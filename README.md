@@ -12,6 +12,7 @@
 [![Stars](https://img.shields.io/github/stars/Meitoncz/Delos?style=flat&color=fbbd44&labelColor=151b2b)](https://github.com/Meitoncz/Delos/stargazers)
 [![Open issues](https://img.shields.io/github/issues/Meitoncz/Delos?color=e8639a&labelColor=151b2b)](https://github.com/Meitoncz/Delos/issues)
 [![Last commit](https://img.shields.io/github/last-commit/Meitoncz/Delos?color=4fd2ee&labelColor=151b2b)](https://github.com/Meitoncz/Delos/commits/main)
+[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-support-e8639a?logo=kofi&logoColor=white&labelColor=151b2b)](https://ko-fi.com/delos_stream)
 
 [Website](https://delos-stream.com) · [Releases](https://github.com/Meitoncz/Delos/releases) · [Issues](https://github.com/Meitoncz/Delos/issues) · [Add to Obtainium](obtainium://add/https://github.com/Meitoncz/Delos)
 
