@@ -40,7 +40,15 @@ private const val FADE_END = 36f   // stage pixels of the right fade
  * rest always shows its first letter intact. Reduced motion keeps the text still. The caller limits the width with [modifier].
  */
 @Composable
-fun MarqueeText(text: String, style: TextStyle, modifier: Modifier = Modifier, active: Boolean = true) {
+fun MarqueeText(text: String, style: TextStyle, modifier: Modifier = Modifier, active: Boolean = true) =
+    MarqueeContent(text, modifier, active) { BasicText(text, style = style, maxLines = 1, softWrap = false) }
+
+/**
+ * [MarqueeText] for any single-line [content] (a stat block of several texts): the same fade, scroll and reduced-motion rules.
+ * [content] is composed twice while it scrolls (the repeat); [key] restarts the scroll when the content changes.
+ */
+@Composable
+fun MarqueeContent(key: Any?, modifier: Modifier = Modifier, active: Boolean = true, content: @Composable () -> Unit) {
     val stage = LocalStage.current
     val rm = LocalReducedMotion.current
     val k = stage.dpPerPx * LocalDensity.current.density
@@ -48,10 +56,10 @@ fun MarqueeText(text: String, style: TextStyle, modifier: Modifier = Modifier, a
     var textWidth by remember { mutableIntStateOf(0) }
     val overflow = boxWidth > 0 && textWidth > boxWidth
     val scrolling = overflow && active && !rm
-    // One lap is the text and the gap; at its end the repeat stands exactly where the text started
+    // One lap is the content and the gap; at its end the repeat stands exactly where the content started
     val lap = textWidth + GAP * k
     val offset = remember { Animatable(0f) }
-    LaunchedEffect(scrolling, text, lap) {
+    LaunchedEffect(scrolling, key, lap) {
         offset.snapTo(0f)
         if (!scrolling) return@LaunchedEffect
         delay(START_DELAY_MS)
@@ -74,13 +82,10 @@ fun MarqueeText(text: String, style: TextStyle, modifier: Modifier = Modifier, a
                 .wrapContentWidth(Alignment.Start, unbounded = true)
                 .graphicsLayer { translationX = -offset.value },
         ) {
-            BasicText(
-                text, style = style, maxLines = 1, softWrap = false,
-                onTextLayout = { textWidth = kotlin.math.ceil(it.multiParagraph.maxIntrinsicWidth).toInt() },
-            )
+            Box(Modifier.onSizeChanged { textWidth = it.width }) { content() }
             if (scrolling) {
                 Spacer(Modifier.width(GAP.px))
-                BasicText(text, style = style, maxLines = 1, softWrap = false)
+                content()
             }
         }
     }

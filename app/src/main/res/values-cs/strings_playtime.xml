@@ -1,22 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Streaming time line under a game's title: the label and its amount (docs/GUI.md, "Streaming time") -->
-    <!-- %s: the amount, e.g. "45 minutes" or "20.4 hours" -->
-    <string name="playtime_label">Čas streamování: %s</string>
-    <plurals name="playtime_minutes">
-        <!-- %d: whole minutes, under one hour -->
-        <item quantity="one">%d minuta</item>
-        <item quantity="few">%d minuty</item>
-        <item quantity="many">%d minuty</item>
-        <item quantity="other">%d minut</item>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="playtime_eyebrow_time">Čas streamování</string>
+    <string name="playtime_eyebrow_last">Naposledy streamováno</string>
+    <plurals name="playtime_unit_minutes" tools:ignore="ImpliedQuantity">
+        <item quantity="one">minuta</item>
+        <item quantity="few">minuty</item>
+        <item quantity="many">minuty</item>
+        <item quantity="other">minut</item>
     </plurals>
-    <plurals name="playtime_hours">
-        <!-- %d: whole hours (no decimal part) -->
-        <item quantity="one">%d hodina</item>
-        <item quantity="few">%d hodiny</item>
-        <item quantity="many">%d hodiny</item>
-        <item quantity="other">%d hodin</item>
+    <plurals name="playtime_unit_hours" tools:ignore="ImpliedQuantity">
+        <item quantity="one">hodina</item>
+        <item quantity="few">hodiny</item>
+        <item quantity="many">hodiny</item>
+        <item quantity="other">hodin</item>
     </plurals>
-    <!-- %s: hours with one decimal in the locale, e.g. 20.4 -->
-    <string name="playtime_hours_fraction">%s hodiny</string>
+    <string name="playtime_unit_hours_fraction">hodiny</string>
+    <string name="playtime_unit_minutes_short">min</string>
+    <string name="playtime_unit_hours_short">h</string>
+    <string name="playtime_last_today">Dnes</string>
+    <string name="playtime_last_yesterday">Včera</string>
+    <plurals name="playtime_last_days">
+        <item quantity="one">před %d dnem</item>
+        <item quantity="few">před %d dny</item>
+        <item quantity="many">před %d dne</item>
+        <item quantity="other">před %d dny</item>
+    </plurals>
+    <plurals name="playtime_last_weeks">
+        <item quantity="one">před %d týdnem</item>
+        <item quantity="few">před %d týdny</item>
+        <item quantity="many">před %d týdne</item>
+        <item quantity="other">před %d týdny</item>
+    </plurals>
 </resources>

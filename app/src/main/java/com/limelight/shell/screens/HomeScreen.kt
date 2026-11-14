@@ -21,6 +21,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.background
@@ -106,6 +107,7 @@ import com.limelight.shell.data.rememberAnimatedArtwork
 import com.limelight.shell.data.rememberArtwork
 import com.limelight.shell.data.rememberArtworkResult
 import com.limelight.shell.data.Pc
+import com.limelight.shell.data.Playtime
 import com.limelight.shell.data.PcRepository
 import com.limelight.shell.data.TileArtSource
 import com.limelight.shell.data.rememberBoxArt
@@ -315,6 +317,10 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
         if (stage.compact) HomeCompact.layout(stage.stageWidth, stage.stageHeight, uiScale, stage.safe.top, stage.safe.bottom) else null
     }
     val covers = remember(home) { if (home != null) CoverGeometry(home.coverScale, HomeCompact.rowStart(home.coverScale)) else StandardCovers }
+    // The focused game's streaming time (docs/GUI.md): an app without any has no block, and the standard layout is then the prototype's exactly
+    val resumes = rememberResumes()
+    val playtime = rememberPlaytime(profileStore, pc.uuid, focused.id, resumes)
+    val standard = remember(uiScale, playtime.totalMillis > 0, stage.safe.top) { HomeStandard.layout(uiScale, playtime.totalMillis > 0, stage.safe.top) }
 
     val tile: @Composable (Int, App) -> Unit = { index, app ->
         GameTile(
@@ -342,8 +348,8 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
         val infoDim by animateFloatAsState(if (shell.layer is Layer.Context) .4f else 1f, tween(Motion.FADE, easing = Motion.Ease), label = "infoDim")
         // A compact stage lays the block out between the status bar and the covers (HomeCompact)
         val infoStart = if (compact) Compact.SIDE else 150f
-        val infoTop = home?.titleTop ?: 150f
-        GameInfo(pc, focused, home,
+        val infoTop = home?.titleTop ?: standard.top
+        GameInfo(pc, focused, home, standard, playtime, resumes,
             // The block (logo, GAME INFO label and pill row) sits high enough that the pills clear the focused cover
             modifier = Modifier.graphicsLayer { alpha = infoDim }.padding(start = infoStart.px, top = infoTop.px), reducedMotion = appearance.reducedMotion,
             // The same condition as the animated background's: the genre takes the game's colors only while it does
@@ -363,7 +369,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                 modifier = Modifier
                     .fillMaxSize()
                     // The scroll area reaches down to the stage's bottom edge: the focused cover's glow (about 110 px under a 450 px cover) is never cut
-                    .padding(top = (if (home != null) home.coverTop - COMPACT_ROW_PAD else 430f - (uiScale - 1f) * 92f).px)
+                    .padding(top = (if (home != null) home.coverTop - COMPACT_ROW_PAD else HomeStandard.rowTop(uiScale)).px)
                     .graphicsLayer {
                         alpha = rowAlpha.value
                         translationX = rowBounce.value
@@ -416,7 +422,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                 // At the end the last cover (focused) is as far from the right edge as the first game (focused) is
                 // from the left one
                 contentPadding = PaddingValues(
-                    start = covers.start.px, end = covers.endPadding.px, top = (if (compact) COMPACT_ROW_PAD else 90f).px,
+                    start = covers.start.px, end = covers.endPadding.px, top = (if (compact) COMPACT_ROW_PAD else HomeStandard.ROW_PAD).px,
                     bottom = (if (home != null) stage.stageHeight - home.coverBottom else 110f).px,
                 ),
                 horizontalArrangement = Arrangement.spacedBy(covers.gap.px),
@@ -564,16 +570,19 @@ private fun gameMenuHeader(res: Resources, app: App, hidden: Boolean, running: A
 }
 
 @Composable
-private fun GameInfo(pc: Pc, app: App, home: HomeCompactLayout?, modifier: Modifier, reducedMotion: Boolean, matchGameColors: Boolean) {
+private fun GameInfo(
+    pc: Pc, app: App, home: HomeCompactLayout?, standard: StandardInfo, playtime: Playtime, resumes: Int,
+    modifier: Modifier, reducedMotion: Boolean, matchGameColors: Boolean,
+) {
     val colors = LocalDelosColors.current
     val art = appArt(pc, app)
     // A compact stage shows the title smaller in a shorter box ([home] says how tall), without the "Game info" label, and lets the pills use the whole width
     val stage = LocalStage.current
     val compact = home != null
-    val titleBox = home?.titleBox ?: 200f
+    val titleBox = home?.titleBox ?: standard.titleBox
     // The logo keeps 10 px of air above and below in its box, 4 in a box that is only as tall as the title
-    val logoPad = if (home != null && home.titleBox < 100f) 4f else 10f
-    val logoHeight = if (home != null) home.titleBox - 2f * logoPad else 180f
+    val logoPad = if (home != null && home.titleBox < 100f) 4f else HomeStandard.LOGO_PAD
+    val logoHeight = titleBox - 2f * logoPad
     val logoWidth = if (compact) minOf(900f, stage.stageWidth - 2f * Compact.SIDE) else 900f
     Column(modifier) {
         val logo by rememberArtworkResult(LocalArtwork.current, pc, app, ArtKind.LOGO)
@@ -619,6 +628,13 @@ private fun GameInfo(pc: Pc, app: App, home: HomeCompactLayout?, modifier: Modif
                     .gameTitleEntrance(homeKey(pc, app), null, reducedMotion),
             )
         } else Box(Modifier.height(titleBox.px)) // Keep the title space while the logo lookup is pending.
+        // The streaming-time stat block (docs/GUI.md): only for an app with time. A compact stage keeps its room for every app, so the covers never resize between apps
+        val hasBlock = playtime.totalMillis > 0
+        val blockMax = (if (compact) stage.stageWidth - 2f * Compact.SIDE else 1620f).px
+        if (home != null) {
+            Spacer(Modifier.height(home.titleGap.px))
+            Box(Modifier.height(home.blockHeight.px)) { if (hasBlock) StreamingTimeBlock(playtime, resumes, Modifier.widthIn(max = blockMax)) }
+        } else if (hasBlock) StreamingTimeBlock(playtime, resumes, Modifier.widthIn(max = blockMax))
         val metadata = LocalGameMetadata.current.entry(pc, app).data
         // Up to two genres and two themes: Steam's user tags when the game has them, else IGDB's lists (the filter
         // still offers every IGDB genre and theme); the facts come first
@@ -638,14 +654,14 @@ private fun GameInfo(pc: Pc, app: App, home: HomeCompactLayout?, modifier: Modif
         val showLabel = !compact && (hasTags || app.running || hdrKind != null || completion != null || virtualDisplay)
         if (showLabel) BasicText(
             stringResource(if (BundledArtwork.kind(app) != null) R.string.home_info_app else R.string.home_info_game),
-            modifier = Modifier.padding(top = 10.px),
+            modifier = Modifier.padding(top = (if (hasBlock) HomeCompact.BLOCK_GAP else 10f).px),
             style = TextStyle(
                 color = colors.text3, fontFamily = Figtree, fontWeight = FontWeight.SemiBold,
                 fontSize = 17.tpx, letterSpacing = .14.em,
             ),
         )
         InfoRow(
-            Modifier.padding(top = if (home != null) home.titleGap.px else if (showLabel) 8.px else 10.px).widthIn(max = (if (compact) stage.stageWidth - 2f * Compact.SIDE else 1620f).px),
+            Modifier.padding(top = if (home != null || (hasBlock && !showLabel)) HomeCompact.BLOCK_GAP.px else if (showLabel) 8.px else 10.px).widthIn(max = (if (compact) stage.stageWidth - 2f * Compact.SIDE else 1620f).px),
             hasTags = hasTags,
             tags = {
                 if (genres.isNotEmpty()) GenrePill(genres, gameColors)

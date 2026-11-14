@@ -1,22 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Streaming time line under a game's title: the label and its amount (docs/GUI.md, "Streaming time") -->
-    <!-- %s: the amount, e.g. "45 minutes" or "20.4 hours" -->
-    <string name="playtime_label">Час стрімінгу: %s</string>
-    <plurals name="playtime_minutes">
-        <!-- %d: whole minutes, under one hour -->
-        <item quantity="one">%d хвилина</item>
-        <item quantity="few">%d хвилини</item>
-        <item quantity="many">%d хвилин</item>
-        <item quantity="other">%d хвилини</item>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="playtime_eyebrow_time">Час стрімінгу</string>
+    <string name="playtime_eyebrow_last">Останній стрімінг</string>
+    <plurals name="playtime_unit_minutes" tools:ignore="ImpliedQuantity">
+        <item quantity="one">хвилина</item>
+        <item quantity="few">хвилини</item>
+        <item quantity="many">хвилин</item>
+        <item quantity="other">хвилини</item>
     </plurals>
-    <plurals name="playtime_hours">
-        <!-- %d: whole hours (no decimal part) -->
-        <item quantity="one">%d година</item>
-        <item quantity="few">%d години</item>
-        <item quantity="many">%d годин</item>
-        <item quantity="other">%d години</item>
+    <plurals name="playtime_unit_hours" tools:ignore="ImpliedQuantity">
+        <item quantity="one">година</item>
+        <item quantity="few">години</item>
+        <item quantity="many">годин</item>
+        <item quantity="other">години</item>
     </plurals>
-    <!-- %s: hours with one decimal in the locale, e.g. 20.4 -->
-    <string name="playtime_hours_fraction">%s години</string>
+    <string name="playtime_unit_hours_fraction">години</string>
+    <string name="playtime_unit_minutes_short">хв</string>
+    <string name="playtime_unit_hours_short">год</string>
+    <string name="playtime_last_today">Сьогодні</string>
+    <string name="playtime_last_yesterday">Вчора</string>
+    <plurals name="playtime_last_days">
+        <item quantity="one">%d день тому</item>
+        <item quantity="few">%d дні тому</item>
+        <item quantity="many">%d днів тому</item>
+        <item quantity="other">%d дня тому</item>
+    </plurals>
+    <plurals name="playtime_last_weeks">
+        <item quantity="one">%d тиждень тому</item>
+        <item quantity="few">%d тижні тому</item>
+        <item quantity="many">%d тижнів тому</item>
+        <item quantity="other">%d тижня тому</item>
+    </plurals>
 </resources>

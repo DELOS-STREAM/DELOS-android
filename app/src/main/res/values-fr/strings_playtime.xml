@@ -1,20 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Streaming time line under a game's title: the label and its amount (docs/GUI.md, "Streaming time") -->
-    <!-- %s: the amount, e.g. "45 minutes" or "20.4 hours" -->
-    <string name="playtime_label">Temps de streaming : %s</string>
-    <plurals name="playtime_minutes">
-        <!-- %d: whole minutes, under one hour -->
-        <item quantity="one">%d minute</item>
-        <item quantity="many">%d minutes</item>
-        <item quantity="other">%d minutes</item>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="playtime_eyebrow_time">Temps de streaming</string>
+    <string name="playtime_eyebrow_last">Dernier streaming</string>
+    <plurals name="playtime_unit_minutes" tools:ignore="ImpliedQuantity">
+        <item quantity="one">minute</item>
+        <item quantity="many">minutes</item>
+        <item quantity="other">minutes</item>
     </plurals>
-    <plurals name="playtime_hours">
-        <!-- %d: whole hours (no decimal part) -->
-        <item quantity="one">%d heure</item>
-        <item quantity="many">%d heures</item>
-        <item quantity="other">%d heures</item>
+    <plurals name="playtime_unit_hours" tools:ignore="ImpliedQuantity">
+        <item quantity="one">heure</item>
+        <item quantity="many">heures</item>
+        <item quantity="other">heures</item>
     </plurals>
-    <!-- %s: hours with one decimal in the locale, e.g. 20.4 -->
-    <string name="playtime_hours_fraction">%s heures</string>
+    <string name="playtime_unit_hours_fraction">heures</string>
+    <string name="playtime_unit_minutes_short">min</string>
+    <string name="playtime_unit_hours_short">h</string>
+    <string name="playtime_last_today">Aujourd’hui</string>
+    <string name="playtime_last_yesterday">Hier</string>
+    <plurals name="playtime_last_days">
+        <item quantity="one">il y a %d jour</item>
+        <item quantity="many">il y a %d jours</item>
+        <item quantity="other">il y a %d jours</item>
+    </plurals>
+    <plurals name="playtime_last_weeks">
+        <item quantity="one">il y a %d semaine</item>
+        <item quantity="many">il y a %d semaines</item>
+        <item quantity="other">il y a %d semaines</item>
+    </plurals>
 </resources>

@@ -1,20 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Streaming time line under a game's title: the label and its amount (docs/GUI.md, "Streaming time") -->
-    <!-- %s: the amount, e.g. "45 minutes" or "20.4 hours" -->
-    <string name="playtime_label">Tiempo de streaming: %s</string>
-    <plurals name="playtime_minutes">
-        <!-- %d: whole minutes, under one hour -->
-        <item quantity="one">%d minuto</item>
-        <item quantity="many">%d minutos</item>
-        <item quantity="other">%d minutos</item>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="playtime_eyebrow_time">Tiempo de streaming</string>
+    <string name="playtime_eyebrow_last">Último streaming</string>
+    <plurals name="playtime_unit_minutes" tools:ignore="ImpliedQuantity">
+        <item quantity="one">minuto</item>
+        <item quantity="many">minutos</item>
+        <item quantity="other">minutos</item>
     </plurals>
-    <plurals name="playtime_hours">
-        <!-- %d: whole hours (no decimal part) -->
-        <item quantity="one">%d hora</item>
-        <item quantity="many">%d horas</item>
-        <item quantity="other">%d horas</item>
+    <plurals name="playtime_unit_hours" tools:ignore="ImpliedQuantity">
+        <item quantity="one">hora</item>
+        <item quantity="many">horas</item>
+        <item quantity="other">horas</item>
     </plurals>
-    <!-- %s: hours with one decimal in the locale, e.g. 20.4 -->
-    <string name="playtime_hours_fraction">%s horas</string>
+    <string name="playtime_unit_hours_fraction">horas</string>
+    <string name="playtime_unit_minutes_short">min</string>
+    <string name="playtime_unit_hours_short">h</string>
+    <string name="playtime_last_today">Hoy</string>
+    <string name="playtime_last_yesterday">Ayer</string>
+    <plurals name="playtime_last_days">
+        <item quantity="one">hace %d día</item>
+        <item quantity="many">hace %d días</item>
+        <item quantity="other">hace %d días</item>
+    </plurals>
+    <plurals name="playtime_last_weeks">
+        <item quantity="one">hace %d semana</item>
+        <item quantity="many">hace %d semanas</item>
+        <item quantity="other">hace %d semanas</item>
+    </plurals>
 </resources>

@@ -24,9 +24,9 @@ class HomeCompactLayoutTest {
             val n = "${name(stage)} at $scale"
             assertEquals("$n status bar", Compact.STATUS_BAR * scale, l.statusBottom, .01f)
             assertEquals("$n hint bar", stage.second - Compact.HINT_BAR * scale, l.hintTop, .01f)
-            assertTrue("$n order", l.statusBottom <= l.titleTop && l.titleBottom <= l.chipsTop && l.chipsBottom <= l.coverTop && l.coverBottom <= l.hintTop)
+            assertTrue("$n order", l.statusBottom <= l.titleTop && l.titleBottom <= l.blockTop && l.blockTop + l.blockHeight <= l.chipsTop && l.chipsBottom <= l.coverTop && l.coverBottom <= l.hintTop)
             // The four gaps, the three blocks and the two ring reaches fill the room between the bars exactly
-            val used = l.statusGap + l.titleBox + l.titleGap + l.chipsHeight + l.chipsGap + 2f * l.ringReach + l.coverHeight + l.hintGap
+            val used = l.statusGap + l.titleBox + l.titleGap + l.blockHeight + l.blockGap + l.chipsHeight + l.chipsGap + 2f * l.ringReach + l.coverHeight + l.hintGap
             assertEquals("$n fills the room", l.hintTop - l.statusBottom, used, .05f)
         }
     }
@@ -49,6 +49,20 @@ class HomeCompactLayoutTest {
     }
 
     @Test
+    fun theStreamingTimeBlockHasItsRoomOnEveryCompactStageForEveryGame() {
+        for (stage in stages) for (scale in scales) {
+            val l = c.layout(stage.first, stage.second, scale)
+            val n = "${name(stage)} at $scale"
+            // The block is 44 high at scale 1 and grows with the texts; its room is there whether or not the game has time
+            assertEquals("$n block height", 44f * scale, l.blockHeight, .01f)
+            assertEquals("$n block sits under the title", l.titleBottom + l.titleGap, l.blockTop, .01f)
+            // The air under it is clear (never under 14) and about what the title leaves above it
+            assertTrue("$n block to chips ${l.blockGap}", l.blockGap >= 14f - .01f)
+            assertTrue("$n about the gap above it: ${l.titleGap} and ${l.blockGap}", kotlin.math.abs(l.blockGap - l.titleGap) <= 4f + .01f)
+        }
+    }
+
+    @Test
     fun theRingIsTheFocusedCoversGrowthAndItsRing() {
         // A 450 px cover at 1.055 grows 12.375 px up and down; the 10 px ring grows with it
         assertEquals(12.375f + 10.55f, c.ringReach(450f), .001f)
@@ -66,8 +80,10 @@ class HomeCompactLayoutTest {
             assertEquals("$n the cover keeps 2:3", 450f * l.coverScale, l.coverHeight, .01f)
             assertTrue("$n at most 0.40 of the height: ${l.coverHeight}", l.coverHeight <= stage.second * .40f + .01f)
             assertTrue("$n not larger than the prototype's", l.coverScale <= 1f)
-            // No minimum but the floor: the comfortable gaps come first and the cover takes what is left (the 722-high stage: the floor)
-            assertTrue("$n at least the floor: ${l.coverScale}", l.coverScale >= c.FLOOR - .0002f)
+            // No minimum but the floor: the comfortable gaps come first and the cover takes what is left (the 722-high stage: the floor). Only where
+            // the floor and the least gaps do not fit together (the same stage at 1.15, with the streaming-time block's room) the cover gives way, down to the hard floor
+            val gapsFit = l.statusGap >= 16f - .05f && l.hintGap >= 28f - .05f && l.chipsGap >= 24f - .05f
+            assertTrue("$n at least the floor: ${l.coverScale}", l.coverScale >= c.FLOOR - .0002f || (gapsFit && l.coverScale >= c.HARD_FLOOR))
         }
     }
 
@@ -102,14 +118,14 @@ class HomeCompactLayoutTest {
     fun theNumbersOfTheSixStages() {
         // Cover scale at interface scale 1: the width rule where the stage is tall for its width, the comfortable gaps on the lower ones,
         // the least gaps on the lowest
-        val expected = mapOf("1099x957" to .6554f, "1488x893" to .7665f, "1191x893" to .7155f, "1108x831" to .6359f, "1051x1051" to .6237f, "1082x722" to .45f)
+        val expected = mapOf("1099x957" to .6554f, "1488x893" to .6401f, "1191x893" to .6401f, "1108x831" to .5095f, "1051x1051" to .6237f, "1082x722" to .45f)
         for (stage in stages) assertEquals(name(stage), expected.getValue(name(stage)), c.layout(stage.first, stage.second).coverScale, .0005f)
         // The lowest stage's cover is at the floor and the least gaps (and the 64 px title box) are kept
         val low = c.layout(1082f, 722f)
         assertTrue(low.titleBox >= 64f - .1f && low.statusGap >= 16f - .1f && low.chipsGap >= 24f - .1f && low.hintGap >= 28f - .1f)
         // At the default interface scale the covers of the wide and the low stages give way to the comfortable gaps
-        assertEquals(.69f, c.layout(1488f, 893f, 1.15f).coverScale, .0005f)
-        assertEquals(.5595f, c.layout(1108f, 831f, 1.15f).coverScale, .0005f)
+        assertEquals(.5498f, c.layout(1488f, 893f, 1.15f).coverScale, .0005f)
+        assertEquals(.45f, c.layout(1108f, 831f, 1.15f).coverScale, .0005f)
         assertTrue(c.layout(1488f, 893f, 1.15f).chipsGap >= 38f && c.layout(1488f, 893f, 1.15f).hintGap >= 42f)
         // The others give the logo its 120 px box, also at the default interface scale
         for (stage in stages.filter { it.second > 800f }) for (scale in scales) assertEquals(name(stage), 120f, c.layout(stage.first, stage.second, scale).titleBox, .01f)
@@ -121,9 +137,9 @@ class HomeCompactLayoutTest {
             val l = c.layout(stage.first, stage.second, scale)
             val n = "${name(stage)} at $scale"
             assertEquals("$n status bar", Compact.STATUS_BAR * scale, l.statusBottom, .01f)
-            assertTrue("$n order", l.statusBottom <= l.titleTop + .05f && l.titleBottom <= l.chipsTop && l.chipsBottom <= l.coverTop - l.ringReach + .05f)
+            assertTrue("$n order", l.statusBottom <= l.titleTop + .05f && l.titleBottom <= l.blockTop && l.blockTop + l.blockHeight <= l.chipsTop && l.chipsBottom <= l.coverTop - l.ringReach + .05f)
             assertTrue("$n the ring stays off the hint bar", l.coverBottom + l.ringReach <= l.hintTop + .05f)
-            assertTrue("$n floor", l.coverScale >= c.FLOOR)
+            assertTrue("$n floor", l.coverScale >= c.FLOOR - .0002f || l.coverScale >= c.HARD_FLOOR)
         }
     }
 

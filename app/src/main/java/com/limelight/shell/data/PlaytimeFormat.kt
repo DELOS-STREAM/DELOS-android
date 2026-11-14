@@ -5,7 +5,7 @@ import com.limelight.R
 import java.text.NumberFormat
 import java.util.Locale
 
-/** The "Streaming time" text: minutes under one hour, hours with one decimal from one hour up; empty (hidden) for zero. */
+/** The "Streaming time" amount: minutes under one hour, hours with one decimal from one hour up; empty (hidden) for zero. */
 object PlaytimeFormat {
     private const val MINUTE = 60_000L
     private const val HOUR = 60 * MINUTE
@@ -20,16 +20,31 @@ object PlaytimeFormat {
         else -> Amount(Amount.Unit.HOURS, (millis * 10 + HOUR / 2) / HOUR)
     }
 
-    /** "Streaming time: 20.4 hours" in the language of [res] and the decimal separator of [locale]; null when there is nothing to show. */
-    fun format(res: Resources, millis: Long, locale: Locale = Locale.getDefault()): String? {
+    /** The amount split as the stat block shows it: [number] big ("20.4", "45") and [unit] small ("hours", "minutes", or "h", "min" when [short]). */
+    data class Parts(val number: String, val unit: String)
+
+    /** The amount of [millis] in the language of [res] and the decimal separator of [locale]; null when there is nothing to show. */
+    fun parts(res: Resources, millis: Long, locale: Locale = Locale.getDefault(), short: Boolean = false): Parts? {
         val amount = amount(millis) ?: return null
-        val text = when (amount.unit) {
-            Amount.Unit.MINUTES -> res.getQuantityString(R.plurals.playtime_minutes, amount.tenths.toInt(), amount.tenths.toInt())
-            Amount.Unit.HOURS ->
-                if (amount.tenths % 10 == 0L) (amount.tenths / 10).toInt().let { res.getQuantityString(R.plurals.playtime_hours, it, it) }
-                else res.getString(R.string.playtime_hours_fraction, decimal(amount.tenths, locale))
+        val count = amount.tenths.toInt()
+        return when (amount.unit) {
+            Amount.Unit.MINUTES -> Parts(
+                NumberFormat.getIntegerInstance(locale).format(count),
+                if (short) res.getString(R.string.playtime_unit_minutes_short) else res.getQuantityString(R.plurals.playtime_unit_minutes, count),
+            )
+            Amount.Unit.HOURS -> {
+                val whole = amount.tenths % 10 == 0L
+                val hours = (amount.tenths / 10).toInt()
+                Parts(
+                    if (whole) NumberFormat.getIntegerInstance(locale).format(hours) else decimal(amount.tenths, locale),
+                    when {
+                        short -> res.getString(R.string.playtime_unit_hours_short)
+                        whole -> res.getQuantityString(R.plurals.playtime_unit_hours, hours)
+                        else -> res.getString(R.string.playtime_unit_hours_fraction)
+                    },
+                )
+            }
         }
-        return res.getString(R.string.playtime_label, text)
     }
 
     /** [tenths] as a number with one decimal in [locale] ("204" gives "20.4" or "20,4"). */

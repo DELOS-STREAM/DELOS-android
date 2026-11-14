@@ -1,18 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Streaming time line under a game's title: the label and its amount (docs/GUI.md, "Streaming time") -->
-    <!-- %s: the amount, e.g. "45 minutes" or "20.4 hours" -->
-    <string name="playtime_label">Streaming time: %s</string>
-    <plurals name="playtime_minutes">
-        <!-- %d: whole minutes, under one hour -->
-        <item quantity="one">%d minute</item>
-        <item quantity="other">%d minutes</item>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- The streaming time stat block under a game's title (docs/GUI.md, "Streaming time"); the UI upper-cases the two eyebrows in the locale -->
+    <string name="playtime_eyebrow_time">Streaming time</string>
+    <string name="playtime_eyebrow_last">Last streamed</string>
+    <!-- The unit next to the amount: no number, which is shown big beside it, so ImpliedQuantity is ignored (the word is right for every number of its category). Minutes under one hour, hours from one hour -->
+    <plurals name="playtime_unit_minutes" tools:ignore="ImpliedQuantity">
+        <item quantity="one">minute</item>
+        <item quantity="other">minutes</item>
     </plurals>
-    <plurals name="playtime_hours">
-        <!-- %d: whole hours (no decimal part) -->
-        <item quantity="one">%d hour</item>
-        <item quantity="other">%d hours</item>
+    <plurals name="playtime_unit_hours" tools:ignore="ImpliedQuantity">
+        <!-- Whole hours (no decimal part) -->
+        <item quantity="one">hour</item>
+        <item quantity="other">hours</item>
     </plurals>
-    <!-- %s: hours with one decimal in the locale, e.g. 20.4 -->
-    <string name="playtime_hours_fraction">%s hours</string>
+    <!-- Hours with a decimal part (20.4): one form for every number -->
+    <string name="playtime_unit_hours_fraction">hours</string>
+    <!-- Short units, used when the full ones do not fit the width -->
+    <string name="playtime_unit_minutes_short">min</string>
+    <string name="playtime_unit_hours_short">h</string>
+    <!-- When the app was last streamed, by calendar day; older than four weeks shows the date -->
+    <string name="playtime_last_today">Today</string>
+    <string name="playtime_last_yesterday">Yesterday</string>
+    <plurals name="playtime_last_days">
+        <!-- %d: 2 to 6 -->
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+    <plurals name="playtime_last_weeks">
+        <!-- %d: 1 to 4 -->
+        <item quantity="one">%d week ago</item>
+        <item quantity="other">%d weeks ago</item>
+    </plurals>
 </resources>

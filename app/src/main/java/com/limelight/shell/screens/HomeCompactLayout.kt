@@ -4,6 +4,7 @@ import com.limelight.shell.ui.Compact
 
 /**
  * Home on a compact stage, laid out top-down (issue #9), stage pixels from the stage's top: the status bar, the title (or logo) box, the
+ * streaming-time block (its room is reserved for every game, with or without time: covers must not resize between games), the
  * info chips (room for two rows), the covers and the hint bar, with the gaps between them. [HomeCompact.layout] computes it; pure,
  * covered by `HomeCompactLayoutTest` on every compact stage.
  */
@@ -12,6 +13,8 @@ internal class HomeCompactLayout(
     val coverScale: Float,
     val titleTop: Float,
     val titleBox: Float,
+    val blockTop: Float,
+    val blockHeight: Float,
     val chipsTop: Float,
     val chipsHeight: Float,
     val coverTop: Float,
@@ -25,9 +28,10 @@ internal class HomeCompactLayout(
     val chipsBottom get() = chipsTop + chipsHeight
     val coverBottom get() = coverTop + coverHeight
 
-    /** The four gaps: status bar to title, title to chips, chips to the focused cover's ring, that ring to the hint bar. */
+    /** The five gaps: status bar to title, title to the streaming-time block, block to chips, chips to the focused cover's ring, that ring to the hint bar. */
     val statusGap get() = titleTop - statusBottom
-    val titleGap get() = chipsTop - titleBottom
+    val titleGap get() = blockTop - titleBottom
+    val blockGap get() = chipsTop - (blockTop + blockHeight)
     val chipsGap get() = coverTop - ringReach - chipsBottom
     val hintGap get() = hintTop - (coverBottom + ringReach)
 }
@@ -43,12 +47,19 @@ internal object HomeCompact {
     const val FOCUS_SCALE = 1.055f
     const val RING = 10f
 
-    /** The least gaps: status bar to title, title to chips (and the most there), chips to the focused cover's ring, ring to hint bar. */
+    /** The least gaps: status bar to title, title to the streaming-time block (and the most there), chips to the focused cover's ring, ring to hint bar. */
     const val GAP_STATUS = 16f
     const val GAP_TITLE = 12f
     const val GAP_TITLE_MAX = 16f
     const val GAP_CHIPS = 24f
     const val GAP_HINT = 28f
+
+    /** The streaming-time block (docs/GUI.md): an eyebrow line of 14 over a value line of 30 at interface scale 1, and the air between it and the chips. */
+    const val BLOCK_HEIGHT = 44f
+    const val BLOCK_GAP = 16f
+
+    /** The block's height at interface scale [scale] (its texts grow with it). */
+    fun blockHeight(scale: Float): Float = BLOCK_HEIGHT * scale
 
     /** The title box: tall enough for the 60 px title at the least, the logo's 120 at the most. */
     const val TITLE_MIN = 64f
@@ -69,6 +80,12 @@ internal object HomeCompact {
      */
     const val MAX_HEIGHT_SHARE = .40f
     const val FLOOR = .45f
+
+    /**
+     * Where the covers stop shrinking for good. Below [FLOOR] they go only as far as the least gaps need: with the streaming-time block's room
+     * reserved, the lowest stage at the default interface scale has not room for the floor and the least gaps (the 722-high Pocket Micro at 1.15).
+     */
+    const val HARD_FLOOR = .30f
 
     /** How the room that is left over is shared: a little above the title, most of it between the chips and the covers and under the covers. */
     const val SHARE_STATUS = .5f
@@ -136,16 +153,17 @@ internal object HomeCompact {
         val titleMin = TITLE_MIN * scale
         val titleMax = maxOf(TITLE_MAX, titleMin)
         // Everything but the cover and the part of its ring that grows with it
-        val fixed = GAP_STATUS + titleMin + GAP_TITLE + chips + GAP_CHIPS + GAP_HINT + 2f * RING * FOCUS_SCALE
+        val block = blockHeight(scale) + BLOCK_GAP
+        val fixed = GAP_STATUS + titleMin + GAP_TITLE + block + chips + GAP_CHIPS + GAP_HINT + 2f * RING * FOCUS_SCALE
         val byHeight = (room - fixed) / FOCUS_SCALE / COVER_HEIGHT
         // The same with the logo's full box and comfortable gaps: what the cover gets while that is not under the minimum
-        val comfortable = GAP_STATUS + titleMax + GAP_TITLE_MAX + chips + COMFORT_CHIPS + COMFORT_HINT + 2f * RING * FOCUS_SCALE
+        val comfortable = GAP_STATUS + titleMax + GAP_TITLE_MAX + block + chips + COMFORT_CHIPS + COMFORT_HINT + 2f * RING * FOCUS_SCALE
         val byComfort = (room - comfortable) / FOCUS_SCALE / COVER_HEIGHT
         val byShare = stageHeight * MAX_HEIGHT_SHARE / COVER_HEIGHT
-        val coverScale = minOf(byShare, widthScale(stageWidth), byComfort).coerceAtLeast(FLOOR)
+        val coverScale = minOf(byShare, widthScale(stageWidth), byComfort).coerceAtLeast(minOf(FLOOR, byHeight).coerceAtLeast(HARD_FLOOR))
         val cover = COVER_HEIGHT * coverScale
         val reach = ringReach(cover)
-        var left = room - (GAP_STATUS + titleMin + GAP_TITLE + chips + GAP_CHIPS + cover + 2f * reach + GAP_HINT)
+        var left = room - (GAP_STATUS + titleMin + GAP_TITLE + block + chips + GAP_CHIPS + cover + 2f * reach + GAP_HINT)
         var statusGap = GAP_STATUS
         var titleGap = GAP_TITLE
         var chipsGap = GAP_CHIPS
@@ -176,8 +194,9 @@ internal object HomeCompact {
             chipsGap = give(chipsGap)
         }
         val titleTop = statusBottom + statusGap
-        val chipsTop = titleTop + title + titleGap
+        val blockTop = titleTop + title + titleGap
+        val chipsTop = blockTop + block
         val coverTop = chipsTop + chips + chipsGap + reach
-        return HomeCompactLayout(coverScale, titleTop, title, chipsTop, chips, coverTop, cover, reach, statusBottom, hintTop)
+        return HomeCompactLayout(coverScale, titleTop, title, blockTop, blockHeight(scale), chipsTop, chips, coverTop, cover, reach, statusBottom, hintTop)
     }
 }

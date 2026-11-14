@@ -1,18 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Streaming time line under a game's title: the label and its amount (docs/GUI.md, "Streaming time") -->
-    <!-- %s: the amount, e.g. "45 minutes" or "20.4 hours" -->
-    <string name="playtime_label">Streaming-Zeit: %s</string>
-    <plurals name="playtime_minutes">
-        <!-- %d: whole minutes, under one hour -->
-        <item quantity="one">%d Minute</item>
-        <item quantity="other">%d Minuten</item>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="playtime_eyebrow_time">Streaming-Zeit</string>
+    <string name="playtime_eyebrow_last">Zuletzt gestreamt</string>
+    <plurals name="playtime_unit_minutes" tools:ignore="ImpliedQuantity">
+        <item quantity="one">Minute</item>
+        <item quantity="other">Minuten</item>
     </plurals>
-    <plurals name="playtime_hours">
-        <!-- %d: whole hours (no decimal part) -->
-        <item quantity="one">%d Stunde</item>
-        <item quantity="other">%d Stunden</item>
+    <plurals name="playtime_unit_hours" tools:ignore="ImpliedQuantity">
+        <item quantity="one">Stunde</item>
+        <item quantity="other">Stunden</item>
     </plurals>
-    <!-- %s: hours with one decimal in the locale, e.g. 20.4 -->
-    <string name="playtime_hours_fraction">%s Stunden</string>
+    <string name="playtime_unit_hours_fraction">Stunden</string>
+    <string name="playtime_unit_minutes_short">Min.</string>
+    <string name="playtime_unit_hours_short">Std.</string>
+    <string name="playtime_last_today">Heute</string>
+    <string name="playtime_last_yesterday">Gestern</string>
+    <plurals name="playtime_last_days">
+        <item quantity="one">vor %d Tag</item>
+        <item quantity="other">vor %d Tagen</item>
+    </plurals>
+    <plurals name="playtime_last_weeks">
+        <item quantity="one">vor %d Woche</item>
+        <item quantity="other">vor %d Wochen</item>
+    </plurals>
 </resources>
