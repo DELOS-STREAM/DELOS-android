@@ -21,6 +21,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import com.limelight.shell.ui.MarqueeText
 import com.limelight.shell.ui.fadeMask
 import com.limelight.shell.ui.rememberMarginBringIntoView
 import androidx.compose.foundation.layout.Arrangement
@@ -264,14 +265,12 @@ private fun DockHead(title: String, enter: () -> Float, exit: () -> Float, modif
             .onSizeChanged { onWidth(it.width / k) },
         verticalArrangement = Arrangement.spacedBy(L.HEAD_GAP.px),
     ) {
-        BasicText(
+        MarqueeText(
             title,
             style = TextStyle(
                 color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = L.TITLE_SIZE.fsp,
                 lineHeight = L.TITLE_LINE_HEIGHT.em, lineHeightStyle = CssLineHeight, letterSpacing = (-.005f).em, shadow = shadow,
             ),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.widthIn(max = maxTitleWidth.px),
         )
         // A low compact stage has no room for the two hints one above the other: side by side there

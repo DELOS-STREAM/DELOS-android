@@ -505,14 +505,14 @@ private fun Header(menu: ContextMenu, parent: MenuItem?, submenu: Boolean, onBac
                         )
                     }
                 }
-                BasicText(
-                    menu.title, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                MarqueeText(
+                    menu.title,
                     style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 25.tpx),
                     modifier = Modifier.padding(top = if (eyebrow != null) 3.px else 0.px, bottom = 2.px),
                 )
                 header?.meta?.let {
-                    BasicText(
-                        it, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    MarqueeText(
+                        it,
                         style = TextStyle(color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Medium, fontSize = 19.tpx),
                     )
                 }
@@ -547,8 +547,8 @@ private fun MenuRow(item: MenuItem, index: Int, modifier: Modifier, onFocused: (
         horizontalArrangement = Arrangement.spacedBy(18.px),
     ) {
         Symbol(item.icon, 30.tpx, iconTint, filled = focused)
-        BasicText(
-            item.label, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        MarqueeText(
+            item.label, active = focused,
             style = TextStyle(color = if (item.danger) MenuDanger else colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 23.tpx),
             modifier = Modifier.weight(1f),
         )

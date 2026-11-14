@@ -75,6 +75,7 @@ import com.limelight.shell.data.rememberArtwork
 import com.limelight.shell.data.rememberBoxArt
 import com.limelight.shell.link.currentTransport
 import com.limelight.shell.settings.*
+import com.limelight.shell.ui.MarqueeText
 import com.limelight.shell.ui.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -442,7 +443,7 @@ private fun GameTitle(pc: String, game: String, modifier: Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.px)) {
         BasicText(stringResource(R.string.settings_game_eyebrow, pc).uppercase(), maxLines = 1, overflow = TextOverflow.Ellipsis,
             style = TextStyle(color = colors.accent2, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 16.tpx, letterSpacing = .14.em, shadow = shadow))
-        BasicText(game, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        MarqueeText(game,
             style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 46.tpx, lineHeight = 1.35.em, shadow = shadow))
     }
 }

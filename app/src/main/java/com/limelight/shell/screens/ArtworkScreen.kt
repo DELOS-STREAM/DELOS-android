@@ -112,6 +112,7 @@ import androidx.compose.ui.res.stringResource
 import com.limelight.R
 import com.limelight.shell.data.ArtworkFact
 import com.limelight.shell.data.sgdbErrorText
+import com.limelight.shell.ui.MarqueeText
 import com.limelight.shell.ui.textResources
 import com.limelight.shell.data.SgdbRetry
 import com.limelight.shell.data.Thumbnails
@@ -782,7 +783,7 @@ private fun GameChip(match: SgdbGame?, busy: Boolean, appName: String, imageCoun
             Box(Modifier.size(40.px).clip(CircleShape).background(colors.accent2.copy(alpha = .2f)), contentAlignment = Alignment.Center) {
                 Symbol(Symbols.SPORTS_ESPORTS, 24.tpx, colors.accent2, filled = true)
             }
-            BasicText(name, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f), style = nameStyle)
+            MarqueeText(name, modifier = Modifier.weight(1f), style = nameStyle)
             // The year and the game id are left out on the compact stage: the name and the count of images matter
             if (match != null && !compact) {
                 match.year?.let { MetaChip("$it") }

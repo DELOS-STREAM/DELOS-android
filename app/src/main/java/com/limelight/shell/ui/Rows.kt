@@ -238,7 +238,7 @@ fun SettingRow(
             Column(Modifier.weight(1f).staggerEntrance(entrance)) {
                 // Cost-bearing rows: the chips on their own line above the title, on the same left edge; the title keeps the full width
                 if (impact != null) ImpactChips(impact, focused, Modifier.padding(bottom = 2.px))
-                BasicText(label, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx))
+                MarqueeText(label, active = focused, style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx))
                 if (override != null) {
                     Row(Modifier.padding(top = 4.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.px)) {
                         CustomBadge()
