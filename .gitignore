@@ -49,3 +49,11 @@ app/.externalNativeBuild/
 AGENTS.md
 # the Delos website: kept local, never pushed (user, 2026-11-13)
 /site/
+# internal working notes and agent context: kept local, not published (user, 2026-11-14)
+/CLAUDE.md
+/docs/SESSION_2026-10-28.md
+/docs/AUDIT.md
+/docs/ANALYSIS.md
+/docs/LOW_RESOLUTION_SHARPNESS_AUDIT.md
+/docs/SETTINGS_HELP_AUDIT.md
+/docs/GITHUB_WORKFLOW.md

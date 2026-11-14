@@ -216,7 +216,7 @@ Stream. Each switch produced exactly one application vibration.
 
 ## Help audit (2026-10-28)
 
-See [SETTINGS_HELP_AUDIT.md](SETTINGS_HELP_AUDIT.md) for the history and coverage audit. Every
+Every
 catalog setting and choice has authored help. The right panel explains the currently selected
 choice, interactions, applicability and when changes take effect. Long text scrolls automatically
 between both ends with edge fades; the title stays fixed. The panel does not accept focus or manual
