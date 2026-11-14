@@ -49,3 +49,7 @@ Follow the patterns already in the code. The shell UI is Kotlin with Compose; th
 ## AI tools
 
 The maintainer works with AI coding agents and reviews all changes. If you use AI tools for a PR, you are still responsible for understanding and testing what you submit.
+
+## Versions
+
+Delos uses semantic versioning; the policy and the history of the reconstructed 0.x versions are in [docs/VERSIONING.md](docs/VERSIONING.md), and the changes per version are in [CHANGELOG.md](CHANGELOG.md). Add user-facing changes under "Unreleased" in the changelog; version bumps are made only by the maintainer when a release is announced.
