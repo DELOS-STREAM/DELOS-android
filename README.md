@@ -1,8 +1,9 @@
 <div align="center">
 
-<img src="docs/readme/logo.png" alt="Delos logo" width="120" height="120">
-
-# Delos
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/logo-dark.png">
+  <img src="docs/readme/logo-light.png" alt="Delos" width="420">
+</picture>
 
 **Game streaming for Android handhelds**, with a console-like interface you can drive entirely with a gamepad.
 
