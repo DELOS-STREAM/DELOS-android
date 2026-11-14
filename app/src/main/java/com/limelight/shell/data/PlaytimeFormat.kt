@@ -23,8 +23,15 @@ object PlaytimeFormat {
     /** The amount split as the stat block shows it: [number] big ("20.4", "45") and [unit] small ("hours", "minutes", or "h", "min" when [short]). */
     data class Parts(val number: String, val unit: String)
 
-    /** The amount of [millis] in the language of [res] and the decimal separator of [locale]; zero is "0" with the hours unit (its plural form per language). */
-    fun parts(res: Resources, millis: Long, locale: Locale = Locale.getDefault(), short: Boolean = false): Parts {
+    /**
+     * The locale the app shows its texts in: the first of the configuration of the [Resources] the strings come from. The app switches
+     * its language per app (`AppLanguage`), which the resources follow and `Locale.getDefault()` does not, so every number, date and upper-casing
+     * that sits next to a string of [res] takes its locale from here.
+     */
+    fun localeOf(res: Resources): Locale = res.configuration.locales[0]
+
+    /** The amount of [millis] in the language of [res] and the decimal separator of its locale ([localeOf]); zero is "0" with the hours unit (its plural form per language). */
+    fun parts(res: Resources, millis: Long, short: Boolean = false, locale: Locale = localeOf(res)): Parts {
         val amount = amount(millis)
         val count = amount.tenths.toInt()
         return when (amount.unit) {

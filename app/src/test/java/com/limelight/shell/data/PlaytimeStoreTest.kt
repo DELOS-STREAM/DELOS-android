@@ -80,7 +80,7 @@ class PlaytimeStoreTest {
 
     @Test fun partsEnglish() {
         val min = 60_000L
-        fun parts(millis: Long, short: Boolean = false) = PlaytimeFormat.parts(resources(), millis, Locale.ENGLISH, short)
+        fun parts(millis: Long, short: Boolean = false) = PlaytimeFormat.parts(resources(), millis, short)
         assertEquals(PlaytimeFormat.Parts("0", "hours"), parts(0))
         assertEquals(PlaytimeFormat.Parts("0", "h"), parts(0, short = true))
         assertEquals(PlaytimeFormat.Parts("1", "minute"), parts(5_000))
@@ -93,9 +93,24 @@ class PlaytimeStoreTest {
     }
 
     @Test @Config(sdk = [33], qualifiers = "cs")
+    fun theLocaleIsThatOfTheResourcesNotTheJvmDefault() {
+        // The app's language is applied to its resources, not to Locale.getDefault(): the decimal comma and the text come from the same place
+        val saved = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.US)
+            assertEquals("cs", PlaytimeFormat.localeOf(resources()).language)
+            assertEquals(PlaytimeFormat.Parts("20,4", "hodiny"), PlaytimeFormat.parts(resources(), 73_440_000))
+            assertEquals("20,4", PlaytimeFormat.decimal(204, PlaytimeFormat.localeOf(resources())))
+        } finally {
+            Locale.setDefault(saved)
+        }
+    }
+
+    @Test @Config(sdk = [33], qualifiers = "cs")
     fun partsCzech() {
         val min = 60_000L
-        fun parts(millis: Long) = PlaytimeFormat.parts(resources(), millis, Locale("cs"))
+        // The locale comes from the resources, as in the UI: no explicit locale
+        fun parts(millis: Long) = PlaytimeFormat.parts(resources(), millis)
         assertEquals(PlaytimeFormat.Parts("0", "hodin"), parts(0))
         assertEquals(PlaytimeFormat.Parts("20,4", "hodiny"), parts(20 * 60 * min + 24 * min))
         assertEquals(PlaytimeFormat.Parts("3", "minuty"), parts(3 * min))
@@ -105,6 +120,7 @@ class PlaytimeStoreTest {
 
     @Test @Config(sdk = [33], qualifiers = "de")
     fun partsGermanZero() {
-        assertEquals(PlaytimeFormat.Parts("0", "Stunden"), PlaytimeFormat.parts(resources(), 0, Locale.GERMAN))
+        assertEquals(PlaytimeFormat.Parts("0", "Stunden"), PlaytimeFormat.parts(resources(), 0))
+        assertEquals(PlaytimeFormat.Parts("20,4", "Stunden"), PlaytimeFormat.parts(resources(), 73_440_000))
     }
 }

@@ -52,7 +52,7 @@ object LastStreamed {
         lastMillis: Long,
         nowMillis: Long = System.currentTimeMillis(),
         zone: ZoneId = ZoneId.systemDefault(),
-        locale: Locale = Locale.getDefault(),
+        locale: Locale = PlaytimeFormat.localeOf(res),
     ): String = when (val relative = relative(lastMillis, nowMillis, zone)) {
         Relative.Never -> res.getString(R.string.playtime_never)
         Relative.Today -> res.getString(R.string.playtime_last_today)

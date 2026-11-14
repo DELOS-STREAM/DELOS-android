@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalConfiguration
@@ -45,7 +47,6 @@ import com.limelight.shell.ui.MarqueeContent
 import com.limelight.shell.ui.px
 import com.limelight.shell.ui.textResources
 import com.limelight.shell.ui.tpx
-import java.util.Locale
 
 /** How much of the stat block fits the width it is given, in the order it gives up text; [SCROLL] is the last resort. */
 internal enum class PlaytimeFit {
@@ -105,17 +106,18 @@ internal fun rememberResumes(): Int {
 /** The texts of the stat block for [playtime] in the current language; worked out again when it changes, on a resume and on a language change. */
 @Composable
 internal fun rememberPlaytimeTexts(playtime: Playtime, resumes: Int): PlaytimeTexts {
+    // textResources() reads the configuration, so a language change recomposes this; the locale is that of the same resources the strings come from
     val config = LocalConfiguration.current
     val res = textResources()
-    val locale: Locale = config.locales[0]
     return remember(playtime, resumes, config) {
+        val locale = PlaytimeFormat.localeOf(res)
         PlaytimeTexts(
             // Upper-cased in the locale (a Turkish i becomes İ)
             res.getString(R.string.playtime_eyebrow_time).uppercase(locale),
             res.getString(R.string.playtime_eyebrow_last).uppercase(locale),
-            PlaytimeFormat.parts(res, playtime.totalMillis, locale),
-            PlaytimeFormat.parts(res, playtime.totalMillis, locale, short = true),
-            LastStreamed.format(res, playtime.lastStreamedMillis, locale = locale),
+            PlaytimeFormat.parts(res, playtime.totalMillis),
+            PlaytimeFormat.parts(res, playtime.totalMillis, short = true),
+            LastStreamed.format(res, playtime.lastStreamedMillis),
         )
     }
 }
@@ -157,7 +159,7 @@ internal fun StatRow(texts: PlaytimeTexts, fit: PlaytimeFit, height: Dp) {
     val scale = LocalStage.current.textScale
     Row(
         Modifier.height(height),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(22.px),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(COLUMN_GAP.px),
     ) {
         val parts = if (fit == PlaytimeFit.SHORT) texts.short else texts.full
         Column(Modifier.height(height), verticalArrangement = Arrangement.Center) {
@@ -198,6 +200,7 @@ private fun Eyebrow(text: String, color: Color) {
             color = color, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 13.tpx, letterSpacing = .16.em, shadow = TEXT_SHADOW,
             lineHeight = EYEBROW_LINE.tpx, lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
         ),
+        modifier = Modifier.padding(end = (EYEBROW_TRAIL * LocalStage.current.textScale).px),
         maxLines = 1, softWrap = false,
     )
 }
@@ -212,11 +215,23 @@ private fun valueStyle(color: Color, size: Int, weight: FontWeight) = TextStyle(
 /** A soft dark shadow under the block's texts: all the readability they get, no plate behind them. */
 private val TEXT_SHADOW = Shadow(Color.Black.copy(alpha = .6f), Offset(0f, 2f), 8f)
 
-/** The thin rounded bar between the block's columns and between the block and the badges: 2 px wide, [BAR_HEIGHT] x scale high, the accent at 70 %. */
+/**
+ * The thin bar between the block's two columns: 2 px wide, [BAR_HEIGHT] x scale high, the accent at 70 % in the middle and fading to
+ * transparent over [BAR_FADE] of its length at the top and at the bottom. It is centred on the block's content by its row.
+ */
 @Composable
-internal fun StatDivider() {
+private fun StatDivider() {
     val scale = LocalStage.current.textScale
-    Box(Modifier.width(2.px).height((BAR_HEIGHT * scale).px).clip(CircleShape).background(LocalDelosColors.current.accent.copy(alpha = .7f)))
+    val solid = LocalDelosColors.current.accent.copy(alpha = .7f)
+    val brush = Brush.verticalGradient(0f to Color.Transparent, BAR_FADE to solid, 1f - BAR_FADE to solid, 1f to Color.Transparent)
+    Box(Modifier.width(2.px).height((BAR_HEIGHT * scale).px).clip(CircleShape).background(brush))
 }
 
-private const val BAR_HEIGHT = 32f
+private const val BAR_HEIGHT = 38f
+private const val BAR_FADE = .22f
+
+/** The air between the block's columns and their divider. */
+internal const val COLUMN_GAP = 22f
+
+/** The letter spacing (0.16 em of 13) that Compose leaves out after the last letter of an eyebrow: the column's width includes it, so the air to the next element is the full gap. */
+private const val EYEBROW_TRAIL = 2.1f

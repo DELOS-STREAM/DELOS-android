@@ -83,6 +83,17 @@ class LastStreamedTest {
         assertEquals("Never", text(0, Locale.ENGLISH))
     }
 
+    @Test @Config(sdk = [33], qualifiers = "de")
+    fun theDateFollowsTheResourcesLocaleNotTheJvmDefault() {
+        val saved = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.US)
+            assertEquals("03.09.2026", LastStreamed.format(resources(), at(2026, 9, 3), now, prague))
+        } finally {
+            Locale.setDefault(saved)
+        }
+    }
+
     @Test @Config(sdk = [33], qualifiers = "cs")
     fun czech() {
         val cs = Locale("cs")
