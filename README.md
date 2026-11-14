@@ -23,38 +23,51 @@ An Android game streaming client built for gaming handhelds. It connects to [Vib
 
 > **Work in progress.** Delos is under active development and has no releases yet. Expect rough edges and changes.
 
-Delos is a fork of [Artemis Android](https://github.com/ClassicOldSong/moonlight-android) by ClassicOldSong, which is itself a fork of [Moonlight Android](https://github.com/moonlight-stream/moonlight-android). It has since separated from them and goes its own way: a console-like interface that is fully usable with a gamepad, designed for Android gaming handhelds.
+## ✨ What is Delos?
 
-## Building
+Delos streams games from your PC to an Android handheld. It is built for the handheld first: a console-like interface native to Android that works with the D-pad, sticks and A/B/X/Y, instead of a phone app stretched onto a bigger screen. It started as a fork of [Artemis](https://github.com/ClassicOldSong/moonlight-android), which is a fork of [Moonlight](https://github.com/moonlight-stream/moonlight-android), and has since gone its own way.
 
-Follow [Mac setup](docs/MAC_SETUP.md) or [Windows setup](docs/WINDOWS_SETUP.md) for the toolchain, submodules and local environment, then run:
+## 🔌 Works with
 
-```sh
-./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
-```
+| | |
+|---|---|
+| 🖥️ **Hosts** | [Vibepollo](https://github.com/Nonary/Vibepollo) (recommended), [Apollo](https://github.com/ClassicOldSong/Apollo) and [Sunshine](https://github.com/LizardByte/Sunshine), on Linux or Windows (Vibepollo's Linux version is still in beta). |
+| 📱 **Devices** | Android 10 or newer, made for gaming handhelds (landscape). Developed and tested on one 1080p handheld with a Windows host. |
 
-The ARM64 debug APK is `app/build/outputs/apk/debug/app-arm64-v8a-debug.apk`. The application ID is `io.github.meitoncz.delos` (debug builds add `.debug`), so Delos installs alongside Artemis and Moonlight.
+## 🎮 Highlights
 
-## Contributing and bug reports
+| | Feature | What you get |
+|---|---|---|
+| 📚 | **Library** | A console-like shelf for games, Desktop and programs; every screen works with the controller, touch works too. |
+| 🖼️ | **Artwork and facts** | Covers, wide covers, backgrounds, logos and animated heroes from SteamGridDB with your own key; genres, themes, HowLongToBeat time and native-HDR badges; filter by genre, theme, HDR and length. |
+| 🔍 | **Upscaling** | SGSR 1 and SGSR2-DV (Delos Video, an experimental adaptation of Qualcomm's SGSR 2 for streamed video), each in Normal or Quality, or sharpen only. |
+| 🌊 | **PyroWave** | Native decoder for the open, low-latency PyroWave codec when your host (Vibepollo) encodes it. |
+| 📶 | **Link test** | Measures the real link to the PC and recommends a bitrate for your codec (Vibepollo). |
+| 🎚️ | **Per-app settings** | Every app can override stream, display and controller settings; small chips show the GPU, latency and network cost of each value. |
+| 🕹️ | **Handheld feel** | Rumble feel presets for small motors, gyro with smoothing, motion sensors for the PC. |
+| 🔄 | **Variable refresh rate** | Auto, on or off for displays that report adaptive refresh (Android 16). Not yet tested on real VRR hardware. |
+| 🖥️ | **Dual screen** | A companion for dual-screen handhelds. Not yet tested on a real one. |
+| 🎨 | **Look** | Eight palettes, sixteen avatars and profiles, animated backgrounds, interface sounds. |
+| 🌍 | **Languages** | Ten languages. |
 
-Found a problem or have an idea? Open an issue with one of the [issue forms](https://github.com/Meitoncz/Delos/issues/new/choose). Code contributions are welcome too: see [CONTRIBUTING.md](CONTRIBUTING.md).
+<div align="center">
+<sub>More on the <a href="https://delos-stream.com">website</a>.</sub>
+</div>
 
-Delos keeps a small diagnostic log on your device (never uploaded). After a crash it offers to open a prefilled bug report for you to check and submit, and Settings → About → Debug info can share a cleaned log. Details and privacy: [docs/DIAGNOSTICS.md](docs/DIAGNOSTICS.md).
+## ❓ Quick answers
 
-## License
+- **Is it free?** Yes, open source under GPL-3.0, and there is no account.
+- **Does it replace Moonlight?** It is a separate app with its own application ID, so it installs next to Artemis and Moonlight.
+- **Where is the PC part?** Delos is only the client. Install Vibepollo, Apollo or Sunshine on the PC.
 
-Delos is licensed under the [GNU General Public License v3.0](LICENSE.txt), the same license as Moonlight and Artemis.
+## 📥 Get Delos
 
-## Credits
+There are no releases yet. Watch the [releases page](https://github.com/Meitoncz/Delos/releases) or add the repository to [Obtainium](obtainium://add/https://github.com/Meitoncz/Delos) to get updates when they arrive.
 
-Delos stands on the work of many people. All credit for the streaming core goes to the Moonlight authors and to ClassicOldSong.
+## 🤝 Community and contributing
 
-- **[Moonlight Android](https://github.com/moonlight-stream/moonlight-android)** and [moonlight-common-c](https://github.com/moonlight-stream/moonlight-common-c): Cameron Gutman, Diego Waxemberg, Aaron Neyer, Andrew Hennessy and all contributors. Moonlight is the work of students at Case Western and was started as a project at MHacks.
-- **[Artemis Android](https://github.com/ClassicOldSong/moonlight-android)** and [Apollo](https://github.com/ClassicOldSong/Apollo): ClassicOldSong and contributors.
-- **[Sunshine](https://github.com/LizardByte/Sunshine)**: LizardByte and contributors. **[Vibepollo](https://github.com/Nonary/Vibepollo)**: Nonary and contributors.
-- Features that other Moonlight forks pioneered are credited to their authors: Moonlight V+ (qiin2333), Artemide (derflacco), Moonlight X (MoreOrLessSoftware), Moonlit Artemis (4had45), Moonlight X Turnip (NoCrypt) with libadrenotools (bylaws), and Axixi2233. The feature list was compared with [Starwire](https://github.com/SicarioGaming/Starwire) (SicarioGaming, GPL-3.0); this records inspiration, not a claim that its code was copied.
-- **Video and upscaling:** [PyroWave](https://github.com/Themaister/Granite) and Granite (Hans-Kristian Arntzen, MIT), [volk](https://github.com/zeux/volk) (MIT), and Qualcomm Snapdragon Game Super Resolution (see `app/src/main/assets/licenses/`).
-- **Fonts and icons:** [Unbounded](https://github.com/googlefonts/unbounded) and [Figtree](https://github.com/erikdkennedy/figtree) (SIL Open Font License), [Phosphor Icons](https://phosphoricons.com/) (MIT).
-- **Game information and artwork:** [IGDB](https://www.igdb.com/), [PCGamingWiki](https://www.pcgamingwiki.com/) (data under [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) unless otherwise noted), [SteamGridDB](https://www.steamgriddb.com/) (artwork belongs to its authors), Steam store user tags, and [HowLongToBeat](https://howlongtobeat.com/) through an unofficial client adapted from [howlongtobeatpy](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI) (MIT, Copyright (c) 2018 Michele). Provider terms are separate from this project's license; provider credentials live only in the metadata service, never in the app or this repository.
+The goal is to maintain Delos for the long term, build a community around it and keep improving it from your feedback. Found a problem or have an idea? Open an [issue](https://github.com/Meitoncz/Delos/issues/new/choose). Code contributions are welcome too: see [CONTRIBUTING.md](CONTRIBUTING.md), which also covers building. Delos keeps a small diagnostic log on your device (never uploaded); details in [docs/DIAGNOSTICS.md](docs/DIAGNOSTICS.md).
 
-The full text of bundled third-party licenses is in `app/src/main/assets/licenses/`.
+## 📜 License and credits
+
+Delos is licensed under the [GNU General Public License v3.0](LICENSE.txt), like Moonlight and Artemis. It stands on the work of many people, above all the Moonlight authors and ClassicOldSong; the full list is in [docs/CREDITS.md](docs/CREDITS.md).
