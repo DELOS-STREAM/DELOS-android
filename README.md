@@ -29,7 +29,7 @@ Delos streams games from your PC to an Android handheld. It is built for the han
 
 ## 🔌 Works with
 
-| | |
+| What | Details |
 |---|---|
 | 🖥️ **Hosts** | [Vibepollo](https://github.com/Nonary/Vibepollo) (recommended), [Apollo](https://github.com/ClassicOldSong/Apollo) and [Sunshine](https://github.com/LizardByte/Sunshine), on Linux or Windows (Vibepollo's Linux version is still in beta). |
 | 📱 **Devices** | Android 10 or newer, made for gaming handhelds (landscape). Developed and tested on one 1080p handheld with a Windows host. |
