@@ -7,7 +7,7 @@
 
 **Game streaming for Android handhelds**, with a console-like interface you can drive entirely with a gamepad.
 
-[![License: GPL v3](https://img.shields.io/github/license/Meitoncz/Delos?color=fbbd44&labelColor=151b2b)](LICENSE.txt)
+[![License: GPL v3](https://img.shields.io/github/license/Meitoncz/Delos?color=fbbd44&labelColor=151b2b)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-4fd2ee?logo=android&logoColor=white&labelColor=151b2b)](#building)
 [![Stars](https://img.shields.io/github/stars/Meitoncz/Delos?style=flat&color=fbbd44&labelColor=151b2b)](https://github.com/Meitoncz/Delos/stargazers)
 [![Open issues](https://img.shields.io/github/issues/Meitoncz/Delos?color=e8639a&labelColor=151b2b)](https://github.com/Meitoncz/Delos/issues)
@@ -70,4 +70,4 @@ The goal is to maintain Delos for the long term, build a community around it and
 
 ## 📜 License and credits
 
-Delos is licensed under the [GNU General Public License v3.0](LICENSE.txt), like Moonlight and Artemis. It stands on the work of many people, above all the Moonlight authors and ClassicOldSong; the full list is in [docs/CREDITS.md](docs/CREDITS.md).
+Delos is licensed under the [GNU General Public License v3.0](LICENSE), like Moonlight and Artemis. It stands on the work of many people, above all the Moonlight authors and ClassicOldSong; the full list is in [docs/CREDITS.md](docs/CREDITS.md).
