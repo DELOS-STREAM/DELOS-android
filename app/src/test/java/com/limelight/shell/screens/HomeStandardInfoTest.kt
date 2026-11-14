@@ -5,7 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The 16:9 home always has the stat block: the pills never come closer to the focused cover's ring than the compact minimum, the block has clear air. */
+/** The 16:9 home: the logo is centred between the status bar and the info row, and the row keeps its distance from the focused cover's ring. */
 class HomeStandardInfoTest {
     private val scales = listOf(1f, 1.05f, 1.1f, 1.15f, 1.2f, 1.3f)
 
@@ -16,44 +16,39 @@ class HomeStandardInfoTest {
     }
 
     @Test
-    fun thePillsClearTheFocusedRing() {
+    fun theLogoIsCentredWithTheLeastAirAboveAndUnder() {
         for (scale in scales) {
             val l = HomeStandard.layout(scale)
-            val clearance = HomeStandard.ringTop(scale) - HomeStandard.chipsBottom(scale, l.top, l.titleBox)
-            assertTrue("scale $scale clearance $clearance", clearance >= HomeCompact.GAP_CHIPS - .01f)
-            // The logo keeps the compact stages' air under the status bar, and the title box never goes under its minimum
-            assertTrue("scale $scale logo top ${l.top + l.logoPad}", l.top + l.logoPad >= Compact.STATUS_BAR * scale + HomeCompact.GAP_STATUS - .01f)
-            assertTrue("scale $scale title box ${l.titleBox}", l.titleBox >= HomeStandard.MIN_TITLE_BOX && l.titleBox <= HomeStandard.TITLE_BOX)
-            assertTrue("scale $scale moved up", l.top <= HomeStandard.INFO_TOP)
+            val statusBottom = Compact.STATUS_BAR * scale
+            // Centred: the same gap from the status bar to the box and from the box to the row
+            assertEquals("scale $scale", l.titleTop - statusBottom, l.titleGap, .01f)
+            assertEquals("scale $scale row", HomeStandard.infoTop(scale), l.titleTop + l.titleBox + l.titleGap, .01f)
+            // The logo (180 high, 10 px of air in its box) keeps at least 16 from the bar and from the row
+            assertTrue("scale $scale logo to the bar ${l.titleGap + HomeStandard.LOGO_PAD}", l.titleGap + HomeStandard.LOGO_PAD >= HomeCompact.GAP_STATUS)
+            assertTrue("scale $scale gap ${l.titleGap}", l.titleGap >= HomeCompact.GAP_TITLE - .01f)
         }
     }
 
     @Test
-    fun theBlockHasClearAirAboveAndBelow() {
-        assertTrue(HomeStandard.TITLE_BLOCK_GAP in 10f..12f)
-        assertTrue(HomeCompact.BLOCK_GAP >= 28f)
+    fun theLogoKeepsItsFullSizeAtEveryInterfaceScale() {
+        for (scale in scales) assertEquals("scale $scale", 200f, HomeStandard.layout(scale).titleBox, 0f)
+        assertEquals(180f, HomeStandard.LOGO_HEIGHT, 0f)
+    }
+
+    @Test
+    fun theInfoRowClearsTheFocusedRing() {
         for (scale in scales) {
             val l = HomeStandard.layout(scale)
-            // The logo's own air and the gap: at least 10 between the logo and the eyebrow
-            assertTrue("scale $scale", l.logoPad + HomeStandard.TITLE_BLOCK_GAP >= 10f)
-            // The logo keeps its 180 px until the room runs out
-            if (scale <= 1f) assertEquals(180f, l.titleBox - 2f * l.logoPad, .01f)
+            val clearance = HomeStandard.ringTop(scale) - (HomeStandard.infoTop(scale) + l.infoHeight)
+            assertTrue("scale $scale clearance $clearance", clearance >= HomeCompact.GAP_CHIPS)
+            assertEquals(44f * scale, l.infoHeight, .01f)
         }
     }
 
     @Test
-    fun atScaleOneTheInfoBlockMovesUpALittleAndKeepsItsLogo() {
-        val l = HomeStandard.layout(1f)
-        assertEquals(188f, l.titleBox, 0f)
-        assertTrue("top ${l.top}", l.top in 130f..150f)
-    }
-
-    @Test
-    fun theRoomOfALargeInterfaceScaleComesFromTheTitleBoxToo() {
-        val l = HomeStandard.layout(1.15f)
-        assertTrue("moved up as far as the status bar allows: ${l.top}", l.top < 135f)
-        assertTrue("and the title box gave some: ${l.titleBox}", l.titleBox < 188f && l.titleBox > 150f)
-        val big = HomeStandard.layout(1.3f)
-        assertTrue("the largest scale: ${big.titleBox}", big.titleBox >= HomeStandard.MIN_TITLE_BOX)
+    fun aCutoutShrinksTheBoxOnlyWhenTheRoomIsUsedUp() {
+        val l = HomeStandard.layout(1.3f, safeTop = 40f)
+        assertTrue("box ${l.titleBox}", l.titleBox < 200f && l.titleBox > 0f)
+        assertEquals(HomeCompact.GAP_STATUS, l.titleGap, .01f)
     }
 }

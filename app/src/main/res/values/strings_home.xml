@@ -43,8 +43,6 @@
     <string name="home_meta_join">%1$s · %2$s</string>
 
     <!-- Info block under the game logo -->
-    <string name="home_info_app">APP INFO</string>
-    <string name="home_info_game">APP INFO</string>
     <!-- %1$s: PC name -->
     <string name="home_chip_running_on">Running on %1$s</string>
     <!-- %1$s: how long the game takes (see metadata_hltb_*) -->

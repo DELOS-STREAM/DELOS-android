@@ -348,7 +348,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
         val infoDim by animateFloatAsState(if (shell.layer is Layer.Context) .4f else 1f, tween(Motion.FADE, easing = Motion.Ease), label = "infoDim")
         // A compact stage lays the block out between the status bar and the covers (HomeCompact)
         val infoStart = if (compact) Compact.SIDE else 150f
-        val infoTop = home?.titleTop ?: standard.top
+        val infoTop = home?.titleTop ?: standard.titleTop
         GameInfo(pc, focused, home, standard, playtime, resumes,
             // The block (logo, GAME INFO label and pill row) sits high enough that the pills clear the focused cover
             modifier = Modifier.graphicsLayer { alpha = infoDim }.padding(start = infoStart.px, top = infoTop.px), reducedMotion = appearance.reducedMotion,
@@ -576,12 +576,13 @@ private fun GameInfo(
 ) {
     val colors = LocalDelosColors.current
     val art = appArt(pc, app)
-    // A compact stage shows the title smaller in a shorter box ([home] says how tall), without the "Game info" label, and lets the pills use the whole width
+    // A compact stage shows the title smaller in a shorter box ([home] says how tall); the title box is centred between the status bar and the info row
     val stage = LocalStage.current
     val compact = home != null
     val titleBox = home?.titleBox ?: standard.titleBox
     // The logo keeps 10 px of air above and below in its box, 4 in a box that is only as tall as the title
-    val logoPad = if (home != null) (if (home.titleBox < 100f) 4f else HomeStandard.LOGO_PAD) else standard.logoPad
+    val logoPad = if (home != null && home.titleBox < 100f) 4f else HomeStandard.LOGO_PAD
+    val titleGap = home?.titleGap ?: standard.titleGap
     val logoHeight = titleBox - 2f * logoPad
     val logoWidth = if (compact) minOf(900f, stage.stageWidth - 2f * Compact.SIDE) else 900f
     Column(modifier) {
@@ -606,8 +607,8 @@ private fun GameInfo(
                     )
                 }
             }
-        // A compact stage stands the title on the bottom of its box, as a logo fills it: the gap to the pills under it is the same for every game
-        } else if (logo.resolved) Row(Modifier.height(titleBox.px), verticalAlignment = if (compact) Alignment.Bottom else Alignment.CenterVertically) {
+        // The title is centred in its box like a logo
+        } else if (logo.resolved) Row(Modifier.height(titleBox.px), verticalAlignment = Alignment.CenterVertically) {
             val size = when {
                 app.name.length > 22 -> if (compact) 44 else 56
                 app.name.length > 13 -> if (compact) 50 else 68
@@ -628,15 +629,6 @@ private fun GameInfo(
                     .gameTitleEntrance(homeKey(pc, app), null, reducedMotion),
             )
         } else Box(Modifier.height(titleBox.px)) // Keep the title space while the logo lookup is pending.
-        // The streaming-time stat block (docs/GUI.md), for every app
-        val blockMax = (if (compact) stage.stageWidth - 2f * Compact.SIDE else 1620f).px
-        if (home != null) {
-            Spacer(Modifier.height(home.titleGap.px))
-            Box(Modifier.height(home.blockHeight.px)) { StreamingTimeBlock(playtime, resumes, Modifier.widthIn(max = blockMax)) }
-        } else {
-            Spacer(Modifier.height(HomeStandard.TITLE_BLOCK_GAP.px))
-            StreamingTimeBlock(playtime, resumes, Modifier.widthIn(max = blockMax))
-        }
         val metadata = LocalGameMetadata.current.entry(pc, app).data
         // Up to two genres and two themes: Steam's user tags when the game has them, else IGDB's lists (the filter
         // still offers every IGDB genre and theme); the facts come first
@@ -652,23 +644,19 @@ private fun GameInfo(
         val completion = metadata?.completion?.takeIf { it.seconds > 0 }
         val virtualDisplay = BundledArtwork.kind(app) == BundledArtwork.Kind.DESKTOP && pc.details.vDisplaySupported
         val hasTags = genres.isNotEmpty() || themes.isNotEmpty()
-        // The title above the pills is shown only while there is at least one pill under it
-        val showLabel = !compact && (hasTags || app.running || hdrKind != null || completion != null || virtualDisplay)
-        if (showLabel) BasicText(
-            stringResource(if (BundledArtwork.kind(app) != null) R.string.home_info_app else R.string.home_info_game),
-            modifier = Modifier.padding(top = HomeCompact.BLOCK_GAP.px),
-            style = TextStyle(
-                color = colors.text3, fontFamily = Figtree, fontWeight = FontWeight.SemiBold,
-                fontSize = 17.tpx, letterSpacing = .14.em,
-            ),
-        )
-        InfoRow(
-            Modifier.padding(top = if (home != null || !showLabel) HomeCompact.BLOCK_GAP.px else 8.px).widthIn(max = (if (compact) stage.stageWidth - 2f * Compact.SIDE else 1620f).px),
+        val hasFacts = app.running || hdrKind != null || completion != null || virtualDisplay
+        // The info row (docs/GUI.md, "Streaming time"): the badges, scrolling when they do not fit, and the stat block at its right end
+        Spacer(Modifier.height(titleGap.px))
+        InfoBar(
+            playtime, resumes,
+            above = home?.blockAbove ?: false,
+            hasFacts = hasFacts,
             hasTags = hasTags,
             tags = {
                 if (genres.isNotEmpty()) GenrePill(genres, gameColors)
                 if (themes.isNotEmpty()) ThemePill(themes, gameColors)
             },
+            modifier = Modifier.widthIn(max = (if (compact) stage.stageWidth - 2f * Compact.SIDE else 1620f).px),
         ) {
             if (app.running) Chip(Symbols.RUNNING, stringResource(R.string.home_chip_running_on, pc.name))
             when (hdrKind) {

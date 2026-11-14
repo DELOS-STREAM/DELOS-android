@@ -31,4 +31,10 @@ class PlaytimeFitTest {
         // Without a last-streamed value the full form is as wide as the stat alone
         assertEquals(PlaytimeFit.FULL, PlaytimeFit.pick(full = 300, statOnly = 300, short = 200, available = 300))
     }
+
+    @Test fun theBadgesKeepTheirWidthWhileTheyFitBesideTheBlock() {
+        assertEquals(BadgesFit.NATURAL, BadgesFit.pick(natural = 900, room = 900))
+        assertEquals(BadgesFit.SCROLL, BadgesFit.pick(natural = 901, room = 900))
+        assertEquals(BadgesFit.SCROLL, BadgesFit.pick(natural = 1, room = 0))
+    }
 }

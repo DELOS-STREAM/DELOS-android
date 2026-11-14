@@ -18,6 +18,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalConfiguration
@@ -71,7 +77,7 @@ internal enum class PlaytimeFit {
 }
 
 /** The texts of one stat block in the current language. */
-private class PlaytimeTexts(
+internal class PlaytimeTexts(
     val eyebrowTime: String,
     val eyebrowLast: String,
     val full: PlaytimeFormat.Parts,
@@ -100,29 +106,35 @@ internal fun rememberResumes(): Int {
     return resumes
 }
 
-/**
- * The streaming-time stat block under the title (prototype B of issue #85): the small caps eyebrow STREAMING TIME in the accent color over the
- * amount (big number, smaller unit), a thin divider, then LAST STREAMED over its relative day. Not focusable, no action. It never
- * shrinks: it gives up the last-streamed column, then the unit's long form ([PlaytimeFit]), and only then scrolls ([MarqueeContent]).
- * Always shown, also for an app never streamed ("0 hours", "Never"). Its height is [HomeCompact.blockHeight] whatever is shown.
- */
+/** The texts of the stat block for [playtime] in the current language; worked out again when it changes, on a resume and on a language change. */
 @Composable
-internal fun StreamingTimeBlock(playtime: Playtime, resumes: Int, modifier: Modifier = Modifier) {
+internal fun rememberPlaytimeTexts(playtime: Playtime, resumes: Int): PlaytimeTexts {
     val config = LocalConfiguration.current
     val res = textResources()
     val locale: Locale = config.locales[0]
-    val scale = LocalStage.current.textScale
-    val texts = remember(playtime, resumes, config) {
-        val full = PlaytimeFormat.parts(res, playtime.totalMillis, locale)
+    return remember(playtime, resumes, config) {
         PlaytimeTexts(
             // Upper-cased in the locale (a Turkish i becomes İ)
             res.getString(R.string.playtime_eyebrow_time).uppercase(locale),
             res.getString(R.string.playtime_eyebrow_last).uppercase(locale),
-            full,
+            PlaytimeFormat.parts(res, playtime.totalMillis, locale),
             PlaytimeFormat.parts(res, playtime.totalMillis, locale, short = true),
             LastStreamed.format(res, playtime.lastStreamedMillis, locale = locale),
         )
     }
+}
+
+/**
+ * The streaming-time stat block (prototype B of issue #85): the small caps eyebrow STREAMING TIME in the accent color over the
+ * amount (big number, smaller unit), a thin divider, then LAST STREAMED over its relative day. Not focusable, no action. Always shown,
+ * also for an app never streamed ("0 hours", "Never"). Its height is [HomeCompact.blockHeight] whatever is shown. This standalone form (the
+ * block above the badges on a very narrow stage; the info row, [InfoBar], places the block itself) never shrinks: it gives up the
+ * last-streamed column, then the unit's long form ([PlaytimeFit]), and only then scrolls ([MarqueeContent]).
+ */
+@Composable
+internal fun StreamingTimeBlock(playtime: Playtime, resumes: Int, modifier: Modifier = Modifier) {
+    val scale = LocalStage.current.textScale
+    val texts = rememberPlaytimeTexts(playtime, resumes)
     val height = HomeCompact.blockHeight(scale).px
     val scrollKey = texts.full.number + texts.short.unit + texts.last
     SubcomposeLayout(modifier) { constraints ->
@@ -144,10 +156,13 @@ internal fun StreamingTimeBlock(playtime: Playtime, resumes: Int, modifier: Modi
 }
 
 @Composable
-private fun StatRow(texts: PlaytimeTexts, fit: PlaytimeFit, height: Dp) {
+internal fun StatRow(texts: PlaytimeTexts, fit: PlaytimeFit, height: Dp) {
     val colors = LocalDelosColors.current
     val scale = LocalStage.current.textScale
-    Row(Modifier.height(height), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(22.px)) {
+    Row(
+        Modifier.playtimeScrim(colors.bg, LocalStage.current.dpPerPx).height(height),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(22.px),
+    ) {
         val parts = if (fit == PlaytimeFit.SHORT) texts.short else texts.full
         Column(Modifier.height(height), verticalArrangement = Arrangement.Center) {
             Eyebrow(texts.eyebrowTime, colors.accent)
@@ -184,7 +199,7 @@ private fun Eyebrow(text: String, color: Color) {
     BasicText(
         text,
         style = TextStyle(
-            color = color, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 13.tpx, letterSpacing = .16.em,
+            color = color, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 13.tpx, letterSpacing = .16.em, shadow = TEXT_SHADOW,
             lineHeight = EYEBROW_LINE.tpx, lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
         ),
         maxLines = 1, softWrap = false,
@@ -193,7 +208,42 @@ private fun Eyebrow(text: String, color: Color) {
 
 @Composable
 private fun valueStyle(color: Color, size: Int, weight: FontWeight) = TextStyle(
-    color = color, fontFamily = Figtree, fontWeight = weight, fontSize = size.tpx, fontFeatureSettings = "tnum",
+    color = color, fontFamily = Figtree, fontWeight = weight, fontSize = size.tpx, fontFeatureSettings = "tnum", shadow = TEXT_SHADOW,
     lineHeight = VALUE_LINE.tpx,
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
 )
+
+/** A soft dark shadow under the block's texts, on top of the scrim ([PlaytimeScrim]). */
+private val TEXT_SHADOW = Shadow(Color.Black.copy(alpha = .55f), Offset(0f, 2f), 8f)
+
+/**
+ * The soft local scrim behind the stat block: at the right of the row it sits on the brightest part of the game background (the hero art
+ * fades out to the left), where the dim eyebrow would not read. [COLOR_ALPHA] of the theme's background color stands behind the
+ * block, fading out over [SPREAD] stage pixels around it in [STEPS] rounded rectangles. `PlaytimeScrimTest` checks the contrast of every text
+ * of the block over [over] a bright game background in every palette.
+ */
+internal object PlaytimeScrim {
+    /** The opacity behind the block, all steps together. */
+    const val COLOR_ALPHA = .97f
+    const val SPREAD = 28f
+    const val STEPS = 8
+
+    /** The opacity of one step so that [STEPS] of them make [COLOR_ALPHA]. */
+    val stepAlpha: Float = 1f - Math.pow(1.0 - COLOR_ALPHA, 1.0 / STEPS).toFloat()
+
+    /** What the scrim [color] (the theme's background) makes of a [background] behind the block's middle. */
+    fun over(color: Color, background: Color): Color = color.copy(alpha = COLOR_ALPHA).compositeOver(background)
+}
+
+private fun Modifier.playtimeScrim(color: Color, dpPerPx: Float): Modifier = drawBehind {
+    val spread = PlaytimeScrim.SPREAD * dpPerPx * density
+    for (i in 0 until PlaytimeScrim.STEPS) {
+        // From the widest, faintest step to the one just round the block
+        val grow = spread * (PlaytimeScrim.STEPS - i) / PlaytimeScrim.STEPS
+        drawRoundRect(
+            color.copy(alpha = PlaytimeScrim.stepAlpha),
+            topLeft = Offset(-grow, -grow), size = Size(size.width + 2f * grow, size.height + 2f * grow),
+            cornerRadius = CornerRadius(grow + size.height / 4f),
+        )
+    }
+}
