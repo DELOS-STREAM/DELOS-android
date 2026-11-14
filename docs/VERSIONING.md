@@ -33,7 +33,7 @@ The 0.x versions were set retroactively on the milestones of the history (Delos'
 | 0.11.0 | 2026-11-10 | `a5c6b5b930b9d3599d2e11914f3400deda0d4f32` | Stream defect fixes, bundled app art, diagnostics and problem reports |
 | 0.12.0 | 2026-11-10 | `40a3eadaaba8fa154ccec9866de6a03f61de5d9e` | Localization in ten languages |
 | 0.13.0 | 2026-11-12 | `7f5882e6e994d74a9c70baa39a3183e25f30a465` | Screen shapes, dual screen with companion pages |
-| 0.14.0 | 2026-11-14 | `54be0b6d8967921e54d89cc8a55494f35402f1d7` | Variable refresh rate, new palettes and avatars, UI sounds, rumble fixes |
+| 0.14.0 | 2026-11-14 | `912bc0d049e54e9a7fb8b09180921d3237bce9d9` | Variable refresh rate, new palettes and avatars, UI sounds, rumble fixes |
 
 The last row is the state of `main` when the history was organised, the expected state before 1.0.0. Anything newer is under "Unreleased" in the changelog.
 
