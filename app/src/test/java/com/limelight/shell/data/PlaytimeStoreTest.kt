@@ -7,7 +7,6 @@ import androidx.test.core.app.ApplicationProvider
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,7 +81,8 @@ class PlaytimeStoreTest {
     @Test fun partsEnglish() {
         val min = 60_000L
         fun parts(millis: Long, short: Boolean = false) = PlaytimeFormat.parts(resources(), millis, Locale.ENGLISH, short)
-        assertNull(parts(0))
+        assertEquals(PlaytimeFormat.Parts("0", "hours"), parts(0))
+        assertEquals(PlaytimeFormat.Parts("0", "h"), parts(0, short = true))
         assertEquals(PlaytimeFormat.Parts("1", "minute"), parts(5_000))
         assertEquals(PlaytimeFormat.Parts("45", "minutes"), parts(45 * min))
         assertEquals(PlaytimeFormat.Parts("45", "min"), parts(45 * min, short = true))
@@ -96,9 +96,15 @@ class PlaytimeStoreTest {
     fun partsCzech() {
         val min = 60_000L
         fun parts(millis: Long) = PlaytimeFormat.parts(resources(), millis, Locale("cs"))
+        assertEquals(PlaytimeFormat.Parts("0", "hodin"), parts(0))
         assertEquals(PlaytimeFormat.Parts("20,4", "hodiny"), parts(20 * 60 * min + 24 * min))
         assertEquals(PlaytimeFormat.Parts("3", "minuty"), parts(3 * min))
         assertEquals(PlaytimeFormat.Parts("45", "minut"), parts(45 * min))
         assertEquals(PlaytimeFormat.Parts("5", "hodin"), parts(5 * 60 * min))
+    }
+
+    @Test @Config(sdk = [33], qualifiers = "de")
+    fun partsGermanZero() {
+        assertEquals(PlaytimeFormat.Parts("0", "Stunden"), PlaytimeFormat.parts(resources(), 0, Locale.GERMAN))
     }
 }

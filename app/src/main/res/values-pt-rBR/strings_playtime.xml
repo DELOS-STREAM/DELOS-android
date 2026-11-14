@@ -16,6 +16,7 @@
     <string name="playtime_unit_minutes_short">min</string>
     <string name="playtime_unit_hours_short">h</string>
     <string name="playtime_last_today">Hoje</string>
+    <string name="playtime_never">Nunca</string>
     <string name="playtime_last_yesterday">Ontem</string>
     <plurals name="playtime_last_days">
         <item quantity="one">há %d dia</item>

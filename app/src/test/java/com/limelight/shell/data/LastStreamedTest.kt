@@ -8,7 +8,6 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.Locale
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,9 +25,9 @@ class LastStreamedTest {
 
     private fun relative(last: Long, nowMillis: Long = now, zone: ZoneId = prague) = LastStreamed.relative(last, nowMillis, zone)
 
-    @Test fun nothingRecordedGivesNothing() {
-        assertNull(relative(0))
-        assertNull(relative(-5))
+    @Test fun nothingRecordedIsNever() {
+        assertEquals(LastStreamed.Relative.Never, relative(0))
+        assertEquals(LastStreamed.Relative.Never, relative(-5))
     }
 
     @Test fun todayAndYesterdayAreCalendarDays() {
@@ -81,12 +80,13 @@ class LastStreamedTest {
         assertEquals("1 week ago", text(at(2026, 11, 7), Locale.ENGLISH))
         assertEquals("2 weeks ago", text(at(2026, 10, 31), Locale.ENGLISH))
         assertEquals("Sep 3, 2026", text(at(2026, 9, 3), Locale.US))
-        assertNull(text(0, Locale.ENGLISH))
+        assertEquals("Never", text(0, Locale.ENGLISH))
     }
 
     @Test @Config(sdk = [33], qualifiers = "cs")
     fun czech() {
         val cs = Locale("cs")
+        assertEquals("Nikdy", text(0, cs))
         assertEquals("Dnes", text(at(2026, 11, 14, 8), cs))
         assertEquals("Včera", text(at(2026, 11, 13), cs))
         assertEquals("před 2 dny", text(at(2026, 11, 12), cs))
@@ -99,6 +99,7 @@ class LastStreamedTest {
     @Test @Config(sdk = [33], qualifiers = "de")
     fun german() {
         val de = Locale.GERMAN
+        assertEquals("Nie", text(0, de))
         assertEquals("Heute", text(at(2026, 11, 14, 8), de))
         assertEquals("Gestern", text(at(2026, 11, 13), de))
         assertEquals("vor 3 Tagen", text(at(2026, 11, 11), de))

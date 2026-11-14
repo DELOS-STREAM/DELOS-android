@@ -317,10 +317,10 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
         if (stage.compact) HomeCompact.layout(stage.stageWidth, stage.stageHeight, uiScale, stage.safe.top, stage.safe.bottom) else null
     }
     val covers = remember(home) { if (home != null) CoverGeometry(home.coverScale, HomeCompact.rowStart(home.coverScale)) else StandardCovers }
-    // The focused game's streaming time (docs/GUI.md): an app without any has no block, and the standard layout is then the prototype's exactly
+    // The focused game's streaming time (docs/GUI.md): the stat block is always there, an app never streamed shows 0 hours and Never
     val resumes = rememberResumes()
     val playtime = rememberPlaytime(profileStore, pc.uuid, focused.id, resumes)
-    val standard = remember(uiScale, playtime.totalMillis > 0, stage.safe.top) { HomeStandard.layout(uiScale, playtime.totalMillis > 0, stage.safe.top) }
+    val standard = remember(uiScale, stage.safe.top) { HomeStandard.layout(uiScale, stage.safe.top) }
 
     val tile: @Composable (Int, App) -> Unit = { index, app ->
         GameTile(
@@ -628,13 +628,12 @@ private fun GameInfo(
                     .gameTitleEntrance(homeKey(pc, app), null, reducedMotion),
             )
         } else Box(Modifier.height(titleBox.px)) // Keep the title space while the logo lookup is pending.
-        // The streaming-time stat block (docs/GUI.md): only for an app with time. A compact stage keeps its room for every app, so the covers never resize between apps
-        val hasBlock = playtime.totalMillis > 0
+        // The streaming-time stat block (docs/GUI.md), for every app
         val blockMax = (if (compact) stage.stageWidth - 2f * Compact.SIDE else 1620f).px
         if (home != null) {
             Spacer(Modifier.height(home.titleGap.px))
-            Box(Modifier.height(home.blockHeight.px)) { if (hasBlock) StreamingTimeBlock(playtime, resumes, Modifier.widthIn(max = blockMax)) }
-        } else if (hasBlock) {
+            Box(Modifier.height(home.blockHeight.px)) { StreamingTimeBlock(playtime, resumes, Modifier.widthIn(max = blockMax)) }
+        } else {
             Spacer(Modifier.height(HomeStandard.TITLE_BLOCK_GAP.px))
             StreamingTimeBlock(playtime, resumes, Modifier.widthIn(max = blockMax))
         }
@@ -657,14 +656,14 @@ private fun GameInfo(
         val showLabel = !compact && (hasTags || app.running || hdrKind != null || completion != null || virtualDisplay)
         if (showLabel) BasicText(
             stringResource(if (BundledArtwork.kind(app) != null) R.string.home_info_app else R.string.home_info_game),
-            modifier = Modifier.padding(top = (if (hasBlock) HomeCompact.BLOCK_GAP else 10f).px),
+            modifier = Modifier.padding(top = HomeCompact.BLOCK_GAP.px),
             style = TextStyle(
                 color = colors.text3, fontFamily = Figtree, fontWeight = FontWeight.SemiBold,
                 fontSize = 17.tpx, letterSpacing = .14.em,
             ),
         )
         InfoRow(
-            Modifier.padding(top = if (home != null || (hasBlock && !showLabel)) HomeCompact.BLOCK_GAP.px else if (showLabel) 8.px else 10.px).widthIn(max = (if (compact) stage.stageWidth - 2f * Compact.SIDE else 1620f).px),
+            Modifier.padding(top = if (home != null || !showLabel) HomeCompact.BLOCK_GAP.px else 8.px).widthIn(max = (if (compact) stage.stageWidth - 2f * Compact.SIDE else 1620f).px),
             hasTags = hasTags,
             tags = {
                 if (genres.isNotEmpty()) GenrePill(genres, gameColors)

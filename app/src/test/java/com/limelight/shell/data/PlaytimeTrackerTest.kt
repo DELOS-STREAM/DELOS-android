@@ -3,7 +3,6 @@ package com.limelight.shell.data
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -67,9 +66,9 @@ class PlaytimeTrackerTest {
         assertTrue(totals.isEmpty())
     }
 
-    @Test fun amountHidesZeroAndPicksUnit() {
+    @Test fun amountIsZeroHoursForNothingAndPicksUnit() {
         val min = 60_000L
-        assertNull(PlaytimeFormat.amount(0))
+        assertEquals(PlaytimeFormat.Amount(PlaytimeFormat.Amount.Unit.HOURS, 0), PlaytimeFormat.amount(0))
         assertEquals(PlaytimeFormat.Amount(PlaytimeFormat.Amount.Unit.MINUTES, 1), PlaytimeFormat.amount(5_000))
         assertEquals(PlaytimeFormat.Amount(PlaytimeFormat.Amount.Unit.MINUTES, 45), PlaytimeFormat.amount(45 * min))
         assertEquals(PlaytimeFormat.Amount(PlaytimeFormat.Amount.Unit.HOURS, 10), PlaytimeFormat.amount(60 * min))

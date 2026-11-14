@@ -12,6 +12,7 @@
     <string name="playtime_unit_minutes_short">分</string>
     <string name="playtime_unit_hours_short">時間</string>
     <string name="playtime_last_today">今日</string>
+    <string name="playtime_never">なし</string>
     <string name="playtime_last_yesterday">昨日</string>
     <plurals name="playtime_last_days">
         <item quantity="other">%d日前</item>

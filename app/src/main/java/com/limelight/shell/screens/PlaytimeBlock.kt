@@ -70,13 +70,13 @@ internal enum class PlaytimeFit {
     }
 }
 
-/** The texts of one stat block in the current language. [last] is null when no time of the last stream is known. */
+/** The texts of one stat block in the current language. */
 private class PlaytimeTexts(
     val eyebrowTime: String,
     val eyebrowLast: String,
     val full: PlaytimeFormat.Parts,
     val short: PlaytimeFormat.Parts,
-    val last: String?,
+    val last: String,
 )
 
 /** Reads the focused app's streaming time (docs/GUI.md): again whenever time is added, the profile changes or the shell resumes after a stream. */
@@ -104,7 +104,7 @@ internal fun rememberResumes(): Int {
  * The streaming-time stat block under the title (prototype B of issue #85): the small caps eyebrow STREAMING TIME in the accent color over the
  * amount (big number, smaller unit), a thin divider, then LAST STREAMED over its relative day. Not focusable, no action. It never
  * shrinks: it gives up the last-streamed column, then the unit's long form ([PlaytimeFit]), and only then scrolls ([MarqueeContent]).
- * Its height is [HomeCompact.blockHeight] whatever is shown; the caller decides whether there is anything to show ([Playtime.totalMillis] over zero).
+ * Always shown, also for an app never streamed ("0 hours", "Never"). Its height is [HomeCompact.blockHeight] whatever is shown.
  */
 @Composable
 internal fun StreamingTimeBlock(playtime: Playtime, resumes: Int, modifier: Modifier = Modifier) {
@@ -113,16 +113,16 @@ internal fun StreamingTimeBlock(playtime: Playtime, resumes: Int, modifier: Modi
     val locale: Locale = config.locales[0]
     val scale = LocalStage.current.textScale
     val texts = remember(playtime, resumes, config) {
-        val full = PlaytimeFormat.parts(res, playtime.totalMillis, locale) ?: return@remember null
+        val full = PlaytimeFormat.parts(res, playtime.totalMillis, locale)
         PlaytimeTexts(
             // Upper-cased in the locale (a Turkish i becomes İ)
             res.getString(R.string.playtime_eyebrow_time).uppercase(locale),
             res.getString(R.string.playtime_eyebrow_last).uppercase(locale),
             full,
-            PlaytimeFormat.parts(res, playtime.totalMillis, locale, short = true) ?: full,
+            PlaytimeFormat.parts(res, playtime.totalMillis, locale, short = true),
             LastStreamed.format(res, playtime.lastStreamedMillis, locale = locale),
         )
-    } ?: return
+    }
     val height = HomeCompact.blockHeight(scale).px
     val scrollKey = texts.full.number + texts.short.unit + texts.last
     SubcomposeLayout(modifier) { constraints ->
@@ -164,7 +164,7 @@ private fun StatRow(texts: PlaytimeTexts, fit: PlaytimeFit, height: Dp) {
                 )
             }
         }
-        if (fit == PlaytimeFit.FULL && texts.last != null) {
+        if (fit == PlaytimeFit.FULL) {
             Box(Modifier.width(2.px).height((32f * scale).px).clip(CircleShape).background(colors.accent.copy(alpha = .7f)))
             Column(Modifier.height(height), verticalArrangement = Arrangement.Center) {
                 Eyebrow(texts.eyebrowLast, colors.text3)

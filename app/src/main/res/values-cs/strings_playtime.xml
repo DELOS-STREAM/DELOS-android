@@ -18,6 +18,7 @@
     <string name="playtime_unit_minutes_short">min</string>
     <string name="playtime_unit_hours_short">h</string>
     <string name="playtime_last_today">Dnes</string>
+    <string name="playtime_never">Nikdy</string>
     <string name="playtime_last_yesterday">Včera</string>
     <plurals name="playtime_last_days">
         <item quantity="one">před %d dnem</item>

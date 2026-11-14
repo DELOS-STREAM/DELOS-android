@@ -20,6 +20,7 @@
     <string name="playtime_unit_hours_short">h</string>
     <!-- When the app was last streamed, by calendar day; older than four weeks shows the date -->
     <string name="playtime_last_today">Today</string>
+    <string name="playtime_never">Never</string>
     <string name="playtime_last_yesterday">Yesterday</string>
     <plurals name="playtime_last_days">
         <!-- %d: 2 to 6 -->

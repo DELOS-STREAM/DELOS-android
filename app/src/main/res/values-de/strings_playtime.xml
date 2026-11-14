@@ -14,6 +14,7 @@
     <string name="playtime_unit_minutes_short">Min.</string>
     <string name="playtime_unit_hours_short">Std.</string>
     <string name="playtime_last_today">Heute</string>
+    <string name="playtime_never">Nie</string>
     <string name="playtime_last_yesterday">Gestern</string>
     <plurals name="playtime_last_days">
         <item quantity="one">vor %d Tag</item>
