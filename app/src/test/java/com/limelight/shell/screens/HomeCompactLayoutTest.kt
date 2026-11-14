@@ -62,9 +62,14 @@ class HomeCompactLayoutTest {
     }
 
     @Test
+    fun theDividerHasClearAirOnBothSides() {
+        assertTrue(c.BLOCK_GAP_X in 16f..20f)
+    }
+
+    @Test
     fun onAVeryNarrowStageTheBlockStandsAboveTheBadgesAndStillFits() {
-        // The block's widest form, 24 between and 160 of badges: under that (and the 144 of margins) it goes above
-        assertEquals(460f * 1.15f + 24f + 160f, c.besideWidth(1.15f), .01f)
+        // The block's widest form, 20 + the 2 px divider + 20 and 160 of badges: under that (and the 144 of margins) it goes above
+        assertEquals(460f * 1.15f + 20f + 2f + 20f + 160f, c.besideWidth(1.15f), .01f)
         assertTrue(c.blockAbove(c.besideWidth(1f) - 1f, 1f))
         assertTrue(!c.blockAbove(c.besideWidth(1f), 1f))
         for (scale in scales) {
@@ -75,8 +80,8 @@ class HomeCompactLayoutTest {
             assertEquals(44f * scale + c.BLOCK_ABOVE_GAP + c.chipRowHeight(scale), narrow.infoHeight, .01f)
             assertTrue("gaps at $scale: ${narrow.statusGap} ${narrow.chipsGap} ${narrow.hintGap}", narrow.statusGap >= 16f - .05f && narrow.chipsGap >= 24f - .05f && narrow.hintGap >= 28f - .05f)
         }
-        // At the default interface scale that is a stage 713 + 144 = 857 wide
-        assertEquals(857f, 2f * Compact.SIDE + c.besideWidth(1.15f), .01f)
+        // At the default interface scale that is a stage 731 + 144 = 875 wide
+        assertEquals(875f, 2f * Compact.SIDE + c.besideWidth(1.15f), .01f)
     }
 
     @Test

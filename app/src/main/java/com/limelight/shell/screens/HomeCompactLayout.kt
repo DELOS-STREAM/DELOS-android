@@ -53,14 +53,15 @@ internal object HomeCompact {
     const val GAP_HINT = 28f
 
     /**
-     * The info row: the badges and, at its right end, the streaming-time block (docs/GUI.md), which is an eyebrow line of 14 over a value line
-     * of 30 at interface scale 1 and so sets the row's height. The badges (about 37 high) are centred on it.
+     * The info row: the streaming-time block (docs/GUI.md) at its start, a divider and the badges, which is an eyebrow line of 14 over a value line
+     * of 30 at interface scale 1 and so sets the row's height. The badges (about 37 high) are centred on the block as a whole.
      */
     const val INFO_ROW_HEIGHT = 44f
 
-    /** The air between the badges and the block, and the least visible room of the badges beside it. */
-    const val BLOCK_GAP_X = 24f
+    /** The air on each side of the divider between the block and the badges, and the least visible room of the badges beside it. */
+    const val BLOCK_GAP_X = 20f
     const val MIN_BADGES_WIDTH = 160f
+    const val DIVIDER_WIDTH = 2f
 
     /** The widest the full block gets at interface scale 1 (a long Czech value with a relative week); with the two above it decides [blockAbove]. */
     const val BLOCK_WIDEST = 460f
@@ -71,8 +72,8 @@ internal object HomeCompact {
     /** The info row at interface scale [scale] (its texts grow with it). */
     fun blockHeight(scale: Float): Float = INFO_ROW_HEIGHT * scale
 
-    /** The room the badges need next to the block's widest form: under it the block goes above them (last resort; the stage is under 144 + this wide). */
-    fun besideWidth(scale: Float): Float = BLOCK_WIDEST * scale + BLOCK_GAP_X + MIN_BADGES_WIDTH
+    /** The room the badges need next to the block's widest form and the divider: under it the block goes above them (last resort; the stage is under 144 + this wide). */
+    fun besideWidth(scale: Float): Float = BLOCK_WIDEST * scale + 2f * BLOCK_GAP_X + DIVIDER_WIDTH + MIN_BADGES_WIDTH
 
     /** Whether the info area [areaWidth] wide is too narrow for the block beside the badges. */
     fun blockAbove(areaWidth: Float, scale: Float): Boolean = areaWidth < besideWidth(scale)

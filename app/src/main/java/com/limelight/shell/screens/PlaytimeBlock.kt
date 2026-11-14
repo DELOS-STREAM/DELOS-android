@@ -18,12 +18,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalConfiguration
@@ -160,7 +156,7 @@ internal fun StatRow(texts: PlaytimeTexts, fit: PlaytimeFit, height: Dp) {
     val colors = LocalDelosColors.current
     val scale = LocalStage.current.textScale
     Row(
-        Modifier.playtimeScrim(colors.bg, LocalStage.current.dpPerPx).height(height),
+        Modifier.height(height),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(22.px),
     ) {
         val parts = if (fit == PlaytimeFit.SHORT) texts.short else texts.full
@@ -180,7 +176,7 @@ internal fun StatRow(texts: PlaytimeTexts, fit: PlaytimeFit, height: Dp) {
             }
         }
         if (fit == PlaytimeFit.FULL) {
-            Box(Modifier.width(2.px).height((32f * scale).px).clip(CircleShape).background(colors.accent.copy(alpha = .7f)))
+            StatDivider()
             Column(Modifier.height(height), verticalArrangement = Arrangement.Center) {
                 Eyebrow(texts.eyebrowLast, colors.text3)
                 Box(Modifier.height((VALUE_LINE * scale).px), contentAlignment = Alignment.CenterStart) {
@@ -213,37 +209,14 @@ private fun valueStyle(color: Color, size: Int, weight: FontWeight) = TextStyle(
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
 )
 
-/** A soft dark shadow under the block's texts, on top of the scrim ([PlaytimeScrim]). */
-private val TEXT_SHADOW = Shadow(Color.Black.copy(alpha = .55f), Offset(0f, 2f), 8f)
+/** A soft dark shadow under the block's texts: all the readability they get, no plate behind them. */
+private val TEXT_SHADOW = Shadow(Color.Black.copy(alpha = .6f), Offset(0f, 2f), 8f)
 
-/**
- * The soft local scrim behind the stat block: at the right of the row it sits on the brightest part of the game background (the hero art
- * fades out to the left), where the dim eyebrow would not read. [COLOR_ALPHA] of the theme's background color stands behind the
- * block, fading out over [SPREAD] stage pixels around it in [STEPS] rounded rectangles. `PlaytimeScrimTest` checks the contrast of every text
- * of the block over [over] a bright game background in every palette.
- */
-internal object PlaytimeScrim {
-    /** The opacity behind the block, all steps together. */
-    const val COLOR_ALPHA = .97f
-    const val SPREAD = 28f
-    const val STEPS = 8
-
-    /** The opacity of one step so that [STEPS] of them make [COLOR_ALPHA]. */
-    val stepAlpha: Float = 1f - Math.pow(1.0 - COLOR_ALPHA, 1.0 / STEPS).toFloat()
-
-    /** What the scrim [color] (the theme's background) makes of a [background] behind the block's middle. */
-    fun over(color: Color, background: Color): Color = color.copy(alpha = COLOR_ALPHA).compositeOver(background)
+/** The thin rounded bar between the block's columns and between the block and the badges: 2 px wide, [BAR_HEIGHT] x scale high, the accent at 70 %. */
+@Composable
+internal fun StatDivider() {
+    val scale = LocalStage.current.textScale
+    Box(Modifier.width(2.px).height((BAR_HEIGHT * scale).px).clip(CircleShape).background(LocalDelosColors.current.accent.copy(alpha = .7f)))
 }
 
-private fun Modifier.playtimeScrim(color: Color, dpPerPx: Float): Modifier = drawBehind {
-    val spread = PlaytimeScrim.SPREAD * dpPerPx * density
-    for (i in 0 until PlaytimeScrim.STEPS) {
-        // From the widest, faintest step to the one just round the block
-        val grow = spread * (PlaytimeScrim.STEPS - i) / PlaytimeScrim.STEPS
-        drawRoundRect(
-            color.copy(alpha = PlaytimeScrim.stepAlpha),
-            topLeft = Offset(-grow, -grow), size = Size(size.width + 2f * grow, size.height + 2f * grow),
-            cornerRadius = CornerRadius(grow + size.height / 4f),
-        )
-    }
-}
+private const val BAR_HEIGHT = 32f

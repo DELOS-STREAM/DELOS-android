@@ -20,24 +20,24 @@ import com.limelight.shell.ui.LocalStage
 import com.limelight.shell.ui.MarqueeContent
 import com.limelight.shell.ui.px
 
-/** What [InfoBar] does with the badges next to the block: they keep their natural width, or scroll in the room the block leaves. */
+/** What [InfoBar] does with the badges next to the block: they keep their natural width, or scroll in the room the block and its divider leave. */
 internal enum class BadgesFit {
     NATURAL, SCROLL;
 
     companion object {
-        /** The badges [natural] wide stay as they are when they fit in [room] (the width beside the block and its gap), else they scroll. */
+        /** The badges [natural] wide stay as they are when they fit in [room] (the width right of the divider), else they scroll. */
         fun pick(natural: Int, room: Int): BadgesFit = if (natural <= room) NATURAL else SCROLL
     }
 }
 
 /**
- * The info row under the title: the badges (the [facts], then a divider and the [tags]) and the streaming-time block at the right end,
- * right-aligned at the row's right edge and centred on the badges' line, in its full form. The badges are the flexible part: they never wrap
- * and never go under the block; when they do not fit in the room left of the block (with [HomeCompact.BLOCK_GAP_X] between) they
- * scroll in it with the edge fade of [MarqueeContent]. Only when the whole row is too narrow for that ([above], decided by
- * [HomeCompact.blockAbove] together with the layout's height) the block stands above the badges. If the block would still leave the
- * badges less than [HomeCompact.MIN_BADGES_WIDTH] (a longer text than the layout allows for), the block shortens ([PlaytimeFit]) as a safety net.
- * [height] is the row's height ([HomeCompact.infoHeight]).
+ * The info row under the title: the streaming-time block at its start, in its full form, its left edge on the logo's; then a thin divider
+ * and the badges (the [facts], then a divider and the [tags]). The block and the divider are fixed; the badges are the flexible part: they
+ * never wrap and take the width left of the divider up to the row's right edge, and when they do not fit there they scroll in it with
+ * the edge fade of [MarqueeContent] (a clear [HomeCompact.BLOCK_GAP_X] between the divider and the first pill). Only when the whole row is too
+ * narrow for that ([above], decided by [HomeCompact.blockAbove] together with the layout's height) the block stands above the badges. If
+ * the block would still leave the badges less than [HomeCompact.MIN_BADGES_WIDTH] (a longer text than the layout allows for), the block
+ * shortens ([PlaytimeFit]) as a safety net. The badges are centred on the block as a whole; the row's height ([HomeCompact.infoHeight]) is the block's.
  */
 @Composable
 internal fun InfoBar(
@@ -77,23 +77,26 @@ internal fun InfoBar(
             val forms = listOf(PlaytimeFit.FULL, PlaytimeFit.STAT_ONLY, PlaytimeFit.SHORT).associateWith { fit ->
                 subcompose(fit) { StatRow(texts, fit, blockHeight) }.first().measure(Constraints())
             }
-            val gapPx = if (hasBadges) gap.roundToPx() else 0
+            val divider = if (hasBadges) subcompose("divider") { StatDivider() }.first().measure(Constraints()) else null
+            val gapPx = gap.roundToPx()
+            // The air on both sides of the divider, and the divider itself
+            val between = if (divider != null) 2 * gapPx + divider.width else 0
             val leastBadges = if (hasBadges) minBadges.roundToPx() else 0
             // The block is full; it shortens only when even then the badges would keep less than their least room
             val fit = PlaytimeFit.pick(
                 forms.getValue(PlaytimeFit.FULL).width, forms.getValue(PlaytimeFit.STAT_ONLY).width,
-                forms.getValue(PlaytimeFit.SHORT).width, width - gapPx - leastBadges,
+                forms.getValue(PlaytimeFit.SHORT).width, width - between - leastBadges,
             ).let { if (it == PlaytimeFit.SCROLL) PlaytimeFit.SHORT else it }
             val block = forms.getValue(fit)
-            val room = (width - block.width - gapPx).coerceAtLeast(0)
+            val room = (width - block.width - between).coerceAtLeast(0)
             val shown = natural?.let { placed ->
                 if (BadgesFit.pick(placed.width, room) == BadgesFit.NATURAL) placed
                 else subcompose("scroll") { MarqueeContent(Unit, Modifier, true, badges) }.first().measure(Constraints(minWidth = room, maxWidth = room))
             }
             layout(width, rowHeight) {
-                // The block first, so that the badges (and their fade) are drawn over its scrim
-                block.place(width - block.width, (rowHeight - block.height) / 2)
-                shown?.place(0, (rowHeight - shown.height) / 2)
+                block.place(0, (rowHeight - block.height) / 2)
+                if (divider != null) divider.place(block.width + gapPx, (rowHeight - divider.height) / 2)
+                shown?.place(block.width + between, (rowHeight - shown.height) / 2)
             }
         }
     }
