@@ -54,9 +54,9 @@ internal object HomeCompact {
     const val GAP_CHIPS = 24f
     const val GAP_HINT = 28f
 
-    /** The streaming-time block (docs/GUI.md): an eyebrow line of 14 over a value line of 30 at interface scale 1, and the air between it and the chips. */
+    /** The streaming-time block (docs/GUI.md): an eyebrow line of 14 over a value line of 30 at interface scale 1, and the air between it and the chips (28: clearly apart from the label row). */
     const val BLOCK_HEIGHT = 44f
-    const val BLOCK_GAP = 16f
+    const val BLOCK_GAP = 28f
 
     /** The block's height at interface scale [scale] (its texts grow with it). */
     fun blockHeight(scale: Float): Float = BLOCK_HEIGHT * scale

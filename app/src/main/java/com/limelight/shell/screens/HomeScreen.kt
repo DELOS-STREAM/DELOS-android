@@ -581,7 +581,7 @@ private fun GameInfo(
     val compact = home != null
     val titleBox = home?.titleBox ?: standard.titleBox
     // The logo keeps 10 px of air above and below in its box, 4 in a box that is only as tall as the title
-    val logoPad = if (home != null && home.titleBox < 100f) 4f else HomeStandard.LOGO_PAD
+    val logoPad = if (home != null) (if (home.titleBox < 100f) 4f else HomeStandard.LOGO_PAD) else standard.logoPad
     val logoHeight = titleBox - 2f * logoPad
     val logoWidth = if (compact) minOf(900f, stage.stageWidth - 2f * Compact.SIDE) else 900f
     Column(modifier) {
@@ -634,7 +634,10 @@ private fun GameInfo(
         if (home != null) {
             Spacer(Modifier.height(home.titleGap.px))
             Box(Modifier.height(home.blockHeight.px)) { if (hasBlock) StreamingTimeBlock(playtime, resumes, Modifier.widthIn(max = blockMax)) }
-        } else if (hasBlock) StreamingTimeBlock(playtime, resumes, Modifier.widthIn(max = blockMax))
+        } else if (hasBlock) {
+            Spacer(Modifier.height(HomeStandard.TITLE_BLOCK_GAP.px))
+            StreamingTimeBlock(playtime, resumes, Modifier.widthIn(max = blockMax))
+        }
         val metadata = LocalGameMetadata.current.entry(pc, app).data
         // Up to two genres and two themes: Steam's user tags when the game has them, else IGDB's lists (the filter
         // still offers every IGDB genre and theme); the facts come first

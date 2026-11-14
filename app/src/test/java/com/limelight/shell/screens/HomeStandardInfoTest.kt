@@ -34,20 +34,31 @@ class HomeStandardInfoTest {
     }
 
     @Test
-    fun theBlockCostsTheCoverClearanceNothingAtScaleOne() {
-        // At scale 1 the block (44) and its 16 px of air replace the label's 10 px of padding: 50 px, of the 72 px of clearance
-        val without = HomeStandard.ringTop(1f) - HomeStandard.chipsBottom(1f, 150f, 200f, withBlock = false)
-        val with = HomeStandard.ringTop(1f) - HomeStandard.chipsBottom(1f, 150f, 200f, withBlock = true)
-        assertEquals(50f, without - with, .01f)
-        assertTrue("clearance $without without the block", without > 70f)
-        // Only about 2 px move up to keep the compact minimum
-        assertEquals(148f, HomeStandard.layout(1f, withBlock = true).top, 1f)
+    fun theBlockHasClearAirAboveAndBelow() {
+        assertTrue(HomeStandard.TITLE_BLOCK_GAP >= 10f && HomeStandard.TITLE_BLOCK_GAP <= 12f)
+        assertTrue(HomeCompact.BLOCK_GAP >= 28f)
+        for (scale in scales) {
+            val l = HomeStandard.layout(scale, withBlock = true)
+            // The logo's own air and the gap: at least 10 between the logo and the eyebrow
+            assertTrue("scale $scale", l.logoPad + HomeStandard.TITLE_BLOCK_GAP >= 10f)
+            // The logo keeps its 180 px until the room runs out
+            if (scale <= 1f) assertEquals(180f, l.titleBox - 2f * l.logoPad, .01f)
+        }
+    }
+
+    @Test
+    fun atScaleOneTheInfoBlockMovesUpALittleAndKeepsItsLogo() {
+        val l = HomeStandard.layout(1f, withBlock = true)
+        assertEquals(188f, l.titleBox, 0f)
+        assertTrue("top ${l.top}", l.top in 130f..150f)
     }
 
     @Test
     fun theRoomOfALargeInterfaceScaleComesFromTheTitleBoxToo() {
         val l = HomeStandard.layout(1.15f, withBlock = true)
-        assertTrue("moved up as far as the status bar allows: ${l.top}", l.top < 130f)
-        assertTrue("and the title box gave a little: ${l.titleBox}", l.titleBox < 200f && l.titleBox > 185f)
+        assertTrue("moved up as far as the status bar allows: ${l.top}", l.top < 135f)
+        assertTrue("and the title box gave some: ${l.titleBox}", l.titleBox < 188f && l.titleBox > 150f)
+        val big = HomeStandard.layout(1.3f, withBlock = true)
+        assertTrue("the largest scale: ${big.titleBox}", big.titleBox >= HomeStandard.MIN_TITLE_BOX)
     }
 }

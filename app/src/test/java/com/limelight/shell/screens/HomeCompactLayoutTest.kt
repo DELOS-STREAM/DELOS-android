@@ -56,9 +56,9 @@ class HomeCompactLayoutTest {
             // The block is 44 high at scale 1 and grows with the texts; its room is there whether or not the game has time
             assertEquals("$n block height", 44f * scale, l.blockHeight, .01f)
             assertEquals("$n block sits under the title", l.titleBottom + l.titleGap, l.blockTop, .01f)
-            // The air under it is clear (never under 14) and about what the title leaves above it
-            assertTrue("$n block to chips ${l.blockGap}", l.blockGap >= 14f - .01f)
-            assertTrue("$n about the gap above it: ${l.titleGap} and ${l.blockGap}", kotlin.math.abs(l.blockGap - l.titleGap) <= 4f + .01f)
+            // The air under it is clear: 28 to the label row, and at least the 12 the title leaves above it
+            assertTrue("$n block to chips ${l.blockGap}", l.blockGap >= 28f - .01f)
+            assertTrue("$n title to block ${l.titleGap}", l.titleGap >= 12f - .01f)
         }
     }
 
@@ -118,13 +118,13 @@ class HomeCompactLayoutTest {
     fun theNumbersOfTheSixStages() {
         // Cover scale at interface scale 1: the width rule where the stage is tall for its width, the comfortable gaps on the lower ones,
         // the least gaps on the lowest
-        val expected = mapOf("1099x957" to .6554f, "1488x893" to .6401f, "1191x893" to .6401f, "1108x831" to .5095f, "1051x1051" to .6237f, "1082x722" to .45f)
+        val expected = mapOf("1099x957" to .6554f, "1488x893" to .6148f, "1191x893" to .6148f, "1108x831" to .4843f, "1051x1051" to .6237f, "1082x722" to .4484f)
         for (stage in stages) assertEquals(name(stage), expected.getValue(name(stage)), c.layout(stage.first, stage.second).coverScale, .0005f)
         // The lowest stage's cover is at the floor and the least gaps (and the 64 px title box) are kept
         val low = c.layout(1082f, 722f)
         assertTrue(low.titleBox >= 64f - .1f && low.statusGap >= 16f - .1f && low.chipsGap >= 24f - .1f && low.hintGap >= 28f - .1f)
         // At the default interface scale the covers of the wide and the low stages give way to the comfortable gaps
-        assertEquals(.5498f, c.layout(1488f, 893f, 1.15f).coverScale, .0005f)
+        assertEquals(.5245f, c.layout(1488f, 893f, 1.15f).coverScale, .0005f)
         assertEquals(.45f, c.layout(1108f, 831f, 1.15f).coverScale, .0005f)
         assertTrue(c.layout(1488f, 893f, 1.15f).chipsGap >= 38f && c.layout(1488f, 893f, 1.15f).hintGap >= 42f)
         // The others give the logo its 120 px box, also at the default interface scale
