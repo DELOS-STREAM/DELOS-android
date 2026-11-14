@@ -1,4 +1,22 @@
+<div align="center">
+
+<img src="docs/readme/logo.png" alt="Delos logo" width="120" height="120">
+
 # Delos
+
+**Game streaming for Android handhelds**, with a console-like interface you can drive entirely with a gamepad.
+
+[![License: GPL v3](https://img.shields.io/github/license/Meitoncz/Delos?color=fbbd44&labelColor=151b2b)](LICENSE.txt)
+[![Android 10+](https://img.shields.io/badge/Android-10%2B-4fd2ee?logo=android&logoColor=white&labelColor=151b2b)](#building)
+[![Stars](https://img.shields.io/github/stars/Meitoncz/Delos?style=flat&color=fbbd44&labelColor=151b2b)](https://github.com/Meitoncz/Delos/stargazers)
+[![Open issues](https://img.shields.io/github/issues/Meitoncz/Delos?color=e8639a&labelColor=151b2b)](https://github.com/Meitoncz/Delos/issues)
+[![Last commit](https://img.shields.io/github/last-commit/Meitoncz/Delos?color=4fd2ee&labelColor=151b2b)](https://github.com/Meitoncz/Delos/commits/main)
+
+[Website](https://delos-stream.com) · [Releases](https://github.com/Meitoncz/Delos/releases) · [Issues](https://github.com/Meitoncz/Delos/issues) · [Add to Obtainium](obtainium://add/https://github.com/Meitoncz/Delos)
+
+<img src="docs/readme/dashboard.webp" alt="The Delos library on a handheld" width="760">
+
+</div>
 
 An Android game streaming client built for gaming handhelds. It connects to [Vibepollo](https://github.com/Nonary/Vibepollo) and also works with [Apollo](https://github.com/ClassicOldSong/Apollo) and [Sunshine](https://github.com/LizardByte/Sunshine).
 
