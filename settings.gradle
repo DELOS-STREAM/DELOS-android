@@ -1,1 +1,3 @@
+// Delos: single-module Android build (module: app).
+rootProject.name = 'Delos'
 include ':app'
