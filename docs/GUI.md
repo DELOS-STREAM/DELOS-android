@@ -555,6 +555,15 @@ saturation, higher lightness) instead of the vivid ones. A stored choice of a re
 The animated backgrounds follow the same weights: the main color about 60 % of the lights, the secondary one a quarter,
 the accent the rest and fainter.
 
+## Streaming time
+
+Every app keeps a total of the time its stream was actually connected, summed over all sessions (like playtime in Steam). Remote Desktop, Remote Input and Remote Monitor count like any app.
+
+- **What counts:** the time from the connection being established until the stream ends (Disconnect, Quit game, the host closing it, a lost connection, the stream window going away). Time while connecting, while the connection is down or while the stream is suspended is not counted. Nothing is ever discarded: short sessions are added like long ones.
+- **Keyed by** profile, PC and app id, so a profile switch never mixes times. The total is a Long (milliseconds) `ui_playtime_<uuid of PC uuid>_<appId>` in the profile's own preferences file (`ui_profile_<id>`), next to the per-game settings; deleting a profile deletes its times. Local only: never uploaded, never part of the companion or any backup export. There is no reset.
+- **Recovery:** `DelosStreamActivity` calls `PlaytimeTracker` (pure logic, injected monotonic clock): `begin` in `onCreate`, `setConnected(true)` in `connectionStarted`, `end` in `stopConnection` and `onDestroy`. Elapsed slices are written to `PlaytimeStore` every 30 s and at every state change, as additions to the total; there is no open-session record. A crash or kill therefore loses at most the last 30 s, and the next start has nothing to close and nothing to double count.
+- **Reading:** `PlaytimeStore.totalMillis(profileId, pcUuid, appId)` or the `totalFlow(...)` Flow (emits when time is added); `PlaytimeFormat.format(resources, millis, locale)` returns `Streaming time: 45 minutes` (under one hour, whole minutes, at least 1) or `Streaming time: 20.4 hours` (from one hour, one decimal in the locale's separator, `20,4` in Czech; a whole number of hours is shown without decimal), and null for zero (the line is hidden).
+
 ## Stream
 
 - SGSR upscaling and independent sharpening are implemented. Codec-specific behavior and measured

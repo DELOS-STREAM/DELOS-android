@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Streaming time line under a game's title: the label and its amount (docs/GUI.md, "Streaming time") -->
+    <!-- %s: the amount, e.g. "45 minutes" or "20.4 hours" -->
+    <string name="playtime_label">ストリーミング時間: %s</string>
+    <plurals name="playtime_minutes">
+        <!-- %d: whole minutes, under one hour -->
+        <item quantity="other">%d分</item>
+    </plurals>
+    <plurals name="playtime_hours">
+        <!-- %d: whole hours (no decimal part) -->
+        <item quantity="other">%d時間</item>
+    </plurals>
+    <!-- %s: hours with one decimal in the locale, e.g. 20.4 -->
+    <string name="playtime_hours_fraction">%s時間</string>
+</resources>

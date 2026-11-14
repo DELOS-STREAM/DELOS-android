@@ -52,6 +52,10 @@ import com.limelight.utils.PanZoomHandler;
 import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
 import com.limelight.shell.StreamLoader;
+import com.limelight.shell.data.PlaytimeKey;
+import com.limelight.shell.data.PlaytimeStore;
+import com.limelight.shell.data.PlaytimeTracker;
+import com.limelight.shell.data.ProfileStore;
 import com.limelight.shell.companion.CompanionHost;
 import com.limelight.shell.StreamOutcome;
 import com.limelight.shell.StreamResultKind;
@@ -75,6 +79,7 @@ import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.provider.Settings;
@@ -195,6 +200,17 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     public static final String EXTRA_DISPLAY_ID = "DisplayID";
 
     private StreamIntentParams launch;
+
+    // Delos: streaming time of this app (docs/GUI.md, "Streaming time"): counts while connected, flushed every PLAYTIME_FLUSH_MS and when the stream ends
+    private static final long PLAYTIME_FLUSH_MS = 30_000;
+    private PlaytimeTracker playtime;
+    private final Runnable playtimeFlush = new Runnable() {
+        @Override
+        public void run() {
+            if (playtime != null) playtime.flush();
+            timerHandler.postDelayed(this, PLAYTIME_FLUSH_MS);
+        }
+    };
     private ViewParent rootView;
     private StreamClipboardSync clipboardSync;
     private StreamWindowController windowController;
@@ -454,6 +470,12 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         wifiLocks.acquire(this);
 
         launch = StreamIntentParams.fromIntent(getIntent());
+        final PlaytimeStore playtimeStore = new PlaytimeStore(getApplicationContext());
+        playtime = new PlaytimeTracker(SystemClock::elapsedRealtime, playtimeStore::add);
+        String playtimePc = getIntent().getStringExtra(EXTRA_PC_UUID);
+        if (playtimePc != null && launch.hasValidApp()) {
+            playtime.begin(new PlaytimeKey(ProfileStore.Companion.currentId(this), playtimePc, launch.appId));
+        }
         httpConn = launch.createHttp(this);
 
         if (!launch.hasValidApp()) {
@@ -1274,6 +1296,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     @Override
     protected void onDestroy() {
+        if (playtime != null) playtime.end();
         if (companionHost != null) companionHost.stop();
         if (externalDisplayListener != null) {
             ((DisplayManager) getSystemService(Context.DISPLAY_SERVICE)).unregisterDisplayListener(externalDisplayListener);
@@ -1535,6 +1558,8 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     private void stopConnection() {
         if (connecting || connected) {
             DiagLog.i("Stream", "Stream stopped");
+            playtime.end();
+            timerHandler.removeCallbacks(playtimeFlush);
             connecting = connected = false;
             windowController.updatePipAutoEnter();
 
@@ -1689,6 +1714,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     @Override
     public void connectionStarted() {
         DiagLog.i("Stream", "Stream started");
+        playtime.setConnected(true);
+        timerHandler.removeCallbacks(playtimeFlush);
+        timerHandler.postDelayed(playtimeFlush, PLAYTIME_FLUSH_MS);
         if (companionHost != null) companionHost.onConnectionStarted();
         runOnUiThread(new Runnable() {
             @Override

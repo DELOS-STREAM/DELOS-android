@@ -259,11 +259,17 @@ class ProfileStore(context: Context, private val later: (Long, () -> Unit) -> Un
          * The current profile's settings, only read: for the stream window, which must not parse the
          * settings catalog or activate stream profiles while a game is starting (that is the shell's job).
          */
-        fun currentSettings(context: Context): SharedPreferences {
+        fun currentSettings(context: Context): SharedPreferences = settingsOf(context, currentId(context))
+
+        /** The id of the current profile, null before any profile exists. */
+        fun currentId(context: Context): String? =
+            PreferenceManager.getDefaultSharedPreferences(context.applicationContext).getString(KEY_CURRENT, null)
+
+        /** The preferences of profile [id] (null: the unprofiled default settings), only read. */
+        fun settingsOf(context: Context, id: String?): SharedPreferences {
             val app = context.applicationContext
-            val prefs = PreferenceManager.getDefaultSharedPreferences(app)
-            val id = prefs.getString(KEY_CURRENT, null) ?: return prefs
-            return app.getSharedPreferences("ui_profile_$id", Context.MODE_PRIVATE)
+            return if (id == null) PreferenceManager.getDefaultSharedPreferences(app)
+            else app.getSharedPreferences("ui_profile_$id", Context.MODE_PRIVATE)
         }
     }
 }
