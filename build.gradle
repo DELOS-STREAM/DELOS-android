@@ -17,7 +17,16 @@ allprojects {
     repositories {
         mavenCentral()
         google()
-        maven { url = uri("https://jitpack.io") }
+        // JitPack builds artefacts on demand and does not guarantee immutability, so it may serve
+        // exactly one module and nothing else is ever looked up there (docs/THIRD_PARTY.md).
+        exclusiveContent {
+            forRepository {
+                maven { url = uri("https://jitpack.io") }
+            }
+            filter {
+                includeModule("com.github.cgutman", "ShieldControllerExtensions")
+            }
+        }
     }
 }
 
