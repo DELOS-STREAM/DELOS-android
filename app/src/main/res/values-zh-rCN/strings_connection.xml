@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Messages (toasts) of a stream that is being started: what the PC answered and why the start stops or changes -->
+    <string name="conn_server_version_malformed">PC 发送的版本无效</string>
+    <string name="conn_not_paired">此设备尚未与 PC 配对</string>
+    <string name="conn_hdr_unsupported_host">PC 的 GPU 不支持 HDR 串流 · 将以 SDR 串流</string>
+    <string name="conn_above_4k_host">PC 不支持高于 4K 的分辨率串流</string>
+    <string name="conn_above_4k_device">高于 4K 的分辨率需要此设备支持 HEVC 或 AV1</string>
+    <!-- Only the old NVIDIA GeForce Experience host software answers this -->
+    <string name="conn_4k_needs_update">请在 PC 上更新 GeForce Experience 以进行 4K 串流 · 将以 1080p 串流</string>
+    <!-- %1$s: app name -->
+    <string name="conn_app_not_found">%1$s 不在 PC 的应用列表中</string>
+    <string name="conn_resume_failed">无法恢复正在运行的会话</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_resume_foreign">此会话由其他设备启动，因此无法恢复。请在该设备或 PC 上结束串流后重试。（错误 %1$d）</string>
+    <string name="conn_app_minimized">应用已最小化。请在 PC 上恢复它，或退出会话后重新开始串流。</string>
+    <string name="conn_quit_failed">无法退出上一个会话 · 请在 PC 上退出</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_quit_foreign">此会话由其他设备启动，因此无法退出。请在该设备或 PC 上结束串流。（错误 %1$d）</string>
+    <string name="conn_launch_failed">PC 无法启动该应用</string>
+</resources>

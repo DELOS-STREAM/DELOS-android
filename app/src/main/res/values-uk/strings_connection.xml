@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Messages (toasts) of a stream that is being started: what the PC answered and why the start stops or changes -->
+    <string name="conn_server_version_malformed">ПК надіслав недійсну версію</string>
+    <string name="conn_not_paired">Цей пристрій не спарено з ПК</string>
+    <string name="conn_hdr_unsupported_host">Відеокарта ПК не може транслювати HDR · стрім буде в SDR</string>
+    <string name="conn_above_4k_host">ПК не може транслювати з роздільною здатністю понад 4K</string>
+    <string name="conn_above_4k_device">Для роздільної здатності понад 4K цьому пристрою потрібен HEVC або AV1</string>
+    <!-- Only the old NVIDIA GeForce Experience host software answers this -->
+    <string name="conn_4k_needs_update">Онови GeForce Experience на ПК, щоб транслювати в 4K · стрім буде в 1080p</string>
+    <!-- %1$s: app name -->
+    <string name="conn_app_not_found">%1$s немає у списку застосунків ПК</string>
+    <string name="conn_resume_failed">Не вдалося відновити поточний сеанс</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_resume_foreign">Цей сеанс запустив інший пристрій, тому його не можна відновити. Заверши стрім на тому пристрої або на ПК і спробуй ще раз. (Помилка %1$d)</string>
+    <string name="conn_app_minimized">Застосунок згорнуто. Віднови його на ПК або заверши сеанс і запусти стрім знову.</string>
+    <string name="conn_quit_failed">Не вдалося завершити попередній сеанс · заверши його на ПК</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_quit_foreign">Цей сеанс запустив інший пристрій, тому його не можна завершити. Заверши стрім на тому пристрої або на ПК. (Помилка %1$d)</string>
+    <string name="conn_launch_failed">ПК не зміг запустити застосунок</string>
+</resources>

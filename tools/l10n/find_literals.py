@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-"""Lists hardcoded user-facing English literals of the Compose shell (app/src/main/java/com/limelight/shell/**/*.kt).
+"""Lists hardcoded user-facing English literals of the app.
+
+Two scopes:
+  * the Compose shell (app/src/main/java/com/limelight/shell/**/*.kt): every literal that looks like text;
+  * the rest of the app (the Java core and the Kotlin outside the shell): a literal that looks like text on a line that
+    hands text to the user (a toast, a dialog title, message or button, a view's text). That code is full of log and
+    protocol strings, so only these calls are checked; a literal on a continuation line of such a call is not seen.
 
 Usage:
   python3 tools/l10n/find_literals.py                 # table: literals per file, total
   python3 tools/l10n/find_literals.py --list          # every literal as path:line: text
   python3 tools/l10n/find_literals.py --list FILE...  # only the given files (path suffix match)
   python3 tools/l10n/find_literals.py --markdown      # the table as Markdown (for docs/LOCALIZATION.md)
+  python3 tools/l10n/find_literals.py --check         # as the table, and exit 1 when any literal is left
 
 A line can opt out with a trailing `// l10n-ignore` comment (a literal that is not user-facing but looks like text).
 The heuristic is deliberately pragmatic: a literal counts when its text (string templates reduced to `{}`)
@@ -18,7 +25,8 @@ import re
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-SHELL = os.path.join(ROOT, "app", "src", "main", "java", "com", "limelight", "shell")
+APP = os.path.join(ROOT, "app", "src", "main", "java", "com", "limelight")
+SHELL = os.path.join(APP, "shell")
 
 # Lines whose literals are never user-facing text.
 SKIP_LINE = re.compile(
@@ -27,6 +35,12 @@ SKIP_LINE = re.compile(
     r"getString\(\"|getBoolean\(\"|getInt\(\"|putString\(\"|putBoolean\(\"|putInt\(\"|"
     r"values\[\"|prefs\.|SharedPreferences|System\.getProperty|String\.format\(Locale|"
     r"Intent\(|setAction|putExtra\(|getStringExtra\(|MIME|\.mime|Uri\.parse|URL\()"
+)
+# Outside the shell: the calls that show their text to the user.
+UI_SINK = re.compile(
+    r"(DelosToast\.show\(|Toast\.makeText\(|\.showToast\(|\.setTitle\(|\.setMessage\(|\.setText\(|\.setHint\(|"
+    r"\.setSummary\(|\.setPositiveButton\(|\.setNegativeButton\(|\.setNeutralButton\(|\.setContentDescription\(|"
+    r"displayDialog\(|displayMessage\(|displayTransientMessage\(|\breject\()"
 )
 CAMEL_OR_IDENT = re.compile(r"^[A-Za-z0-9_.:/\-]+$")
 HAS_LOWER_UPPER = re.compile(r"[a-z][A-Z]")
@@ -117,10 +131,12 @@ def user_facing(body):
         return False
     if text.startswith(("http", "#", "/", ".")) or "%" in text and " " not in text:
         return False
-    return re.search(r"[A-Za-z]", text.replace("{}", "")) is not None
+    # Separators written as escapes ("{} \u00b7 {}") are not words
+    words = re.sub(r"\\u[0-9A-Fa-f]{4}|\\[nt]", " ", text.replace("{}", ""))
+    return re.search(r"[A-Za-z]", words) is not None
 
 
-def scan(path):
+def scan(path, sinks_only=False):
     with open(path, encoding="utf-8") as f:
         source = f.read()
     lines = source.split("\n")
@@ -128,6 +144,8 @@ def scan(path):
     for number, body in literals(source):
         row = lines[number - 1] if number <= len(lines) else ""
         if "l10n-ignore" in row or SKIP_LINE.search(row):
+            continue
+        if sinks_only and not UI_SINK.search(row):
             continue
         if user_facing(body):
             found.append((number, reduce_template(body)))
@@ -141,16 +159,28 @@ def shell_files():
                 yield os.path.join(base, name)
 
 
+def core_files():
+    """The Java core and the Kotlin outside the shell."""
+    for base, dirs, names in os.walk(APP):
+        if base == APP:
+            dirs[:] = [d for d in dirs if d != "shell"]
+        for name in sorted(names):
+            if name.endswith((".java", ".kt")):
+                yield os.path.join(base, name)
+
+
 def main(argv):
     args = [a for a in argv if not a.startswith("--")]
     listing = "--list" in argv
     markdown = "--markdown" in argv
     counts = []
-    for path in sorted(shell_files()):
-        rel = os.path.relpath(path, SHELL)
+    sources = [(path, os.path.relpath(path, SHELL), False) for path in sorted(shell_files())]
+    # Named from the package root with a leading "../", next to the shell's own files
+    sources += [(path, "../" + os.path.relpath(path, APP), True) for path in sorted(core_files())]
+    for path, rel, sinks_only in sources:
         if args and not any(rel.endswith(a) or path.endswith(a) for a in args):
             continue
-        found = scan(path)
+        found = scan(path, sinks_only)
         if listing:
             for number, text in found:
                 print("%s:%d: %s" % (os.path.relpath(path, ROOT), number, text))
@@ -170,6 +200,8 @@ def main(argv):
         for rel, count in counts:
             print("%-*s %5d" % (width, rel, count))
         print("%-*s %5d" % (width, "TOTAL", total))
+    if "--check" in argv and total:
+        return 1
     return 0
 
 

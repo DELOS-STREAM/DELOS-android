@@ -514,11 +514,8 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
                     if (!willStreamHdr) {
                         // Nope, no HDR for us :(
-                        DelosToast.show(this, "Display does not support HDR10", DelosToast.LONG, ToastKind.WARNING);
+                        DelosToast.show(this, getString(R.string.stream_warn_display_no_hdr10), DelosToast.LONG, ToastKind.WARNING);
                     }
-                }
-                else {
-                    DelosToast.show(this, "HDR requires Android 7.0 or later", DelosToast.LONG, ToastKind.WARNING);
                 }
             }
         }
@@ -530,7 +527,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             if (PyroWaveRenderer.isAvailable()) {
                 offerPyroWave = true;
             } else {
-                DelosToast.show(this, "This device cannot decode PyroWave", DelosToast.LONG, ToastKind.WARNING);
+                DelosToast.show(this, getString(R.string.stream_warn_pyrowave_unavailable), DelosToast.LONG, ToastKind.WARNING);
             }
         }
 
@@ -590,16 +587,16 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         // Don't stream HDR if the decoder can't support it
         if (willStreamHdr && !offerPyroWave && !decoderRenderer.isHevcMain10Hdr10Supported() && !decoderRenderer.isAv1Main10Supported()) {
             willStreamHdr = false;
-            DelosToast.show(this, "Decoder does not support HDR10 profile", DelosToast.LONG, ToastKind.WARNING);
+            DelosToast.show(this, getString(R.string.stream_warn_decoder_no_hdr10), DelosToast.LONG, ToastKind.WARNING);
         }
         // Display a message to the user if HEVC was forced on but we still didn't find a decoder
         if (prefConfig.videoFormat == PreferenceConfiguration.FormatOption.FORCE_HEVC && !decoderRenderer.isHevcSupported()) {
-            DelosToast.show(this, "No HEVC decoder found", DelosToast.LONG, ToastKind.WARNING);
+            DelosToast.show(this, getString(R.string.stream_warn_no_hevc_decoder), DelosToast.LONG, ToastKind.WARNING);
         }
 
         // Display a message to the user if AV1 was forced on but we still didn't find a decoder
         if (prefConfig.videoFormat == PreferenceConfiguration.FormatOption.FORCE_AV1 && !decoderRenderer.isAv1Supported()) {
-            DelosToast.show(this, "No AV1 decoder found", DelosToast.LONG, ToastKind.WARNING);
+            DelosToast.show(this, getString(R.string.stream_warn_no_av1_decoder), DelosToast.LONG, ToastKind.WARNING);
         }
 
         // H.264 is always supported
@@ -619,7 +616,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         if (offerPyroWave) {
             supportedVideoFormats |= PyroWaveFormats.offered(willStreamHdr, prefConfig.pyroWaveChroma444);
             if (willStreamHdr && prefConfig.pyroWaveChroma444) {
-                DelosToast.show(this, "PyroWave 4:4:4 is not offered with HDR; using 4:2:0", DelosToast.LONG, ToastKind.WARNING);
+                DelosToast.show(this, getString(R.string.stream_warn_pyrowave_444_hdr), DelosToast.LONG, ToastKind.WARNING);
             }
         }
 
@@ -1601,7 +1598,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
                         final ToastKind messageKind = quit ? ToastKind.SUCCESS : ToastKind.ERROR;
                         final String message = quit
                                 ? app.getResources().getString(R.string.applist_quit_success) + " " + quitName
-                                : (failure != null && !failure.isEmpty() ? failure : "The PC did not quit " + quitName);
+                                : (failure != null && !failure.isEmpty() ? failure : app.getResources().getString(R.string.stream_quit_failed, quitName));
                         com.limelight.shell.StreamExit.INSTANCE.setQuitting(false);
                         new Handler(Looper.getMainLooper()).post(() -> DelosToast.show(app, message, DelosToast.LONG, messageKind));
                     } else {

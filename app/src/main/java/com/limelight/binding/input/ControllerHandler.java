@@ -3276,7 +3276,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         public void toggleMouseEmulation() {
             mainThreadHandler.removeCallbacks(mouseEmulationRunnable);
             mouseEmulationActive = !mouseEmulationActive;
-            DelosToast.show(activityContext, "Mouse emulation is: " + (mouseEmulationActive ? "ON" : "OFF"), DelosToast.SHORT);
+            DelosToast.show(activityContext, activityContext.getString(mouseEmulationActive
+                    ? R.string.stream_mouse_emulation_on : R.string.stream_mouse_emulation_off), DelosToast.SHORT);
 
             if (mouseEmulationActive) {
                 mainThreadHandler.postDelayed(mouseEmulationRunnable, mouseEmulationReportPeriod);

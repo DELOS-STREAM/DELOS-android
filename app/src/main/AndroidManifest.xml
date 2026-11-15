@@ -188,13 +188,13 @@
 
         <service
             android:name=".discovery.DiscoveryService"
-            android:label="mDNS PC Auto-Discovery Service" />
+            android:label="@string/service_label_discovery" />
         <service
             android:name=".computers.ComputerManagerService"
-            android:label="Computer Management Service" />
+            android:label="@string/service_label_computers" />
         <service
             android:name=".binding.input.driver.UsbDriverService"
-            android:label="Usb Driver Service" />
+            android:label="@string/service_label_usb" />
 
         <!-- Help pages from stream errors, for devices without a browser (Android TV) -->
         <activity
@@ -206,7 +206,7 @@
             <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
         </activity>
 
-        <!-- 无障碍 实体键盘 屏蔽某些快捷键 -->
+        <!-- Accessibility service for a physical keyboard: keeps some system shortcuts from leaving the stream -->
         <service
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:name="com.limelight.KeyboardAccessibilityService"
