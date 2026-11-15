@@ -18,7 +18,7 @@ checked as a living specification only when it is listed there.
 | [../CHANGELOG.md](../CHANGELOG.md) | What changed in each version, and what is not verified on real hardware |
 | [BUILDING.md](BUILDING.md) | How to build, test and lint on macOS, Linux and Windows |
 | [ENGINEERING_RULES.md](ENGINEERING_RULES.md) | The permanent rules of the project and the documentation style |
-| [VERSIONING.md](VERSIONING.md) | Version numbers, tags, the release checklist |
+| [VERSIONING.md](VERSIONING.md) | Semantic Versioning, the public API, tags, the release checklist |
 | [THIRD_PARTY.md](THIRD_PARTY.md) | Origin, version, license and checksum of every bundled library and binary |
 | [CREDITS.md](CREDITS.md) | The people and projects Delos builds on |
 
@@ -75,7 +75,7 @@ Each records what was researched or measured on one day. It is not edited afterw
 | Directory | What it is |
 |---|---|
 | `tools/docs/` | `check_links.py`: relative links, anchors and the structure of the living specifications |
-| `tools/hooks/` | `commit-msg`: the commit message check ([CONTRIBUTING.md](../CONTRIBUTING.md), "Commit messages") |
+| `tools/hooks/` | `commit-msg`: the commit message check; `pre-push` and `check-branch-name.sh`: the branch name check ([ENGINEERING_RULES.md](ENGINEERING_RULES.md#9-commit-messages-and-branch-names)) |
 | `tools/l10n/` | `find_literals.py`: user-visible text that is not a string resource ([LOCALIZATION.md](LOCALIZATION.md)) |
 | `tools/fonts/` | The font and icon generator ([ICONS.md](ICONS.md)) |
 | `tools/icon/` | The launcher icon generator ([gui/START_AND_HOME.md](gui/START_AND_HOME.md#1-android-launcher-identity)) |

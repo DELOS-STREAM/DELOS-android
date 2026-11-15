@@ -1,6 +1,8 @@
 # Changelog
 
-All notable changes to Delos are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the versioning is described in [docs/VERSIONING.md](docs/VERSIONING.md).
+All notable changes to Delos are documented in this file, newest first.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and Delos adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html); what counts as its public API is declared in [docs/VERSIONING.md](docs/VERSIONING.md).
 
 The 0.x versions are reconstructed milestones of the development history, not published releases. 1.0.0 will be the first public release.
 
@@ -10,9 +12,35 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ### Added
 - Streaming time: Delos counts how long each app was streamed, per profile and PC, and shows the total and when it was last streamed on the home screen ("0 hours" and "Never" before the first stream).
+- Stream encryption readout: Debug info shows what the last stream encrypted (video, audio, control), and the full statistics panel has an "Encryption" row. It reports what the PC negotiated; nothing is enforced.
+- The license texts of the bundled libraries are packaged in the APK. The app does not display them yet.
 
 ### Changed
 - Text that does not fit on one line (context menu titles and items, row values, app names) scrolls with a fading edge while it is focused instead of being cut off.
+- The stream start warnings (HDR10, HEVC, AV1, PyroWave), the connection messages of a stream start, the mouse emulation and custom key messages and the service labels are translated into the ten languages; they were English only.
+
+### Removed
+- The unused "root" build variant with its input capture helper. It was never part of a build.
+
+### Fixed
+- Leaving a stream while it is still connecting (Home, lock, a lost surface) stops the connection; before, the next start could fail with "stream operation still running". Not verified on a device.
+- A reply from SteamGridDB that is not its JSON (a Wi-Fi sign-in page, a maintenance page) no longer crashes the app while the library is open; it shows a message.
+- Stream profiles are saved atomically: an interrupted save no longer loses every stream profile.
+- A stream that starts before the previous one is fully closed keeps its back, menu and keyboard callbacks.
+- The control screen of an external-display stream no longer repeats its "no stream" message every 500 ms after it closed.
+- PyroWave: a crash at the end of a 10-bit/HDR stream or on an HDR switch. Not verified on a device.
+- PyroWave: release builds no longer send the stack-dump signal to a stalled video thread, which could deadlock it.
+- Native code: failed allocations, thread attaches and lookups are handled instead of crashing the process. Not verified on a device.
+- Release builds keep the class the SteamGridDB match file is read into; code shrinking could drop its fields.
+
+### Security
+- A launch from outside Delos (a shortcut made by another app, an intent of another app, an opened `.art` file) asks before it starts a game, opens a PC or sends Wake-on-LAN, like `art://launch` links. Launches that Delos makes itself are signed and start without a prompt.
+- The pairing key, the client certificate and id, the PC database and the diagnostic logs are excluded from cloud backup and device-to-device transfer. A restored or transferred installation pairs with its PCs again.
+- A paired PC is accepted only with its pinned certificate; a certificate that the system trusts no longer passes as well.
+- An unverified HTTP reply of a paired PC no longer changes its stored name, addresses or MAC address.
+- The id a host sends is validated before it names files or database rows; a host with an invalid id is not added.
+- A game name in a SteamGridDB search is sent as one path segment, so a name with "/" cannot reach another endpoint with the user's API key.
+- Text that another app passes in an intent is no longer shown in the stream result overlay.
 
 ### Fixed
 - A USB Xbox controller announces its buttons to the PC, and an Xbox One controller no longer reports the guide button as held until it is pressed once.
@@ -281,4 +309,4 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 [0.4.0]: https://github.com/Meitoncz/Delos/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Meitoncz/Delos/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Meitoncz/Delos/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/Meitoncz/Delos/commits/v0.1.0
+[0.1.0]: https://github.com/Meitoncz/Delos/releases/tag/v0.1.0

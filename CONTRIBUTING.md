@@ -43,27 +43,43 @@ A bug fix comes with a regression test that fails without the fix. New logic com
 
 ## Commit messages
 
+Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/). The types, the scopes and every rule are in [docs/ENGINEERING_RULES.md](docs/ENGINEERING_RULES.md#9-commit-messages-and-branch-names); this is the short form.
+
 ```
-Stream menu: keep the bitrate after a failed request (#123)
+fix(stream): keep the bitrate after a failed request
 
 The page reset its slider to the profile value when the host answered
 with an error. It now keeps the value the user chose and shows the
 host's message.
 
+Refs: #123
+
 [skip ci]
 ```
 
-- **Subject:** one line of at most 72 characters that says what changed, in sentence case, without a full stop. An area prefix (`Stream menu:`, `Docs:`, `Build:`) and the issue number `(#N)` at the end are welcome.
-- **Body:** after an empty line. What changed and why, measurements with device and date, and what was not verified. Lists of details belong here, not in the subject.
+- **Subject:** `<type>[(scope)][!]: <description>`, at most 72 characters. The description says what the commit does, in the imperative, without a period at the end.
+- **Types:** `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`, `chore`, `style`, `revert`.
+- **Scopes** (optional): `ui`, `stream`, `pyrowave`, `input`, `host`, `l10n`, `deps`, `docs`, `ci`, `tools`, `release`.
+- **Breaking change:** `!` before the colon (`feat(host)!: ...`) or a footer `BREAKING CHANGE: <description>`. Breaking means an incompatible change of the public API declared in [docs/VERSIONING.md](docs/VERSIONING.md#public-api).
+- **Body:** after an empty line. What changed and why, measurements with device and date, and what was not verified.
+- **Footers:** after an empty line after the body. An issue is named as `Refs: #123`, or `Closes: #123` when the commit closes it.
+- **`[skip ci]`** is the last line of every commit to `main`, after the footers and an empty line. GitHub Actions does not start workflows for a pushed commit whose message contains it. The Delos workflow starts only by hand today, so the line has nothing to skip yet; the maintainer keeps it so that no push starts a run if an automatic trigger is ever added. A contributor's pull request does not need it.
 - **One topic per commit.** No `WIP`, `fixup!` or `squash!` commits on `main`: tidy them up before the merge.
-- **`[skip ci]`** is the last line of the body of every commit to `main`. GitHub Actions does not start workflows for a pushed commit whose message contains it. The Delos workflow starts only by hand today, so the line has nothing to skip yet; the maintainer keeps it so that no push starts a run if an automatic trigger is ever added. A contributor's pull request does not need it.
-- The history of `main` is never rewritten. A mistake is fixed by a new commit.
+- The convention applies from 2026-11-15. The history of `main` is never rewritten, so older commits keep their subjects; a mistake is fixed by a new commit.
 
-The hook `tools/hooks/commit-msg` checks the subject. Enable it once per clone:
+## Branch names
+
+Branches follow [Conventional Branch](https://conventionalbranch.org): `<type>/<description>`, with the type `feature`, `bugfix`, `hotfix`, `release` or `chore` and a description in lower-case letters, digits and single hyphens. The issue number comes first when there is one: `feature/87-review-rules`, `bugfix/123-bitrate-reset`, `release/v1.0.0`.
+
+## Hooks
+
+Two hooks check the commit message and, on a push, the name of a new branch. Enable them once per clone:
 
 ```sh
 git config core.hooksPath tools/hooks
 ```
+
+`sh tools/hooks/check-branch-name.sh` checks the current branch by hand.
 
 ## Principles
 
@@ -109,4 +125,4 @@ The maintainer works with AI coding agents and reviews all changes. If you use A
 
 ## Versions
 
-Delos uses semantic versioning; the policy and the history of the reconstructed 0.x versions are in [docs/VERSIONING.md](docs/VERSIONING.md), and the changes per version are in [CHANGELOG.md](CHANGELOG.md). Add user-facing changes under "Unreleased" in the changelog; version bumps are made only by the maintainer when a release is announced.
+Delos follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html); the public API it is measured against and the history of the reconstructed 0.x versions are in [docs/VERSIONING.md](docs/VERSIONING.md). The changes per version are in [CHANGELOG.md](CHANGELOG.md), which follows [Keep a Changelog 1.0.0](https://keepachangelog.com/en/1.0.0/). Add user-facing changes under "Unreleased" with one of its six headings (Added, Changed, Deprecated, Removed, Fixed, Security): a `feat` goes to Added or Changed, a `fix` to Fixed or Security; version bumps are made only by the maintainer when a release is announced.
