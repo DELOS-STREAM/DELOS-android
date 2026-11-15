@@ -104,6 +104,11 @@ public class NvConnection {
         connectionAllowed.release();
     }
 
+    /** The host's {@code appversion}, known once the start has read {@code serverinfo}. */
+    public String getServerAppVersion() {
+        return context.serverAppVersion;
+    }
+
     private InetAddress resolveServerAddress() throws IOException {
         // Try to find an address that works for this host
         InetAddress[] addrs = InetAddress.getAllByName(context.serverAddress.address);

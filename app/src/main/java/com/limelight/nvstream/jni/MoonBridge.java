@@ -412,6 +412,12 @@ public class MoonBridge {
 
     public static native String getStageName(int stage);
 
+    /**
+     * What the current (or last) connection encrypts, as negotiated: bit 0 video, bit 1 audio.
+     * Meaningful once the connection has started; read it through {@code StreamEncryption}.
+     */
+    public static native int getStreamEncryption();
+
     public static native String findExternalAddressIP4(String stunHostName, int stunPort);
 
     public static native int getPendingAudioDuration();

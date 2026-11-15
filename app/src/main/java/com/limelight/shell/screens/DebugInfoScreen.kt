@@ -392,6 +392,10 @@ fun DebugInfoScreen() {
             res.getString(R.string.debug_copy_description)))
         add(DebugRow("diag_clear", DebugSection.DIAGNOSTICS, Symbols.DELETE, res.getString(R.string.debug_clear_label), RowValue.Action { clearLogs() },
             res.getString(R.string.debug_clear_description)))
+        // What the last stream of this session encrypted (the PC decides about video and audio)
+        add(DebugRow("stream_encryption", DebugSection.DIAGNOSTICS, Symbols.KEY, res.getString(R.string.stream_encryption_label),
+            RowValue.Info(com.limelight.diag.StreamEncryption.last?.text(res) ?: res.getString(R.string.stream_encryption_none)),
+            res.getString(R.string.stream_encryption_description)))
         // Debug builds only (the row is never added in a release build): the way to see the crash capture and the report card work
         if (BuildConfig.DEBUG) {
             add(DebugRow("diag_test_crash", DebugSection.DIAGNOSTICS, Symbols.TEST_CRASH, "Trigger test crash", RowValue.Action { // l10n-ignore: debug builds only
