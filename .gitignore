@@ -36,6 +36,10 @@ Thumbs.db
 #.idea/workspace.xml - remove # and delete .idea if it better suit your needs.
 .gradle
 build/
+# Kotlin compiler session files
+.kotlin/
+# Python bytecode of the tools
+__pycache__/
 *.iml
 
 # Compiled JNI libraries folder
@@ -57,3 +61,6 @@ AGENTS.md
 /docs/LOW_RESOLUTION_SHARPNESS_AUDIT.md
 /docs/SETTINGS_HELP_AUDIT.md
 /docs/GITHUB_WORKFLOW.md
+# the owner's workstation setup notes: local only; the public build guide is docs/BUILDING.md
+/docs/MAC_SETUP.md
+/docs/WINDOWS_SETUP.md
