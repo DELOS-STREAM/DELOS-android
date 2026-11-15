@@ -49,6 +49,8 @@ public class NvConnection {
     private String uniqueId;
     private ConnectionContext context;
     private static Semaphore connectionAllowed = new Semaphore(1);
+    // Lets stop() be called at any moment of start(), see ConnectionGate
+    private final ConnectionGate gate = new ConnectionGate();
     private final boolean isMonkey;
     private final Context appContext;
 
@@ -89,13 +91,24 @@ public class NvConnection {
         return new SecureRandom().nextInt();
     }
 
+    /**
+     * Ends this connection in whatever state its start is: one that has not reached the native
+     * start never starts, a running native start is interrupted, a started connection is stopped.
+     * Safe to call more than once.
+     */
     public void stop() {
+        gate.requestStop();
+
         // Interrupt any pending connection. This is thread-safe.
         MoonBridge.interruptConnection();
 
         // Moonlight-core is not thread-safe with respect to connection start and stop, so
         // we must not invoke that functionality in parallel.
         synchronized (MoonBridge.class) {
+            if (!gate.takeStarted()) {
+                // Nothing was started (or the start failed and gave its permit back itself)
+                return;
+            }
             MoonBridge.stopConnection();
             MoonBridge.cleanupBridge();
         }
@@ -404,6 +417,10 @@ public class NvConnection {
                 int tryCount = 0;
 
                 do {
+                    if (gate.isStopRequested()) {
+                        // The stream was left before the app was launched
+                        return;
+                    }
                     boolean retry = false;
                     try {
                         if (!startApp()) {
@@ -460,6 +477,11 @@ public class NvConnection {
                 // Moonlight-core is not thread-safe with respect to connection start and stop, so
                 // we must not invoke that functionality in parallel.
                 synchronized (MoonBridge.class) {
+                    if (!gate.mayStart()) {
+                        // The stream was left while it was being set up: nothing native starts
+                        connectionAllowed.release();
+                        return;
+                    }
                     MoonBridge.setupBridge(videoDecoderRenderer, audioRenderer, connectionListener);
                     int ret = MoonBridge.startConnection(context.serverAddress.address,
                             context.serverAppVersion, context.serverGfeVersion, context.rtspSessionUrl,
@@ -474,6 +496,7 @@ public class NvConnection {
                             context.videoCapabilities,
                             context.streamConfig.getColorSpace(),
                             context.streamConfig.getColorRange());
+                    gate.onStartResult(ret == 0);
                     if (ret != 0) {
                         // LiStartConnection() failed, so the caller is not expected
                         // to stop the connection themselves. We need to release their

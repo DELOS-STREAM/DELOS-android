@@ -41,6 +41,7 @@ import com.limelight.nvstream.http.NvHTTP;
 import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.diag.DiagLog;
+import com.limelight.diag.StreamEncryption;
 import com.limelight.preferences.GlPreferences;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.ExternalControllerView;
@@ -142,7 +143,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     public NvConnection conn;
     private StreamLoader spinner;
     private boolean endedWithResult = false;
-    private boolean connecting = false;
+    // True from the start of the connection until it is established or stopped. Written on the UI thread,
+    // read by the connection callbacks.
+    private volatile boolean connecting = false;
     public boolean connected = false;
     // The frame rate passed to Surface.setFrameRate() once the surface exists (StreamDisplayPlanner.Plan#surfaceFrameRate)
     private float surfaceFrameRate;
@@ -973,11 +976,13 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
         @Override
         public boolean isConnected() {
-            return connected;
+            // A connection that is still being set up has to be stopped as well when the surface goes away
+            return connecting || connected;
         }
 
         @Override
         public void startConnection() {
+            connecting = true;
             conn.start(new AndroidAudioRenderer(DelosStreamActivity.this, prefConfig.playHostAudio),
                     decoderRenderer, DelosStreamActivity.this);
         }
@@ -1713,7 +1718,14 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     @Override
     public void connectionStarted() {
+        if (!connecting) {
+            // The stream was left while it was being set up; NvConnection.stop() ends this connection
+            LimeLog.info("Connection started after the stream was left");
+            return;
+        }
         DiagLog.i("Stream", "Stream started");
+        StreamEncryption encryption = StreamEncryption.read(conn.getServerAppVersion());
+        DiagLog.i("Stream", encryption.logLine());
         playtime.setConnected(true);
         timerHandler.removeCallbacks(playtimeFlush);
         timerHandler.postDelayed(playtimeFlush, PLAYTIME_FLUSH_MS);
@@ -1721,6 +1733,10 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if (!connecting) {
+                    // Stopped between the callback and this turn of the UI thread
+                    return;
+                }
                 if (spinner != null) {
                     spinner.dismiss();
                     spinner = null;
