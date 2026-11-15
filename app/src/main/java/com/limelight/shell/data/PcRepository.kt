@@ -181,10 +181,13 @@ class PcRepository(context: Context, private val settings: () -> SharedPreferenc
         rememberPairing(uuid, details)
         pcMap[uuid] = snapshot(uuid, details)
         _pcs.value = pcMap.values.toList()
-        if (uuid == activePc()?.uuid && details.rawAppList != null && details.rawAppList != rawApps) {
+        // The active PC is settled first: a PC that becomes active with this report starts from an empty
+        // list, and the list of this very report must not be the one that is dropped
+        val active = followActivePc()
+        if (uuid == active?.uuid && details.rawAppList != null && details.rawAppList != rawApps) {
             parse(details.rawAppList)
         }
-        update()
+        publish(active)
     }
 
     private fun snapshot(uuid: String, details: ComputerDetails): Pc {
@@ -269,7 +272,10 @@ class PcRepository(context: Context, private val settings: () -> SharedPreferenc
     }
 
     /** Recomputes [library] and keeps the app list poller on the active PC. */
-    private fun update() = synchronized(this) {
+    private fun update() = synchronized(this) { publish(followActivePc()) }
+
+    /** Moves the app list and its poller to the active PC when that changed; returns the active PC. */
+    private fun followActivePc(): Pc? {
         val pc = activePc()
         if (pc?.uuid != pollerPc) {
             poller?.stop()
@@ -284,6 +290,10 @@ class PcRepository(context: Context, private val settings: () -> SharedPreferenc
                 if (started) poller = binder?.createAppListPoller(live)?.also { it.start() }
             }
         }
+        return pc
+    }
+
+    private fun publish(pc: Pc?) {
         _library.value = when {
             pc == null -> if (everyPcReported) Library.NoPc else Library.Loading
             !pc.online && rawApps == null -> Library.Offline(pc)

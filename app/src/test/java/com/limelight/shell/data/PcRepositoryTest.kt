@@ -61,18 +61,33 @@ class PcRepositoryTest {
 
     private fun ready() = repo.library.value as Library.Ready
 
-    /**
-     * A PC as the service reports it while polling: again and again. The first report makes a PC the
-     * library's PC, the app list is taken from the reports after that.
-     */
-    private fun PcRepository.polled(details: ComputerDetails) {
-        onComputerUpdated(details)
-        onComputerUpdated(details)
+    @Test
+    fun theAppListOfTheFirstReportIsUsed() {
+        // Regression: the report that made a PC the library's PC lost its app list, which then appeared
+        // only with the next report.
+        repo.onComputerUpdated(details())
+
+        assertEquals(listOf("Desktop", "Steam", "Hades"), ready().apps.map { it.name })
+    }
+
+    @Test
+    fun theAppListOfTheReportThatMakesAnotherPcActiveIsUsed() {
+        repo.onComputerUpdated(details())
+        val other = "<root status_code=\"200\"><App><AppTitle>Only</AppTitle><ID>7</ID></App></root>"
+        repo.onComputerUpdated(details(uuid = "PC-2", name = "Attic", pairState = PairState.NOT_PAIRED, rawApps = other))
+        assertEquals("PC-1", ready().pc.uuid)
+
+        repo.forget("PC-1")
+        assertFalse(repo.library.value is Library.Ready)
+
+        repo.onComputerUpdated(details(uuid = "PC-2", name = "Attic", rawApps = other))
+        assertEquals("PC-2", ready().pc.uuid)
+        assertEquals(listOf("Only"), ready().apps.map { it.name })
     }
 
     @Test
     fun aPairedOnlinePcWithAnAppListIsTheLibrary() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
         val pc = repo.pcs.value.single()
         assertEquals("PC-1", pc.uuid)
@@ -85,7 +100,7 @@ class PcRepositoryTest {
 
     @Test
     fun anUnpairedPcIsListedButIsNotTheLibrary() {
-        repo.polled(details(pairState = PairState.NOT_PAIRED))
+        repo.onComputerUpdated(details(pairState = PairState.NOT_PAIRED))
 
         assertFalse(repo.pcs.value.single().paired)
         assertFalse(repo.library.value is Library.Ready)
@@ -94,7 +109,7 @@ class PcRepositoryTest {
 
     @Test
     fun aPairedPcWithoutAnAppListYetIsLoading() {
-        repo.polled(details(rawApps = null))
+        repo.onComputerUpdated(details(rawApps = null))
 
         assertEquals(Library.Loading, repo.library.value)
     }
@@ -105,7 +120,7 @@ class PcRepositoryTest {
         val off = details(state = ComputerDetails.State.OFFLINE, pairState = null, rawApps = null)
         off.serverCert = TestIdentity.create("host").cert
 
-        repo.polled(off)
+        repo.onComputerUpdated(off)
 
         val library = repo.library.value
         assertTrue(library is Library.Offline)
@@ -114,76 +129,76 @@ class PcRepositoryTest {
 
     @Test
     fun offlineThenOnlineKeepsApps() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
-        repo.polled(details(state = ComputerDetails.State.OFFLINE, pairState = null, rawApps = null))
+        repo.onComputerUpdated(details(state = ComputerDetails.State.OFFLINE, pairState = null, rawApps = null))
 
         // The games stay on screen while the PC is unreachable, and it does not look unpaired.
         assertEquals(3, ready().apps.size)
         assertFalse(ready().pc.online)
         assertTrue(ready().pc.paired)
 
-        repo.polled(details())
+        repo.onComputerUpdated(details())
         assertTrue(ready().pc.online)
         assertEquals(3, ready().apps.size)
     }
 
     @Test
     fun pairingIsRememberedAcrossAppStarts() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
         val restarted = PcRepository(context) { settings }
-        restarted.polled(details(state = ComputerDetails.State.UNKNOWN, pairState = null, rawApps = null))
+        restarted.onComputerUpdated(details(state = ComputerDetails.State.UNKNOWN, pairState = null, rawApps = null))
 
         assertTrue(restarted.pcs.value.single().paired)
     }
 
     @Test
     fun aServerThatSaysNotPairedWinsOverWhatWasRemembered() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
-        repo.polled(details(pairState = PairState.NOT_PAIRED))
+        repo.onComputerUpdated(details(pairState = PairState.NOT_PAIRED))
 
         assertFalse(repo.pcs.value.single().paired)
         val restarted = PcRepository(context) { settings }
-        restarted.polled(details(state = ComputerDetails.State.OFFLINE, pairState = null, rawApps = null))
+        restarted.onComputerUpdated(details(state = ComputerDetails.State.OFFLINE, pairState = null, rawApps = null))
         assertFalse(restarted.pcs.value.single().paired)
     }
 
     @Test
     fun aFailedPairingAttemptDoesNotUnpairWhatWasPaired() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
-        repo.polled(details(pairState = PairState.PIN_WRONG))
+        repo.onComputerUpdated(details(pairState = PairState.PIN_WRONG))
 
         assertTrue(repo.pcs.value.single().paired)
     }
 
     @Test
     fun aForgottenPcStaysForgotten() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
         repo.rename("PC-1", "My desk")
 
         repo.forget("PC-1")
         // Its polling thread may report once more.
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
         assertTrue(repo.pcs.value.isEmpty())
         assertFalse(repo.library.value is Library.Ready)
 
         // Added again by the user: shown again, as a new PC without the old name.
         repo.remember("PC-1")
-        repo.polled(details(pairState = PairState.NOT_PAIRED))
+        repo.onComputerUpdated(details(pairState = PairState.NOT_PAIRED))
         assertEquals("Desk", repo.pcs.value.single().name)
         assertFalse(repo.pcs.value.single().paired)
     }
 
     @Test
     fun renameSurvivesAPoll() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
         repo.rename("PC-1", "  Living room  ")
-        repo.polled(details(name = "DESKTOP-ABC"))
+        repo.onComputerUpdated(details(name = "DESKTOP-ABC"))
 
         val pc = repo.pcs.value.single()
         assertEquals("Living room", pc.name)
@@ -193,7 +208,7 @@ class PcRepositoryTest {
 
     @Test
     fun aBlankNameGoesBackToThePcsOwn() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
         repo.rename("PC-1", "Living room")
 
         repo.rename("PC-1", "   ")
@@ -203,7 +218,7 @@ class PcRepositoryTest {
 
     @Test
     fun hiddenAppsAreFiltered() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
         repo.setHidden("PC-1", 2, true)
 
@@ -222,7 +237,7 @@ class PcRepositoryTest {
 
     @Test
     fun aHiddenGameThatNoLongerExistsIsNotCounted() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
         repo.setHidden("PC-1", 2, true)
         repo.setHidden("PC-1", 99, true)
 
@@ -231,7 +246,7 @@ class PcRepositoryTest {
 
     @Test
     fun hiddenGamesBelongToTheirPc() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
         repo.setHidden("PC-2", 2, true)
 
         assertEquals(3, ready().apps.size)
@@ -239,13 +254,13 @@ class PcRepositoryTest {
 
     @Test
     fun theRunningGameComesFirstThenRecentlyPlayed() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
         repo.setLastPlayed("PC-1", 3)
 
         assertEquals(listOf("Hades", "Desktop", "Steam"), ready().apps.map { it.name })
         assertEquals(3, ready().lastPlayed)
 
-        repo.polled(details(running = 2))
+        repo.onComputerUpdated(details(running = 2))
         assertEquals(listOf("Steam", "Hades", "Desktop"), ready().apps.map { it.name })
         assertEquals(listOf(true, false, false), ready().apps.map { it.running })
     }
@@ -254,25 +269,25 @@ class PcRepositoryTest {
     fun theLastPlayedGameOfEarlierVersionsStillCountsAsRecent() {
         settings.edit().putInt("ui_last_app_PC-1", 2).commit()
 
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
         assertEquals("Steam", ready().apps.first().name)
     }
 
     @Test
     fun anUnreadableAppListKeepsThePreviousOne() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
-        repo.polled(details(rawApps = "<root status_code=\"200\"><App><AppTitle>Desk"))
+        repo.onComputerUpdated(details(rawApps = "<root status_code=\"200\"><App><AppTitle>Desk"))
 
         assertEquals(listOf("Desktop", "Steam", "Hades"), ready().apps.map { it.name })
     }
 
     @Test
     fun aNewAppListReplacesTheOldOne() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
 
-        repo.polled(details(rawApps = "<root status_code=\"200\"><App><AppTitle>Only</AppTitle><ID>7</ID></App></root>"))
+        repo.onComputerUpdated(details(rawApps = "<root status_code=\"200\"><App><AppTitle>Only</AppTitle><ID>7</ID></App></root>"))
 
         assertEquals(listOf("Only"), ready().apps.map { it.name })
     }
@@ -280,9 +295,9 @@ class PcRepositoryTest {
     @Test
     fun theOnlinePairedPcIsPreferredUntilTheUserChooses() {
         val cert = TestIdentity.create("host").cert
-        repo.polled(details(uuid = "PC-OFF", state = ComputerDetails.State.OFFLINE, pairState = null, rawApps = null)
+        repo.onComputerUpdated(details(uuid = "PC-OFF", state = ComputerDetails.State.OFFLINE, pairState = null, rawApps = null)
             .also { it.serverCert = cert })
-        repo.polled(details(uuid = "PC-ON"))
+        repo.onComputerUpdated(details(uuid = "PC-ON"))
 
         assertEquals("PC-ON", ready().pc.uuid)
 
@@ -291,22 +306,22 @@ class PcRepositoryTest {
 
         // The choice belongs to the profile and survives a restart.
         val restarted = PcRepository(context) { settings }
-        restarted.polled(details(uuid = "PC-ON"))
-        restarted.polled(details(uuid = "PC-OFF", state = ComputerDetails.State.OFFLINE, pairState = null, rawApps = null)
+        restarted.onComputerUpdated(details(uuid = "PC-ON"))
+        restarted.onComputerUpdated(details(uuid = "PC-OFF", state = ComputerDetails.State.OFFLINE, pairState = null, rawApps = null)
             .also { it.serverCert = cert })
         assertEquals("PC-OFF", (restarted.library.value as Library.Offline).pc.uuid)
     }
 
     @Test
     fun forgettingTheChosenPcFallsBackToAnother() {
-        repo.polled(details(uuid = "PC-A"))
-        repo.polled(details(uuid = "PC-B"))
+        repo.onComputerUpdated(details(uuid = "PC-A"))
+        repo.onComputerUpdated(details(uuid = "PC-B"))
         repo.selectPc("PC-B")
-        repo.polled(details(uuid = "PC-B"))
+        repo.onComputerUpdated(details(uuid = "PC-B"))
         assertEquals("PC-B", ready().pc.uuid)
 
         repo.forget("PC-B")
-        repo.polled(details(uuid = "PC-A"))
+        repo.onComputerUpdated(details(uuid = "PC-A"))
 
         assertEquals("PC-A", ready().pc.uuid)
         assertEquals(listOf("PC-A"), repo.pcs.value.map { it.uuid })
@@ -314,7 +329,7 @@ class PcRepositoryTest {
 
     @Test
     fun anotherProfileHasItsOwnNamesAndHiddenGames() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
         repo.rename("PC-1", "Mine")
         repo.setHidden("PC-1", 2, true)
 
@@ -329,17 +344,17 @@ class PcRepositoryTest {
 
     @Test
     fun aPcWithoutAnIdIsIgnored() {
-        repo.polled(ComputerDetails().also { it.name = "Ghost" })
+        repo.onComputerUpdated(ComputerDetails().also { it.name = "Ghost" })
 
         assertTrue(repo.pcs.value.isEmpty())
     }
 
     @Test
     fun wakeOnLanNeedsAKnownMacAddress() {
-        repo.polled(details())
+        repo.onComputerUpdated(details())
         assertFalse(repo.pcs.value.single().canWake)
 
-        repo.polled(details().also { it.macAddress = "a0:b1:c2:d3:e4:f5" })
+        repo.onComputerUpdated(details().also { it.macAddress = "a0:b1:c2:d3:e4:f5" })
         assertTrue(repo.pcs.value.single().canWake)
     }
 
