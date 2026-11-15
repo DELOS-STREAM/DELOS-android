@@ -192,6 +192,35 @@ public class ComputerDatabaseManagerTest {
     }
 
     @Test
+    public void aRowWhoseIdCouldLeaveADirectoryIsNotAPc() {
+        // The id names cache and artwork directories. Such a row can only come from an earlier version
+        // or a tampered file, so it is written here past updateComputer().
+        String[] bad = {"../../shared_prefs", "a/b", "..", "a b", "a\\b", "", "PC.1",
+                new String(new char[com.limelight.utils.HostIds.MAX_UUID_LENGTH + 1]).replace('\0', 'A')};
+        db.updateComputer(fullPc());
+        db.close();
+        SQLiteDatabase raw = SQLiteDatabase.openDatabase(
+                context.getDatabasePath("computers4.db").getPath(), null, SQLiteDatabase.OPEN_READWRITE);
+        for (int i = 0; i < bad.length; i++) {
+            ContentValues row = new ContentValues();
+            row.put("UUID", bad[i]);
+            row.put("ComputerName", "Bad " + i);
+            row.put("Addresses", "{}");
+            raw.insertOrThrow("Computers", null, row);
+        }
+        raw.close();
+        db = new ComputerDatabaseManager(context);
+
+        List<ComputerDetails> all = db.getAllComputers();
+        assertEquals(1, all.size());
+        assertEquals("UUID-FULL", all.get(0).uuid);
+        for (int i = 0; i < bad.length; i++) {
+            assertNull(bad[i], db.getComputerByUUID(bad[i]));
+            assertNull(bad[i], db.getComputerByName("Bad " + i));
+        }
+    }
+
+    @Test
     public void anEmptyDatabaseListsNothing() {
         assertTrue(db.getAllComputers().isEmpty());
     }
