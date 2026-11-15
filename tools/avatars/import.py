@@ -1,7 +1,7 @@
 """Import the generated avatar images (gpt-image-2) into the Delos app assets.
 
-Usage: python tools/avatars/import.py [INPUT_DIR] [--preview-dir DIR] [--preview-all]
-INPUT_DIR defaults to C:\\Vibecoding\\Delos\\.gradle-agent\\avatars-in and holds <index>_<slug>.png files
+Usage: python tools/avatars/import.py INPUT_DIR [--preview-dir DIR] [--preview-all]
+INPUT_DIR is the directory that holds the <index>_<slug>.png files
 (00_sailor.png ... 15_dragon.png): 1024x1024 RGBA, the character on a transparent background and filling
 about 74% of the canvas. Any subset may be present; run it again whenever more files arrive.
 Dependencies: Pillow 11.3.0 with WebP support. Deterministic (no randomness, no timestamps).
@@ -46,7 +46,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 REPO = Path(__file__).resolve().parents[2]
 ASSETS = REPO / "app/src/main/assets/avatars"
-DEFAULT_INPUT = Path(r"C:\Vibecoding\Delos\.gradle-agent\avatars-in")
 DEFAULT_PREVIEW = REPO / "build/avatars-preview"
 SIZE = 384
 FAMILY_COLUMNS = 8   # the family sheet: two rows of eight, like the picker
@@ -366,7 +365,7 @@ def read_colors():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("input", nargs="?", type=Path, default=DEFAULT_INPUT)
+    parser.add_argument("input", type=Path, metavar="INPUT_DIR", help="the directory that holds the <index>_<slug>.png files")
     parser.add_argument("--preview-dir", type=Path, default=DEFAULT_PREVIEW)
     parser.add_argument("--preview-all", action="store_true", help="show the dark badge of the slugs that were not imported too")
     args = parser.parse_args()
