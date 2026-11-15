@@ -101,9 +101,9 @@ The scripts of `cgutman/moonlight-mobile-deps@419349aa` (`build-android.sh` call
 
 | Component | Version | Form | Origin | Licence | Licence file |
 |---|---|---|---|---|---|
-| moonlight-common-c | `00b6423dbe2ce929ba83489c9725f2fdeacd6365` | git submodule `app/src/main/jni/moonlight-core/moonlight-common-c` | [Meitoncz/Delos-common-c](https://github.com/Meitoncz/Delos-common-c): a fork of [ClassicOldSong/moonlight-common-c](https://github.com/ClassicOldSong/moonlight-common-c), which is a fork of [moonlight-stream/moonlight-common-c](https://github.com/moonlight-stream/moonlight-common-c); carries the PyroWave protocol commits of Nonary | GPL-3.0 | `LICENSE.txt` in the submodule |
-| ENet | `aca87840b57f045a1f7f9299e4b1b9b8e2a5e2f1` | nested submodule `moonlight-common-c/enet` | [cgutman/enet](https://github.com/cgutman/enet), pinned by moonlight-common-c | MIT | `ENet-MIT.txt` |
-| nanors (Reed-Solomon, with `deps/obl`) | `b1e3c22ca0cdc0bb83e3cd6ed1a2fc77869ed99a` | nested submodule `moonlight-common-c/nanors` | [sleepybishop/nanors](https://github.com/sleepybishop/nanors), pinned by moonlight-common-c | MIT | `nanors-MIT.txt` |
+| delos-common-c (fork of moonlight-common-c) | `8c208139e841c9f5fffe6e4f1606bfdf922c9707` (updated with the changes of moonlight-common-c `94c65fd3`) | git submodule `app/src/main/jni/moonlight-core/moonlight-common-c` | [Meitoncz/Delos-common-c](https://github.com/Meitoncz/Delos-common-c): a fork of [ClassicOldSong/moonlight-common-c](https://github.com/ClassicOldSong/moonlight-common-c), which is a fork of [moonlight-stream/moonlight-common-c](https://github.com/moonlight-stream/moonlight-common-c); carries the PyroWave protocol commits of Nonary | GPL-3.0 | `LICENSE.txt` in the submodule |
+| ENet | `98dbb897ac4a7208038e0782cddedf89dcf0723a` | nested submodule `moonlight-common-c/enet` | [cgutman/enet](https://github.com/cgutman/enet), pinned by moonlight-common-c | MIT | `ENet-MIT.txt` |
+| nanors (Reed-Solomon, with `deps/obl`) | `a9b1636f9c98dbfdd0daeaf6982ccd24d1c30f29` | nested submodule `moonlight-common-c/nanors` | [sleepybishop/nanors](https://github.com/sleepybishop/nanors), pinned by moonlight-common-c | MIT | `nanors-MIT.txt` |
 | PyroWave | `186f0393b77f7755953b5ecde994bb1cec2e4155` plus Nonary's patches | vendored source in `app/src/main/jni/pyrowave/` | [Nonary/moonlight-qt](https://github.com/Nonary/moonlight-qt) `e4693208c9c1abefdd8c1cd44600e613b3fc14fb`, directory `pyrowave/`; original: [Themaister/pyrowave](https://github.com/Themaister/pyrowave) | MIT | `PyroWave-MIT.txt` |
 | Granite (subset) | `b6cffd5ce81f540f0855e6778428483e14763d9b` | vendored with PyroWave | same; original: [Themaister/Granite](https://github.com/Themaister/Granite) | MIT | `Granite-MIT.txt` |
 | volk | `47cddf7ed97b94118a08aacb548a411188e016cc` | vendored with PyroWave | same; original: [zeux/volk](https://github.com/zeux/volk) | MIT | `volk-MIT.txt` |
@@ -303,11 +303,15 @@ Stated plainly, so nobody has to find them:
    published newer binaries (checked 2026-11-15).
 2. **The prebuilt libraries were never rebuilt from source by this project**, and the upstream artefact
    that proves their origin expires on 2026-12-01 (section 1).
-3. **The `moonlight-common-c` pin is behind upstream.** On 2026-11-15 `moonlight-stream/moonlight-common-c`
-   `master` (`94c65fd3`) had 65 commits that the pin does not contain, among them fixes to the RTSP
-   parser, STUN validation, video frame reassembly bounds and a use-after-free of queued controller
-   packets. (The review's first count, 11, was taken against an older upstream state.) The fork is 17
-   commits ahead. Updating the pin needs a stream test on a device.
+3. **The delos-common-c update was tested on one device and one host only.** On 2026-11-15 delos-common-c
+   (pin `8c208139`) was updated with the changes of `moonlight-stream/moonlight-common-c` `master` (`94c65fd3`,
+   65 commits: fixes to the RTSP parser, STUN validation, replay detection, video frame reassembly bounds and a
+   use-after-free of queued controller packets); the 12 Delos and Artemis commits of the fork are kept.
+   Evidence (2026-11-15), AYN Odin 2 Portal Max with Vibepollo on Windows: H.264, HEVC, AV1, PyroWave 4:4:4 and
+   PyroWave HDR start and end; audio, controller and keyboard input, rumble, reconnect after a Wi-Fi drop and
+   the link test work. Vibepollo crashed once at the end of an HEVC HDR stream; two repeats of the same case
+   did not crash, and the cause is not known. Not tested: Apollo, Sunshine, a Linux host, an HDR switch during
+   a stream, STUN.
 4. **`slangmosh.hpp` cannot be regenerated here** (section 2).
 5. **No automated check** yet compares the vendored PyroWave tree with its pinned commit, or
    `shaders_spv.h` with its sources.

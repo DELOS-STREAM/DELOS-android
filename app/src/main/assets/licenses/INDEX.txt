@@ -9,8 +9,8 @@ Delos, with the Moonlight and Artemis code it is built on | this build | GPL-3.0
 Native code
 OpenSSL (libcrypto) | 4.0.2 | Apache-2.0 | OpenSSL-Apache-2.0.txt
 Opus (libopus) | 1.6.1 | BSD-3-Clause | opus-BSD-3-Clause.txt
-ENet | cgutman/enet aca87840 | MIT | ENet-MIT.txt
-nanors | sleepybishop/nanors b1e3c22c | MIT | nanors-MIT.txt
+ENet | cgutman/enet 98dbb897 | MIT | ENet-MIT.txt
+nanors | sleepybishop/nanors a9b1636f | MIT | nanors-MIT.txt
 PyroWave | Themaister/pyrowave 186f0393 with Nonary/moonlight-qt patches | MIT | PyroWave-MIT.txt
 Granite | Themaister/Granite b6cffd5c | MIT | Granite-MIT.txt
 volk | zeux/volk 47cddf7e | MIT | volk-MIT.txt

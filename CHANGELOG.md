@@ -20,6 +20,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - The app list of a PC appears with its first answer instead of one poll later.
 - "Report this problem" opens the report form made for the app, which asks only for what the app cannot fill in.
 
+### Security
+- delos-common-c, the streaming core, is updated with the changes of moonlight-common-c: replayed RTSP and control messages, STUN answers from the wrong address or with a bad length, oversized or malformed video frames, empty audio packets and ENet disconnects meant for another peer are rejected; a use-after-free of queued controller input and uninitialised bytes in the keep-alive ping are fixed. Not yet tested on a real stream.
+
 ## [0.14.0] - 2026-11-14
 
 _Variable refresh rate, new palettes and avatars, UI sounds, rumble fixes._
