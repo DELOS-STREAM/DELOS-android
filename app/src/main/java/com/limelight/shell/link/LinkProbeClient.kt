@@ -132,7 +132,8 @@ internal class LinkProbeClient(
         }
     }
 
-    private fun parseResponse(body: String): PyroWaveProbeResponse = try {
+    @androidx.annotation.VisibleForTesting
+    internal fun parseResponse(body: String): PyroWaveProbeResponse = try {
         PyroWaveProbeResponse.parse(body)
     } catch (e: HostHttpResponseException) {
         // The host fails after announcing its port with a status_code 500 document
@@ -172,7 +173,8 @@ internal class LinkProbeClient(
         }
     }
 
-    private fun failure(code: Int, text: String): LinkTestException {
+    @androidx.annotation.VisibleForTesting
+    internal fun failure(code: Int, text: String): LinkTestException {
         val message = text.trim().take(200)
         return when {
             code == 403 -> LinkTestException(LinkFailure.DENIED, message.ifEmpty { "Forbidden" }) // l10n-ignore: developer message
@@ -183,7 +185,8 @@ internal class LinkProbeClient(
         }
     }
 
-    private fun validPort(header: String): Int? {
+    @androidx.annotation.VisibleForTesting
+    internal fun validPort(header: String): Int? {
         val text = header.trim()
         if (text.isEmpty() || text.length > 5 || !text.all { it in '0'..'9' }) return null
         return text.toInt().takeIf { it in 1024..65535 }

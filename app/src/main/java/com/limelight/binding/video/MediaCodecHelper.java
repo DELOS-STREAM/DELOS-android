@@ -280,7 +280,8 @@ public class MediaCodecHelper {
     }
 
 
-    private static boolean isPowerVR(String glRenderer) {
+    @androidx.annotation.VisibleForTesting
+    static boolean isPowerVR(String glRenderer) {
         return glRenderer.toLowerCase().contains("powervr");
     }
 
@@ -303,7 +304,8 @@ public class MediaCodecHelper {
         return modelNumber;
     }
 
-    private static boolean isLowEndSnapdragonRenderer(String glRenderer) {
+    @androidx.annotation.VisibleForTesting
+    static boolean isLowEndSnapdragonRenderer(String glRenderer) {
         String modelNumber = getAdrenoVersionString(glRenderer);
         if (modelNumber == null) {
             // Not an Adreno GPU
@@ -314,7 +316,8 @@ public class MediaCodecHelper {
         return modelNumber.charAt(1) == '0';
     }
 
-    private static int getAdrenoRendererModelNumber(String glRenderer) {
+    @androidx.annotation.VisibleForTesting
+    static int getAdrenoRendererModelNumber(String glRenderer) {
         String modelNumber = getAdrenoVersionString(glRenderer);
         if (modelNumber == null) {
             // Not an Adreno GPU

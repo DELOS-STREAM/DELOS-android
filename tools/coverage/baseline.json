@@ -1,0 +1,164 @@
+{
+  "overall": {
+    "line": 28,
+    "branch": 20
+  },
+  "packages": {
+    "com.limelight": {
+      "line": 8,
+      "branch": 4
+    },
+    "com.limelight.binding": {
+      "line": 0,
+      "branch": null
+    },
+    "com.limelight.binding.audio": {
+      "line": 0,
+      "branch": 0
+    },
+    "com.limelight.binding.crypto": {
+      "line": 86,
+      "branch": 79
+    },
+    "com.limelight.binding.input": {
+      "line": 37,
+      "branch": 25
+    },
+    "com.limelight.binding.input.capture": {
+      "line": 0,
+      "branch": 0
+    },
+    "com.limelight.binding.input.driver": {
+      "line": 16,
+      "branch": 3
+    },
+    "com.limelight.binding.input.evdev": {
+      "line": 0,
+      "branch": null
+    },
+    "com.limelight.binding.input.touch": {
+      "line": 15,
+      "branch": 2
+    },
+    "com.limelight.binding.input.virtual_controller": {
+      "line": 8,
+      "branch": 7
+    },
+    "com.limelight.binding.input.virtual_controller.keyboard": {
+      "line": 1,
+      "branch": 0
+    },
+    "com.limelight.binding.video": {
+      "line": 27,
+      "branch": 23
+    },
+    "com.limelight.computers": {
+      "line": 26,
+      "branch": 21
+    },
+    "com.limelight.diag": {
+      "line": 82,
+      "branch": 63
+    },
+    "com.limelight.discovery": {
+      "line": 0,
+      "branch": 0
+    },
+    "com.limelight.display": {
+      "line": 81,
+      "branch": 67
+    },
+    "com.limelight.grid.assets": {
+      "line": 0,
+      "branch": 0
+    },
+    "com.limelight.nvstream": {
+      "line": 24,
+      "branch": 4
+    },
+    "com.limelight.nvstream.av": {
+      "line": 0,
+      "branch": 0
+    },
+    "com.limelight.nvstream.av.audio": {
+      "line": null,
+      "branch": null
+    },
+    "com.limelight.nvstream.av.video": {
+      "line": 0,
+      "branch": null
+    },
+    "com.limelight.nvstream.http": {
+      "line": 77,
+      "branch": 61
+    },
+    "com.limelight.nvstream.input": {
+      "line": 0,
+      "branch": null
+    },
+    "com.limelight.nvstream.jni": {
+      "line": 0,
+      "branch": 0
+    },
+    "com.limelight.nvstream.mdns": {
+      "line": 0,
+      "branch": 0
+    },
+    "com.limelight.nvstream.wol": {
+      "line": 26,
+      "branch": 33
+    },
+    "com.limelight.preferences": {
+      "line": 85,
+      "branch": 72
+    },
+    "com.limelight.profiles": {
+      "line": 75,
+      "branch": 77
+    },
+    "com.limelight.shell": {
+      "line": 11,
+      "branch": 6
+    },
+    "com.limelight.shell.companion": {
+      "line": 23,
+      "branch": 16
+    },
+    "com.limelight.shell.data": {
+      "line": 74,
+      "branch": 63
+    },
+    "com.limelight.shell.keyboard": {
+      "line": 28,
+      "branch": 25
+    },
+    "com.limelight.shell.link": {
+      "line": 66,
+      "branch": 65
+    },
+    "com.limelight.shell.screens": {
+      "line": 8,
+      "branch": 5
+    },
+    "com.limelight.shell.settings": {
+      "line": 87,
+      "branch": 75
+    },
+    "com.limelight.shell.system": {
+      "line": 0,
+      "branch": 0
+    },
+    "com.limelight.shell.ui": {
+      "line": 17,
+      "branch": 10
+    },
+    "com.limelight.ui": {
+      "line": 26,
+      "branch": 28
+    },
+    "com.limelight.utils": {
+      "line": 57,
+      "branch": 40
+    }
+  }
+}

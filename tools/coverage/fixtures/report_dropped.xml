@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN" "report.dtd">
+<report name="fixture">
+  <package name="com/example/alpha">
+    <class name="com/example/alpha/A" sourcefilename="A.java">
+      <counter type="LINE" missed="0" covered="1"/>
+    </class>
+    <counter type="INSTRUCTION" missed="5" covered="500"/>
+    <counter type="BRANCH" missed="15" covered="15"/>
+    <counter type="LINE" missed="30" covered="30"/>
+  </package>
+  <package name="com/example/beta">
+    <counter type="BRANCH" missed="10" covered="0"/>
+    <counter type="LINE" missed="15" covered="15"/>
+  </package>
+  <package name="com/example/empty">
+    <counter type="LINE" missed="10" covered="0"/>
+  </package>
+  <counter type="BRANCH" missed="25" covered="15"/>
+  <counter type="LINE" missed="55" covered="45"/>
+</report>

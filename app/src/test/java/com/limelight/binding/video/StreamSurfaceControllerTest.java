@@ -31,8 +31,11 @@ import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** Characterisation tests: the surface and upscaler decisions DelosStreamActivity made before the controller was extracted. */
 @RunWith(RobolectricTestRunner.class)
@@ -253,34 +256,59 @@ public class StreamSurfaceControllerTest {
 
     // --- Decoder thread to UI thread handshake ---
 
+    /** A wait whose time limit has already passed: the timeout case without waiting for a real clock. */
+    private static final StreamSurfaceController.Waiter TIMED_OUT = (done, timeoutMs) -> false;
+
     @Test
     public void layoutSizedSurfaceRunsOnTheUiExecutorAndWaitsForIt() throws Exception {
-        List<Runnable> posted = new ArrayList<>();
-        StreamSurfaceController posting = new StreamSurfaceController(posted::add, prefs, host);
+        List<Runnable> posted = java.util.Collections.synchronizedList(new ArrayList<>());
+        CountDownLatch waiting = new CountDownLatch(1);
+        AtomicLong limitMs = new AtomicLong();
+        // The limit never runs out in this test, so only the UI thread's work can end the wait.
+        StreamSurfaceController.Waiter untilDone = (done, timeoutMs) -> {
+            limitMs.set(timeoutMs);
+            waiting.countDown();
+            done.await();
+            return true;
+        };
+        StreamSurfaceController posting = new StreamSurfaceController(posted::add, prefs, host, untilDone);
         AtomicBoolean returned = new AtomicBoolean();
         Thread decoderThread = new Thread(() -> {
             posting.useLayoutSizedStreamSurface();
             returned.set(true);
         });
         decoderThread.start();
-        long deadline = System.currentTimeMillis() + 5000;
-        while (posted.isEmpty() && System.currentTimeMillis() < deadline) Thread.sleep(5);
+
+        assertTrue("the decoder thread never started waiting", waiting.await(30, TimeUnit.SECONDS));
         assertEquals(1, posted.size());
-        Thread.sleep(50);
         assertFalse("the decoder thread waits for the UI thread", returned.get());
+        verify(holder, never()).setSizeFromLayout();
+        assertTrue("the wait for the UI thread must be bounded", limitMs.get() > 0);
+        assertEquals(StreamSurfaceController.RESIZE_WAIT_MS, limitMs.get());
+
         posted.get(0).run();
-        decoderThread.join(5000);
+        decoderThread.join(30_000);
         assertTrue(returned.get());
         verify(holder).setSizeFromLayout();
     }
 
     @Test
     public void handshakeGivesUpAfterTheBoundedWait() {
-        long start = System.nanoTime();
-        assertFalse(StreamSurfaceController.runAndAwait(task -> { }, () -> { }, 100));
-        long elapsedMs = (System.nanoTime() - start) / 1_000_000;
-        assertTrue("waited " + elapsedMs, elapsedMs >= 90 && elapsedMs < 2000);
-        assertEquals(1000, StreamSurfaceController.RESIZE_WAIT_MS);
+        AtomicLong limitMs = new AtomicLong();
+
+        // The UI thread never runs the task and the limit passes.
+        assertFalse(StreamSurfaceController.runAndAwait(task -> { }, () -> { }, 100, (done, timeoutMs) -> {
+            limitMs.set(timeoutMs);
+            return false;
+        }));
+
+        assertEquals(100, limitMs.get());
+    }
+
+    @Test
+    public void theRealWaitReturnsWhenItsLimitPasses() {
+        // The production wait, with a limit so short that the test does not depend on its length.
+        assertFalse(StreamSurfaceController.runAndAwait(task -> { }, () -> { }, 1));
     }
 
     @Test
@@ -289,7 +317,7 @@ public class StreamSurfaceControllerTest {
         AtomicBoolean resized = new AtomicBoolean();
 
         // The UI thread is busy for longer than the decoder waits
-        assertFalse(StreamSurfaceController.runAndAwait(posted::add, () -> resized.set(true), 50));
+        assertFalse(StreamSurfaceController.runAndAwait(posted::add, () -> resized.set(true), 50, TIMED_OUT));
         assertFalse(resized.get());
 
         // The request was not withdrawn: it applies as soon as the UI thread runs it
@@ -304,11 +332,12 @@ public class StreamSurfaceControllerTest {
     }
 
     @Test
-    public void failedResizeStillReleasesTheDecoderThread() throws Exception {
+    public void failedResizeStillReleasesTheDecoderThread() {
         Executor otherThread = task -> new Thread(task).start();
-        long start = System.nanoTime();
-        StreamSurfaceController.runAndAwait(otherThread, () -> { throw new IllegalStateException("boom"); }, 5000);
-        assertTrue((System.nanoTime() - start) / 1_000_000 < 4000);
+
+        // Released by the failed task itself, not by the time limit (which is far away).
+        assertTrue(StreamSurfaceController.runAndAwait(otherThread,
+                () -> { throw new IllegalStateException("boom"); }, 600_000));
     }
 
     @Test

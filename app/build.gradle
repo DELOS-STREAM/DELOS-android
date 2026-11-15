@@ -202,3 +202,37 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:4.17'
     testImplementation 'org.mockito:mockito-core:5.19.0'
 }
+
+// ==== BEGIN unit-test coverage (JaCoCo) ====
+// `./gradlew :app:jacocoDebugUnitTestReport` runs the debug unit tests and writes
+// app/build/reports/jacoco/jacocoDebugUnitTestReport/{jacocoDebugUnitTestReport.xml,html/index.html}.
+// `python3 tools/coverage/check_coverage.py` compares that XML with tools/coverage/baseline.json.
+apply plugin: 'jacoco'
+jacoco { toolVersion = '0.8.13' }
+android.buildTypes.debug.enableUnitTestCoverage = true
+tasks.withType(Test).configureEach {
+    jacoco.includeNoLocationClasses = true   // Robolectric loads classes through its own class loader
+    jacoco.excludes = ['jdk.internal.*']
+    // Robolectric needs this JDK-internal package to run tests on the API 36 image (targetSdk).
+    jvmArgs '--add-exports=java.base/jdk.internal.access=ALL-UNNAMED'
+    // Keep the log readable: a failure must not drown in passed-test lines and logcat echoes.
+    // Full output of every test stays in app/build/reports/tests and app/build/test-results.
+    testLogging {
+        events = ['failed', 'skipped']
+        showStandardStreams = false
+    }
+}
+tasks.register('jacocoDebugUnitTestReport', JacocoReport) {
+    group = 'verification'
+    description = 'Unit-test coverage of the debug variant (XML + HTML).'
+    dependsOn 'testDebugUnitTest'
+    def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/ComposableSingletons*']
+    // Exact directories only: a wider file tree makes Gradle see outputs of unrelated tasks as inputs.
+    classDirectories.setFrom(files(
+        fileTree(dir: layout.buildDirectory.dir('intermediates/javac/debug'), excludes: excludes),
+        fileTree(dir: layout.buildDirectory.dir('intermediates/built_in_kotlinc/debug'), excludes: excludes)))
+    sourceDirectories.setFrom(files('src/main/java', 'src/debug/java'))
+    executionData.setFrom(layout.buildDirectory.file('outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec'))
+    reports { xml.required = true; html.required = true; csv.required = false }
+}
+// ==== END unit-test coverage (JaCoCo) ====
