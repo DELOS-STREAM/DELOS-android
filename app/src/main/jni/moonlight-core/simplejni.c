@@ -1,4 +1,7 @@
 #include <Limelight.h>
+// The negotiated encryption state (EncryptionFeaturesEnabled, AudioEncryptionEnabled), which the public
+// header does not expose
+#include <Limelight-internal.h>
 
 #include <jni.h>
 #include <android/log.h>
@@ -125,7 +128,11 @@ Java_com_limelight_nvstream_jni_MoonBridge_sendMouseHighResHScroll(JNIEnv *env, 
 
 JNIEXPORT void JNICALL
 Java_com_limelight_nvstream_jni_MoonBridge_sendUtf8Text(JNIEnv *env, jclass clazz, jstring text) {
-    const char* utf8Text = (*env)->GetStringUTFChars(env, text, NULL);
+    // NULL when the string cannot be read; OutOfMemoryError is then pending for the Java caller
+    const char* utf8Text = text != NULL ? (*env)->GetStringUTFChars(env, text, NULL) : NULL;
+    if (utf8Text == NULL) {
+        return;
+    }
     LiSendUtf8TextEvent(utf8Text, strlen(utf8Text));
     (*env)->ReleaseStringUTFChars(env, text, utf8Text);
 }
@@ -149,7 +156,10 @@ JNIEXPORT jstring JNICALL
 Java_com_limelight_nvstream_jni_MoonBridge_findExternalAddressIP4(JNIEnv *env, jclass clazz, jstring stunHostName, jint stunPort) {
     int err;
     struct in_addr wanAddr;
-    const char* stunHostNameStr = (*env)->GetStringUTFChars(env, stunHostName, NULL);
+    const char* stunHostNameStr = stunHostName != NULL ? (*env)->GetStringUTFChars(env, stunHostName, NULL) : NULL;
+    if (stunHostNameStr == NULL) {
+        return NULL;
+    }
 
     err = LiFindExternalAddressIP4(stunHostNameStr, stunPort, &wanAddr.s_addr);
     (*env)->ReleaseStringUTFChars(env, stunHostName, stunHostNameStr);
@@ -182,7 +192,10 @@ Java_com_limelight_nvstream_jni_MoonBridge_getPendingVideoFrames(JNIEnv *env, jc
 JNIEXPORT jint JNICALL
 Java_com_limelight_nvstream_jni_MoonBridge_testClientConnectivity(JNIEnv *env, jclass clazz, jstring testServerHostName, jint referencePort, jint testFlags) {
     int ret;
-    const char* testServerHostNameStr = (*env)->GetStringUTFChars(env, testServerHostName, NULL);
+    const char* testServerHostNameStr = testServerHostName != NULL ? (*env)->GetStringUTFChars(env, testServerHostName, NULL) : NULL;
+    if (testServerHostNameStr == NULL) {
+        return ML_TEST_RESULT_INCONCLUSIVE;
+    }
 
     ret = LiTestClientConnectivity(testServerHostNameStr, (unsigned short)referencePort, testFlags);
 
@@ -203,8 +216,12 @@ Java_com_limelight_nvstream_jni_MoonBridge_getPortFlagsFromTerminationErrorCode(
 
 JNIEXPORT jstring JNICALL
 Java_com_limelight_nvstream_jni_MoonBridge_stringifyPortFlags(JNIEnv *env, jclass clazz, jint portFlags, jstring separator) {
-    const char* separatorStr = (*env)->GetStringUTFChars(env, separator, NULL);
+    const char* separatorStr = separator != NULL ? (*env)->GetStringUTFChars(env, separator, NULL) : NULL;
     char outputBuffer[512];
+
+    if (separatorStr == NULL) {
+        return NULL;
+    }
 
     LiStringifyPortFlags(portFlags, separatorStr, outputBuffer, sizeof(outputBuffer));
 
@@ -226,6 +243,13 @@ Java_com_limelight_nvstream_jni_MoonBridge_getEstimatedRttInfo(JNIEnv *env, jcla
 JNIEXPORT jstring JNICALL
 Java_com_limelight_nvstream_jni_MoonBridge_getLaunchUrlQueryParameters(JNIEnv *env, jclass clazz) {
     return (*env)->NewStringUTF(env, LiGetLaunchUrlQueryParameters());
+}
+
+// What the host and Delos agreed to encrypt for the current (or last) connection: bit 0 video, bit 1 audio.
+// Only meaningful once the connection has started.
+JNIEXPORT jint JNICALL
+Java_com_limelight_nvstream_jni_MoonBridge_getStreamEncryption(JNIEnv *env, jclass clazz) {
+    return ((EncryptionFeaturesEnabled & SS_ENC_VIDEO) ? 1 : 0) | (AudioEncryptionEnabled ? 2 : 0);
 }
 
 JNIEXPORT jbyte JNICALL

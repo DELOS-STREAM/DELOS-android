@@ -257,8 +257,12 @@ struct Output {
     }
 };
 }
-extern "C" JNIEXPORT jlong JNICALL Java_com_limelight_binding_video_SgsrRenderer_nativeCreateHdr(JNIEnv *env,jclass,jobject surface,jint width,jint height){
+// A C++ exception (out of memory) must not reach the Java caller's frames
+extern "C" JNIEXPORT jlong JNICALL Java_com_limelight_binding_video_SgsrRenderer_nativeCreateHdr(JNIEnv *env,jclass,jobject surface,jint width,jint height) try {
     auto output=std::make_unique<Output>();if(!output->create(env,surface,width,height))return 0;return reinterpret_cast<jlong>(output.release());
+} catch(...) {
+    __android_log_print(ANDROID_LOG_ERROR,"SGSR","P010 output could not be created: native exception");
+    return 0;
 }
 extern "C" JNIEXPORT jint JNICALL Java_com_limelight_binding_video_SgsrRenderer_nativeAcquireHdr(JNIEnv *,jclass,jlong handle){return reinterpret_cast<Output *>(handle)->acquire();}
 extern "C" JNIEXPORT jint JNICALL Java_com_limelight_binding_video_SgsrRenderer_nativeHdrWidth(JNIEnv *,jclass,jlong handle){return reinterpret_cast<Output *>(handle)->width;}

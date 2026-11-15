@@ -29,9 +29,11 @@
 #include <android/surface_control.h>
 #include <poll.h>
 #include <unistd.h>
-#include <signal.h>
 #include <sys/syscall.h>
+#if defined(LC_DEBUG)
+#include <signal.h>
 #include <unwind.h>
+#endif
 #include <sys/system_properties.h>
 #include <dlfcn.h>
 #include <time.h>
@@ -43,11 +45,15 @@
 #include <condition_variable>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <iterator>
 #include <memory>
 #include <mutex>
-#include <vector>
+#include <string>
+#include <system_error>
 #include <thread>
+#include <type_traits>
+#include <vector>
 
 #include "shaders_spv.h"
 #include "pyrowaveframing.h"
@@ -350,9 +356,14 @@ namespace {
     std::atomic<uint64_t> videoStageSinceUs{0};
     std::atomic<uint64_t> lastFrameUs{0};
 
-    // A stuck video thread logs its own stack (signal sent from nativeTakeStats); frames are library
-    // offsets, symbolised offline against the unstripped libmoonlight-core.so
+    // The thread that submits frames, for the stall report of nativeTakeStats
     std::atomic<pid_t> videoTid{0};
+
+#if defined(LC_DEBUG)
+    // Debug builds only: a stuck video thread logs its own stack (signal sent from nativeTakeStats); frames
+    // are library offsets, symbolised offline against the unstripped libmoonlight-core.so. The handler is not
+    // async-signal-safe (it unwinds, calls dladdr and logs), so it can deadlock a thread that is stuck inside
+    // the loader or the logger: acceptable on a developer's device, never in a release build.
     constexpr int STACK_SIGNAL = 50;
 
     struct StackState {
@@ -390,10 +401,13 @@ namespace {
         std::call_once(once, [] {
             struct sigaction action = {};
             action.sa_handler = logOwnStack;
+            // The interrupted system call resumes instead of failing with EINTR
+            action.sa_flags = SA_RESTART;
             sigemptyset(&action.sa_mask);
             sigaction(STACK_SIGNAL, &action, nullptr);
         });
     }
+#endif
 
     std::string readTaskFile(pid_t tid, const char *file) {
         char path[64];
@@ -440,8 +454,8 @@ namespace {
         }
     }
 
-    // Delos: SurfaceControl and AHardwareBuffer (API 29 / 26), looked up at run time because the native
-    // code builds for API 21. They carry the P010 HDR output (see "YUV output" in Renderer).
+    // Delos: SurfaceControl and AHardwareBuffer (API 29 / 26), looked up at run time (a leftover from the
+    // time the native code built for API 21). They carry the P010 HDR output (see "YUV output" in Renderer).
     struct SurfaceApi {
         ASurfaceControl *(*createFromWindow)(ANativeWindow *, const char *) = nullptr;
         void (*releaseControl)(ASurfaceControl *) = nullptr;
@@ -502,22 +516,30 @@ namespace {
 
     // Which P010 buffers SurfaceFlinger still holds, updated from its completion callbacks (binder threads).
     // Shared with the callbacks so it outlives the renderer; the surface control is released with it.
+    // A callback can arrive after the Renderer was deleted, so nothing here may point into the Renderer:
+    // the function table is a copy of the renderer's, never a pointer to it.
     struct YuvReleases {
         std::mutex lock;
         bool held[YUV_BUFFERS] = {};
         int fence[YUV_BUFFERS] = {-1, -1, -1, -1};
-        SurfaceApi *api = nullptr;
+        const SurfaceApi api;
         ASurfaceControl *control = nullptr;
+
+        explicit YuvReleases(const SurfaceApi &surfaceApi) : api(surfaceApi) {}
 
         ~YuvReleases() {
             for (int fd : fence) {
                 if (fd >= 0) close(fd);
             }
             if (control != nullptr) {
-                api->releaseControl(control);
+                api.releaseControl(control);
             }
         }
     };
+    static_assert(std::is_trivially_copyable<SurfaceApi>::value,
+                  "SurfaceApi is copied into YuvReleases: it must hold nothing but function pointers");
+    static_assert(std::is_same<decltype(YuvReleases::api), const SurfaceApi>::value,
+                  "YuvReleases outlives the Renderer: it owns its function table, it does not point to one");
 
     struct YuvCallback {
         std::shared_ptr<YuvReleases> releases;
@@ -529,7 +551,7 @@ namespace {
         auto *callback = static_cast<YuvCallback *>(context);
         auto &releases = *callback->releases;
         if (callback->previous >= 0) {
-            const int fd = releases.api->previousReleaseFence(stats, releases.control);
+            const int fd = releases.api.previousReleaseFence(stats, releases.control);
             std::lock_guard<std::mutex> lock(releases.lock);
             if (releases.fence[callback->previous] >= 0) {
                 close(releases.fence[callback->previous]);
@@ -568,7 +590,7 @@ namespace {
                     bool tenBitStream, int upscalingMode, int supersamplingLevel, float sharpness,
                     const SgsrLimits &limits) {
             window = nativeWindow;
-            // API 28; Delos builds the native code for API 21
+            // API 28, looked up at run time (a leftover from the time the native code built for API 21)
             void *android = dlopen("libandroid.so", RTLD_NOW | RTLD_NOLOAD);
             if (android == nullptr) {
                 android = dlopen("libandroid.so", RTLD_NOW);
@@ -692,71 +714,83 @@ namespace {
         // The caller lends its assembled packet buffer until synchronous submission returns.
         // On identity/cancel the worker detaches EGL and exits; normal submission then resumes inline.
         void startVideoWorker() {
-            workerCreated = true;
-            std::thread([this] {
-                std::unique_lock<std::mutex> lock(workerLock);
-                while (!workerStopping && (arrivalPending.load() || workerFrame)) {
-                    if (!workerFrame && !workerWake) {
-                        if (arrivalTickActive.load() && arrivalPending.load() && planesInitialized) {
-                            workerChanged.wait_for(lock, std::chrono::milliseconds(16),
-                                    [this] { return workerStopping || workerFrame || workerWake; });
-                        } else {
-                            workerChanged.wait(lock, [this] { return workerStopping || workerFrame || workerWake; });
-                        }
-                    }
-                    if (workerStopping) break;
-                    const bool frame = workerFrame;
-                    workerWake = false;
-                    lock.unlock();
-                    videoTid.store(pid_t(syscall(SYS_gettid)), std::memory_order_relaxed);
-                    if (frame) {
-                        workerResult = submit(workerData, workerLength, *workerSegments, workerCriticalPackets);
-                    } else if (arrivalPending.load()) {
-                        bool cancelWithoutFrame;
-                        {
-                            std::lock_guard<std::mutex> arrival(arrivalLock);
-                            cancelWithoutFrame = arrivalStarted && arrivalProgress < 0 && !planesInitialized;
-                        }
-                        if (cancelWithoutFrame) {
-                            destroyArrivalResources();
-                            std::lock_guard<std::mutex> arrival(arrivalLock);
-                            arrivalRequested = false;
-                            arrivalPending = false;
-                            arrivalTickActive = false;
-                            arrivalComplete = true;
-                        } else if (arrivalTickActive.load() && planesInitialized) {
-                            if (!present(false)) {
-                                failArrival(lastVulkanError[0] != 0 ? lastVulkanError :
-                                        "PyroWave launch arrival: last-frame presentation failed");
-                                arrivalTickActive = false;
-                            }
-                        } else if (!arrivalTickActive.load()) {
-                            // Warm resources only, with no copy, mip generation or presentation pass.
-                            if (!check(vk.WaitForFences(device, 1, &frameFence, VK_TRUE, FENCE_TIMEOUT_NS),
-                                       "arrival warm fence")) {
-                                failArrival(lastVulkanError);
-                            } else {
-                                prepareArrivalFrame();
-                            }
-                        }
-                    }
-                    enterStage(STAGE_IDLE);
-                    lock.lock();
-                    if (frame) {
-                        workerFrame = false;
-                        workerDone.notify_one();
+            try {
+                std::thread([this] { runVideoWorker(); }).detach();
+                workerCreated = true;
+            } catch (const std::system_error &) {
+                // No thread: the arrival is over before it began and frames are submitted on the decoder thread
+                std::lock_guard<std::mutex> arrival(arrivalLock);
+                arrivalError = "PyroWave launch arrival: the worker thread could not start";
+                arrivalRequested = false;
+                arrivalPending = false;
+                arrivalTickActive = false;
+                arrivalComplete = true;
+            }
+        }
+
+        void runVideoWorker() {
+            std::unique_lock<std::mutex> lock(workerLock);
+            while (!workerStopping && (arrivalPending.load() || workerFrame)) {
+                if (!workerFrame && !workerWake) {
+                    if (arrivalTickActive.load() && arrivalPending.load() && planesInitialized) {
+                        workerChanged.wait_for(lock, std::chrono::milliseconds(16),
+                                [this] { return workerStopping || workerFrame || workerWake; });
+                    } else {
+                        workerChanged.wait(lock, [this] { return workerStopping || workerFrame || workerWake; });
                     }
                 }
+                if (workerStopping) break;
+                const bool frame = workerFrame;
+                workerWake = false;
                 lock.unlock();
-                // No future GL operation may run on the callback thread before this detachment.
-                if (!yuvGl.releaseThread()) {
-                    std::lock_guard<std::mutex> arrival(arrivalLock);
-                    arrivalError = "PyroWave HDR context could not leave the arrival thread";
+                videoTid.store(pid_t(syscall(SYS_gettid)), std::memory_order_relaxed);
+                if (frame) {
+                    workerResult = submit(workerData, workerLength, *workerSegments, workerCriticalPackets);
+                } else if (arrivalPending.load()) {
+                    bool cancelWithoutFrame;
+                    {
+                        std::lock_guard<std::mutex> arrival(arrivalLock);
+                        cancelWithoutFrame = arrivalStarted && arrivalProgress < 0 && !planesInitialized;
+                    }
+                    if (cancelWithoutFrame) {
+                        destroyArrivalResources();
+                        std::lock_guard<std::mutex> arrival(arrivalLock);
+                        arrivalRequested = false;
+                        arrivalPending = false;
+                        arrivalTickActive = false;
+                        arrivalComplete = true;
+                    } else if (arrivalTickActive.load() && planesInitialized) {
+                        if (!present(false)) {
+                            failArrival(lastVulkanError[0] != 0 ? lastVulkanError :
+                                    "PyroWave launch arrival: last-frame presentation failed");
+                            arrivalTickActive = false;
+                        }
+                    } else if (!arrivalTickActive.load()) {
+                        // Warm resources only, with no copy, mip generation or presentation pass.
+                        if (!check(vk.WaitForFences(device, 1, &frameFence, VK_TRUE, FENCE_TIMEOUT_NS),
+                                   "arrival warm fence")) {
+                            failArrival(lastVulkanError);
+                        } else {
+                            prepareArrivalFrame();
+                        }
+                    }
                 }
+                enterStage(STAGE_IDLE);
                 lock.lock();
-                workerFinished = true;
-                workerDone.notify_all();
-            }).detach();
+                if (frame) {
+                    workerFrame = false;
+                    workerDone.notify_one();
+                }
+            }
+            lock.unlock();
+            // No future GL operation may run on the callback thread before this detachment.
+            if (!yuvGl.releaseThread()) {
+                std::lock_guard<std::mutex> arrival(arrivalLock);
+                arrivalError = "PyroWave HDR context could not leave the arrival thread";
+            }
+            lock.lock();
+            workerFinished = true;
+            workerDone.notify_all();
         }
 
         int submitOnVideoWorker(const uint8_t *data, size_t length,
@@ -1913,8 +1947,7 @@ namespace {
         // AHardwareBuffer and OpenGL ES copies that into P010 (YuvTargetGl), all on the GPU. Without the GL
         // extensions the planes are read back and the CPU fills the buffers instead.
         bool createYuvOutput() {
-            releases = std::make_shared<YuvReleases>();
-            releases->api = &surfaceApi;
+            releases = std::make_shared<YuvReleases>(surfaceApi);
             releases->control = surfaceApi.createFromWindow(window, "Delos PyroWave HDR");
             if (releases->control == nullptr) {
                 LOGE("Cannot create a surface control for the HDR output");
@@ -3611,6 +3644,19 @@ namespace {
     std::mutex activeLock;
     Renderer *activeRenderer = nullptr;
 
+    // A C++ exception must never leave a JNI entry point or a moonlight-common-c callback: their callers are
+    // C and Java frames, which cannot unwind it. Each of them ends in `catch (...)` and reports through this,
+    // which logs the exception that is in flight.
+    void logNativeException(const char *where) noexcept {
+        try {
+            throw;
+        } catch (const std::exception &error) {
+            LOGE("%s failed: %s", where, error.what());
+        } catch (...) {
+            LOGE("%s failed: unknown native exception", where);
+        }
+    }
+
     // The renderers Java still holds a handle to. The setters and getters (UI thread) must not wait on
     // activeLock, which the video thread holds for a whole frame, so they use this lock instead; destroy
     // unlists the renderer under it before deleting, and a late call from another thread then finds
@@ -3699,7 +3745,7 @@ extern "C" {
 
 // Called by moonlight-core's decode unit callback for PyroWave streams: one buffer per RTP packet,
 // lost packets zero-filled and typed BUFFER_TYPE_LOST, record starts BUFFER_TYPE_RECORD_START.
-int PyroWave_SubmitDecodeUnit(PDECODE_UNIT decodeUnit) {
+int PyroWave_SubmitDecodeUnit(PDECODE_UNIT decodeUnit) try {
     const uint64_t submitStartUs = nowUs();
     // The age of the frame when the renderer starts on it, on common-c's clock (PltGetMicroseconds)
     const uint64_t commonStartUs = PltGetMicroseconds();
@@ -3821,12 +3867,16 @@ int PyroWave_SubmitDecodeUnit(PDECODE_UNIT decodeUnit) {
     }
     // Every PyroWave frame is independent: never ask the host for a keyframe
     return DR_OK;
+} catch (...) {
+    logNativeException("PyroWave_SubmitDecodeUnit");
+    enterStage(STAGE_IDLE);
+    return DR_OK;
 }
 
 #if defined(LC_DEBUG)
 JNIEXPORT jstring JNICALL
 Java_com_limelight_binding_video_PyroWaveGpuInstrumentation_nativeRunRendererProbe(JNIEnv *env, jclass,
-                                                                                 jobject surface) {
+                                                                                 jobject surface) try {
     ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
     if (window == nullptr) return env->NewStringUTF("FAIL\nProbe surface unavailable\n");
     const SgsrLimits limits = {3840, 3840, 3840ull * 2160, 2};
@@ -3849,6 +3899,9 @@ Java_com_limelight_binding_video_PyroWaveGpuInstrumentation_nativeRunRendererPro
         report += "Stream larger than its display: upscaler on, not supersampled\n";
     }
     return env->NewStringUTF(report.c_str());
+} catch (...) {
+    logNativeException("nativeRunRendererProbe");
+    return nullptr;
 }
 #endif
 
@@ -3868,20 +3921,24 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeCreate(JNIEnv *env, jcla
                                                                jint matrix, jboolean tenBit, jint upscalingMode,
                                                                jint supersamplingLevel, jfloat sharpness,
                                                                jint maxInternalWidth, jint maxInternalHeight,
-                                                               jlong maxInternalPixels, jint nativeTolerance) {
+                                                               jlong maxInternalPixels, jint nativeTolerance) try {
     if (surface == nullptr || width <= 0 || height <= 0 || (!chroma444 && ((width & 1) || (height & 1)))) {
         LOGE("PyroWave needs a surface and positive dimensions, even for 4:2:0 (%dx%d)", width, height);
         return 0;
     }
-    ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
+    // Released here unless the renderer takes it over
+    std::unique_ptr<ANativeWindow, void (*)(ANativeWindow *)> window(ANativeWindow_fromSurface(env, surface),
+                                                                     ANativeWindow_release);
     if (window == nullptr) {
         return 0;
     }
+#if defined(LC_DEBUG)
     installStackSignal();
+#endif
     auto renderer = std::make_unique<Renderer>();
     const SgsrLimits limits = {uint32_t(std::max(maxInternalWidth, 2)), uint32_t(std::max(maxInternalHeight, 2)),
                                uint64_t(std::max<jlong>(maxInternalPixels, 4)), std::max(nativeTolerance, 0)};
-    if (!renderer->create(window, width, height, frameRate, outputWidth, outputHeight, chroma444, fullRange,
+    if (!renderer->create(window.release(), width, height, frameRate, outputWidth, outputHeight, chroma444, fullRange,
                           matrix, tenBit, upscalingMode, supersamplingLevel, sharpness, limits)) {
         return 0;  // The renderer releases the window.
     }
@@ -3902,6 +3959,9 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeCreate(JNIEnv *env, jcla
         liveRenderer = renderer.get();
     }
     return reinterpret_cast<jlong>(renderer.release());
+} catch (...) {
+    logNativeException("nativeCreate");
+    return 0;
 }
 
 JNIEXPORT jint JNICALL
@@ -3938,11 +3998,13 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeSetSharpness(JNIEnv *, j
 JNIEXPORT void JNICALL
 Java_com_limelight_binding_video_PyroWaveRenderer_nativeSetLaunchArrivalPose(JNIEnv *, jclass, jlong handle,
         jboolean prepare, jfloat progress, jfloat scaleX, jfloat scaleY, jfloat skew,
-        jfloat warp, jfloat blur, jfloat chromatic, jfloat maxBlurSourcePixels) {
+        jfloat warp, jfloat blur, jfloat chromatic, jfloat maxBlurSourcePixels) try {
     const float pose[] = {scaleX, scaleY, skew, warp, blur, chromatic};
     withLiveRenderer(handle, [&](Renderer &renderer) {
         renderer.setLaunchArrivalPose(prepare, progress, pose, maxBlurSourcePixels);
     });
+} catch (...) {
+    logNativeException("nativeSetLaunchArrivalPose");
 }
 
 JNIEXPORT jboolean JNICALL
@@ -3967,11 +4029,14 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeIsLaunchArrivalComplete(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_limelight_binding_video_PyroWaveRenderer_nativeGetLaunchArrivalError(JNIEnv *env, jclass, jlong handle) {
+Java_com_limelight_binding_video_PyroWaveRenderer_nativeGetLaunchArrivalError(JNIEnv *env, jclass, jlong handle) try {
     std::string error;
     if (!withLiveRenderer(handle, [&](Renderer &renderer) { error = renderer.getLaunchArrivalError(); }))
         return env->NewStringUTF("PyroWave renderer is no longer available");
     return error.empty() ? nullptr : env->NewStringUTF(error.c_str());
+} catch (...) {
+    logNativeException("nativeGetLaunchArrivalError");
+    return nullptr;
 }
 
 JNIEXPORT void JNICALL
@@ -3995,22 +4060,28 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeIsSupersampling(JNIEnv *
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_limelight_binding_video_PyroWaveRenderer_nativeGetScaleDescription(JNIEnv *env, jclass, jlong handle) {
+Java_com_limelight_binding_video_PyroWaveRenderer_nativeGetScaleDescription(JNIEnv *env, jclass, jlong handle) try {
     std::string description;
     withLiveRenderer(handle, [&](Renderer &renderer) { description = renderer.scaleDescription(); });
     return description.empty() ? nullptr : env->NewStringUTF(description.c_str());
+} catch (...) {
+    logNativeException("nativeGetScaleDescription");
+    return nullptr;
 }
 
 // Copies the statistics window into [out] (the order of PyroWaveRenderer.Stats) and starts a new one
 JNIEXPORT void JNICALL
-Java_com_limelight_binding_video_PyroWaveRenderer_nativeTakeStats(JNIEnv *env, jclass, jlongArray out) {
+Java_com_limelight_binding_video_PyroWaveRenderer_nativeTakeStats(JNIEnv *env, jclass, jlongArray out) try {
+    if (out == nullptr) {
+        return;
+    }
     const uint64_t now = nowUs();
     const int stage = videoStage.load(std::memory_order_relaxed);
     const uint64_t since = videoStageSinceUs.load(std::memory_order_relaxed);
     const uint64_t lastFrame = lastFrameUs.load(std::memory_order_relaxed);
     if (stage != STAGE_IDLE && since != 0 && now - since > 500'000) {
         LOGW("Video thread stuck %llu ms: %s", (unsigned long long) ((now - since) / 1000), STAGE_NAMES[stage]);
-        // Once per stall, after two seconds: the thread's state, kernel wait and native stack
+        // Once per stall, after two seconds: the thread's state and kernel wait, in debug builds its native stack too
         static uint64_t dumpedStall = 0;
         const pid_t tid = videoTid.load(std::memory_order_relaxed);
         if (now - since > 2'000'000 && dumpedStall != since && tid != 0) {
@@ -4020,7 +4091,9 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeTakeStats(JNIEnv *env, j
             LOGW("Video thread %d state '%s', waiting in '%s'", tid,
                  paren != std::string::npos && paren + 2 < stat.size() ? stat.substr(paren + 2, 1).c_str() : "?",
                  readTaskFile(tid, "wchan").c_str());
+#if defined(LC_DEBUG)
             syscall(SYS_tgkill, getpid(), tid, STACK_SIGNAL);
+#endif
         }
     } else if (lastFrame != 0 && now - lastFrame > 1'000'000) {
         LOGW("No frame from moonlight-common-c for %llu ms", (unsigned long long) ((now - lastFrame) / 1000));
@@ -4047,10 +4120,12 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeTakeStats(JNIEnv *env, j
                             jlong(diagSwapchainImages.load(std::memory_order_relaxed)),
                             jlong(diagPreTransform.load(std::memory_order_relaxed))};
     env->SetLongArrayRegion(out, 0, std::min<jsize>(env->GetArrayLength(out), jsize(std::size(values))), values);
+} catch (...) {
+    logNativeException("nativeTakeStats");
 }
 
 JNIEXPORT void JNICALL
-Java_com_limelight_binding_video_PyroWaveRenderer_nativeDestroy(JNIEnv *, jclass, jlong handle) {
+Java_com_limelight_binding_video_PyroWaveRenderer_nativeDestroy(JNIEnv *, jclass, jlong handle) try {
     auto *renderer = reinterpret_cast<Renderer *>(handle);
     {
         std::lock_guard<std::mutex> lock(handleLock);
@@ -4059,13 +4134,21 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeDestroy(JNIEnv *, jclass
     }
     // The UI never waits for an in-flight decode, arrival fence or worker join. The existing active lock
     // retains the raw renderer until the callback returns; late JNI calls already see it unlisted.
-    std::thread([renderer] {
+    const auto reap = [renderer] {
         {
             std::lock_guard<std::mutex> lock(activeLock);
             if (activeRenderer == renderer) activeRenderer = nullptr;
         }
         delete renderer;
-    }).detach();
+    };
+    try {
+        std::thread(reap).detach();
+    } catch (const std::system_error &) {
+        // No thread to hand it to: destroy it here rather than leak the GPU device and the surface
+        reap();
+    }
+} catch (...) {
+    logNativeException("nativeDestroy");
 }
 
 }  // extern "C"
