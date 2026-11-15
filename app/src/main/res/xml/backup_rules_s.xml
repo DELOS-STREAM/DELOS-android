@@ -1,10 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ (dataExtractionRules). Keep in step with backup_rules.xml; BackupRulesTest checks both. -->
 <data-extraction-rules>
-  <!-- Don't sync preferences because it often contains device-specific data -->
   <cloud-backup disableIfNoEncryptionCapabilities="true">
+    <!-- Don't sync preferences because it often contains device-specific data -->
     <exclude domain="sharedpref" path="."/>
+    <!-- The pairing identity of this device: its private key, certificate and client id -->
+    <exclude domain="file" path="client.key"/>
+    <exclude domain="file" path="client.crt"/>
+    <exclude domain="file" path="uniqueid"/>
+    <!-- The PC database (addresses, MAC addresses, pinned certificates); it is the only database -->
+    <exclude domain="database" path="."/>
+    <!-- The raw diagnostic log and crash files and renderer captures -->
+    <exclude domain="file" path="diagnostics"/>
+    <exclude domain="file" path="sgsr-diagnostics"/>
   </cloud-backup>
+  <!-- A transferred installation pairs again as well: the key does not leave this device -->
   <device-transfer>
     <exclude domain="sharedpref" path="."/>
+    <exclude domain="file" path="client.key"/>
+    <exclude domain="file" path="client.crt"/>
+    <exclude domain="file" path="uniqueid"/>
+    <exclude domain="database" path="."/>
+    <exclude domain="file" path="diagnostics"/>
+    <exclude domain="file" path="sgsr-diagnostics"/>
   </device-transfer>
 </data-extraction-rules>
