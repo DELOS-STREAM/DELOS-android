@@ -60,6 +60,8 @@
     <string name="artwork_error_key_rejected">SteamGridDB did not accept the API key</string>
     <!-- %1$d: HTTP status code -->
     <string name="artwork_error_api_http">SteamGridDB answered %1$d</string>
+    <!-- The SteamGridDB answer was not what its API sends (a sign-in page of a Wi-Fi network, a maintenance page) -->
+    <string name="artwork_error_bad_reply">SteamGridDB sent an unreadable reply</string>
     <string name="artwork_error_download_http" translatable="false">HTTP %1$d</string>
     <string name="artwork_error_too_large">image too large</string>
     <string name="artwork_error_save_failed">could not save the image</string>

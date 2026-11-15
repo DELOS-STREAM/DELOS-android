@@ -49,6 +49,7 @@
     <string name="artwork_error_no_key">先にSteamGridDBのAPIキーを追加してください</string>
     <string name="artwork_error_key_rejected">SteamGridDBがAPIキーを受け付けませんでした</string>
     <string name="artwork_error_api_http">SteamGridDBの応答：%1$d</string>
+    <string name="artwork_error_bad_reply">SteamGridDBの応答を読み取れませんでした</string>
     <string name="artwork_error_too_large">画像が大きすぎます</string>
     <string name="artwork_error_save_failed">画像を保存できませんでした</string>
     <!-- Cover -->

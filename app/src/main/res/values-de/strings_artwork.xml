@@ -60,6 +60,7 @@
     <string name="artwork_error_key_rejected">SteamGridDB hat den API-Schlüssel nicht akzeptiert</string>
     <!-- %1$d: HTTP status code -->
     <string name="artwork_error_api_http">SteamGridDB antwortete mit %1$d</string>
+    <string name="artwork_error_bad_reply">SteamGridDB hat eine unlesbare Antwort gesendet</string>
     <string name="artwork_error_too_large">Bild zu groß</string>
     <string name="artwork_error_save_failed">Bild konnte nicht gespeichert werden</string>
     <!-- One group per kind of image: the tab, how many there are, filtered lists, empty states and the download toasts -->

@@ -49,6 +49,7 @@
     <string name="artwork_error_no_key">먼저 SteamGridDB API 키를 추가해 주세요</string>
     <string name="artwork_error_key_rejected">SteamGridDB가 API 키를 받아들이지 않았어요</string>
     <string name="artwork_error_api_http">SteamGridDB 응답 코드 %1$d</string>
+    <string name="artwork_error_bad_reply">SteamGridDB 응답을 읽을 수 없어요</string>
     <string name="artwork_error_too_large">이미지가 너무 커요</string>
     <string name="artwork_error_save_failed">이미지를 저장하지 못했어요</string>
     <string name="artwork_tab_cover">커버</string>
