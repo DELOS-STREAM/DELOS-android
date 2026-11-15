@@ -213,6 +213,8 @@ android.buildTypes.debug.enableUnitTestCoverage = true
 tasks.withType(Test).configureEach {
     jacoco.includeNoLocationClasses = true   // Robolectric loads classes through its own class loader
     jacoco.excludes = ['jdk.internal.*']
+    // Robolectric needs this JDK-internal package to run tests on the API 36 image (targetSdk).
+    jvmArgs '--add-exports=java.base/jdk.internal.access=ALL-UNNAMED'
     // Keep the log readable: a failure must not drown in passed-test lines and logcat echoes.
     // Full output of every test stays in app/build/reports/tests and app/build/test-results.
     testLogging {
@@ -225,12 +227,12 @@ tasks.register('jacocoDebugUnitTestReport', JacocoReport) {
     description = 'Unit-test coverage of the debug variant (XML + HTML).'
     dependsOn 'testDebugUnitTest'
     def excludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/ComposableSingletons*']
+    // Exact directories only: a wider file tree makes Gradle see outputs of unrelated tasks as inputs.
     classDirectories.setFrom(files(
         fileTree(dir: layout.buildDirectory.dir('intermediates/javac/debug'), excludes: excludes),
-        fileTree(dir: layout.buildDirectory.dir('intermediates/built_in_kotlinc/debug'), excludes: excludes),
-        fileTree(dir: layout.buildDirectory.dir('tmp/kotlin-classes/debug'), excludes: excludes)))
+        fileTree(dir: layout.buildDirectory.dir('intermediates/built_in_kotlinc/debug'), excludes: excludes)))
     sourceDirectories.setFrom(files('src/main/java', 'src/debug/java'))
-    executionData.setFrom(fileTree(dir: layout.buildDirectory, includes: ['**/testDebugUnitTest.exec', 'jacoco/*.exec']))
+    executionData.setFrom(layout.buildDirectory.file('outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec'))
     reports { xml.required = true; html.required = true; csv.required = false }
 }
 // ==== END unit-test coverage (JaCoCo) ====
