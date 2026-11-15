@@ -17,4 +17,4 @@ Tick what applies; write "n/a" with the reason where a line does not apply. The 
 - [ ] Binaries and dependencies: no new binary or dependency without its row in `docs/THIRD_PARTY.md` and its checksum
 - [ ] Security: the change adds no listener, exported component, outbound endpoint or stored secret, or `SECURITY.md` is updated
 - [ ] No personal data or secrets (IP addresses, keys, tokens, local paths)
-- [ ] Commit subjects say what changed in at most 72 characters
+- [ ] Commits follow Conventional Commits (`<type>[(scope)][!]: <description>`, at most 72 characters) and the branch is named `<type>/<description>` (`docs/ENGINEERING_RULES.md`, section 9)

@@ -2,13 +2,80 @@
 
 ## Policy
 
-Delos uses semantic versioning, `MAJOR.MINOR.PATCH`.
+Delos follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html). A version is `MAJOR.MINOR.PATCH`,
+three non-negative integers without leading zeros (rule 2).
 
-- The first PUBLIC release will be 1.0.0. Everything before it is 0.x, reconstructed from history.
-- PATCH (1.0.x, 1.1.x): hotfixes and small fixes, no new features.
-- MINOR (1.x.0): bigger updates and new features.
-- MAJOR (X.0.0): a redesign of the whole app (not planned).
-- A version bump is a release decision: it happens only when the owner announces a release. Releases are not being made now.
+| # | Rule | SemVer rule |
+|---|---|---|
+| 1 | The public API of Delos is declared in "Public API" below. | 1 |
+| 2 | A released version is never modified. A correction is a new version. | 3 |
+| 3 | `0.y.z` is initial development: anything may change and the public API is not stable. | 4 |
+| 4 | `1.0.0` is the first public release and defines the public API. | 5 |
+| 5 | PATCH increases when a release holds only backward-compatible bug fixes. | 6 |
+| 6 | MINOR increases when a release adds backward-compatible functionality or marks a part of the public API as deprecated. PATCH returns to 0. | 7 |
+| 7 | MAJOR increases when a release changes the public API incompatibly. MINOR and PATCH return to 0. | 8 |
+| 8 | A version bump is a release decision: it happens only when the owner announces a release. No release is being made now. | Owner rule |
+
+The version 2.0.0 of the specification supersedes the earlier wording of this document, in which MAJOR meant a
+redesign of the whole app. A redesign that keeps the public API compatible is a MINOR release.
+
+## Public API
+
+Delos is an app, not a library. Its public API is what other software, stored data and other installations
+depend on. An incompatible change of any row is a MAJOR change from `1.0.0` on.
+
+| # | Part | What is promised | Incompatible change (examples) |
+|---|---|---|---|
+| A1 | `art://` links | The link forms `art://host` and `art://launch` (`ShellLink`) keep their meaning and parameters. | Removing a link form or a parameter; changing what a parameter means. |
+| A2 | Launch intents and launcher shortcuts | A shortcut that a released version pinned, and the intent extras of the exported entry points (`ShortcutTrampoline`, `ShellActivity`), keep working. | A pinned shortcut that no longer starts its app. |
+| A3 | The `.art` file format | A file that a released version accepted is still accepted with the same meaning. | Removing or renaming a line of the format. |
+| A4 | Exported components | The exported activities, services and providers of `AndroidManifest.xml` keep their names and intent filters. | Removing or renaming an exported component. |
+| A5 | Stored data | A newer version reads, or migrates, the data of every version since `1.0.0`: settings and profiles (shared preferences, `profiles.json`), per-app settings, the PC database and the pairing identity. Caches (artwork, game metadata) may be rebuilt. | A format that an installed older version cannot be migrated from; an update that loses profiles, settings or pairings. |
+| A6 | Backup and transfer | What `SECURITY.md` lists as backed up is restored by a newer version. | A restored backup of a supported version that a newer version cannot read. |
+| A7 | Host compatibility | The host software and protocol versions that the README names as supported keep working. | Dropping a supported host or raising the minimum host version. |
+| A8 | Minimum Android version | `minSdk` in `app/build.gradle` (`29`, Android 10). | Raising `minSdk`. |
+| A9 | Issue form fields | The form `app_report.yml` and the field ids that a released APK fills in (`IssueUrl`) exist while that APK is supported. | Renaming the form or a field id that a released APK uses. |
+
+Not part of the public API: the look and layout of the screens, texts and translations, default values of
+settings, the diagnostic log format, debug previews and their intent extras, everything in `tools/`, and the
+internal classes of the app.
+
+Not defined yet: the minimum supported versions of Vibepollo, Apollo and Sunshine (row A7). The README states what
+was tested; the minimum is written here before `1.0.0`.
+
+## Which number increases
+
+| Change in a release | Number | Commit mark ([ENGINEERING_RULES.md](ENGINEERING_RULES.md#9-commit-messages-and-branch-names)) | Changelog section |
+|---|---|---|---|
+| An incompatible change of the public API | MAJOR | `!` after the type or scope, or a `BREAKING CHANGE:` footer | Changed or Removed, with the word "Breaking" |
+| New backward-compatible functionality | MINOR | `feat` | Added, or Changed for existing functionality |
+| A part of the public API is deprecated | MINOR | `feat` or `refactor`, said in the body | Deprecated |
+| Backward-compatible bug fixes only | PATCH | `fix` | Fixed, or Security for a vulnerability |
+| No change of behavior (`docs`, `test`, `refactor`, `build`, `ci`, `chore`, `style`) | none by itself | the type | none, unless users can see it |
+
+The highest number of all commits since the last release decides. The types state the smallest increase; the owner
+may choose a larger one (rule 7 allows MINOR for substantial improvements of private code). While the version is
+`0.y.z`, a breaking change increases MINOR and is still marked with `!`.
+
+## Pre-release versions and build metadata
+
+Not exercised: no pre-release and no build with metadata was made yet.
+
+| # | Rule | SemVer rule |
+|---|---|---|
+| 1 | A pre-release is `X.Y.Z-<identifiers>`, for example `1.0.0-rc.1`. Delos uses `rc.N` with N from 1. Identifiers hold only `0-9A-Za-z-`, are not empty, and numeric ones have no leading zero. | 9 |
+| 2 | A pre-release precedes its normal version: `1.0.0-rc.1 < 1.0.0-rc.2 < 1.0.0`. It may not meet the compatibility promise of its normal version. | 9, 11 |
+| 3 | Build metadata is `+<identifiers>` after the version, for example `1.0.0+g912bc0d`. It is ignored for precedence. Delos release builds carry none. | 10 |
+| 4 | `versionName` is the complete SemVer string, with the pre-release part and the build metadata when present. | |
+| 5 | A pre-release has the `versionCode` of its normal version: `1.0.0-rc.1`, `1.0.0-rc.2` and `1.0.0` are all `10000`. | |
+| 6 | The tag of a pre-release is `vX.Y.Z-rc.N`, and its GitHub release is marked as a pre-release. | |
+
+`versionCode` has no room between two versions (`1.0.1` is `10001`), so it cannot order pre-releases. Rule 5 is the
+simplest rule that is correct: Android installs an APK over one with the same `versionCode` and refuses only a lower
+one, so each release candidate and the final version install over each other, and no pre-release blocks the update
+to a later normal version. The cost: a tool that compares only `versionCode` does not see `1.0.0` as newer than
+`1.0.0-rc.1`; the order among them is in `versionName` only. Pre-releases are therefore distributed only as GitHub
+pre-releases for testing.
 
 ## versionCode
 
@@ -16,7 +83,7 @@ Delos uses semantic versioning, `MAJOR.MINOR.PATCH`.
 
 ## Reconstructed 0.x versions
 
-The 0.x versions were set retroactively on the milestones of the history (Delos' own history starts on 2026-10-19). They are not published releases. Each version ends on the commit in the table; its changes are in [CHANGELOG.md](../CHANGELOG.md).
+The 0.x versions were set retroactively on the milestones of the history (Delos' own history starts on 2026-10-19). They are not published releases. They were numbered before Semantic Versioning 2.0.0 and the commit convention were adopted (2026-11-15): each milestone increased MINOR, whatever it contained. The numbers and their tags stay as they are. Each version ends on the commit in the table; its changes are in [CHANGELOG.md](../CHANGELOG.md).
 
 | Version | Date | Commit | Theme |
 |---|---|---|---|
@@ -39,17 +106,17 @@ The last row is the state of `main` when the history was organized, the expected
 
 ## Tags
 
-Tags are named `vMAJOR.MINOR.PATCH` (for example `v0.4.0`) and are annotated. `tools/versioning/create-tags.sh` creates the tags v0.1.0 to v0.14.0 locally on the commits above; it is idempotent, refuses to overwrite an existing tag and pushes only with `--push`.
+Tags are named `vMAJOR.MINOR.PATCH` (for example `v0.4.0`) and are annotated. The `v` is a convention of tag names; it is not part of the version: the tag is `v1.2.3`, the version is `1.2.3`. `tools/versioning/create-tags.sh` creates the tags v0.1.0 to v0.14.0 locally on the commits above; it is idempotent, refuses to overwrite an existing tag and pushes only with `--push`.
 
 The local clone also has older upstream tags (v9.x, v10.x, v20.x). They belong to Moonlight and Artemis, are not Delos versions and are not pushed.
 
 ## Adding a new version
 
-1. Only when the owner announces a release.
+1. Only when the owner announces a release. The new number follows "Which number increases" above.
 2. Update `versionMajor`, `versionMinor`, `versionPatch` in `app/build.gradle` (and the comment, if needed).
-3. In `CHANGELOG.md`, move the "Unreleased" entries under a new heading `## [X.Y.Z] - YYYY-MM-DD`, group them Added / Changed / Fixed / Removed, and update the compare links at the bottom.
+3. In `CHANGELOG.md`, move the "Unreleased" entries under a new heading `## [X.Y.Z] - YYYY-MM-DD`, group them under the six headings of [Keep a Changelog 1.0.0](https://keepachangelog.com/en/1.0.0/) (Added, Changed, Deprecated, Removed, Fixed, Security; a heading without entries is left out), leave an empty `## [Unreleased]` on top, and update the compare links at the bottom: a new line `[X.Y.Z]: …/compare/vPREVIOUS...vX.Y.Z` and `[Unreleased]: …/compare/vX.Y.Z...HEAD`.
 4. Commit, then create an annotated tag on that commit: `git tag -a vX.Y.Z -m "Delos X.Y.Z"` and push it.
-5. Create a GitHub release only when the owner announces it. **The release text must always show the complete changelog of that version**, visible directly on the release page: paste the whole `## [X.Y.Z]` section from `CHANGELOG.md` (the theme line and every Added / Changed / Fixed / Removed list), never a shortened summary, a "see CHANGELOG.md" link alone or GitHub's auto-generated "what's changed" list instead of it. A link to the full `CHANGELOG.md` and the compare range may follow below the pasted section. (Owner rule, 2026-11-15.) A convenient way: `gh release create vX.Y.Z --title "Delos X.Y.Z" --notes-file <(awk '/^## \[X.Y.Z\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md)`.
+5. Create a GitHub release only when the owner announces it. **The release text must always show the complete changelog of that version**, visible directly on the release page: paste the whole `## [X.Y.Z]` section from `CHANGELOG.md` (the theme line and every list under its headings), never a shortened summary, a "see CHANGELOG.md" link alone or GitHub's auto-generated "what's changed" list instead of it. A link to the full `CHANGELOG.md` and the compare range may follow below the pasted section. (Owner rule, 2026-11-15.) A convenient way: `gh release create vX.Y.Z --title "Delos X.Y.Z" --notes-file <(awk '/^## \[X.Y.Z\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md)`.
 
 The version shown in Settings > About, in the diagnostic report and in the problem report comes from `BuildConfig.VERSION_NAME`, so there is nothing else to edit.
 
@@ -59,7 +126,7 @@ Every line holds before the tag of a release is pushed. The rules behind it: [EN
 
 | # | Check | How |
 |---|---|---|
-| 1 | The changelog section is complete. | Read `git log vPREVIOUS..HEAD --no-merges --format=%s` line by line against the new `## [X.Y.Z]` section: nothing a user can see is missing. |
+| 1 | The changelog section is complete. | Read `git log vPREVIOUS..HEAD --no-merges --format=%s` line by line against the new `## [X.Y.Z]` section: nothing a user can see is missing, and the new number is the one "Which number increases" gives for the `feat`, `fix` and `!` commits of the range. |
 | 2 | Every statement of a benefit is backed. | Each line of the section, of `README.md` and of the release text that says faster, smoother, sharper, lower latency or "works with" has its evidence in `docs/` (device, Android version, host, date, number or observation) or says "not tested". |
 | 3 | The "Not verified on real hardware yet" paragraph at the top of `CHANGELOG.md` is current. | It names every feature without a device test, the test device and the tested host. It is pasted under the changelog section on the release page. |
 | 4 | In-app texts of untested features say so. | Read the help texts of those features in `app/src/main/res/values/strings*.xml`. |
