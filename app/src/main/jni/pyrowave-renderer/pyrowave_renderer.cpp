@@ -45,11 +45,15 @@
 #include <cstring>
 #include <iterator>
 #include <memory>
+#include <exception>
 #include <mutex>
-#include <vector>
+#include <string>
+#include <system_error>
 #include <thread>
 
 #include "shaders_spv.h"
+#include <type_traits>
+#include <vector>
 #include "pyrowaveframing.h"
 #include "pyrowave_yuv_gl.h"
 #include "../moonlight-core/diag_log.h"
@@ -506,18 +510,22 @@ namespace {
         std::mutex lock;
         bool held[YUV_BUFFERS] = {};
         int fence[YUV_BUFFERS] = {-1, -1, -1, -1};
-        SurfaceApi *api = nullptr;
+        const SurfaceApi api;
         ASurfaceControl *control = nullptr;
 
         ~YuvReleases() {
             for (int fd : fence) {
                 if (fd >= 0) close(fd);
+    // A callback can arrive after the Renderer was deleted, so nothing here may point into the Renderer:
+    // the function table is a copy of the renderer's, never a pointer to it.
             }
             if (control != nullptr) {
-                api->releaseControl(control);
+                api.releaseControl(control);
             }
         }
     };
+
+        explicit YuvReleases(const SurfaceApi &surfaceApi) : api(surfaceApi) {}
 
     struct YuvCallback {
         std::shared_ptr<YuvReleases> releases;
@@ -528,8 +536,12 @@ namespace {
     void onYuvTransactionComplete(void *context, ASurfaceTransactionStats *stats) {
         auto *callback = static_cast<YuvCallback *>(context);
         auto &releases = *callback->releases;
+    static_assert(std::is_trivially_copyable<SurfaceApi>::value,
+                  "SurfaceApi is copied into YuvReleases: it must hold nothing but function pointers");
+    static_assert(std::is_same<decltype(YuvReleases::api), const SurfaceApi>::value,
+                  "YuvReleases outlives the Renderer: it owns its function table, it does not point to one");
         if (callback->previous >= 0) {
-            const int fd = releases.api->previousReleaseFence(stats, releases.control);
+            const int fd = releases.api.previousReleaseFence(stats, releases.control);
             std::lock_guard<std::mutex> lock(releases.lock);
             if (releases.fence[callback->previous] >= 0) {
                 close(releases.fence[callback->previous]);
@@ -1913,8 +1925,7 @@ namespace {
         // AHardwareBuffer and OpenGL ES copies that into P010 (YuvTargetGl), all on the GPU. Without the GL
         // extensions the planes are read back and the CPU fills the buffers instead.
         bool createYuvOutput() {
-            releases = std::make_shared<YuvReleases>();
-            releases->api = &surfaceApi;
+            releases = std::make_shared<YuvReleases>(surfaceApi);
             releases->control = surfaceApi.createFromWindow(window, "Delos PyroWave HDR");
             if (releases->control == nullptr) {
                 LOGE("Cannot create a surface control for the HDR output");
