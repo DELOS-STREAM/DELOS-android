@@ -50,6 +50,7 @@ import com.limelight.nvstream.ConnectionContext;
 import com.limelight.nvstream.http.PairingManager.PairState;
 import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.utils.DeviceUtils;
+import com.limelight.utils.HostIds;
 
 import okhttp3.Call;
 import okhttp3.ConnectionPool;
@@ -410,6 +411,10 @@ public class NvHTTP {
 
         // UUID is mandatory to determine which machine is responding
         details.uuid = getXmlString(serverInfo, "uniqueid", true);
+        if (!HostIds.isValidUuid(details.uuid)) {
+            // The id names cache and artwork directories and keys the PC database
+            throw new XmlPullParserException("Invalid uniqueid in host response");
+        }
 
         String permStr = getXmlString(serverInfo, "Permission", false);
         if (permStr != null) {

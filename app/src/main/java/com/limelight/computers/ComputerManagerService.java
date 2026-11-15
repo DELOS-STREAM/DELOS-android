@@ -944,7 +944,8 @@ public class ComputerManagerService extends Service {
                                         getCacheDir(), "applist", computer.uuid)
                                 ) {
                                     CacheHelper.writeStringToOutputStream(cacheOut, appList);
-                                } catch (IOException e) {
+                                } catch (IOException | IllegalArgumentException e) {
+                                    // IllegalArgumentException: CacheHelper refused the path component
                                     e.printStackTrace();
                                 }
 

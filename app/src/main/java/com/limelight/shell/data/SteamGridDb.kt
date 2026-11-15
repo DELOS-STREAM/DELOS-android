@@ -527,7 +527,8 @@ open class ArtworkStore(context: Context) {
         return Bitmap.createScaledBitmap(bitmap, target.first, target.second, true).also { if (it !== bitmap) bitmap.recycle() }.asImageBitmap()
     }
 
-    private fun dir(pc: Pc, app: App) = File(root, "${pc.uuid}/${app.id}")
+    /** The PC id comes from the host: [HostIds.appDir] keeps the directory below [root]. */
+    private fun dir(pc: Pc, app: App) = com.limelight.utils.HostIds.appDir(root, pc.uuid, app.id)
     private fun file(pc: Pc, app: App, kind: ArtKind) = File(dir(pc, app).apply { mkdirs() }, kind.file)
     private fun memoryKey(pc: Pc, app: App, kind: ArtKind) = "${pc.uuid}/${app.id}/${kind.file}"
 

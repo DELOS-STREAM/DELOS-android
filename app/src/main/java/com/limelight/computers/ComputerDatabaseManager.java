@@ -142,6 +142,11 @@ public class ComputerDatabaseManager {
         ComputerDetails details = new ComputerDetails();
 
         details.uuid = c.getString(0);
+        if (!com.limelight.utils.HostIds.isValidUuid(details.uuid)) {
+            // The id names cache and artwork directories; a row that could leave them is not a PC
+            LimeLog.warning("Ignoring a stored PC with an invalid id");
+            return null;
+        }
         details.name = c.getString(1);
         try {
             JSONObject addresses = new JSONObject(c.getString(2));
@@ -184,7 +189,10 @@ public class ComputerDatabaseManager {
         try (final Cursor c = computerDb.rawQuery("SELECT * FROM "+COMPUTER_TABLE_NAME, null)) {
             LinkedList<ComputerDetails> computerList = new LinkedList<>();
             while (c.moveToNext()) {
-                computerList.add(getComputerFromCursor(c));
+                ComputerDetails computer = getComputerFromCursor(c);
+                if (computer != null) {
+                    computerList.add(computer);
+                }
             }
             return computerList;
         }
