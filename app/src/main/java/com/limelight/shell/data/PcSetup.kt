@@ -204,7 +204,8 @@ open class PcSetup(context: Context, private val repo: PcRepository, private val
     )
 
     /** Like AddComputerManually: 192.168.1.20, 192.168.1.20:47989, host.local, [::1] or ::1. */
-    private fun parseAddress(input: String): Uri? {
+    @androidx.annotation.VisibleForTesting
+    internal fun parseAddress(input: String): Uri? {
         if (input.isEmpty()) return null
         Uri.parse("art://$input").takeIf { !it.host.isNullOrEmpty() }?.let { return it }
         return Uri.parse("art://[$input]").takeIf { !it.host.isNullOrEmpty() }
