@@ -82,6 +82,32 @@ class GameLauncherTest {
     }
 
     @Test
+    fun theServerCommandsMayBeAnyKindOfList() {
+        // Regression: the list was cast to ArrayList, so any other List crashed the start of a game.
+        val lists = listOf<List<String>>(
+            java.util.Collections.unmodifiableList(arrayListOf("Sleep", "Restart")),
+            java.util.LinkedList(listOf("Sleep", "Restart")),
+            listOf("Sleep", "Restart"),
+        )
+        for (commands in lists) {
+            val details = pc().also { it.serverCommands = commands }
+
+            val intent = ServerHelper.getStreamIntent(GameLauncher.startIntent(activity, binder, details, app).intent)
+
+            assertEquals(arrayListOf("Sleep", "Restart"), intent.getStringArrayListExtra(DelosStreamActivity.EXTRA_SERVER_COMMANDS))
+        }
+    }
+
+    @Test
+    fun aPcWithoutServerCommandsCarriesNone() {
+        val details = pc().also { it.serverCommands = null }
+
+        val intent = ServerHelper.getStreamIntent(GameLauncher.startIntent(activity, binder, details, app).intent)
+
+        assertNull(intent.getStringArrayListExtra(DelosStreamActivity.EXTRA_SERVER_COMMANDS))
+    }
+
+    @Test
     fun anUnpairedPcCarriesNoCertificate() {
         val details = pc().also { it.serverCert = null }
 

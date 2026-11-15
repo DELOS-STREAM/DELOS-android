@@ -1,12 +1,12 @@
 {
   "overall": {
-    "line": 28,
-    "branch": 20
+    "line": 29,
+    "branch": 21
   },
   "packages": {
     "com.limelight": {
-      "line": 8,
-      "branch": 4
+      "line": 14,
+      "branch": 7
     },
     "com.limelight.binding": {
       "line": 0,
@@ -33,7 +33,7 @@
       "branch": 3
     },
     "com.limelight.binding.input.evdev": {
-      "line": 0,
+      "line": null,
       "branch": null
     },
     "com.limelight.binding.input.touch": {
@@ -58,7 +58,7 @@
     },
     "com.limelight.diag": {
       "line": 82,
-      "branch": 63
+      "branch": 66
     },
     "com.limelight.discovery": {
       "line": 0,
@@ -68,17 +68,9 @@
       "line": 81,
       "branch": 67
     },
-    "com.limelight.grid.assets": {
-      "line": 0,
-      "branch": 0
-    },
     "com.limelight.nvstream": {
-      "line": 24,
-      "branch": 4
-    },
-    "com.limelight.nvstream.av": {
-      "line": 0,
-      "branch": 0
+      "line": 25,
+      "branch": 5
     },
     "com.limelight.nvstream.av.audio": {
       "line": null,
@@ -89,8 +81,8 @@
       "branch": null
     },
     "com.limelight.nvstream.http": {
-      "line": 77,
-      "branch": 61
+      "line": 78,
+      "branch": 63
     },
     "com.limelight.nvstream.input": {
       "line": 0,
@@ -113,8 +105,8 @@
       "branch": 72
     },
     "com.limelight.profiles": {
-      "line": 75,
-      "branch": 77
+      "line": 82,
+      "branch": 83
     },
     "com.limelight.shell": {
       "line": 11,
@@ -125,8 +117,8 @@
       "branch": 16
     },
     "com.limelight.shell.data": {
-      "line": 74,
-      "branch": 63
+      "line": 75,
+      "branch": 65
     },
     "com.limelight.shell.keyboard": {
       "line": 28,
@@ -157,8 +149,8 @@
       "branch": 28
     },
     "com.limelight.utils": {
-      "line": 57,
-      "branch": 40
+      "line": 62,
+      "branch": 48
     }
   }
 }

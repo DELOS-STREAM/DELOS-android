@@ -29,9 +29,6 @@ import java.nio.ByteOrder;
 public class XboxControllerReportTest {
     private static final float TOLERANCE = 0.001f;
 
-    /** Every flag except the guide button, which the Xbox One pad reports in a packet of its own. */
-    private static final int NOT_GUIDE = ~ControllerPacket.SPECIAL_BUTTON_FLAG;
-
     /** The last state a driver handed to the app. */
     private static final class State implements UsbDriverListener {
         int reports;
@@ -188,11 +185,11 @@ public class XboxControllerReportTest {
         };
         for (int[] row : table) {
             readOne(reportOne(row[0], row[1], 0, 0, 0, 0, 0, 0));
-            assertEquals("bits " + row[0] + "/" + row[1], row[2], state.buttons & NOT_GUIDE);
+            assertEquals("bits " + row[0] + "/" + row[1], row[2], state.buttons);
         }
 
         readOne(reportOne(0, 0, 0, 0, 0, 0, 0, 0));
-        assertEquals(0, state.buttons & NOT_GUIDE);
+        assertEquals(0, state.buttons);
     }
 
     @Test
@@ -228,6 +225,38 @@ public class XboxControllerReportTest {
         // The other buttons are not touched by the guide report.
         readOne(reportOne(0x10, 0, 0, 0, 0, 0, 0, 0));
         assertEquals(ControllerPacket.A_FLAG, state.buttons);
+    }
+
+    @Test
+    public void xboxOneGuideButtonIsNotHeldBeforeItsFirstGuideReport() {
+        // Regression: the constructor stored the supported buttons as the pressed ones, and the input report
+        // of an Xbox One pad never touches the guide bit, so guide stayed held until the first guide report.
+        readOne(reportOne(0, 0, 0, 0, 0, 0, 0, 0));
+        assertEquals(0, state.buttons);
+
+        readOne(reportOne(0x10, 0, 0, 0, 0, 0, 0, 0));
+        assertEquals(ControllerPacket.A_FLAG, state.buttons);
+    }
+
+    @Test
+    public void noButtonIsPressedBeforeTheFirstReport() {
+        pad360.reportInput();
+        assertEquals(0, state.buttons);
+        padOne.reportInput();
+        assertEquals(0, state.buttons);
+    }
+
+    @Test
+    public void thePadsAnnounceTheButtonsTheyHave() {
+        // Regression: the supported buttons were announced as 0, which tells the PC the pad has no buttons.
+        int expected = ControllerPacket.A_FLAG | ControllerPacket.B_FLAG | ControllerPacket.X_FLAG | ControllerPacket.Y_FLAG
+                | ControllerPacket.UP_FLAG | ControllerPacket.DOWN_FLAG | ControllerPacket.LEFT_FLAG | ControllerPacket.RIGHT_FLAG
+                | ControllerPacket.LB_FLAG | ControllerPacket.RB_FLAG
+                | ControllerPacket.LS_CLK_FLAG | ControllerPacket.RS_CLK_FLAG
+                | ControllerPacket.BACK_FLAG | ControllerPacket.PLAY_FLAG | ControllerPacket.SPECIAL_BUTTON_FLAG;
+
+        assertEquals(expected, pad360.getSupportedButtonFlags());
+        assertEquals(expected, padOne.getSupportedButtonFlags());
     }
 
     @Test

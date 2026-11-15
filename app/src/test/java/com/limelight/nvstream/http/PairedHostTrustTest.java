@@ -7,6 +7,8 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import com.limelight.utils.HostIds;
+
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -184,6 +186,43 @@ public class PairedHostTrustTest {
     }
 
     @Test
+    public void anUnverifiedReplyReplacesNoStoredNameAddressOrCertificate() throws Exception {
+        ComputerDetails stored = new ComputerDetails();
+        stored.uuid = "ABC-1";
+        stored.name = "Workstation";
+        stored.serverCert = host.cert;
+        stored.localAddress = new ComputerDetails.AddressTuple("192.168.1.10", 47989);
+        stored.remoteAddress = new ComputerDetails.AddressTuple("203.0.113.5", 48989);
+        stored.manualAddress = new ComputerDetails.AddressTuple("pc.example.org", 50000);
+        stored.ipv6Address = new ComputerDetails.AddressTuple("2001:db8::1", 47989);
+        stored.externalPort = 48989;
+        stored.macAddress = "AA:BB:CC:DD:EE:FF";
+
+        // Everything a reply can carry, including what serverinfo itself never does
+        NvHTTP nv = new NvHTTP(address(serve(null, FORGED.replace("47989", "40000"))), serve(other, FORGED),
+                "client", host.cert, client);
+        ComputerDetails reply = nv.getComputerDetails(true);
+        assertTrue(reply.identityUnverified);
+        reply.uuid = "FORGED-ID";
+        reply.serverCert = other.cert;
+        reply.manualAddress = new ComputerDetails.AddressTuple("10.9.9.8", 47989);
+        reply.ipv6Address = new ComputerDetails.AddressTuple("2001:db8::bad", 47989);
+        reply.rawAppList = "<root status_code=\"200\"/>";
+        stored.update(reply);
+
+        assertEquals("ABC-1", stored.uuid);
+        assertEquals("Workstation", stored.name);
+        assertSame(host.cert, stored.serverCert);
+        assertEquals(new ComputerDetails.AddressTuple("192.168.1.10", 47989), stored.localAddress);
+        assertEquals(new ComputerDetails.AddressTuple("203.0.113.5", 48989), stored.remoteAddress);
+        assertEquals(new ComputerDetails.AddressTuple("pc.example.org", 50000), stored.manualAddress);
+        assertEquals(new ComputerDetails.AddressTuple("2001:db8::1", 47989), stored.ipv6Address);
+        assertEquals(48989, stored.externalPort);
+        assertEquals("AA:BB:CC:DD:EE:FF", stored.macAddress);
+        assertNull(stored.rawAppList);
+    }
+
+    @Test
     public void aVerifiedReplyUpdatesAPairedPcAndClearsTheMark() throws Exception {
         ComputerDetails stored = new ComputerDetails();
         stored.uuid = "ABC-1";
@@ -218,7 +257,8 @@ public class PairedHostTrustTest {
     @Test
     public void aUniqueIdThatCouldLeaveADirectoryIsRejected() throws Exception {
         NvHTTP nv = new NvHTTP(address(1), 1, "client", null, client);
-        for (String bad : new String[] {"../x", "a/b", "..", "a b", "a\\b"}) {
+        for (String bad : new String[] {"../x", "a/b", "..", "a b", "a\\b", "PC.1", "%2e%2e", "a:b",
+                new String(new char[HostIds.MAX_UUID_LENGTH + 1]).replace('\0', 'A')}) {
             assertThrows(bad, XmlPullParserException.class,
                     () -> nv.getComputerDetails(REAL.replace("ABC-1", bad)));
         }

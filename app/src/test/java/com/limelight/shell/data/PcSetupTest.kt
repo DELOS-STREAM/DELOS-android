@@ -63,6 +63,35 @@ class PcSetupTest {
     }
 
     @Test
+    fun everyFormOfAddressGivesItsHostAndPort() {
+        // typed, host as stored, port (-1: none typed, the default port is used)
+        val table = listOf(
+            Triple("192.168.1.20", "192.168.1.20", -1),
+            Triple("192.168.1.20:48989", "192.168.1.20", 48989),
+            Triple("desk.local", "desk.local", -1),
+            Triple("desk", "desk", -1),
+            Triple("pc.example.org:47989", "pc.example.org", 47989),
+            Triple("[2001:db8::1]", "2001:db8::1", -1),
+            Triple("[2001:db8::1]:48989", "2001:db8::1", 48989),
+            Triple("[::1]", "::1", -1),
+            Triple("[::1]:47989", "::1", 47989),
+            // Regression: without brackets the last group was read as the port (2001:db8::1 gave port 1).
+            Triple("2001:db8::1", "2001:db8::1", -1),
+            Triple("2001:db8::1:2", "2001:db8::1:2", -1),
+            Triple("2001:db8:0:0:0:0:0:47989", "2001:db8:0:0:0:0:0:47989", -1),
+            Triple("fe80::1234:5678", "fe80::1234:5678", -1),
+            Triple("::1", "::1", -1),
+            Triple("::", "::", -1),
+        )
+        for ((typed, host, port) in table) {
+            val uri = setup.parseAddress(typed)
+            assertNotNull(typed, uri)
+            assertEquals(typed, host, ComputerDetails.AddressTuple(uri!!.host, 47989).address)
+            assertEquals(typed, port, uri.port)
+        }
+    }
+
+    @Test
     fun nothingTypedIsNotAnAddress() {
         assertNull(setup.parseAddress(""))
     }

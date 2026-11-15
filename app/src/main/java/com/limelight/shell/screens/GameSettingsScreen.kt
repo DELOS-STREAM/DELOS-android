@@ -82,7 +82,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 /**
- * The per-game settings (docs/PER_GAME_SETTINGS.md): a slim hero banner with the game's name, the number of its custom settings
+ * The per-game settings (docs/PER_APP_SETTINGS.md): a slim hero banner with the game's name, the number of its custom settings
  * and Reset all; the Stream / Display tabs centred under it like the global settings; the shared rows and gliding plate; and the
  * description panel of the global settings. A setting this game overrides is marked on its row ([RowOverride]) and resets with X
  * (or its touch button).

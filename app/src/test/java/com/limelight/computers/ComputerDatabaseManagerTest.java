@@ -192,6 +192,71 @@ public class ComputerDatabaseManagerTest {
     }
 
     @Test
+    public void aRowWhoseIdCouldLeaveADirectoryIsNotAPc() {
+        // The id names cache and artwork directories. Such a row can only come from an earlier version
+        // or a tampered file, so it is written here past updateComputer().
+        String[] bad = {"../../shared_prefs", "a/b", "..", "a b", "a\\b", "", "PC.1",
+                new String(new char[com.limelight.utils.HostIds.MAX_UUID_LENGTH + 1]).replace('\0', 'A')};
+        db.updateComputer(fullPc());
+        db.close();
+        SQLiteDatabase raw = SQLiteDatabase.openDatabase(
+                context.getDatabasePath("computers4.db").getPath(), null, SQLiteDatabase.OPEN_READWRITE);
+        for (int i = 0; i < bad.length; i++) {
+            ContentValues row = new ContentValues();
+            row.put("UUID", bad[i]);
+            row.put("ComputerName", "Bad " + i);
+            row.put("Addresses", "{}");
+            raw.insertOrThrow("Computers", null, row);
+        }
+        raw.close();
+        db = new ComputerDatabaseManager(context);
+
+        List<ComputerDetails> all = db.getAllComputers();
+        assertEquals(1, all.size());
+        assertEquals("UUID-FULL", all.get(0).uuid);
+        for (int i = 0; i < bad.length; i++) {
+            assertNull(bad[i], db.getComputerByUUID(bad[i]));
+            assertNull(bad[i], db.getComputerByName("Bad " + i));
+        }
+    }
+
+    @Test
+    public void anUnknownIdOrNameIsNoPc() {
+        db.updateComputer(fullPc());
+
+        assertNull(db.getComputerByUUID("UUID-OTHER"));
+        assertNull(db.getComputerByName("Kitchen"));
+        assertNotNull(db.getComputerByName("Living room"));
+    }
+
+    @Test
+    public void aRowWithoutAnIdInAVersion3DatabaseIsNotMigrated() {
+        db.close();
+        SQLiteDatabase legacy = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("computers3.db"), null);
+        legacy.execSQL("CREATE TABLE Computers(UUID TEXT PRIMARY KEY, ComputerName TEXT NOT NULL,"
+                + " Addresses TEXT NOT NULL, MacAddress TEXT, ServerCert TEXT)");
+        ContentValues broken = new ContentValues();
+        broken.putNull("UUID");
+        broken.put("ComputerName", "No id");
+        broken.put("Addresses", "192.168.1.6;;;");
+        legacy.insertOrThrow("Computers", null, broken);
+        ContentValues good = new ContentValues();
+        good.put("UUID", "UUID-V3-GOOD");
+        good.put("ComputerName", "Good PC");
+        good.put("Addresses", "192.168.1.5;;;");
+        legacy.insertOrThrow("Computers", null, good);
+        legacy.close();
+
+        db = new ComputerDatabaseManager(context);
+
+        List<ComputerDetails> all = db.getAllComputers();
+        assertEquals(1, all.size());
+        assertEquals("UUID-V3-GOOD", all.get(0).uuid);
+        assertEquals(new AddressTuple("192.168.1.5", 47989), all.get(0).localAddress);
+        assertNull(db.getComputerByName("No id"));
+    }
+
+    @Test
     public void anEmptyDatabaseListsNothing() {
         assertTrue(db.getAllComputers().isEmpty());
     }

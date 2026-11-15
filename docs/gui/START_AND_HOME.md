@@ -166,12 +166,12 @@ The importer takes whatever is present: any subset, and it is run again when mor
 
 | Command | What it does |
 |---|---|
-| `python tools/avatars/import.py [INPUT_DIR]` | Imports the PNGs of the directory that holds them (steps below). Needs Pillow 11.3.0 with WebP. |
-| `python tools/avatars/import.py --preview-dir DIR` | Writes contact sheets: 280/96/72/56 px on the dark badge and on the fixed-hue gradient, plus a family sheet of all sixteen in two rows of eight with the colors the app draws. The default directory is `build/avatars-preview/`, ignored by git. |
+| `python tools/avatars/import.py INPUT_DIR` | Imports the PNGs of the directory that holds them (steps below). Needs Pillow 11.3.0 with WebP. |
+| `python tools/avatars/import.py INPUT_DIR --preview-dir DIR` | Writes contact sheets: 280/96/72/56 px on the dark badge and on the fixed-hue gradient, plus a family sheet of all sixteen in two rows of eight with the colors the app draws. The default directory is `build/avatars-preview/`, ignored by git. |
 | `--preview-all` | Also shows the dark badge of the slugs that are not imported. |
 | `python3 -m unittest tools/avatars/test_import.py` | Checks the color rule, the hint table and that the importer's slugs and hues match `Profiles.kt`. Run from the repository root, by hand; needs Pillow only. |
 
-`python tools/avatars/import.py [INPUT_DIR]` does the following:
+`python tools/avatars/import.py INPUT_DIR` does the following:
 
 1. It validates every PNG: RGBA, square, alpha, character centered within 6% and 60-85% of the canvas. Validation only
    warns.

@@ -121,7 +121,9 @@ public class ServerHelper {
         gameIntent.putExtra(DelosStreamActivity.EXTRA_PC_UUID, computer.uuid);
         gameIntent.putExtra(DelosStreamActivity.EXTRA_PC_NAME, computer.name);
         gameIntent.putExtra(DelosStreamActivity.EXTRA_VDISPLAY, withVDisplay);
-        gameIntent.putExtra(DelosStreamActivity.EXTRA_SERVER_COMMANDS, (ArrayList<String>) computer.serverCommands);
+        // A copy: the list may be any List (an unmodifiable or a shared one), the extra needs an ArrayList
+        gameIntent.putStringArrayListExtra(DelosStreamActivity.EXTRA_SERVER_COMMANDS,
+                computer.serverCommands == null ? null : new ArrayList<>(computer.serverCommands));
 
         try {
             if (computer.serverCert != null) {

@@ -1,6 +1,6 @@
 package com.limelight.diag
 
-/** Turns a [Problem] and the [DeviceInfo] into the prefilled bug report form: facts only, never a PC name or address. */
+/** Turns a [Problem] and the [DeviceInfo] into the prefilled report form: facts only, never a PC name or address. */
 object ProblemIssue {
     fun draft(problem: Problem, info: DeviceInfo, fileName: String): IssueDraft {
         val title = when (problem.kind) {
@@ -25,7 +25,7 @@ object ProblemIssue {
             build = "Delos ${info.delosVersion} (${info.buildType})",
             streamSettings = settings,
             logs = logsText(problem),
-            area = if (problem.kind == ProblemKind.STREAM_FAILED) "Pairing/connection" else "Other",
+            area = if (problem.kind == ProblemKind.STREAM_FAILED) IssueUrl.AREA_CONNECTION else IssueUrl.AREA_OTHER,
         )
     }
 

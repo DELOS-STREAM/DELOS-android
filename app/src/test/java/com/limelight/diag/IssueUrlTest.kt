@@ -23,12 +23,15 @@ class IssueUrlTest {
         k to URLDecoder.decode(v, "UTF-8")
     }
 
-    @Test fun theAddressOpensTheBugFormOfTheRepositoryWithTheFromAppLabel() {
+    @Test fun theAddressOpensTheFormMadeForTheApp() {
         val url = IssueUrl.build(draft)
-        assertTrue(url, url.startsWith("https://github.com/Meitoncz/Delos/issues/new?template=bug_report.yml&labels=from-app&"))
-        val p = params(url)
-        assertEquals("from-app", p["labels"])
-        assertEquals("bug_report.yml", p["template"])
+        assertTrue(url, url.startsWith("https://github.com/Meitoncz/Delos/issues/new?template=app_report.yml&title="))
+        assertEquals("app_report.yml", params(url)["template"])
+    }
+
+    @Test fun theAddressAsksForNoLabel() {
+        // GitHub documents "404 Not Found" for a labels parameter from someone who may not label issues: the form sets them.
+        assertFalse(params(IssueUrl.build(draft)).containsKey("labels"))
     }
 
     @Test fun everyFieldUsesTheIdOfTheFormAndSurvivesTheEscaping() {
@@ -45,7 +48,7 @@ class IssueUrlTest {
     @Test fun reservedCharactersNeverEndUpRawInAValue() {
         val url = IssueUrl.build(draft.copy(whatHappened = "a&b=c#d?e f+g%h\n\"q\" <x> é"))
         val query = url.substringAfter('?')
-        assertEquals("nine parameters, so eight separators and no raw & inside a value", 8, query.count { it == '&' })
+        assertEquals("eight parameters, so seven separators and no raw & inside a value", 7, query.count { it == '&' })
         assertFalse(query.contains(' ') || query.contains('#') || query.contains('<') || query.contains('"') || query.contains('\n'))
         assertEquals("a&b=c#d?e f+g%h\n\"q\" <x> é", params(url)["what-happened"])
     }
@@ -58,6 +61,19 @@ class IssueUrlTest {
         assertTrue(logs.startsWith("\tat com.limelight.Frame1.run"))
         assertTrue(logs.endsWith("the full log is in the attached file)"))
         assertEquals(draft.whatHappened, params(url)["what-happened"])
+    }
+
+    @Test fun aDescriptionTooLongForTheAddressIsCutAfterTheLog() {
+        val long = "What I did before the crash. ".repeat(2000)
+        val url = IssueUrl.build(draft.copy(whatHappened = long))
+        assertTrue("${url.length}", url.length <= IssueUrl.MAX_LENGTH)
+        val p = params(url)
+        // The log goes first and entirely; what is left of the description is its beginning
+        assertEquals("", p["logs"])
+        assertTrue(p["what-happened"]!!.isNotEmpty())
+        assertTrue(long.startsWith(p["what-happened"]!!))
+        assertEquals(draft.device, p["device"])
+        assertEquals(draft.title, p["title"])
     }
 
     @Test fun aSmallerLimitStillHoldsAndNeverCutsInsideAnEscape() {

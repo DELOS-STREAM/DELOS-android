@@ -154,7 +154,7 @@ npx wrangler secret put IGDB_CLIENT_SECRET
 ```
 
 Then put the Worker URL into the app build as `DELOS_METADATA_URL` (environment variable or
-`local.properties`, see `docs/WINDOWS_SETUP.md`) and rebuild.
+`local.properties`, see `docs/BUILDING.md`, "local.properties") and rebuild.
 
 ## Smoke test
 
