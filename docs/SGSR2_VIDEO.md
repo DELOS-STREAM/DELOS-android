@@ -13,73 +13,319 @@ MediaCodec (GLES) path and on the PyroWave (Vulkan) path, and records what was v
 | SGSR2-DV and SGSR2-DV (Quality): behavior, pipeline, differences from the Qualcomm reference | SGSR 1, Sharpen only, supersampling, the stream menu's Upscaler page: [STREAM_QUALITY.md](STREAM_QUALITY.md) |
 | The PyroWave Vulkan implementation of all four upscaler modes | Why optical flow, and what the hardware offers: [VIDEO_OPTICAL_FLOW_RESEARCH.md](VIDEO_OPTICAL_FLOW_RESEARCH.md) |
 
-"Behavior", "Pipeline", "Credits and exact changes", "Official quality variant and tuning audit" and "PyroWave
-Vulkan path" describe the current design. A section whose heading starts with "Evidence (date)" is a dated record
-and is not updated afterwards. In the one recorded viewing comparison (480p HDR on the Odin, 2026-10-26) the owner
-chose `SGSR2-DV (Quality)` as the best of the four modes and called the gain modest; all modes stay available.
+"Behavior", "Pipeline", "PyroWave Vulkan path", "Official quality variant" and "Credits and exact changes" describe
+the current design. A section whose heading starts with "Evidence (date)" is a dated record and is not updated
+afterwards.
 
 ## Behavior
 
-Stream menu → Upscaler → Mode offers SGSR 1 (Normal), SGSR 1 (Quality), **SGSR2-DV**
-and **SGSR2-DV (Quality)**.
-All remain opt-in, retain live On/Off and independent sharpness, and use the existing HDR/P010 output.
-The mode also participates in global and per-app settings through `list_sgsr_quality=temporal`.
-Live changes only affect the session; changing modes resets temporal history without reconnecting.
-PyroWave uses separate Vulkan implementations of all four modes; it does not feed this GLES stage.
-A fifth mode, **Sharpen only** (`list_sgsr_quality=sharpen`), does no scaling and no temporal work: it is documented in
-[STREAM_QUALITY.md](STREAM_QUALITY.md#sharpen-only-mode) together with how its cost is measured.
-
-SGSR 1 has no visual acceptance: in the 2026-10-26 comparison the owner found that it made the overall picture
-worse, even though identical-frame diagnostics showed stronger text edges than bilinear. The comparison used
-480p on the 7-inch OLED, because 720p already looked close to native there.
+1. Stream menu → Upscaler → Mode offers SGSR 1 (Normal), SGSR 1 (Quality), **SGSR2-DV** and
+   **SGSR2-DV (Quality)**.
+2. All four modes are opt-in, retain live On/Off and independent sharpness, and use the existing HDR/P010 output.
+3. All four modes stay available. The one recorded viewing comparison is in
+   [Evidence (2026-10-26): SGSR2-DV (Quality) GPU checks and viewing comparison](#evidence-2026-10-26-sgsr2-dv-quality-gpu-checks-and-viewing-comparison).
+4. The mode participates in global and per-app settings through `list_sgsr_quality=temporal`.
+5. Live changes affect only the session. Changing modes resets temporal history without reconnecting.
+6. PyroWave uses separate Vulkan implementations of all four modes; it does not feed the GLES stage
+   ([PyroWave Vulkan path](#pyrowave-vulkan-path)).
+7. A fifth mode, **Sharpen only** (`list_sgsr_quality=sharpen`), does no scaling and no temporal work. It is
+   documented in [STREAM_QUALITY.md](STREAM_QUALITY.md#sharpen-only-mode) together with how its cost is measured.
+8. SGSR 1 has no visual acceptance. The comparison behind that statement is in
+   [Evidence (2026-10-26): SGSR2-DV (Quality) GPU checks and viewing comparison](#evidence-2026-10-26-sgsr2-dv-quality-gpu-checks-and-viewing-comparison).
+9. SGSR 1 (Normal) and SGSR 1 (Quality) use a fixed reconstruction gain and their own final-filter mapping in both
+   pipelines. The values are in
+   [Evidence (2026-11-07): SGSR 1 fixed-gain follow-up](#evidence-2026-11-07-sgsr-1-fixed-gain-follow-up).
 
 ## Pipeline
 
 `SgsrTemporal` runs on the existing SGSR GL thread, after the SurfaceTexture resolve and before final
 presentation. It shares the current GPU image and never requests a CPU pixel copy in normal playback.
 
-1. Render analysis luma into an R8 texture and generate a four-level pyramid. Ping-pong current and
-   previous luma. Matching uses encoded RGB-derived luma; the actual picture stays FP16 for HDR.
-2. Compute **pyramidal Lucas-Kanade backward flow** (current → previous) on an 8-pixel grid, with
-   up to six refinement iterations per level and floating-point subpixel propagation.
-3. Compute independent forward flow (previous → current). Motion includes the camera and objects.
-   Tensor conditioning, photometric residual, bounds and forward/backward consistency control trust.
-4. Detect large frame changes from a conservative GPU 8x8 luma comparison; reset rather than reusing
-   uncertain history. This is a heuristic, not proof that every game scene cut will be recognized.
-5. Reconstruct into ping-pong RGBA16F output textures using the adapted Qualcomm SGSR 2 two-pass-FS
-   upscale shader. Its engine Convert stage is replaced by estimated total flow and history rejection.
-   Source jitter is zero. Bound input fetches and signed Lanczos normalization avoid edge reads and
-   singular/negative-weight instability. All nine spatial taps are enabled. Untrusted history is
-   discarded, and trusted accumulation is conservatively limited.
-6. Apply bounded, contrast-dependent sharpening only during presentation, never inside accumulated
-   history. HDR uses the same ten-bit P010 conversion, metadata, geometry and fence handling as SGSR 1.
+### Stages
 
-History resets on mode changes, initialization/output resize, HDR transitions, nonmonotonic timestamps
-and source timestamp gaps over 50 ms. The last threshold is conservative and needs revisiting for
-unusually low frame rates. Decoder reset/recreate closes the stage. Spatial modes do not allocate
-temporal resources until needed. A failed temporal shader/allocation goes through the existing SGSR
-failure status and direct-decoder recovery rather than displaying an invalid HDR frame. A single failed
-frame (a texture update or buffer swap failing while the surface is replaced) is skipped; only a streak
-of about a second of failed frames stops SGSR and recovers to direct output.
+1. Analysis luma. The stage renders analysis luma into an R8 texture and generates a four-level pyramid. Current
+   and previous luma ping-pong. Matching uses encoded RGB-derived luma; the actual picture stays FP16 for HDR.
+2. Backward flow. The stage computes **pyramidal Lucas-Kanade backward flow** (current → previous) on an 8-pixel
+   grid, with up to six refinement iterations per level and floating-point subpixel propagation.
+3. Forward flow. The stage computes independent forward flow (previous → current). Motion includes the camera
+   and objects. Tensor conditioning, photometric residual, bounds and forward/backward consistency control trust.
+4. Scene change. Large frame changes are detected from a conservative GPU 8x8 luma comparison. The stage resets
+   rather than reusing uncertain history. This is a heuristic, not proof that every game scene cut is recognized.
+5. Reconstruction. The stage reconstructs into ping-pong RGBA16F output textures using the adapted Qualcomm SGSR 2
+   two-pass-FS upscale shader.
+   - Its engine Convert stage is replaced by estimated total flow and history rejection.
+   - Source jitter is zero.
+   - Bound input fetches and signed Lanczos normalization avoid edge reads and singular/negative-weight
+     instability.
+   - All nine spatial taps are enabled.
+   - Untrusted history is discarded, and trusted accumulation is conservatively limited.
+6. Presentation. Bounded, contrast-dependent sharpening is applied only during presentation, never inside
+   accumulated history. HDR uses the same ten-bit P010 conversion, metadata, geometry and fence handling as SGSR 1.
 
-The current flow implementation uses ordinary GLES compute, not QCOM block-matching instructions.
-The simple SAD prototype was rejected after synthetic periodic patterns exposed incorrect vectors.
-Lucas-Kanade performed substantially better in that fixture. Qualcomm Vulkan block matching is a
-possible later optimization, not the algorithm that ships.
+### History reset and lifecycle
+
+| Event | Result |
+|---|---|
+| Mode change | History resets |
+| Initialization or output resize | History resets |
+| HDR transition | History resets |
+| Nonmonotonic timestamp | History resets |
+| Source timestamp gap over 50 ms | History resets. The threshold is conservative and needs revisiting for unusually low frame rates. |
+| Decoder reset or recreate | The stage closes |
+| Spatial mode selected | No temporal resources are allocated until needed |
+| Failed temporal shader or allocation | Goes through the existing SGSR failure status and direct-decoder recovery rather than displaying an invalid HDR frame |
+| A single failed frame (a texture update or buffer swap failing while the surface is replaced) | The frame is skipped |
+| A streak of about a second of failed frames | SGSR stops and recovers to direct output |
+
+### Flow algorithm
+
+- The flow implementation uses ordinary GLES compute, not QCOM block-matching instructions.
+- The algorithm that ships is Lucas-Kanade. A simple SAD block match is not used; the reason is in
+  [Fixture observations (date not recorded)](#fixture-observations-date-not-recorded).
+- Qualcomm Vulkan block matching is a possible later optimization, not the algorithm that ships.
+
+## PyroWave Vulkan path
+
+### Modes
+
+PyroWave implements all four modes directly from decoded Y/Cb/Cr planes.
+
+| Mode | Implementation |
+|---|---|
+| **SGSR 1 (Normal)** | Qualcomm's spatial edge-direction filter. |
+| **SGSR 1 (Quality)** | The distinct Unity HQ reconstruction with RGB-derived luma, lower edge threshold and a 60/40 blend of two weighted estimates. |
+| **SGSR2-DV** | Bidirectional optical flow on an 8-pixel grid and temporal reconstruction. |
+| **SGSR2-DV (Quality)** | A separate input-resolution Activate pass derives a reactive mask from luma changes, flow confidence, forward/backward consistency and disocclusion. Reconstruction additionally clips history in YCoCg around a weighted current-frame center. |
+
+### Color domain and sharpening
+
+- Intermediate RGB stays FP16 and in the source's encoded domain, including PQ for HDR.
+- Presentation-only bounded sharpening is shared by the SDR swapchain and the BT.2020/P010 pack pass.
+- Zero sharpness bypasses the filter. Sharpened pixels never feed temporal history.
+- Off bypasses all reconstruction and sharpening while retaining the saved sharpness setting.
+- All post-decode passes remain inside the existing GPU draw timestamp interval.
+
+### Mode changes and history
+
+1. Requested mode and applied mode are separate.
+2. Live changes apply after the current frame fence, without restarting the network connection or decoder.
+3. Switching between spatial, temporal and Quality modes recreates only the required resources. Spatial modes
+   allocate no motion/history pair.
+4. A reset returns fresh reconstruction before reading undefined previous-frame images.
+
+| Event | Result |
+|---|---|
+| Mode change | Temporal history resets |
+| HDR change | Temporal history resets |
+| Whole-frame luma cut (the same conservative 8x8 comparison as the MediaCodec path, `sgsr_scene.comp`) | Temporal history resets |
+| Gap of more than 50 ms between frames | Temporal history resets |
+
+### HDR, rebuilds and fallbacks
+
+1. HDR rebuilds the dependent pack/present pipelines in ownership order.
+2. A failed upscaler rebuild, at the HDR switch or when its level does not fit, falls back to level 1 and then to
+   direct rendering rather than an unsupported active mode.
+3. A failed swapchain or pipeline rebuild is retried before the next frame is drawn.
+4. In HDR the upscaler needs P010 buffers at the presentation size. If those cannot be allocated:
+   1. The upscaler is dropped and stays off until the next HDR switch retries it.
+   2. The GPU P010 bridge is retried at the stream size.
+   3. Only if that fails too does the CPU readback path take over, which also reports direct rendering.
+   4. A later HDR switch retries the GPU bridge.
+5. A rebuild of the P010 output (a mode or level change that needs new resources, or the switch to SDR) keeps the
+   previous output's SurfaceControl on screen with its last picture.
+   - The first transaction of the rebuilt output shows it and removes the old control atomically.
+   - After a switch to the RGB swapchain the old control leaves once three swapchain frames have been presented.
+   - The display therefore holds the last frame for the rebuild instead of showing the empty window underneath.
+
+### Supersampling
+
+1. Native-resolution supersampling is available for all four modes at the existing 1x/2x levels and size limits,
+   matching the MediaCodec path.
+2. The native planner receives its size limits and the "native input" tolerance from `SgsrDimensions` when the
+   renderer is created.
+3. The planner judges whether a stream is native against the display it is aspect-fitted to. A stream larger than
+   its display is a downscale and is never supersampled. Its presentation size stays the stream size, since
+   shrinking is the display scaler's job.
+4. If level 2 cannot be allocated the renderer falls back to level 1. The stream menu reports the level in effect:
+   the request at once, 1 after that fallback.
+
+## Official quality variant
+
+### Qualcomm's variants
+
+Qualcomm provides three SGSR 2 variants at the pinned source revision
+([Credits and exact changes](#credits-and-exact-changes)).
+
+| Variant | Qualcomm's position |
+|---|---|
+| 2-pass fragment | Recommended, fast |
+| 2-pass compute | Recommended, fast |
+| 3-pass compute | Explicitly favors visual quality |
+
+`SGSR2-DV` uses the 2-pass fragment reconstruction, with all nine spatial samples rather than the faster
+five-sample option.
+
+The quality-oriented 3-pass pipeline adds an Activate stage, reactive/disocclusion handling and an optional pixel
+lock for thin-feature stability. Its optional RCAS sharpening is a separate fourth stage and is disabled by default
+in Qualcomm's Unity integration.
+
+### SGSR2-DV (Quality)
+
+`SGSR2-DV (Quality)` adapts the 3-pass structure for decoded video. Decoded video has no engine depth, object
+motion vectors, camera matrices or render jitter, so this is a video-specific adaptation, not an unchanged copy of
+the engine integration.
+
+| Element | State in `SGSR2-DV (Quality)` | Reason or detail |
+|---|---|---|
+| Activate | A separate Activate compute pass | Derives a reactive mask from optical-flow confidence, luma residual and forward/backward consistency |
+| Reconstruction kernel | Nine-tap kernel retained | |
+| Temporal history clipping | In YCoCg | Colored edges are not rejected independently per RGB channel |
+| RCAS | Disabled | RCAS would duplicate the existing optional presentation sharpener |
+| Pixel lock | Disabled | Pixel lock without engine jitter can preserve source aliasing on static thin features |
+
+The GPU checks, stage timings and the owner's viewing result for this mode are in
+[Evidence (2026-10-26): SGSR2-DV (Quality) GPU checks and viewing comparison](#evidence-2026-10-26-sgsr2-dv-quality-gpu-checks-and-viewing-comparison).
+
+### Tuning values
+
+| Parameter | Value | Source |
+|---|---|---|
+| Bias | output-width/input-width | Official Unity reference, `Runtime/v2/SGSR2RenderPass.cs` |
+| Variance-box factor | min(20, area-scale cubed) | Official Unity reference, `Runtime/v2/SGSR2RenderPass.cs` |
+| Spatial taps | Nine | [Pipeline](#pipeline) |
+| Source jitter | Zero | [Pipeline](#pipeline) |
+| Sharpness `0%` | Bypasses the presentation sharpener | This section |
+
+The Sharpness control is not a SGSR 2 reconstruction-quality parameter. It controls a separate, bounded
+presentation-only sharpener after reconstruction. 0% bypasses that sharpening, and its output is never accumulated
+into temporal history.
+
+The source-level comparison of every parameter with the references is in
+[Evidence (2026-11-07): verification against the official reference](#evidence-2026-11-07-verification-against-the-official-reference).
 
 ## Credits and exact changes
 
-- Official Qualcomm SGSR 2 shader: SnapdragonGameStudios/snapdragon-gsr,
-  `d926f074bcb9d714e179f1ce0fcb9ee2eeb5074e`,
-  `sgsr/v2/include/glsl_2_pass_fs/sgsr2_upscale.fs`, BSD-3-Clause. Copyright retained in
-  `assets/sgsr/sgsr2_video.frag`; license bundled in `assets/licenses/sgsr.txt`.
-- Official Unity reference used to verify reconstruction parameters:
-  SnapdragonGameStudios/com.qualcomm.snapdragon.sgsr.for.unity,
-  `ab685c993ebd0f65a762c6e28f64f124c7f12532`, `Runtime/v2/SGSR2RenderPass.cs`:
-  bias is output-width/input-width; the variance-box factor is min(20, area-scale cubed).
-- The GLSL video flow, scene-change detector, rejection adapter, lifecycle and presentation sharpening
-  are original Delos code under the project's GPL license. No optical-flow library or model weights
-  were imported. The mathematical Lucas-Kanade method is implemented directly.
+| Component | Origin | Revision | File | License |
+|---|---|---|---|---|
+| Official Qualcomm SGSR 2 shader | SnapdragonGameStudios/snapdragon-gsr | `d926f074bcb9d714e179f1ce0fcb9ee2eeb5074e` | `sgsr/v2/include/glsl_2_pass_fs/sgsr2_upscale.fs` | BSD-3-Clause. Copyright retained in `assets/sgsr/sgsr2_video.frag`; license bundled in `assets/licenses/sgsr.txt`. |
+| Official Unity reference used to verify reconstruction parameters ([Tuning values](#tuning-values)) | SnapdragonGameStudios/com.qualcomm.snapdragon.sgsr.for.unity | `ab685c993ebd0f65a762c6e28f64f124c7f12532` | `Runtime/v2/SGSR2RenderPass.cs` | Reference only |
+| The GLSL video flow, scene-change detector, rejection adapter, lifecycle and presentation sharpening | Original Delos code | | | The project's GPL license |
+
+No optical-flow library or model weights are imported. The mathematical Lucas-Kanade method is implemented
+directly.
+
+## Code map
+
+| Path | Role |
+|---|---|
+| `app/src/main/java/com/limelight/binding/video/SgsrRenderer.java`, `SgsrTemporal.java`, `SgsrDimensions.java` | The GLES renderer, the temporal stage, the sizes |
+| `app/src/main/assets/sgsr/` | The GLES shaders, including the adapted `sgsr2_video.frag` |
+| `app/src/main/jni/pyrowave-renderer/` | The Vulkan implementation for PyroWave and its shaders |
+| `app/src/debug/java/com/limelight/binding/video/SgsrGpuInstrumentation.java`, `PyroWaveGpuInstrumentation.java` | Headless GPU checks on a device |
+
+## Verification
+
+The two debug instrumentations run the shipped shaders on a device's GPU and compare the output with known
+values. The dated results are in the Evidence sections.
+
+| Check | Path | Command |
+|---|---|---|
+| `SgsrGpuInstrumentation` | MediaCodec (GLES) | In [Evidence (2026-10-26): GPU fixtures on the Odin](#evidence-2026-10-26-gpu-fixtures-on-the-odin) |
+| `PyroWaveGpuInstrumentation` | PyroWave (Vulkan) | In [GPU regression probe](#gpu-regression-probe) |
+
+Instrumentation is not run while streaming: it restarts the app process.
+
+### GPU regression probe
+
+The debug APK includes `PyroWaveGpuInstrumentation`. It dispatches the shipped Vulkan SPIR-V and
+reads back real GPU output without launching a game or opening a streaming connection:
+
+```powershell
+adb -s <device> shell am instrument -w io.github.meitoncz.delos.debug/com.limelight.binding.video.PyroWaveGpuInstrumentation
+```
+
+The production-renderer probe additionally checks:
+
+- the upscaler's resource allocation and compute dispatch;
+- actual applied modes;
+- both supersampling levels;
+- the downscale case;
+- Off teardown;
+- the swapchain-format rebuild of SDR → HDR → SDR.
+
+It does not run `present()`, so the swapchain/P010 present passes, the P010 pack pass and the GL bridge are not
+covered by it.
+
+The recorded run is in
+[Evidence (2026-10-28): PyroWave GPU regression probe on the Odin](#evidence-2026-10-28-pyrowave-gpu-regression-probe-on-the-odin).
+
+### On-device comparison recipe (not run)
+
+This comparison has not been run; it is the recipe for whoever does it. Do not run instrumentation
+while streaming: it restarts the app. The recipe comes from the source audit in
+[Evidence (2026-11-07): verification against the official reference](#evidence-2026-11-07-verification-against-the-official-reference).
+
+1. **Record the real path first:** codec, decoded/cropped size, SDR/HDR and color metadata,
+   presentation/internal sizes, applied mode, supersampling level and sharpness. Include the
+   `SGSR output` and P010 target/parent-size messages, or the native applied-size diagnostics.
+   Verify the HDR view has been laid out; a parent-size fallback can invalidate an assumed 1080p test.
+2. **Separate scale from sharpness:** compare a low-resolution stream (480p or 720p) with a
+   native-resolution stream. Compare GLES SGSR 1 at 0/50/100%. At the audit baseline only the last reached the
+   reference gain; all three positions use the official gain
+   ([Evidence (2026-11-07): SGSR 1 fixed-gain follow-up](#evidence-2026-11-07-sgsr-1-fixed-gain-follow-up)).
+   Compare native separately at the same source/output sizes, not as an assumed identical slider.
+   Keep the host's own AA, sharpening and bitrate unchanged.
+3. **Use identical decoded content:** freeze a game scene/menu on the host through normal user
+   interaction, capture several settled frames after each mode change, and compare equal crops.
+   A paused animation or a short loop is preferable to unrelated screenshots. Off is the existing
+   direct display path, not a neutral software-bilinear reference. Do not attribute every Off/On
+   difference to the reconstruction kernel.
+4. **Static crops:** small white text, a saturated yellow/red/cyan focus border, slanted rails or
+   wires, brick/foliage detail and a dark-to-bright smooth ramp. Inspect overshoot, phase speckle,
+   one-pixel shift, chroma spread and lost texture separately. Include corners/edges to exercise
+   clamped taps. Native supersampling comparisons must state the actual internal size.
+5. **Motion crops:** slow fractional-pixel pans, fast pans, an object crossing a contrasting
+   background, particles/transparency, HUD over moving scenery, and a hard scene cut. Compare
+   a sequence rather than one still for trails, flicker and delayed detail. Also test 20 FPS or
+   lower: the GLES 50 ms reset threshold can suppress accumulation at low cadence.
+6. **HDR/color:** repeat neutral gray, near-black ramps, bright highlights and saturated borders
+   in SDR and HDR with the same exposure. Check legal-range black/white and BT.709/2020 transitions.
+   Screenshots may pass through tone mapping; they alone cannot prove PQ luminance accuracy.
+7. **Run existing GPU probes outside a stream:** GLES includes the colored-history regression;
+   retain constants, ramp, resize/reset checks and native source/P010 probes. Then measure actual
+   processing time, frame cadence and thermals during sustained 60/120 FPS playback separately.
+
+The device comparison for the SGSR 1 fixed gain is described in
+[Evidence (2026-11-07): SGSR 1 fixed-gain follow-up](#evidence-2026-11-07-sgsr-1-fixed-gain-follow-up). It has not
+been run either.
+
+### Fixture observations (date not recorded)
+
+- The simple SAD prototype was rejected after synthetic periodic patterns exposed incorrect vectors.
+- Lucas-Kanade performed substantially better in that fixture.
+
+### Not verified
+
+- Optical flow can fail on motion blur, occlusions, transparency, particles, repeated textures, tiny HUD text and
+  compression. Rejection/clamping reduces risk but does not establish good game quality.
+- No engine depth or actual render jitter is available; stationary 480p input cannot recover detail it never
+  contains.
+- Long-session performance, thermal behavior and difficult game motion have not been validated on a device.
+- Any display other than the Odin's has no record ([#22](https://github.com/Meitoncz/Delos/issues/22) tracks other
+  devices).
+- The scene-change detector is a heuristic; that every game scene cut is recognized is not verified.
+- The on-device comparison recipe has not been run.
+- What the 2026-11-07 source audit left unverified is listed in
+  [Not verified in this audit](#not-verified-in-this-audit).
+- Device acceptance and performance of the SGSR 1 fixed gain are not measured. The cost of its added GLES pass,
+  intermediate storage and bandwidth is not measured
+  ([Evidence (2026-11-07): SGSR 1 fixed-gain follow-up](#evidence-2026-11-07-sgsr-1-fixed-gain-follow-up)).
+- The colored-history regression in `SgsrGpuInstrumentation` was not run on the Odin in the 2026-11-07 audit.
+
+## Related
+
+- [STREAM_QUALITY.md](STREAM_QUALITY.md), [VIDEO_OPTICAL_FLOW_RESEARCH.md](VIDEO_OPTICAL_FLOW_RESEARCH.md), [LAUNCH_TRANSITION.md](LAUNCH_TRANSITION.md).
+- Issues [#19](https://github.com/Meitoncz/Delos/issues/19), [#22](https://github.com/Meitoncz/Delos/issues/22), [#74](https://github.com/Meitoncz/Delos/issues/74).
 
 ## Evidence (2026-10-26): GPU fixtures on the Odin
 
@@ -113,35 +359,6 @@ adb shell am instrument -w io.github.meitoncz.delos.debug/com.limelight.binding.
 Do not run it while streaming: instrumentation restarts the app process. The headless Java checks are
 versioned under `app/src/debug/` and excluded from release; the native fixture scripts of that day were
 not committed. The viewing comparison that followed is recorded in the next two evidence sections.
-
-## Code map
-
-| Path | Role |
-|---|---|
-| `app/src/main/java/com/limelight/binding/video/SgsrRenderer.java`, `SgsrTemporal.java`, `SgsrDimensions.java` | The GLES renderer, the temporal stage, the sizes |
-| `app/src/main/assets/sgsr/` | The GLES shaders, including the adapted `sgsr2_video.frag` |
-| `app/src/main/jni/pyrowave-renderer/` | The Vulkan implementation for PyroWave and its shaders |
-| `app/src/debug/java/com/limelight/binding/video/SgsrGpuInstrumentation.java`, `PyroWaveGpuInstrumentation.java` | Headless GPU checks on a device |
-
-## Verification
-
-The two debug instrumentations run the shipped shaders on a device's GPU and compare the output with known
-values; the commands are in "Evidence (2026-10-26): GPU fixtures on the Odin" and "GPU regression probe". The
-dated results are in the Evidence sections.
-
-### Not verified
-
-Optical flow can fail on motion blur, occlusions, transparency, particles, repeated textures, tiny
-HUD text and compression. Rejection/clamping reduces risk but does not establish good game quality.
-No engine depth or actual render jitter is available; stationary 480p input cannot recover detail it
-never contains. Long-session performance, thermal behavior and difficult game motion have not been
-validated on a device.
-Any display other than the Odin's has no record ([#22](https://github.com/Meitoncz/Delos/issues/22) tracks other devices).
-
-## Related
-
-- [STREAM_QUALITY.md](STREAM_QUALITY.md), [VIDEO_OPTICAL_FLOW_RESEARCH.md](VIDEO_OPTICAL_FLOW_RESEARCH.md), [LAUNCH_TRANSITION.md](LAUNCH_TRANSITION.md).
-- Issues [#19](https://github.com/Meitoncz/Delos/issues/19), [#22](https://github.com/Meitoncz/Delos/issues/22), [#74](https://github.com/Meitoncz/Delos/issues/74).
 
 ## Evidence (2026-10-26): first game feedback and phase-noise correction
 
@@ -187,109 +404,50 @@ The corrected build, 63 JVM tests and lint passed. Headless instrumentation on t
 also passed constants, scene/reset/resize/HDR transitions and the 2.25x ramp regression. Static full
 temporal-stage timing was 2.40 ms median / 2.56 ms p95 at 480p and 2.76 / 2.88 ms at 720p.
 
-## Official quality variant and tuning audit
+## Evidence (2026-10-26): SGSR2-DV (Quality) GPU checks and viewing comparison
 
-Qualcomm provides three SGSR 2 variants at the pinned source revision: recommended fast 2-pass
-fragment and compute implementations, plus a 3-pass compute implementation that explicitly favors
-visual quality. The current Delos video adaptation uses the 2-pass fragment reconstruction, already
-with all nine spatial samples rather than the faster five-sample option.
+Device: the Odin (Adreno 740, 7-inch OLED).
 
-The quality-oriented 3-pass pipeline adds an Activate stage, reactive/disocclusion handling and an
-optional pixel lock for thin-feature stability. Its optional RCAS sharpening is a separate fourth
-stage and is disabled by default in Qualcomm's Unity integration.
+`SGSR2-DV (Quality)` passed the real Adreno 740 shader compiler and headless GPU checks for
+constant colors, scene/reset/resize/HDR transitions and the 2.25x phase-noise regression.
 
-`SGSR2-DV (Quality)` adapts that structure for decoded video. A separate Activate compute pass
-derives a reactive mask from optical-flow confidence, luma residual and forward/backward
-consistency. Reconstruction retains the nine-tap kernel and clips temporal history in YCoCg so
-colored edges are not rejected independently per RGB channel. RCAS and pixel lock remain disabled:
-RCAS would duplicate the existing optional presentation sharpener, while pixel lock without engine
-jitter can preserve source aliasing on static thin features. Decoded video still has no engine depth,
-object motion vectors, camera matrices or render jitter, so this is a video-specific adaptation, not
-an unchanged copy of the engine integration.
+| Input → output | Median | p95 |
+| --- | --- | --- |
+| 854x480 → 1920x1079 | 3.26 ms | 3.99 ms |
+| 1280x720 → 1920x1080 | 3.90 ms | 4.26 ms |
 
-Evidence (2026-10-26): the mode passed the real Adreno 740 shader compiler and headless GPU checks for
-constant colors, scene/reset/resize/HDR transitions and the 2.25x phase-noise regression. At 854x480 to
-1920x1079 the full temporal stage measured 3.26 ms median / 3.99 ms p95; at 1280x720 to 1920x1080 it measured
-3.90 / 4.26 ms. The owner found the improvement modest at 480p but selected this as the best mode;
-remaining static logo aliasing is consistent with missing source detail at that resolution.
+The times are of the full temporal stage.
 
-The Sharpness control is not a SGSR 2 reconstruction-quality parameter. It controls a separate,
-bounded presentation-only sharpener after reconstruction; 0% bypasses that sharpening and its output
-is never accumulated into temporal history.
+In the one recorded viewing comparison (480p HDR on the Odin, 2026-10-26) the owner found the improvement modest
+at 480p but selected `SGSR2-DV (Quality)` as the best of the four modes. Remaining static logo aliasing is
+consistent with missing source detail at that resolution.
 
-## PyroWave Vulkan path
+In the same comparison the owner found that SGSR 1 made the overall picture worse, even though identical-frame
+diagnostics showed stronger text edges than bilinear. The comparison used 480p on the 7-inch OLED, because 720p
+already looked close to native there.
 
-PyroWave implements all four modes directly from decoded Y/Cb/Cr planes:
-
-- **SGSR 1 (Normal):** Qualcomm's spatial edge-direction filter.
-- **SGSR 1 (Quality):** the distinct Unity HQ reconstruction with RGB-derived luma,
-  lower edge threshold and a 60/40 blend of two weighted estimates.
-- **SGSR2-DV:** bidirectional optical flow on an 8-pixel grid and temporal reconstruction.
-- **SGSR2-DV (Quality):** a separate input-resolution Activate pass derives a reactive mask
-  from luma changes, flow confidence, forward/backward consistency and disocclusion; reconstruction
-  additionally clips history in YCoCg around a weighted current-frame center.
-
-Intermediate RGB stays FP16 and in the source's encoded domain, including PQ for HDR.
-Presentation-only bounded sharpening is shared by the SDR swapchain and BT.2020/P010 pack pass.
-Zero sharpness bypasses the filter; sharpened pixels never feed temporal history.
-Off bypasses all reconstruction and sharpening while retaining the saved sharpness setting.
-
-Requested mode and applied mode are separate. Live changes apply after the current frame fence,
-without restarting the network connection or decoder. Switching between spatial, temporal and
-Quality modes recreates only the required resources; spatial modes allocate no motion/history pair.
-Mode and HDR changes reset temporal history. A whole-frame luma cut (the same conservative 8x8
-comparison as the MediaCodec path, `sgsr_scene.comp`) and a gap of more than 50 ms between
-frames reset it as well. A reset returns fresh reconstruction before reading
-undefined previous-frame images. HDR rebuilds the dependent pack/present pipelines in ownership order.
-A failed upscaler rebuild, at the HDR switch or when its level does not fit, falls back to level 1 and
-then to direct rendering rather than an unsupported active mode; a failed swapchain or pipeline rebuild
-is retried before the next frame is drawn.
-In HDR the upscaler needs P010 buffers at the presentation size. If those cannot be allocated, the
-upscaler is dropped (and stays off until the next HDR switch retries it) and the GPU P010 bridge is
-retried at the stream size; only if that fails too does the CPU readback path take over, which also
-reports direct rendering. A later HDR switch retries the GPU bridge.
-A rebuild of the P010 output (a mode or level change that needs new resources, or the switch to SDR)
-keeps the previous output's SurfaceControl on screen with its last picture. The new output's first
-transaction shows it and removes the old control atomically; after a switch to the RGB swapchain the
-old control leaves once three swapchain frames have been presented. The display therefore holds the
-last frame for the rebuild instead of showing the empty window underneath.
-All post-decode passes remain inside the existing GPU draw timestamp interval.
-
-Native-resolution supersampling is available for all four modes at the existing 1x/2x levels and
-size limits, matching the MediaCodec path. The native planner receives its size limits and the
-"native input" tolerance from `SgsrDimensions` when the renderer is created, and judges whether a
-stream is native against the display it is aspect-fitted to: a stream larger than its display is
-a downscale and is never supersampled (its presentation size stays the stream size, since shrinking is
-the display scaler's job). If level 2 cannot be allocated the renderer falls back to level 1 and the
-stream menu reports the level in effect: the request at once, 1 after that fallback.
-
-### GPU regression probe
-
-The debug APK includes `PyroWaveGpuInstrumentation`. It dispatches the shipped Vulkan SPIR-V and
-reads back real GPU output without launching a game or opening a streaming connection:
-
-```powershell
-adb -s <device> shell am instrument -w io.github.meitoncz.delos.debug/com.limelight.binding.video.PyroWaveGpuInstrumentation
-```
-
-Evidence (2026-10-28): the Odin Adreno 740 run passed constant preservation, Standard/HQ textured edges and local bounds,
-bidirectional motion, distinct regular/Quality output, activation/reset and scene transitions,
-16-bit BT.2020 values, zero/nonzero sharpening and limited-range P010 packing.
-Standard/HQ maximum pixel difference was 0.0620117; regular/Quality was 0.0114746.
-P010 packing maximum error was 0.000482917. These are synthetic correctness checks, not a claim
-of visual acceptance or sustained 60/120 FPS performance in a game.
-The production-renderer probe additionally checks the upscaler's resource allocation and compute
-dispatch, actual applied modes, both supersampling levels, the downscale case, Off teardown and the
-swapchain-format rebuild of SDR → HDR → SDR. It does not run `present()`, so the swapchain/P010
-present passes, the P010 pack pass and the GL bridge are not covered by it.
-
-### Evidence (2026-10-27): first SGSR2-DV acceptance on PyroWave
+## Evidence (2026-10-27): first SGSR2-DV acceptance on PyroWave
 
 The target is the real display size, aspect-fitted from the stream dimensions; the first implementation
 incorrectly inherited a fixed surface size and reconstructed 720p back to 720p. Device logs after the
 fix confirmed `1280x720 -> 1920x1080`. A fused reconstruction/clipping shader reduced draw cost from
 about 6.5-6.8 ms to mostly 3.9-4.9 ms, allowing about 118-119 fps during the tested 120 Hz HDR stream.
 The owner accepted the improved latency, HDR color, live toggle and processing-time statistics.
+
+## Evidence (2026-10-28): PyroWave GPU regression probe on the Odin
+
+The Odin Adreno 740 run of `PyroWaveGpuInstrumentation` passed constant preservation, Standard/HQ textured edges
+and local bounds, bidirectional motion, distinct regular/Quality output, activation/reset and scene transitions,
+16-bit BT.2020 values, zero/nonzero sharpening and limited-range P010 packing.
+
+| Measure | Value |
+|---|---|
+| Standard/HQ maximum pixel difference | 0.0620117 |
+| Regular/Quality maximum pixel difference | 0.0114746 |
+| P010 packing maximum error | 0.000482917 |
+
+These are synthetic correctness checks, not a claim of visual acceptance or sustained 60/120 FPS performance in a
+game.
 
 ## Evidence (2026-11-07): verification against the official reference
 
@@ -386,38 +544,11 @@ Adreno/driver behavior. The same case is now in `SgsrGpuInstrumentation` alongsi
 the phase ramp; its updated Java compiled against the real Android API. It was **not run on Odin**
 in this audit. The shader and GPU regression are isolated in commit `e5ad4ce3`.
 
-### On-device comparison recipe (not run)
+### On-device comparison recipe
 
-This comparison has not been run; it is the recipe for whoever does it. Do not run instrumentation
-while streaming: it restarts the app.
+The recipe written in this audit is in [On-device comparison recipe (not run)](#on-device-comparison-recipe-not-run).
 
-1. **Record the real path first:** codec, decoded/cropped size, SDR/HDR and color metadata,
-   presentation/internal sizes, applied mode, supersampling level and sharpness. Include the
-   `SGSR output` and P010 target/parent-size messages, or the native applied-size diagnostics.
-   Verify the HDR view has been laid out; a parent-size fallback can invalidate an assumed 1080p test.
-2. **Separate scale from sharpness:** compare a low-resolution stream (480p or 720p) with a
-   native-resolution stream. Compare GLES SGSR 1 at 0/50/100%; the last reaches the reference gain.
-   Compare native separately at the same source/output sizes, not as an assumed identical slider.
-   Keep the host's own AA, sharpening and bitrate unchanged.
-3. **Use identical decoded content:** freeze a game scene/menu on the host through normal user
-   interaction, capture several settled frames after each mode change, and compare equal crops.
-   A paused animation or a short loop is preferable to unrelated screenshots. Off is the existing
-   direct display path, not a neutral software-bilinear reference. Do not attribute every Off/On
-   difference to the reconstruction kernel.
-4. **Static crops:** small white text, a saturated yellow/red/cyan focus border, slanted rails or
-   wires, brick/foliage detail and a dark-to-bright smooth ramp. Inspect overshoot, phase speckle,
-   one-pixel shift, chroma spread and lost texture separately. Include corners/edges to exercise
-   clamped taps. Native supersampling comparisons must state the actual internal size.
-5. **Motion crops:** slow fractional-pixel pans, fast pans, an object crossing a contrasting
-   background, particles/transparency, HUD over moving scenery, and a hard scene cut. Compare
-   a sequence rather than one still for trails, flicker and delayed detail. Also test 20 FPS or
-   lower: the GLES 50 ms reset threshold can suppress accumulation at low cadence.
-6. **HDR/color:** repeat neutral gray, near-black ramps, bright highlights and saturated borders
-   in SDR and HDR with the same exposure. Check legal-range black/white and BT.709/2020 transitions.
-   Screenshots may pass through tone mapping; they alone cannot prove PQ luminance accuracy.
-7. **Run existing GPU probes outside a stream:** GLES now includes the colored-history regression;
-   retain constants, ramp, resize/reset checks and native source/P010 probes. Then measure actual
-   processing time, frame cadence and thermals during sustained 60/120 FPS playback separately.
+### Not verified in this audit
 
 Unverified in this audit: physical same-frame renderer comparisons, actual crop/SurfaceTexture matrices,
 first-frame EGL/view sizing, driver external-YUV conversion/chroma siting, SurfaceFlinger filtering,
@@ -425,7 +556,7 @@ P010 display colorimetry, real-game flow/occlusion accuracy and sustained latenc
 built, installed or run on a device for it. Other differences above were documented rather
 than silently retuned; the source audit does not establish one universal cause of perceived softness.
 
-## SGSR 1 fixed-gain follow-up (2026-11-07)
+## Evidence (2026-11-07): SGSR 1 fixed-gain follow-up
 
 The owner approved restoring the official **2.0 reconstruction gain** for SGSR 1 (Normal) and
 High Quality in both MediaCodec/GLES and PyroWave/Vulkan. This supersedes the two historical
@@ -463,7 +594,8 @@ storage and bandwidth cost are **unmeasured**; target reuse is not a claim of ze
 
 A device comparison should keep the same scene, source/output sizes, host AA/sharpening
 and bitrate: compare the build before this follow-up with the current one at 50% for Standard and HQ in each pipeline,
-then 0/50/100% to isolate final sharpening. Unlike the comparison recipe above, all
+then 0/50/100% to isolate final sharpening. Unlike step 2 of the
+[On-device comparison recipe (not run)](#on-device-comparison-recipe-not-run) at the audit baseline, all
 three SGSR 1 slider positions now use the official gain. Include SDR/HDR/P010, the launch arrival
 effect, live mode changes, halos, fine text, texture and sustained processing time. Stronger
 reconstruction detail is expected **[INFERENCE]**, but ringing or compression visibility may also

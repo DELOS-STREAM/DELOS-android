@@ -1,0 +1,527 @@
+# Stream and stream menu
+
+## Purpose
+
+The stream menu is the in-stream menu of Delos: nine glass tiles over the lower part of the stream with the pages
+behind them in a popover. This document specifies the stream-related rows of the Upscaler page, the Bitrate page and
+the statistics panel, the layout, navigation and motion of the stream menu, and the two debug previews that draw the
+context menu and the stream menu without a stream.
+
+## Scope
+
+| Covered here | Specified elsewhere |
+|---|---|
+| Upscaler page rows, Bitrate recommendation row, Link block and SGSR output rows of the statistics panel, automatic saving of the menu's changes | Codec-specific behavior and measured results: [STREAM_QUALITY.md](../STREAM_QUALITY.md), [SGSR2_VIDEO.md](../SGSR2_VIDEO.md) |
+| Stream menu: dock, tiles, head, caption, gradient, popover, row focus, navigation, touch, motion | Shared durations and easings (`Motion`): [MOTION_AND_COLORS.md](MOTION_AND_COLORS.md) |
+| Stream-menu entry points, delayed handlers, stream window flags, `ActiveKeyboardInput` | Delos Full keyboard: [FULL_KEYBOARD.md](FULL_KEYBOARD.md) |
+| Context menu preview (debug builds) | The context menu itself and Settings: [MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md) |
+| Stream menu preview (debug builds) | Stream exits and the `DelosStreamActivity` structure: [SHELL_ARCHITECTURE.md](SHELL_ARCHITECTURE.md) |
+| | Index of the GUI documents and design principles: [GUI.md](../GUI.md) |
+
+## 1. Stream
+
+### 1.1 Upscaling
+
+- SGSR upscaling and independent sharpening are implemented.
+- Codec-specific behavior and measured results are documented in [STREAM_QUALITY.md](../STREAM_QUALITY.md) and
+  [SGSR2_VIDEO.md](../SGSR2_VIDEO.md).
+- Current quality/performance acceptance is tracked only in [#19](https://github.com/Meitoncz/Delos/issues/19).
+
+### 1.2 Upscaler page
+
+The Upscaler page of the stream menu changes a row with one press.
+
+| Row | Content | Shown |
+|---|---|---|
+| **Enabled** | The on/off toggle for the upscaler and Sharpen only alike. | Always |
+| **Supersampling quality** | The supersampling quality. | Only while the stream matches the display and the mode scales |
+| **Mode** | SGSR 1 (Normal), SGSR 1 High Quality, SGSR2-DV, SGSR2-DV (Quality), **Sharpen only**. | Always |
+| **Sharpness** | The sharpness slider. | Always |
+
+- The supersampling quality, mode and sharpness rows show the value just requested, not the one the renderer applied
+  on its last frame. A fallback from 2× to 1× corrects the row afterwards.
+- Mode and Sharpness change live.
+- Switching Mode to or from Sharpen only rebuilds the output stage the way the Enabled toggle does (the picture may
+  flicker once), because Sharpen only draws at the stream's size.
+
+In **Sharpen only**:
+
+- The Supersampling quality row is hidden: nothing is scaled, so it has no meaning.
+- The page is titled Upscaler.
+- The Sharpness slider is the whole effect.
+- The tile's status reads "On: Sharpen only" in the help.
+
+### 1.3 Bitrate page, recommendation row
+
+| Property | Value |
+|---|---|
+| Shown | PyroWave always; an ordinary codec once a link test exists |
+| Position | A row above Apply |
+| Text | `Recommended: 135 Mbps · drops frames at 225 Mbps` |
+| Icon | Thumbs up, the glyph of every "recommended" row |
+| Value | **Fill**, a scrolling label like every row |
+| Refresh | Once a second, from the stream's own counters and the last link test |
+
+- A fills the slider with the recommendation; only Apply sends it.
+- The row's help says what the number rests on and, for an untested link, that testing is done in Settings before
+  connecting. The host refuses probes during a stream, so there is no Test link here.
+- An ordinary codec without a test shows only the slider and Apply.
+
+### 1.4 Statistics panel, Link block
+
+The Link block is shown in the full panel, for PyroWave only, after Backlog.
+
+| Row | Example | Meaning |
+|---|---|---|
+| **Receiving** | `212 of 225 Mb/s` | The app's whole received rate against the bitrate in force. |
+| **Partial / lost** | | Frames per second. |
+| **Verdict** | `Link keeps up at 225 Mbps`, `Link drops frames at 225 Mbps, try 135 Mbps`, `Device skips frames; the link is fine`, `Measuring` | |
+
+### 1.5 Statistics panel, SGSR output rows
+
+The SGSR output rows are shown in the full panel, for MediaCodec streams whose output goes through the upscaler or
+Sharpen only. They use the same label/value style as the other rows.
+
+| Row | Position | Example | Meaning |
+|---|---|---|---|
+| **Upscaling** | | | The GPU time per frame read from the frame fences (the CPU submit time until the first fence is read). |
+| **Frame queue** | After Upscaling | `1.0 avg / 1 max waiting · age 0.6 / 1.9 ms · 0.0 skipped /s` | See the list below. |
+| **Render latency** | Before Total latency | `6.1 / 7.9 / 9.3 ms avg/p95/max` | The time from the frame reaching the output stage to the display presenting it, over the last second. |
+
+**Frame queue** states three values:
+
+1. How many decoder frames were waiting when a draw started (1 = the output kept up).
+2. How long the newest one had waited.
+3. How many older frames per second were skipped because a newer one was ready (non-zero = the output thread cannot
+   keep up with the decoder).
+
+When the GPU already had two frames of work in flight, the Frame queue row ends with `· 30.0 GPU busy /s`: frames per
+second that waited for it and were replaced by a newer one without being drawn (the GPU work per frame is longer than
+the frame interval). After two seconds of that, one toast per stream and upscaler mode says "Upscaler is too heavy for
+this frame rate: lower the supersampling or the frame rate". No setting changes by itself.
+
+**Render latency**:
+
+- It is shown only while the statistics overlay is on and the platform reports the display's present time.
+- It does not include the controller, network, host or decoding, so it is not the delay between a press and the
+  changed picture (see [Latency](../STREAM_QUALITY.md#latency-75)).
+
+### 1.6 Automatic saving
+
+- There is no save button. Every change on the Upscaler page applies live and is kept for this game automatically, as
+  that game's overrides of the four upscaler settings (`MenuAutoSave`).
+- The save happens about 500 ms after the last change, or when the menu closes or the stream ends.
+- The profile is never written from the menu.
+- Nothing is written while the menu merely opens.
+- There is no toast.
+- A stream without its launch identity stays session-only.
+
+## 2. Stream menu
+
+### 2.1 Design
+
+The design is "Console tiles" (prototype B, approved):
+
+1. **Nine glass tiles** in one row over the lower part of the stream.
+2. The game's name and the A / B hints above the row's left end.
+3. The **complete help text** of the focused tile under the row.
+4. The pages behind the tiles in a **popover above the tile that opened it**, a caret on its bottom edge pointing at
+   that tile.
+
+- While the menu is open the player looks at the menu, not at the game, so it is generous: big tiles, the whole help
+  text in large type, an unhurried entrance.
+- The stream is never dimmed as a whole: only a soft gradient sits behind the dock (no card behind the tiles).
+- Sizes are stage pixels (1920 × 1080, the dock bottom-aligned on it).
+- The numbers of `StreamMenuLayout` are taken one for one from the CSS variables of the design prototype, which is not
+  part of this repository. The prototype's `#quickmenu` / `#qmpop` show the same design.
+- This section together with `StreamMenuLayout` is the specification.
+- The classes that hold each part are listed in [Code map](#code-map).
+
+### 2.2 Ownership and entry points
+
+- `StreamMenu` owns every stream-menu entry point, including controller, touch and Back.
+- There is no classic dialog fallback.
+- `GameMenu` remains only as the special-key action helper and storage constants used by the stream menu and keyboard
+  layouts; it does not create a menu window.
+- TV poster cache/provider paths are independent of the classic grid asset adapters, which are removed.
+
+Three delayed actions use explicit main-Looper handlers:
+
+| Action | Delay |
+|---|---|
+| Delayed shortcut releases | 25 ms |
+| Pointer recapture after focus | 500 ms |
+| USB attachment handling | 1000 ms |
+
+- The stream window keeps its immersive/multi-window system-UI flags and display selection. These are compatibility
+  behavior on Android 10+, not interchangeable with app-window bounds or the shell's separate modern insets
+  controller.
+- The custom and full on-screen keyboards resolve `ActiveKeyboardInput` for each event, not a static Activity or a
+  cached session.
+- The narrow target of `ActiveKeyboardInput` is weakly held, available only while connected, and owner-cleared when
+  the stream Activity is destroyed. An old owner cannot clear a replacement stream.
+- Accessibility focus/key forwarding and external controller window ownership keep their own paths.
+
+### 2.3 Tiles
+
+The tiles, in order:
+
+| Tile | Popover page | Pill | Notes |
+|---|---|---|---|
+| Resume | No | No | |
+| Keyboard | No | No | The Delos Full keyboard ([FULL_KEYBOARD.md](FULL_KEYBOARD.md)): A closes the menu, then toggles it. |
+| Overlay | No | On / Off pill; says Compact | Toggle. |
+| Brightness | Yes | No | |
+| Bitrate | Yes | No | |
+| Upscaler (Supersampling) | Yes | On / Off pill; shows its status word | Toggle. |
+| More | Yes | No | |
+| Disconnect | No | No | |
+| Quit app | No | No | |
+
+| Element | Value |
+|---|---|
+| Tile | 150 px glass, corner 42 |
+| Gap | 40 |
+| Row width | 9 × 150 + 8 × 40 = 1670, 125 on each side |
+| Top edge of the tiles | y 628 |
+| Icon | 64, Phosphor, filled on focus |
+| Label | 24 SemiBold, 24 below the tile |
+| On / Off pill | 18 bold, 34 high, at the tile's top right corner (right −12, top −14) |
+| Focused tile scale | 1.12 (spring, 420 ms) |
+| Focused label | Gold, 8 px lower |
+| Gold ring | Box 186, corner 56, 4 px, outer glow and a soft glow inside that breathes over 2.6 s |
+| Other tiles while a popover is open | Dimmed to 46 % (labels 40 %) |
+
+- The **Keyboard** tile has the plain keyboard icon (`Symbols.KEYBOARD`, the one of the Settings > Controls
+  virtual-keys row). Android's system keyboard in the More page has its own text-cursor icon.
+- The Keyboard tile turns accent while the keyboard is up but has **no On / Off pill**.
+- Android's system keyboard is the More row Open Android keyboard.
+- The other toggles (Overlay, Upscaler) have an **On / Off pill** and turn accent: accent glass and icon, accent pill.
+- **Focus** scales the tile, lights its glass, adds a glow and turns the label gold.
+- One **gold ring** glides under the focused tile.
+- While a popover is open the ring rests on the tile that opened it.
+- The focus on the dock **wraps**: Right on the last tile goes to the first, Left on the first to the last. The ring
+  glides across the bar like any move. The popover's rows do not wrap.
+
+### 2.4 Head
+
+| Element | Value |
+|---|---|
+| Game's name | Unbounded 36, one line |
+| **A Select** / **B Back** hints | Stacked under the name; 44 px glyphs, label 24 |
+| Position | Bottom edge 46 above the tiles, at the tile row's left edge |
+
+### 2.5 Caption
+
+- The focused tile's name is not repeated. Its **complete help** is centered under the labels.
+- The caption never grows, scrolls or runs as a marquee.
+- `StreamMenuLayoutTest` checks every text the caption can show (all tiles, every upscaler status) at scales 1.0, 1.15
+  and 1.3 against the characters of a line. A text that does not fit fails the test and is shortened in
+  `StreamMenuHelp`.
+- A different text slides up 18 px out of a 6 px blur (420 ms).
+- The caption is gone while a popover is open.
+
+| Element | Value |
+|---|---|
+| Type | 28 with line height 1.4 |
+| Width | At most 1100 |
+| Line breaks | Balanced |
+| Box | Exactly three lines at the current interface scale |
+
+### 2.6 Gradient, scrim and glass
+
+| Position | Black |
+|---|---|
+| Down to 34 % of the height | Transparent |
+| 48 % | 22 % |
+| 66 % | 55 % |
+| 84 % | 80 % |
+| Bottom edge | 90 % |
+
+- An open popover adds a 22 % scrim.
+- Glass is drawn as the prototype's tints and white gradients over a dark undercoat: 28 % under the tiles
+  (`TILE_BACKING_ALPHA`), 30 % under the card (`CARD_BACKING_ALPHA`).
+- The stream is a separate window (a `SurfaceView`), so the frosted blur of the prototype is not available. The
+  undercoat keeps the glass readable over a bright picture.
+- A window that can blur its backdrop replaces the undercoat later.
+
+### 2.7 Popover
+
+The popover is a glass card **above its own tile**, centered on the tile.
+
+| Element | Value |
+|---|---|
+| Card glass | Tint rgba 34/44/84 at 50 %, white gradients |
+| Card corner | 44 |
+| Card shadow | 0 40 90 −20 |
+| Distance from the stage's left and right edges | 120 |
+| Box end | 322 above the stage's bottom edge |
+| **Caret** | 60 × 24, rounded, ONE path with the card so the glass is continuous; at the tile's center, at least 72 from the card's corners |
+| Padding | 40 × 30 (24 below) |
+| Header | 64: the back circle (focusable, B does the same) and the title in Unbounded 30 |
+| Rows | 72 tall with 8 between them, corner 28 |
+| Row icon | 32 in a 56 column |
+| Row label | 24 SemiBold |
+| Row values | 24 |
+| Switch | 78 × 44 |
+| Slider | 240 × 12 with a 32 knob |
+| Choices | Between two chevrons |
+
+| Page | Width |
+|---|---|
+| Brightness | 780 |
+| Bitrate | 860 |
+| Upscaler | 980 |
+| More and the pages opened from it | 920 |
+
+Margin and height:
+
+- **One margin M = 120** (`POPOVER_MARGIN`) is the card's gap to the left, right and top edges of the stage. It is the
+  gap More (the rightmost popover, 920 wide centered on its tile, its right edge at 1800) has to the right edge.
+- Every page keeps its content's height up to **one shared maximum**, the space from the card's bottom (734) up to M:
+  614 (`popoverMaxHeight`). Small pages stay small.
+- Beyond the maximum, the rows scroll inside the card with faded edges (D-pad focus scrolls the focused row into
+  view). The header and the help stay fixed.
+- More (11 rows) and a long list of keys scroll.
+- The Upscaler page with Supersampling (601.6 tall) scrolls only at interface scale above 1.15.
+- The card stays clear of the compact statistics line (bottom edge 61.2, at interface scale 1.3 68.8, by
+  `compactStatsBottom`).
+- The help of the focused row stands under the rows in a box of two lines (three from interface scale 1.15 up),
+  complete, never scrolling.
+- A card pushed against the right edge keeps M there too (the top gap and the side gap are equal) and the caret still
+  points at its tile: the card is clamped, the caret stays inside its corners.
+- The pages opened from More (Send keys, Commands, Mouse mode) are anchored over the More tile.
+
+Rows of the More page:
+
+| Row | Notes |
+|---|---|
+| Send keys | Opens a page. |
+| Send clipboard | |
+| Get clipboard | |
+| Commands | Opens a page. |
+| Task manager | |
+| Zoom | |
+| Mouse mode | When allowed. Opens a page. |
+| On-screen controls | |
+| **Open Android keyboard** | An action: closes the menu, then opens or closes Android's system keyboard. |
+| Touch sensitivity | |
+| Rumble feel | |
+| **Gyro smoothing** | See below. |
+
+**Gyro smoothing**:
+
+- A 0 to 100 % slider in steps of 5, reading "0 % (off)" at 0.
+- It is shown only where the Settings row is shown.
+- It is dimmed with its reason in the help line while neither the external nor the built-in gyroscope is on.
+- It applies at once to the running sensors.
+- It is kept for this game automatically like the upscaler's settings: about 500 ms after the last change, or when the
+  menu closes or the stream ends. It is saved as this game's `seekbar_gyro_smoothing` override, never the profile,
+  which is changed in Settings.
+- See [STREAM_QUALITY.md](../STREAM_QUALITY.md#gyro-smoothing-77).
+
+**Key layout** and **Rotate** are not offered: the key-layout overlay is hidden (its code and preferences stay) and a
+rotation re-lays out the overlays.
+
+### 2.8 Popover row focus
+
+- One local `RowGlideHost` inside the rows viewport carries the focus plate between rows in 520 ms.
+- A remembered painter reuses its paths, paint and stroke. No row-local focus tint/ring/shadow fades behind it.
+- Keys and Commands use a capsule plate while retaining their one-row (scrolling when it does not fit) layout and
+  static white 10% pill base. The base composites above the traveling tint.
+- Back stays fixed outside the plate and is the first ordered target on linear pages. Held Up stops there and Down
+  stops at the last row.
+- The row glide leaves More entry-row restoration, B/back and immediate Left/Right choice/slider adjustment as they
+  are.
+
+| Focus plate element | Value |
+|---|---|
+| Fill | Accent 17% |
+| Ring | 3 px inset |
+| Corner | 28 |
+| Shadow | Inner shadow |
+| Travel between rows | 520 ms |
+
+### 2.9 Navigation
+
+| Input | Where | Result |
+|---|---|---|
+| Left/Right | Dock | Move along the tiles. |
+| A | Toggle or action tile | Acts at once. |
+| A | Brightness, Bitrate, Upscaler or More | Opens its popover and puts the focus on its first row. |
+| B | Popover | Closes it and returns the focus to its tile. |
+| B | Send keys, Commands, Mouse mode | Goes back to that row of More first: these pages are opened from More. |
+| B | Dock | Resumes the stream. |
+
+- The focus cannot leave the popover with the D-pad.
+- The open and close buttons (L3 + R3 by default, the swipe up) and the external display's input routing are
+  unchanged by the menu.
+
+**Touch**:
+
+| Tap | Result |
+|---|---|
+| On a tile | A. |
+| On another tile with a page while a popover is open | Morphs the popover to that page. |
+| On the same tile while its popover is open | Closes it. |
+| On a tile without a page while a popover is open | Nothing. |
+| Outside the popover | Closes the popover only and never resumes the stream (Resume and B do). |
+
+### 2.10 Motion
+
+Every number is a `--d-*` / `--ease-*` variable of `b.html`, copied to the shared `Motion`
+([MOTION_AND_COLORS.md](MOTION_AND_COLORS.md)) and `StreamMenuMotion`.
+
+The **entrance** runs on one clock (about 1.3 s):
+
+| Element | Motion |
+|---|---|
+| Tile | Rises 90 px from a 0.8 scale with the overshooting spring (620 ms), 42 ms after the one before, starting 100 ms in |
+| Labels | Fade in 140 ms after their tile |
+| Head | Rises 24 px from 60 ms |
+| Ring | Scales in from 0.7, 260 ms after the first focused tile |
+| Caption | Rises 20 px from 520 ms |
+
+The **exit**:
+
+| Element | Motion |
+|---|---|
+| Tiles | Drop 46 px to a 0.92 scale (240 ms, ease-in) |
+| Everything | Fades, the last tile first (8 ms apart) |
+| Window | Closes 320 ms after the exit starts |
+
+Focus:
+
+| Element | Motion |
+|---|---|
+| Tile and icon | Springs |
+| Ring | Glide 560 ms with a slight overshoot (`--ease-glide`) |
+| Label | Gold |
+
+**Popover**:
+
+| Element | Motion |
+|---|---|
+| Dock | Sinks 160 px over 640 ms |
+| Card, opening | Grows from 0.86 around the caret's tip with the spring (560 ms) while its glass fades in over 336 ms |
+| Rows, opening | Rise 18 px and fade in 46 ms apart |
+| Card, closing | Shrinks back to the caret in 240 ms |
+
+Another tile's page **morphs** the card:
+
+| Element | Motion |
+|---|---|
+| x, width, caret and height | Follow their targets with a spring (stiffness 190, damping ratio .8) |
+| Old rows | Rise out in 140 ms |
+| New rows, the title and the help | Enter after 150 ms |
+
+Controls:
+
+| Element | Motion |
+|---|---|
+| Switch knob | Springs across |
+| Choice | Its chevron nudges 7 px and its new value slides in 22 px |
+| Slider knob | Grows to 1.18 when focused |
+| Pill that changes | Pops in from 0.6 |
+
+With reduced motion every transform is dropped: only fades (and colors) remain, the ring and the dock jump, the
+geometry snaps.
+
+## 3. Context menu preview
+
+The preview exists in debug builds. It draws the real context menu over a drawn dashboard (hero, game tiles, a PC
+card), without the shell. `ContextMenuPreview` in `src/debug` implements it; `ShellActivity` hands the intent to it,
+and `src/release` replaces it by a stub.
+
+```
+adb shell am start -n io.github.meitoncz.delos.debug/com.limelight.shell.ShellActivity --es preview_screen context_menu \
+  [--es preview_state <idle|running|other|options|long|pc>]
+```
+
+The menu opens 700 ms after the start with its entrance and stays. A tap outside closes it.
+
+| `preview_state` | What is drawn |
+|---|---|
+| `idle` | The game menu of a game (nothing runs). |
+| `running` | The game runs (Resume, Quit app in red). |
+| `other` | Another game runs. |
+| `options` | The Options submenu is open (the mechanism no real menu uses yet). |
+| `long` | The 12 matches of a pick list that scroll inside the card. |
+| `pc` | The PC menu below its card with the caret on top. |
+
+## 4. Stream menu preview
+
+The preview exists in debug builds. It draws the real menu without a stream, over a sunset "game scene", with made-up
+values. `FakeStreamMenuHost` in `src/debug` supplies the values; `ShellActivity` hands the intent to
+`StreamMenuPreview`, which `src/release` replaces by a stub.
+
+```
+adb shell am start -n io.github.meitoncz.delos.debug/com.limelight.shell.ShellActivity --es preview_screen stream_menu \
+  --es preview_page <main|upscaler|bitrate|brightness|more|keys|commands|mouse|rumble> --ei preview_focus <tile 0..8> \
+  [--ei preview_upscaler_mode <0..4; 4 = Sharpen only, whose page has no Supersampling quality row>] \
+  [--ei preview_row <row of the page to focus>] [--ez preview_animate true]
+```
+
+| Extra | Type | Values | Required |
+|---|---|---|---|
+| `preview_screen` | `--es` | `stream_menu` | Yes |
+| `preview_page` | `--es` | `main`, `upscaler`, `bitrate`, `brightness`, `more`, `keys`, `commands`, `mouse`, `rumble` | Yes |
+| `preview_focus` | `--ei` | Tile `0..8` | Yes |
+| `preview_upscaler_mode` | `--ei` | `0..4`; `4` = Sharpen only, whose page has no Supersampling quality row | No |
+| `preview_row` | `--ei` | Row of the page to focus | No |
+| `preview_animate` | `--ez` | `true` | No |
+
+- The menu starts already open at that page without its entrance.
+- `--ez preview_animate true` plays the entrance, so a screenshot after about 1.4 s shows the settled result.
+- No profile is needed.
+- Resume or B close the menu; a tap on the scene opens it again.
+
+## Code map
+
+| Path or class | Role |
+|---|---|
+| `StreamMenuLayout` | The numbers and the pure geometry of the stream menu. |
+| `Motion` | The shared durations and easings. |
+| `StreamMenuMotion` | The dock's own delays. |
+| `StreamMenuBar` | The dock. |
+| `StreamMenuPopover` | The popover and its rows. |
+| `StreamMenuRoot` | The whole menu in one composable, so a window of its own can host it. |
+| `StreamMenuHost` | The stream behind the menu. |
+| `StreamMenu` | Implements `StreamMenuHost` with the live `DelosStreamActivity`; owns every stream-menu entry point. |
+| `StreamMenuHelp` | The help texts of the caption. |
+| `RowGlideHost` | Carries the focus plate between the popover's rows. |
+| `MenuAutoSave` | Keeps the menu's changes for this game. |
+| `GameMenu` | The special-key action helper and storage constants used by the stream menu and keyboard layouts. |
+| `ActiveKeyboardInput` | The input target the custom and full on-screen keyboards resolve for each event. |
+| `FakeStreamMenuHost` (`src/debug`) | Implements `StreamMenuHost` for the debug preview with fake state. |
+| `StreamMenuPreview` | The stream menu preview; a stub in `src/release`. |
+| `ContextMenuPreview` (`src/debug`) | The context menu preview; a stub in `src/release`. |
+| `ShellActivity` | Hands the preview intent to `ContextMenuPreview` and `StreamMenuPreview`. |
+
+## Verification
+
+| Test | What it enforces |
+|---|---|
+| `StreamMenuLayoutTest` | Every text the caption can show (all tiles, every upscaler status) fits the characters of a line at scales 1.0, 1.15 and 1.3. |
+
+Debug previews:
+
+| Preview | Draws |
+|---|---|
+| [Context menu preview](#3-context-menu-preview) | The real context menu over a drawn dashboard. |
+| [Stream menu preview](#4-stream-menu-preview) | The real stream menu over a sunset "game scene". |
+
+### Not verified
+
+The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verified).
+
+## Related
+
+- [GUI.md](../GUI.md)
+- [FULL_KEYBOARD.md](FULL_KEYBOARD.md)
+- [MOTION_AND_COLORS.md](MOTION_AND_COLORS.md)
+- [MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md)
+- [SHELL_ARCHITECTURE.md](SHELL_ARCHITECTURE.md)
+- [STREAM_QUALITY.md](../STREAM_QUALITY.md)
+- [SGSR2_VIDEO.md](../SGSR2_VIDEO.md)
+- [#19](https://github.com/Meitoncz/Delos/issues/19)

@@ -29,7 +29,17 @@ Each describes how a part of Delos behaves now and must match the code. Dated re
 
 | Document | Area |
 |---|---|
-| [GUI.md](GUI.md) | Every screen of the shell, the stream menu, the keyboard, motion, colors, screen shapes |
+| [GUI.md](GUI.md) | The interface: design principles and the index of the documents in `gui/` |
+| [gui/START_AND_HOME.md](gui/START_AND_HOME.md) | The launcher icon, first launch, profile avatars, the start screen, home, the launch of a game, streaming time |
+| [gui/ARTWORK.md](gui/ARTWORK.md) | SteamGridDB artwork: covers, hero, logo, the artwork screen |
+| [gui/GAME_INFO.md](gui/GAME_INFO.md) | Game information and the library filters |
+| [gui/MENUS_AND_SETTINGS.md](gui/MENUS_AND_SETTINGS.md) | The context menu, the settings rows and tabs, impact chips |
+| [gui/CONTROLS_AND_TEXT.md](gui/CONTROLS_AND_TEXT.md) | Controller mapping, text input, text that does not fit |
+| [gui/MOTION_AND_COLORS.md](gui/MOTION_AND_COLORS.md) | The motion language, toasts, the problem report card, color roles |
+| [gui/STREAM_MENU.md](gui/STREAM_MENU.md) | The stream screen and the stream menu |
+| [gui/FULL_KEYBOARD.md](gui/FULL_KEYBOARD.md) | The Full keyboard over the stream |
+| [gui/SCREEN_SHAPES.md](gui/SCREEN_SHAPES.md) | Layouts for other screen shapes, the screen previews, the layout tools |
+| [gui/SHELL_ARCHITECTURE.md](gui/SHELL_ARCHITECTURE.md) | The code map of the shell, design constraints, stream exits |
 | [SETTINGS.md](SETTINGS.md) | The Settings screen, the settings catalog, impact chips, profiles |
 | [PER_APP_SETTINGS.md](PER_APP_SETTINGS.md) | Settings that one app overrides |
 | [STREAM_QUALITY.md](STREAM_QUALITY.md) | Bitrate, pacing, encryption, link test, SGSR 1, variable refresh rate, gyro smoothing, latency |
@@ -68,11 +78,11 @@ Each records what was researched or measured on one day. It is not edited afterw
 | `tools/hooks/` | `commit-msg`: the commit message check ([CONTRIBUTING.md](../CONTRIBUTING.md), "Commit messages") |
 | `tools/l10n/` | `find_literals.py`: user-visible text that is not a string resource ([LOCALIZATION.md](LOCALIZATION.md)) |
 | `tools/fonts/` | The font and icon generator ([ICONS.md](ICONS.md)) |
-| `tools/icon/` | The launcher icon generator ([GUI.md](GUI.md), "Android launcher identity") |
-| `tools/avatars/` | The profile avatar importer ([GUI.md](GUI.md), "Profile avatars") |
+| `tools/icon/` | The launcher icon generator ([gui/START_AND_HOME.md](gui/START_AND_HOME.md#1-android-launcher-identity)) |
+| `tools/avatars/` | The profile avatar importer ([gui/START_AND_HOME.md](gui/START_AND_HOME.md#3-profile-avatars)) |
 | `tools/artwork/` | The generator of the bundled app artwork |
 | `tools/sounds/` | `make_ui_sounds.py`: the generator of the interface sounds |
-| `tools/layout/` | Scripts that drive the debug previews through screen shapes on an emulator ([GUI.md](GUI.md), "Screen shapes") |
+| `tools/layout/` | Scripts that drive the debug previews through screen shapes on an emulator ([gui/SCREEN_SHAPES.md](gui/SCREEN_SHAPES.md)) |
 | `tools/pyrowave/` | The vendor script and patches of the PyroWave source ([THIRD_PARTY.md](THIRD_PARTY.md)) |
 | `tools/versioning/` | `create-tags.sh`: the tags of the reconstructed 0.x versions ([VERSIONING.md](VERSIONING.md)) |
 | `tools/metadata-worker/` | The metadata service, with its own [README](../tools/metadata-worker/README.md) |
