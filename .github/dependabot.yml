@@ -1,0 +1,30 @@
+# Weekly update proposals, one grouped pull request per ecosystem.
+# Where Gradle dependency verification is on (gradle/verification-metadata.xml), a Gradle update builds only after
+# that file is regenerated for the new versions.
+# Not covered: the moonlight-common-c submodule and the prebuilt native libraries; they are checked by hand before a
+# release (docs/VERSIONING.md, "Release checklist").
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    labels: [maintenance]
+    commit-message:
+      prefix: "Build"
+    groups:
+      gradle:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    labels: [maintenance]
+    commit-message:
+      prefix: "CI"
+    groups:
+      actions:
+        patterns: ["*"]

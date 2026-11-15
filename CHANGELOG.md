@@ -4,11 +4,15 @@ All notable changes to Delos are listed here, newest first. The format follows [
 
 The 0.x versions are reconstructed milestones of the development history, not published releases. 1.0.0 will be the first public release.
 
-Not verified on real hardware yet: variable refresh rate (no VRR display was available), dual-screen handhelds such as the AYN Thor (tested only on emulators and the shape simulator), and HDR colour and luminance.
+Not verified on real hardware yet: variable refresh rate (no VRR display was available) and dual-screen handhelds such as the AYN Thor (tested only on emulators and the shape simulator). HDR colour was judged by eye on one OLED handheld (2026-10-27); colour and luminance were not measured. Delos is developed and tested with one handheld (AYN Odin 2 Portal Max, Android 13) and Vibepollo on Windows; there is no recorded test with Apollo, Sunshine or a Linux host.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- Streaming time: Delos counts how long each app was streamed, per profile and PC, and shows the total and when it was last streamed on the home screen ("0 hours" and "Never" before the first stream).
+
+### Changed
+- Text that does not fit on one line (context menu titles and items, row values, app names) scrolls with a fading edge while it is focused instead of being cut off.
 
 ## [0.14.0] - 2026-11-14
 
@@ -78,7 +82,7 @@ _Stream defect fixes, bundled app art, diagnostics and problem reports._
 - The stream plans for the refresh rate the display runs after the mode switch.
 - Launch links and shortcuts poll the PC right away.
 - Icon audit: every icon reviewed against its meaning.
-- Cheaper frames in the home screen and context menu.
+- Less drawing work on the home screen: the focus glow is blurred once per shape, and the dimming behind a context menu no longer recomposes the tiles (the effect was not measured).
 
 ### Fixed
 - Long text no longer gets stuck when typing into the stream.
@@ -113,7 +117,7 @@ _Link guidance, latency work, SGSR verification, per-game settings redesign._
 
 ### Changed
 - SGSR 1 and SGSR2-DV are checked against the official reference; the upscaler modes are renamed accordingly.
-- Stream threads get higher priority and stay on the big cores; SGSR drops stale frames and limits the GPU work in flight.
+- Stream threads get higher priority and stay on the big cores; SGSR drops stale frames and limits the GPU work in flight (the effect on latency was not measured).
 - Supersampling level 1 is labelled 1.33x.
 
 ### Fixed

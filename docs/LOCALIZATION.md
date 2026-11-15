@@ -1,6 +1,19 @@
 # Localization
 
-How Delos text is stored, written, translated and checked. Tracking issue: [#10](https://github.com/Meitoncz/Delos/issues/10).
+## Purpose
+
+How Delos text is stored, written, translated and checked: the languages, where English text lives in the code,
+the rules for writing a string, the glossary of each language and the tests that enforce them.
+
+## Scope
+
+| Covered here | Specified elsewhere |
+|---|---|
+| Languages, string files, keys, writing rules, brand names | Where a text appears on screen and how much room it has: [GUI.md](GUI.md) |
+| Tone, glossaries and terminology per language | The settings catalog that reads its texts from resources: [SETTINGS.md](SETTINGS.md) |
+| Text fit, fonts and scripts, tooling | |
+
+Tracking issue: [#10](https://github.com/Meitoncz/Delos/issues/10).
 
 ## Languages
 
@@ -93,7 +106,7 @@ more). The help texts are string resources too:
   (`StreamMenuHelp.description(res, key)`; the keys stay the English item names, which are identifiers: `MenuKey` / `MoreRow` constants and the rumble preset enum name, never shown; `StreamMenuLayoutTest` fails when a menu key has no `stream_help_*` string). Because lint cannot see
   `getIdentifier` uses, `res/raw/keep.xml` keeps `help_*` and `stream_help_*`. These strings are always formatted, so a literal
   percent sign is written `%%` there.
-* Settings tabs (`SettingsTab.label(res)` / `description(res)`), appearance choices (`Palette`, `BackgroundKind`, `HomeLayout`,
+* Settings tabs (`SettingsTab.label(res)` / `description(res)`), appearance choices (`Palette`, `BackgroundKind`,
   `ClockFormat`: `label(res)`), the labels `SettingsCapabilities.choices(res, spec, values)` adds (native resolutions, custom
   values, layouts) and the typed-text errors of `StreamSettingsStore.writeText(res, …)` are in `res/values/strings_settings.xml`.
 * `SettingsHelp.LINE_CHARS` / `MAX_LINES` and the tests that check help length describe the **English** text in the 432 px box
@@ -114,7 +127,7 @@ functions and a string; `TagNamesTest` fails when they disagree or the English t
 
 ## File layout
 
-One file per area, so that parallel agents and translators touch different files and merge conflicts stay rare. The same file
+One file per area, so that people working in parallel and translators touch different files and merge conflicts stay rare. The same file
 names are used in every language folder (`values-de/strings_home.xml` translates `values/strings_home.xml`); the test only
 needs the keys, but identical names keep diffs reviewable.
 
@@ -123,24 +136,23 @@ needs the keys, but identical names keep diffs reviewable.
 | `strings.xml` | legacy Java UI and preferences (existing, shrinking) |
 | `strings_common.xml` | words shared by several areas: OK, Cancel, Save, Undo, Back, On, Off, units |
 | `strings_home.xml` | start screen, side menu, dashboard, first run (boot, welcome) |
-| `strings_library.xml` | game list, game detail, tags, sorting |
 | `strings_stream_menu.xml` | in-stream menu, its help, loader, stream result and statistics labels, upscaler status, controller button names |
 | `strings_rumble.xml` | rumble feel names and the sentences about a rumble technique that cannot run |
 | `strings_devices.xml` | PCs, add/remove/wake, device setup, status |
 | `strings_pairing.xml` | pairing dialogs and PIN flow |
 | `strings_profile.xml` | profiles, avatars, profile dialogs (**reference**) |
-| `strings_settings.xml` | settings tabs, rows, native settings screens, game settings |
+| `strings_settings.xml` | settings tabs, rows, native settings screens, per-app settings |
 | `strings_settings_help.xml` | settings help texts (`help_*`) |
 | `strings_filters.xml` | artwork and library filters |
 | `strings_metadata.xml` | game metadata, tags, genres, sources |
 | `strings_tags.xml` | genre and theme names of the game card and filter (`tags_*`) |
 | `strings_artwork.xml` | artwork picker and progress |
 | `strings_toasts.xml` | toasts that belong to no single screen, the kind words (INFO, DONE …) and the toast screen-reader text |
-| `strings_dialogs.xml` | generic dialogs, security prompts |
 | `strings_debug.xml` | debug info screen (user-visible) |
 | `strings_keyboard.xml` | on-screen keyboard labels and its settings |
 | `strings_diagnostics.xml` | log export, the problem report card (typed `Problem` → sentences), log preview note |
 | `strings_link.xml` | link test and guidance |
+| `strings_playtime.xml` | the streaming-time block of the home info row |
 | `strings_shell.xml` | top bar, side menu, hint bar, link prompts |
 | `strings_firstrun.xml` | first run: avatar and profile creation |
 | `strings_settings_screen.xml` | native settings screens: titles, descriptions, search, letter picker |
@@ -366,7 +378,7 @@ Informal *ty* everywhere (imperatives: „Vyber“, „Zkus“); no feminine/mas
 | driver | ovladač | |
 | pair / unpair | spárovat / zrušit spárování | |
 | rumble / vibration | vibrace | „Charakter vibrací“ = rumble feel |
-| library | knihovna | home layout = „Rozložení knihovny“ |
+| library | knihovna | |
 | cover / wide cover / background / logo | obal / široký obal / pozadí / logo | artwork = „obrázky“ |
 | link (device ↔ PC) | spojení | „Otestovat spojení“; „na této síti“ (locative, so `link_transport_other` = „této síti“, used after „na“) |
 | refresh rate / frame rate | obnovovací frekvence / snímková frekvence | FPS kept |
@@ -411,7 +423,13 @@ The on-screen letter picker of the settings search (`settings_screen_search_lett
   "Trigger test crash" row, service labels in the manifest (not shown to the user), Steam tag names (data matched against the store).
 * Where Start / Select / Home have no common local name (es, fr, de, cs, pt-BR) the printed legend is kept.
 
-## Status
+## Verification
+
+`StringResourcesTest` (keys, kinds, placeholders, plurals and the Delos rules of every language), `TextFitTest`
+(length of short slots, below) and `TagNamesTest` (genre and theme names) run with the unit tests;
+`tools/l10n/find_literals.py` lists text that is not a resource.
+
+### Status
 
 Every language (cs, es, pt-BR, fr, de, ja, ko, zh-CN, uk) covers every string; `find_literals.py` reports no hardcoded literal in the
 shell. Text produced outside the UI is typed and mapped to resources: rumble presets and problems (`RumblePresets`, `RumbleProblem`,
@@ -420,7 +438,7 @@ shell. Text produced outside the UI is typed and mapped to resources: rumble pre
 on their own line (`artwork_filtered_active`). The statistics position names are shared with the settings strings
 (`settings_native_stats_*`).
 
-## Text-fit check
+### Text-fit check
 
 `TextFitTest` flags, for cs, es, pt-BR, fr, de and uk, a translation of a short UI slot (tab, chip, hint bar, side menu, button, menu
 row, option; found by key prefix and suffix, English at most 28 characters) that is more than twice the English length and longer
@@ -428,6 +446,11 @@ than 12 characters. A label with no shorter natural wording is listed in `ACCEPT
 accepted entry stops being flagged. Review of this pass: 29 flagged before (cs 1, es 5, pt-BR 5, fr 10, de 4, uk 4), 17 accepted after
 (es 3, pt-BR 4, fr 7, de 1, uk 2) with the worst offenders (over 2.4 times) shortened: Odpárovat, Háptica, Crépuscule,
 Mise en page, Haptique, Entkoppeln, Abendrot, Fehler, З’єднати, Роз’єднати, Recentes.
+
+### Not verified
+
+- The translations were not audited by a native speaker of each language.
+- Text fit is checked by length rules, not by looking at every screen in every language on a device.
 
 ## Terminology: Spanish
 

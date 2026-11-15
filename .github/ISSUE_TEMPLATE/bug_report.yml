@@ -1,6 +1,16 @@
+# FIELD-ID CONTRACT (docs/DIAGNOSTICS.md, "Field-id contract of the issue forms")
+#
+# Delos builds whose IssueUrl.TEMPLATE is "bug_report.yml" open THIS form from "Report this problem" and fill it in
+# through query parameters named after the field ids. Frozen for that reason:
+#
+#   file name    bug_report.yml
+#   field ids    what-happened, area, device, build, stream-settings, logs
+#   area options "Other" and "Pairing/connection"
+#
+# Never rename or remove them. The form made for the app is app_report.yml (same ids).
 name: Bug report
 description: Something in Delos does not work as expected
-labels: []
+labels: [bug, needs-triage]
 body:
   - type: markdown
     attributes:
@@ -9,7 +19,7 @@ body:
 
         If the problem is on the PC side (capture, encoder, host settings), please report it to Vibepollo, Apollo or Sunshine instead.
 
-        **Before posting, remove personal data** from text and screenshots: IP addresses, PC and account names, anything private.
+        Security problem? Do not file it here: use [Report a vulnerability](https://github.com/Meitoncz/Delos/security/advisories/new).
 
         Came here from **Report this problem** in Delos? The form is filled in for you. Check it, add what you were doing, and attach the diagnostic file Delos saved to your Downloads folder (drag it into the "What happened?" box; the log box at the end cannot take files).
   - type: checkboxes
@@ -18,6 +28,8 @@ body:
       label: Checks
       options:
         - label: I searched existing issues and did not find this one.
+          required: true
+        - label: I removed IP addresses, PC and account names and anything else private from the text and screenshots.
           required: true
   - type: textarea
     id: what-happened
@@ -30,12 +42,11 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
+      description: Leave empty when it happened once and you cannot repeat it.
       placeholder: |
         1. Open ...
         2. Press ...
         3. See ...
-    validations:
-      required: true
   - type: dropdown
     id: frequency
     attributes:
@@ -45,8 +56,6 @@ body:
         - Often
         - Sometimes
         - Once so far
-    validations:
-      required: true
   - type: dropdown
     id: area
     attributes:
@@ -68,13 +77,21 @@ body:
       placeholder: "Device model, Android version"
     validations:
       required: true
-  - type: input
+  - type: dropdown
     id: host
     attributes:
-      label: Host software and version
-      description: Vibepollo, Apollo or Sunshine, and which version.
-    validations:
-      required: true
+      label: Host software
+      options:
+        - Vibepollo
+        - Apollo
+        - Sunshine
+        - Other
+        - Not a stream problem
+  - type: input
+    id: host-version
+    attributes:
+      label: Host version and operating system
+      placeholder: "e.g. Vibepollo 2.0.1 on Windows 11"
   - type: input
     id: gpu
     attributes:
@@ -98,11 +115,11 @@ body:
     attributes:
       label: Logs and screenshots
       description: |
-        Helpful but optional. With a debug build, run this right after the problem happens:
+        Helpful but optional. In Delos, Settings > About > Debug info shares a cleaned diagnostic log (addresses and names removed) or copies a short summary.
+
+        With a debug build you can also run this right after the problem happens:
 
         `adb logcat -d -s DelosPyroDiag DelosSharpen DelosLatency DelosLinkTest DelosThreads`
 
         For stream problems, also attach a screenshot of the "Full" statistics panel. Remove IP addresses, names and other personal data first.
-
-        In Delos, Settings > About > Debug info can also share a cleaned diagnostic log (addresses and names removed) or copy a short summary.
       render: text

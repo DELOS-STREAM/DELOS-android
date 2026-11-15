@@ -1,9 +1,22 @@
-# Live bitrate, MediaCodec pacing and SGSR
+# Stream quality
 
-Historical implementation and measurement record, requested 2026-10-26. Live bitrate, MediaCodec
-pacing and SGSR behavior are described below; dated acceptance statements are not current task status.
-Current verification and follow-up measurements live in [#19](https://github.com/Meitoncz/Delos/issues/19).
-Feature provenance is preserved in the [README](../README.md#feature-provenance).
+## Purpose
+
+What Delos does to the quality, smoothness and latency of a stream on the device: bitrate changes during a stream,
+frame pacing and decoding, encryption, the link test and bitrate recommendation, the SGSR upscalers, variable
+refresh rate, gyro smoothing and the latency work. Each section specifies the current behavior.
+
+## Scope
+
+| Covered here | Specified elsewhere |
+|---|---|
+| Runtime bitrate, Fast V-Sync, asynchronous decoding, thread scheduling | SGSR2-DV in depth: [SGSR2_VIDEO.md](SGSR2_VIDEO.md) |
+| Stream encryption as the stream negotiates it | The security model as a whole: [SECURITY.md](../SECURITY.md) |
+| PyroWave diagnostics, link guidance and the link test | The rows and pages that show these settings: [GUI.md](GUI.md), [SETTINGS.md](SETTINGS.md) |
+| SGSR 1, Sharpen only, supersampling, variable refresh rate, gyro smoothing, latency | Rumble: [RUMBLE.md](RUMBLE.md) |
+
+What was checked on a device, and when, is in the "Evidence" sections at the end. Ideas taken from other projects
+are credited in [CREDITS.md](CREDITS.md).
 
 ## Runtime bitrate
 
@@ -14,10 +27,31 @@ The host's XML status must indicate success, and its returned bitrate is the aut
 The installed Vibepollo 2.0.1 implementation caps this command at 500 Mbps (and its configured ceiling).
 The menu reports the applied value rather than pretending that an unclamped request was accepted.
 
-Changes affect the current stream only; profile/per-game defaults are not overwritten. Unsupported
+Changes affect the current stream only; profile/per-app defaults are not overwritten. Unsupported
 hosts, missing sessions, permission errors and connection failures report a message without claiming
 success. The stream stays connected. Source: Vibepollo `src/nvhttp.cpp::setBitrate` at installed host
 commit `66e169c325dab73e4e780fe34ac3c613af4cdf52`.
+
+## Stream encryption
+
+Delos shows whether video, audio and control are encrypted; encryption of video and audio is decided by the host.
+
+What Delos asks for and what decides the result (`moonlight-core/callbacks.c`, `SdpGenerator.c` in
+moonlight-common-c):
+
+| Part of the connection | Delos asks for encryption | It is encrypted when |
+|---|---|---|
+| App list, launch, the session key, runtime bitrate (HTTPS) | always | always: TLS with the PC's certificate pinned at pairing |
+| Controller, keyboard and mouse input | always | always, with the session key |
+| Control stream | always | the host supports the encrypted control stream |
+| Audio | always | the host offers audio encryption |
+| Video | on devices whose CPU has AES instructions | the host offers or requires video encryption |
+| Stream setup (RTSP) | not chosen by Delos | the host hands out an encrypted session address (`rtspenc://`) |
+
+Delos cannot switch video or audio encryption on by itself: the host decides, and a host may leave them in clear
+on a local network. The state is information for the user, who can then change the host's setting. Delos does
+not refuse a stream whose video or audio is in clear and has no setting that forces encryption. The security
+model as a whole is in [SECURITY.md](../SECURITY.md).
 
 ## Fast V-Sync and asynchronous decoding
 
@@ -44,7 +78,7 @@ backpressure as in synchronous decoding. If the renderer stalls long enough to f
 queue), the dropped output frame or left-out input index is counted and logged, not silent.
 
 Both are MediaCodec features (H.264, HEVC, AV1); PyroWave remains on its separate native Vulkan path.
-These settings also participate in the existing per-game profile/launch snapshot mechanism.
+These settings also participate in the per-app profile/launch snapshot mechanism.
 
 The callback adapter and pacer are adapted from SicarioGaming/Starwire at
 `87624983e78782ac6346c0f7369f68f39dfe1082` (GPL-3.0), which credits **derflacco / Artemide** for the
@@ -135,7 +169,7 @@ device throttles, the hint is a request, not a guarantee.
   and the saving (0.2-0.7 ms per frame) is only a guess until a trace shows per-packet syscall cost.
 - Splitting receive from decode for PyroWave: a structural change to the single-threaded reassembly queue; it
   only avoids loss when a decode exceeds a frame interval, which the stall numbers must show first.
-- The input path (1 ms mouse batching, reliable controller packets): protocol behaviour, host-gated, and for
+- The input path (1 ms mouse batching, reliable controller packets): protocol behavior, host-gated, and for
   a handheld with its own controller the path is already short. Only `InputSend` and `ControlRecv` priority
   was changed.
 - Socket marking (DSCP on the video socket): lives inside moonlight-common-c, and the downlink class is
@@ -155,7 +189,7 @@ client), the rows in `shell/screens/LinkGuidanceRows.kt`.
    only when the user presses it, never automatically and never during a stream (the host refuses probes
    while a stream session exists, answering HTTP 400 "Stop streaming before testing bandwidth"). A cancellable
    portal says what is being tested ("Testing 250 Mbps · stay on Wi-Fi · B cancels").
-2. **Recommended bitrate with a one-line reason** (Settings bitrate row, per-game bitrate row, stream menu
+2. **Recommended bitrate with a one-line reason** (Settings bitrate row, per-app bitrate row, stream menu
    Bitrate page): `Recommended: 225 Mbps · link carries up to 665 Mbps` (both numbers when the link has headroom; the
    help panel says it in one sentence: "Tested yesterday on Wi-Fi: carries up to 665 Mbps; 225 Mbps is enough for
    1080p60 PyroWave 4:2:0."). Settings also offers **Use recommended
@@ -301,7 +335,7 @@ Mbps high.
 - A test result is a snapshot of a 2-second burst on a Wi-Fi that swings with RSSI, roaming and power save: repeat
   it before concluding anything, and expect variance of a few tens of Mbps.
 - The test measures UDP delivery only. It does not prove sustained smoothness, host encoding speed, frame-burst
-  delivery or decoder load ([#19](https://github.com/Meitoncz/Delos/issues/19)).
+  delivery or decoder load.
 
 ### Where Delos follows the reference client, not the host document
 
@@ -328,12 +362,13 @@ a ceiling bounded by the quality need, Delos at the setting as the user asked).
 
 ### Results
 
-To be filled after the Odin measurements (issue #18). One row per place and band; run Test link three times and
-record every result to show the variance.
-
-| Date | Place / AP | Band, distance | Run 1 | Run 2 | Run 3 | Static guide | Recommended | Stream check (partial/s at the recommendation) |
-|---|---|---|---|---|---|---|---|---|
-| | | | | | | | | |
+Not measured: no recorded run. The table that this section was meant to hold (three runs per place and band, with
+a stream check at the recommended bitrate) was never filled, and issue
+[#18](https://github.com/Meitoncz/Delos/issues/18) was closed without it. What is recorded: the test was used on
+the Odin on one Wi-Fi 7 network on 2026-11-07 and reported about 700 Mbps (closing note of the issue), after the
+pass rules had been changed as described under "Where Delos follows the reference client". No variance between
+runs, no second network and no comparison of the recommendation with a real stream were recorded. The constants
+for ordinary codecs and the thresholds of the passive hint are therefore judgment, not calibration.
 
 ## Snapdragon Game Super Resolution 1
 
@@ -381,11 +416,11 @@ presentation parameters without restarting either decoder. Live changes are sess
 defaults remain in Display settings and may be overridden per game. Initialization/runtime failures
 fall back to direct rendering and are exposed in the menu/logs; HDR is not silently converted to SDR.
 
-Every change on this page is also kept for the running game, automatically: it applies live and, about 500 ms after the
+Every change on this page is also kept for the running app, automatically: it applies live and, about 500 ms after the
 last change (a slider drag or held D-pad writes once; the menu closing or the stream ending writes at once), the current
-upscaler on/off, mode, sharpness and supersampling level are written as that game's per-game overrides (see
-[PER_GAME_SETTINGS.md](PER_GAME_SETTINGS.md#the-menu-keeps-the-live-upscaler-for-the-game)) and apply from its next
-launch. Nothing else is written (no bitrate, no other display setting) and neither the profile nor other games change; the
+upscaler on/off, mode, sharpness and supersampling level are written as that app's per-app overrides (see
+[PER_APP_SETTINGS.md](PER_APP_SETTINGS.md#the-menu-keeps-the-live-upscaler-and-gyro-smoothing-for-the-app)) and apply from its next
+launch. Nothing else is written (no bitrate, no other display setting) and neither the profile nor other apps change; the
 running stream keeps its live values. A stream started without its launch identity stays session-only.
 
 Both renderers implement SGSR 1 (Normal), SGSR 1 (Quality), SGSR2-DV and SGSR2-DV (Quality), and
@@ -440,7 +475,7 @@ restored globally and per game like the others (`list_sgsr_quality=sharpen`); ol
 
 **Algorithm.** SGSR 1 at a scale factor of 1 is not a plain sharpen (it is an edge-directed resample of the luma with
 a Lanczos kernel), so the mode has its own pass: FidelityFX CAS (contrast adaptive sharpening, AMD, MIT) on the
-five-sample cross, per colour channel, in the encoded domain (SDR gamma or HDR PQ code values, never linearised):
+five-sample cross, per color channel, in the encoded domain (SDR gamma or HDR PQ code values, never linearised):
 
 ```
 mn, mx = min / max of centre e and its up b, left d, right f, down h
@@ -495,13 +530,13 @@ the visual result, and the shader compile on the Adreno 740 are verified only by
 
 For all four SGSR modes, a stream already matching the display uses supersampling instead of
 same-resolution reconstruction. The live stream menu calls this mode **Supersampling** and offers two
-levels, session-only unless saved: `1.33x` (stored value 1, labelled 1x until 2026-11-07) reconstructs 1920x1080 into 2560x1440, while `2x` reconstructs it into
+levels, session-only unless saved: `1.33x` (stored value 1, labeled 1x until 2026-11-07) reconstructs 1920x1080 into 2560x1440, while `2x` reconstructs it into
 3840x2160. A separate presentation pass reduces the internal image to the display resolution.
 The HDR path performs RGB-to-P010 conversion only after that reduction; intermediate RGB remains
 FP16 and PQ-encoded, not linear-light or eight-bit SDR.
 
 The level a stream starts with is the Display setting **Supersampling quality**
-(`list_sgsr_supersampling_level`, 1 or 2, default 1; profile value with a per-game override). An unknown
+(`list_sgsr_supersampling_level`, 1 or 2, default 1; profile value with a per-app override). An unknown
 stored value reads as 1.33x, and a 2x that does not fit falls back to 1.33x exactly as for the live choice.
 
 The sizing policy tolerates a two-pixel Surface aspect-fit difference, checks the GPU texture limit,
@@ -528,7 +563,7 @@ here are implemented for Delos rather than copying that bridge's synchronous fra
 
 ## Variable refresh rate (VRR / ARR)
 
-Setting: Settings > Display > Variable refresh rate (`list_vrr`: Auto, On, Off; default Auto; also a per-game setting). The row
+Setting: Settings > Display > Variable refresh rate (`list_vrr`: Auto, On, Off; default Auto; also a per-app setting). The row
 is hidden below Android 11 (API 30), where `Surface.setFrameRate()` does not exist. Most handhelds, including the AYN Odin 2,
 have a fixed-refresh panel; nothing changes for them.
 
@@ -569,7 +604,7 @@ need, compared with Off on the same stream; (4) a 60 FPS stream on a 120 Hz pane
 **Controls → Gamepad → Gyro smoothing** (`seekbar_gyro_smoothing`, 0..100, default 0) steadies the gyroscope before it is
 sent to the host. 0 is off and the sensor path is then unchanged (the filter is never created). It acts on the gyroscope
 only, never on the accelerometer, for both the external gamepad's sensors and the built-in device sensors
-(`ControllerHandler.createSensorListener`). The stream menu (More → Gyro smoothing, steps of 5) changes it live and keeps it for this game as its per-game override (the profile is not written; the Settings slider sets the profile value and applies to the next stream, because Settings is not open during a stream).
+(`ControllerHandler.createSensorListener`). The stream menu (More → Gyro smoothing, steps of 5) changes it live and keeps it for this app as its per-app override (the profile is not written; the Settings slider sets the profile value and applies to the next stream, because Settings is not open during a stream).
 
 **Live change and threads**: the menu writes the new strength into `PreferenceConfiguration.gyroSmoothing` (`volatile`) and
 nothing else (no profile write). Each gyro sensor listener reads that field once per sample (a volatile read, never
@@ -608,9 +643,9 @@ smooths the data, which would make 0 the right choice.
 
 ## Latency (#75)
 
-Status: the optimisations below are implemented; **none of them has been measured on the device yet** (results table at
-the end of this section is empty). Everything marked [INFERENCE] is derived from the source and from Android's
-standard behaviour, not observed on the Odin. The input-to-photon number can only come from the camera test below; the
+Status: the optimizations below are implemented; **their effect on latency has not been measured on the device**
+(see "Results" at the end of this section). Everything marked [INFERENCE] is derived from the source and from Android's
+standard behavior, not observed on the Odin. The input-to-photon number can only come from the camera test below; the
 in-app stage timestamps never include the controller, network, host or decoding of the host side.
 
 ### Latency budget
@@ -635,7 +670,7 @@ everything else is [INFERENCE].
 | Compositor tail | SurfaceFlinger latch plus scan-out | 8-12 on average, up to one frame more when the latch is missed |
 
 The compositor tail is the one a client cannot shorten by much: a buffer queued at time t is latched at the next SurfaceFlinger
-latch point and scanned out at the following panel refresh, 1 to 1.5 frame periods plus half a scan-out for the screen centre.
+latch point and scanned out at the following panel refresh, 1 to 1.5 frame periods plus half a scan-out for the screen center.
 If the stream FPS equals the display rate, the phase between frame-ready and refresh is fixed for stretches of a session and
 drifts slowly (host and panel clocks differ by tens of ppm), so a measured latency wanders over a window of about one frame
 period across minutes. Camera runs must be long enough or sample the trigger phase randomly.
@@ -664,7 +699,7 @@ mode only); the OES-copy fusion; cheaper SGSR 2 flow and a 2x cap (they change t
 
 ### GPU saturation by the temporal modes (device finding, 2026-11-07)
 
-Measured on the Odin with this branch's first version, SGSR2-DV (Normal) at 2x supersampling (a 4K target), 120 FPS: the
+Measured on the Odin with the first version of this work, SGSR2-DV (Normal) at 2x supersampling (a 4K target), 120 FPS: the
 Upscaling figure peaked above 150 ms, `DelosSharpen` showed `queue pending avg=1.0 max=1, skipped=0` (the SurfaceTexture queue
 was not the problem), `draw` 4-6 ms on average (maximum 41-50), and `DelosLatency` showed `avail->gpu` 60-130 ms,
 `avail->latch` 20-60 ms and `avail->present` 70-140 ms (maximum 290). The whole app and the system stuttered.
@@ -692,8 +727,8 @@ not leave headroom on its own; the load governor above lowers the flow work from
 
 ### Measurement plan
 
-1. **Camera (the only input-to-photon number).** A phone with 240 FPS slow motion pointed at the handheld. A debug-only
-   "latency flash" action in the stream menu is not built yet; until it is, press a controller button that makes a white
+1. **Camera (the only input-to-photon number).** A phone with 240 FPS slow motion pointed at the handheld. Delos has no
+   built-in "latency flash" action; press a controller button that makes a white
    flash on the host (a trivial full-screen window that turns white on a key, for example) and count camera frames from the
    physical press, or an LED on the controller, to the screen turning white. At 240 FPS one camera frame is 4.2 ms. Do 30-50 presses at
    random intervals (so different refresh phases are sampled) and report median and p90. Measure once without the stream (the
@@ -722,89 +757,111 @@ runs. Sub-millisecond changes cannot be seen by the camera; judge them with `Del
 
 ### Results
 
-Empty until the device is measured. One row per run.
+Not measured: no recorded run. Issue [#75](https://github.com/Meitoncz/Delos/issues/75) was closed on 2026-11-07 with
+the optimizations and the in-app instrumentation done and with the decision not to do the camera measurement. No
+input-to-photon number and no before/after comparison of any change in this section exists. The in-app stage
+timestamps (`DelosLatency`, the "Frame queue" and "Render latency" statistics rows) remain available for spot
+checks, and the plan above stays valid for whoever measures it.
 
-| Date | Pipeline | Codec / HDR | FPS / Hz | Pacing | Overlay | Change under test | Camera median / p90 (ms) | `avail->present` avg / p95 | `pacing` avg | Skipped /s | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|---|
+## Code map
 
-## Validation and device acceptance
+| Path | Role |
+|---|---|
+| `app/src/main/java/com/limelight/shell/link/` | Link test: `LinkProbeClient`, `LinkPolicy`, `LinkSearch`, `LinkRecommendation`, `WireBudget` |
+| `app/src/main/java/com/limelight/shell/screens/LinkGuidanceRows.kt` | The Test link and recommendation rows |
+| `app/src/main/java/com/limelight/binding/video/MediaCodecDecoderRenderer.java` | MediaCodec decoding, pacing, asynchronous mode |
+| `app/src/main/java/com/limelight/binding/video/SgsrRenderer.java`, `SgsrTemporal.java`, `SgsrDimensions.java` | The GLES upscalers and their sizes |
+| `app/src/main/java/com/limelight/preferences/UpscalerMode.java`, `PyroWaveBitrate.java` | Upscaler modes; the PyroWave bitrate recommendation |
+| `app/src/main/java/com/limelight/binding/video/VrrMode.java`, `DisplayVrr.java` | Variable refresh rate |
+| `app/src/main/java/com/limelight/binding/input/GyroSmoother.java` | Gyro smoothing |
+| `app/src/main/jni/moonlight-core/latency_threads.c`, `callbacks.c` | Thread priorities; the stream configuration, including the encryption request |
+| `app/src/main/jni/pyrowave-renderer/` | The PyroWave Vulkan renderer and its upscalers |
+
+## Verification
 
 Unit tests cover applied bitrate parsing and XML failures, Nano Pacer lock/reset/rate handling and
-MediaCodec flush/restart generation ordering. The settings catalog includes the three new controls.
-At the first HDR build checkpoint: 61 unit tests passed, debug build and lint passed (zero errors,
-383 warnings); the packaged ARM64 native library was checked for the SGSR JNI entry points.
+MediaCodec flush/restart generation ordering. Runtime bitrate is host/encoder-dependent; an HTTP
+acknowledgement alone is not proof that every codec's measured traffic changes as requested.
 
-The ARM64 build was installed on the Odin after checking that no Game activity was foreground.
-The user was asked to start HEVC at 720p with HDR, Fast V-Sync and async decoding, change runtime
-bitrate, and toggle SGSR/sharpness live. Check actual image orientation, HDR color/luminance, stable
-frames, connection continuity and logs confirming the GPU/P010 path rather than fallback. Repeat
-SDR, existing pacing/async-off, repeated toggles and stream reconnect/teardown. The user starts games
-and performs navigation; agents only install/start the app and read diagnostics.
+A device check of this area: start HEVC at 720p with HDR, Fast V-Sync and async decoding, change the runtime
+bitrate, and toggle SGSR/sharpness live. Check image orientation, HDR color/luminance, stable
+frames, connection continuity and logs confirming the GPU/P010 path rather than fallback. Repeat with
+SDR, the other pacing modes, async off, repeated toggles and stream reconnect/teardown.
 
-Do not mark these roadmap items complete or merge until the user's device results and any resulting
-fixes are recorded. Runtime bitrate is host/encoder-dependent; an HTTP acknowledgement alone is not
-proof that every codec's measured traffic changes as requested.
+### Not verified
 
-### Odin feedback, 2026-10-26
+- The effect of the latency work, and any input-to-photon latency: not measured ("Latency", "Results").
+- The link test beyond one network: no variance between runs, no second network, no comparison of the
+  recommendation with a real stream. The thresholds of the passive hint are not calibrated.
+- Variable refresh rate on a display that reports adaptive refresh: no such device was available.
+- Gyro smoothing in a game: the numbers are filter numbers from `GyroSmootherTest`.
+- Sustained performance and heat in long sessions, for every upscaler mode.
+- Any host other than Vibepollo on Windows.
 
-The user confirmed Fast V-Sync, asynchronous decoding and runtime bitrate changes work. SGSR's first
-HDR test exposed a vertically inverted image and an enlarged/cropped viewport; HDR colors could not
-be assessed. The correction keeps the HDR parent SurfaceView at its original stream buffer size,
+## Related
+
+- [SGSR2_VIDEO.md](SGSR2_VIDEO.md), [PER_APP_SETTINGS.md](PER_APP_SETTINGS.md), [SETTINGS.md](SETTINGS.md), [GUI.md](GUI.md), [SECURITY.md](../SECURITY.md).
+- Issues [#18](https://github.com/Meitoncz/Delos/issues/18) (link guidance), [#19](https://github.com/Meitoncz/Delos/issues/19) (PyroWave quality and performance), [#67](https://github.com/Meitoncz/Delos/issues/67) (Sharpen only),
+  [#74](https://github.com/Meitoncz/Delos/issues/74) (SGSR reference check), [#75](https://github.com/Meitoncz/Delos/issues/75) (latency), [#77](https://github.com/Meitoncz/Delos/issues/77) (gyro smoothing), [#24](https://github.com/Meitoncz/Delos/issues/24) (variable refresh rate).
+
+## Evidence (2026-10-26): first device feedback
+
+AYN Odin 2 Portal Max, Vibepollo on Windows. The owner confirmed that Fast V-Sync, asynchronous decoding and
+runtime bitrate changes work. SGSR's first
+HDR test exposed a vertically inverted image and an enlarged/cropped viewport. The correction keeps the HDR
+parent SurfaceView at its original stream buffer size,
 maps the display-sized P010 child into that parent's coordinate space, and explicitly flips the raw
 GL framebuffer vertically at presentation. Unlike an EGL window swap, raw SurfaceControl buffer
-submission does not supply the GL-to-Android orientation conversion. Repeat visual acceptance after
-installing this correction; HDR color and luminance are still unverified.
+submission does not supply the GL-to-Android orientation conversion.
 
-The user subsequently confirmed the corrected HDR colors are good and reported little visual change
+After the correction the owner confirmed that the HDR colors are good (judged by eye, not measured) and
+reported little visual change
 at 480p. Device logs show actual SGSR output from 854x480 to 1920x1079 (the SurfaceView's aspect-fit
-size), with sharpness 100%; scaling is directly to the view, not a fixed 2x stage. The user authorized
-adding the High Quality variant for comparison. Its visual acceptance is pending.
+size), with sharpness 100%; scaling is directly to the view, not a fixed 2x stage. The High Quality
+variant was then added for comparison.
 
-Final upscaler acceptance used 480p HDR as a deliberately difficult source. The user preferred
+The upscaler comparison used 480p HDR as a deliberately difficult source. The owner preferred
 `SGSR2-DV (Quality)` over the other three modes while asking to retain all four choices. The
-improvement was modest and static source aliasing remains visible. A future 1080p-to-4K comparison
-should be a more representative upscale ratio but is not required to complete this feature.
+improvement was modest and static source aliasing remains visible. A 1080p-to-4K comparison
+would be a more representative upscale ratio; it was not done.
 
-The High Quality build passed assembly, all 62 tests and lint (`check-hq-final.log`) and was installed
-on the Odin after confirming ShellActivity was foreground. Later device logs confirm `SGSR quality:
-High Quality` actually rendered on the GPU/P010 path. This confirms shader compilation/selection;
-the user's visual and sustained-performance acceptance is still pending.
+The High Quality build passed assembly, the unit tests of that day (62) and lint. Later device logs confirm
+`SGSR quality: High Quality` actually rendered on the GPU/P010 path. This confirms shader
+compilation/selection; no visual or sustained-performance acceptance of that mode is recorded.
 
-### PyroWave SGSR 2 and AV1 recovery, 2026-10-27
+## Evidence (2026-10-27): PyroWave SGSR 2 and AV1 recovery
 
-PyroWave's Vulkan renderer now runs its video-specific SGSR 2 reconstruction for SDR and HDR/P010.
+PyroWave's Vulkan renderer runs its video-specific SGSR 2 reconstruction for SDR and HDR/P010.
 The first full-resolution version added about 6.5-6.8 ms of GPU draw work and was visibly too latent.
-Combining neighbourhood reconstruction and YCoCg clipping removed the duplicate nine-sample pass;
+Combining neighborhood reconstruction and YCoCg clipping removed the duplicate nine-sample pass;
 the Odin then measured mostly 3.9-4.9 ms of draw work and sustained about 118-119 fps in the tested
-720p-to-1920x1080 HDR stream. The user confirmed substantially better latency, correct HDR colour and
-working live On/Off. The native status also keeps the menu toggle synchronized.
+720p-to-1920x1080 HDR stream. The owner confirmed substantially better latency (by feel, not measured),
+correct HDR color and working live On/Off. The native status also keeps the menu toggle synchronized.
 
 Adding post-processing timing initially exposed an unrelated lifetime hazard in asynchronous
 MediaCodec input. A decoder recovery could invalidate a retained direct input buffer and the next
 `put()` crashed inside `GetByteArrayRegion`/`memcpy`. Async mode now fetches the callback-owned buffer
 for each frame instead of retaining it across a possible flush/reset. GL timer queries that triggered
-the recovery were removed in favour of safe wall timing. On the corrected build, the user started
+the recovery were removed in favor of safe wall timing. On the corrected build, the owner started
 AV1 with SGSR twice; both sessions kept the upscaler available and neither crashed. Device logs also
 confirmed MediaCodec output at 1920x1080 for a 1280x720 source.
 
-### PyroWave upscaler parity, 2026-10-28
+## Evidence (2026-10-28): PyroWave upscaler parity
 
-Completed A01–A05: genuine SGSR 1 (Normal)/HQ, distinct temporal Quality activation/reconstruction,
+Implemented: genuine SGSR 1 (Normal)/HQ, distinct temporal Quality activation/reconstruction,
 presentation sharpening and matching saved/live controls/help. The native mode replaces the old
 temporal-enabled boolean; requested settings remain separate from the actually applied mode.
 Shaders are generated with `jni/pyrowave-renderer/shaders/build.sh`; no runtime shader compiler
 or network dependency is introduced. GPU draw timestamps include all new post-decoding passes.
 
-The local ARM64/ARMv7 debug build, all 80 unit tests and lint passed (0 errors, 387 warnings).
-The existing Turkish translation quick-fix/report exception remains non-fatal and unchanged.
-The ARM64 APK was installed after checking that no Game activity was running.
+The ARM64/ARMv7 debug build, the unit tests of that day (80) and lint (0 errors) passed.
 `PyroWaveGpuInstrumentation` passed real Vulkan shader readbacks on the Odin Adreno 740:
 spatial constants/edges, bidirectional motion, Quality activation and distinct reconstruction,
 history resets/scene changes, ten-bit BT.2020 preservation, zero/nonzero presentation sharpening
 and HDR P010 packing. A second probe created the actual renderer, allocated/dispatched each mode
 at both supersampling levels, checked applied state/Off teardown and rebuilt SDR → HDR → SDR.
-No game, emulator, streaming connection or injected navigation was used.
+No game, emulator or streaming connection was used.
 
-These checks establish implementation and GPU correctness, not new visual acceptance or sustained
-game performance. The earlier 118–119 FPS result above is specifically the old SGSR2-DV path,
-not a benchmark for the new HQ/Quality modes. Track current acceptance in [#19](https://github.com/Meitoncz/Delos/issues/19).
+These checks establish implementation and GPU correctness, not visual acceptance or sustained
+game performance. The 118–119 FPS result above is specifically the first SGSR2-DV path,
+not a benchmark for the HQ/Quality modes; no later acceptance of those modes is recorded.

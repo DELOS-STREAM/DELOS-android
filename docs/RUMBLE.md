@@ -1,15 +1,30 @@
 # Rumble feel and the rumble laboratory
 
-A vibration that never stops while the gyro is on is not a translator problem and not a client problem: the host's emulated
-DualSense does not forward the stop. Select a DualShock 4 profile on the host until it is fixed; see
-[CONTROLLER_STATE.md](CONTROLLER_STATE.md) (the evidence, the upstream reports and the `ControllerSend` / `MotionSend` diagnostics).
+## Purpose
+
+Rumble sent by the host is translated so that the small vibration motor of a handheld can reproduce it. This
+document specifies the Rumble feel setting and its presets, the translation parameters, what ends a rumble, the
+rumble diagnostics and the rumble laboratory of the Debug info screen.
+
+## Scope
+
+| Covered here | Specified elsewhere |
+|---|---|
+| The Rumble feel row, the presets, the translator and playback | A vibration that never stops while the gyro is on: [CONTROLLER_STATE.md](CONTROLLER_STATE.md) |
+| What ends a rumble, the `RumblePlayback` diagnostic lines | The Settings screen: [SETTINGS.md](SETTINGS.md) |
+| The laboratory in Debug info | |
+
+A vibration that never stops while the gyro is on is not caused by the translator or by Delos: the host's emulated
+DualSense does not forward the stop. Select a DualShock 4 profile on the host until the host is fixed
+([CONTROLLER_STATE.md](CONTROLLER_STATE.md) has the evidence, the upstream reports and the `ControllerSend` /
+`MotionSend` diagnostics).
 
 ## Rumble feel (Settings)
 
 **Settings → Controls → Gamepad** (next to *Enable Rumble*) has a **Rumble feel** row with four choices.
 It is shown only where the other vibration settings are (not on a device without a vibration motor) and is
 dimmed while *Enable Rumble* is off. It applies from the next stream, is profile-scoped like the rumble
-keys and has **no per-game override** (the other rumble settings have none either).
+keys and has **no per-app override** (the other rumble settings have none either).
 
 | Choice | What it does | Parameters |
 | --- | --- | --- |
@@ -38,7 +53,7 @@ computed, kept bit for bit by the tests); lab patterns use the Original mapping.
 single/dual/quad vibrator paths on the next stream. USB-driver and Shield-specific rumble
 remain unchanged. Existing device/OSC/fallback routing and fallback-strength scaling still
 apply before translation. This is a user-profile setting, not automatic device detection or
-a per-game override. It also affects external pads using those Android paths when enabled.
+a per-app override. It also affects external pads using those Android paths when enabled.
 
 ## Rumble feel in Settings and in the stream
 
@@ -51,7 +66,7 @@ nothing; if the active preset's technique fails during the stream the row shows 
 A on a preset applies and saves it exactly like the laboratory (same `RumblePreferences.applyPreset`), marks it
 **Active**, plays no sample and leaves the menu open so presets can be tried back to back. B returns to More.
 `ControllerHandler` follows `PreferenceConfiguration.rumbleTranslatorEnabled`/`rumbleProfile` at every rumble
-event, so the new preset is used from the next rumble the game sends (the previous output is cancelled
+event, so the new preset is used from the next rumble the game sends (the previous output is canceled
 when the preset changes; a rumble the game keeps holding stays silent until its next update).
 
 The Debug laboratory (Settings > About > Debug info) stays as a developer tool for tuning the parameters.
@@ -67,7 +82,7 @@ all share the same high buzz. **Pulsing** changes the *technique*: a repeating o
 (`VibrationEffect.createWaveform`, repeating from index 0) whose on and off durations are part of the profile
 (`pulseOnMs`, `pulseOffMs`; saved as `pref_rumble_pulse_on_ms`/`pref_rumble_pulse_off_ms`). The on phase plays the translated
 amplitude (never below the floor), the off phase amplitude 0; the waveform is replaced when the amplitude changes (also at the end
-of a start kick) and cancelled at zero. It applies to the single-vibrator path (the Odin); dual/quad vibrators keep the
+of a start kick) and canceled at zero. It applies to the single-vibrator path (the Odin); dual/quad vibrators keep the
 amplitude path and record that as a problem.
 
 **Removed presets:** Stronger, Always felt, Deep rumble, Sharp impacts, Smooth deep, Max immersion, Everything felt and
@@ -104,7 +119,7 @@ ends a rumble of its own. On the device a host value plays like this:
   **60 s** at the translated amplitude; the next host value replaces it. A translated amplitude of 0 (a host zero, or a value
   below one amplitude step) cancels instead.
 - **Pulse path** (Pulsing) and the PWM path of a vibrator without amplitude control: a waveform that **repeats until it is
-  cancelled**.
+  canceled**.
 - Besides the next host value only `RumblePlayback.stop` (the stream ends, the feel is switched live) and a destroyed controller
   context (a device change) end it. Both cancel through the vibrator object that played the effect: the system compares the
   binder token of that object (`VibratorManagerService.cancelVibrate(usageFilter, token)`), so a `cancel()` through another
@@ -134,7 +149,7 @@ that comes first. Read the lines of one stream like this:
 | `... vibrate pulse waveform on/off 20/20 ms amp 50 repeating until cancelled ...` / `... no vibrator call, the pulse waveform at amp 50 is already playing ...` | The Pulsing feel: a new waveform, or an event at the same amplitude that changed nothing. |
 | `RumblePlayback host 0000 0000 -> single#1a2b3c id=0 translated amp 0: cancel via Vibrator.cancel() requested by host zero` | A cancel and who asked: `host zero`, `host value translated to zero` (the motors were not 0 but the mix is below one step), `settling tick reached zero` (kick or smoothing), `technique ... failed`. |
 | `RumblePlayback stop requested by stream teardown (ControllerHandler.stop): cancelling 1 output(s)` and `RumblePlayback cancel single#1a2b3c via Vibrator.cancel() requested by ...` | The stream ended (`stream teardown`) or the feel was switched (`rumble preset changed`); one `cancel` line per output. |
-| `RumblePlayback teardown: controller context 'name' is destroyed, its vibrator single#1a2b3c is cancelled` and `... requested by output discarded (device context destroyed)` | A device change or removal cancelled the vibrator. |
+| `RumblePlayback teardown: controller context 'name' is destroyed, its vibrator single#1a2b3c is cancelled` and `... requested by output discarded (device context destroyed)` | A device change or removal canceled the vibrator. |
 | `RumblePlayback host 0000 0000 for controller 0 drove no output: matching context false, input contexts 1, USB contexts 0` | The event reached no vibrator at all (no controller context with that number, or one without a vibrator), a host zero included. |
 | `RumblePlayback host 8000 0000 -> single#1a2b3c: ignored, the playback is stopped` | An event that arrived after the stop. |
 
@@ -204,23 +219,39 @@ The Odin's existing interface-haptic tuning indicates a high perceptibility thre
 (about 86% amplitude and 60 ms), but no new threshold/default is selected here. This layer
 adjusts amplitude and onset timing, not the hardware's physical resonant frequency.
 
-## Verification (2026-11-06)
+## Code map
 
-Standalone Java compilation covered the translator, playback, preference loader,
-PreferenceConfiguration and ControllerHandler against the cached Android/app contracts.
-The Debug screen compiled with the real Compose compiler/API jars. Seventeen translator
-regressions passed, including the full mixed MSB grid and all 65,536 individual raw values.
-Three disposable offline Robolectric Android 13 scenarios exercised delayed kick settling,
-zero/terminal cancellation, independent hardware histories, replacement playback and saved
-profile values. Temporary smoke sources/classes were not retained in the repository.
+| Path (under `app/src/main/java/com/limelight/`) | Role |
+|---|---|
+| `utils/RumbleTranslator.java` | Translates the host's motor values into an amplitude and a start kick |
+| `utils/RumblePlayback.java` | Plays the result on the device or controller vibrators; pulsing; cancellation |
+| `utils/RumblePresets.java`, `utils/RumblePreferences.java` | The presets and the preference keys that store them |
+| `binding/input/ControllerHandler.java` | Receives rumble from the stream and calls the playback |
+| `shell/screens/DebugInfoScreen.kt` | The laboratory |
 
-The preset update additionally passed standalone compilation of the preset model,
-preference helper and Debug screen with real Android/Compose APIs, plus 27 permanent
-regressions (17 translator, 3 preset boundary/Original, 7 preference selection/persistence).
-Two disposable offline Android 13 smoke scenarios exercised every saved preset through
-scheduled playback and ran the actual new Test sample coroutine through Android vibration
-effects, observing the tap, steady force, rising ramp, decay and final zero amplitude.
+## Verification
 
-These are not a Gradle build, lint run, visual/controller check or physical vibration
-measurement. The lead owns full build/lint and Odin acceptance; the user judges the feel
-and compares it with PXPlay before any device defaults are agreed. Issue #66 remains open.
+`RumbleTranslatorTest`, `RumblePlaybackTest`, `RumblePresetsTest` and `RumblePreferencesPresetTest` cover the
+translation, the playback decisions, the presets and their storage. The feel itself is checked in the laboratory
+(Settings → About → Debug info) and in a stream.
+
+### Not verified
+
+- No vibration was measured with an instrument. The presets were chosen by feel on one handheld with one
+  amplitude-only vibrator.
+- Devices with two or four vibrators and controllers with their own motors have no recorded run.
+
+## Related
+
+- [CONTROLLER_STATE.md](CONTROLLER_STATE.md), [SETTINGS.md](SETTINGS.md).
+- Issue [#66](https://github.com/Meitoncz/Delos/issues/66).
+
+## Evidence (2026-11-06)
+
+Checks made when the translation layer and the presets were written (issue #66, closed on that day). They are a record of that day:
+
+- Seventeen translator regressions passed, including the full mixed MSB grid and all 65,536 individual raw values.
+- Three offline Robolectric (Android 13) scenarios exercised delayed kick settling, zero/terminal cancellation, independent hardware histories, replacement playback and saved profile values. They were throwaway smoke tests and are not in the repository.
+- The preset update passed 27 permanent regressions (17 translator, 3 preset boundary/Original, 7 preference selection/persistence). Two further throwaway Android 13 smoke scenarios exercised every saved preset through scheduled playback and ran the Test sample through Android vibration effects, observing the tap, steady force, rising ramp, decay and final zero amplitude.
+
+None of this is a physical vibration measurement. The presets were chosen by feel on one handheld (see "Presets" above); nothing was measured with an instrument.

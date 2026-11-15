@@ -2,6 +2,8 @@
 
 Thanks for your interest. Delos is in active development, has no releases yet, and is maintained by one person ([@Meitoncz](https://github.com/Meitoncz)), so things move at a human pace.
 
+The permanent rules of the project (tests, security, history, binaries, claims, documentation, releases, code) are in [docs/ENGINEERING_RULES.md](docs/ENGINEERING_RULES.md). This page says how to take part; it does not repeat them.
+
 ## Reporting bugs and ideas
 
 Use the issue forms: pick "Bug report" or "Feature request" when opening a [new issue](https://github.com/Meitoncz/Delos/issues/new/choose). Search existing issues first. For bugs, the form asks for your device, host software and Delos build (shown on the About page), and explains how to collect logs.
@@ -10,20 +12,66 @@ Please remove personal data (IP addresses, PC and account names) from logs and s
 
 Problems on the PC side belong to [Vibepollo](https://github.com/Nonary/Vibepollo), [Apollo](https://github.com/ClassicOldSong/Apollo) or [Sunshine](https://github.com/LizardByte/Sunshine).
 
+## Security problems
+
+Do not open a public issue for a vulnerability. Report it privately as described in [SECURITY.md](SECURITY.md), which also describes what Delos encrypts, stores and sends.
+
 ## Building
 
-Follow [Mac setup](docs/MAC_SETUP.md) or [Windows setup](docs/WINDOWS_SETUP.md) for the toolchain and submodules, then run:
+[docs/BUILDING.md](docs/BUILDING.md) has the requirements for macOS, Linux and Windows, the submodule, `local.properties` and every command. In short: JDK 21, the Android SDK, a checkout path without spaces, then
 
 ```sh
+git clone --recurse-submodules https://github.com/Meitoncz/Delos.git
+cd Delos
 ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
+```
+
+## Tests and lint
+
+| Command | What it checks |
+|---|---|
+| `./gradlew :app:testDebugUnitTest` | The unit tests (JVM and Robolectric) |
+| `./gradlew :app:testDebugUnitTest --tests 'com.limelight.diag.*'` | One package or class of them |
+| `./gradlew :app:lintDebug` | Android lint with `app/lint.xml` |
+| `./gradlew :app:assembleDebug` | That the app builds |
+| `python3 tools/docs/check_links.py` | Relative links and anchors of the Markdown files |
+| `python3 tools/l10n/find_literals.py` | User-visible text that is not a string resource |
+
+Run the first three before you open a pull request: CI runs only when the maintainer starts it, never by itself on a push or a pull request.
+
+A bug fix comes with a regression test that fails without the fix. New logic comes with tests. Where a unit test cannot reach the code (native code, behavior that needs a device), say so in the commit body with a line `No test: <reason>`.
+
+## Commit messages
+
+```
+Stream menu: keep the bitrate after a failed request (#123)
+
+The page reset its slider to the profile value when the host answered
+with an error. It now keeps the value the user chose and shows the
+host's message.
+
+[skip ci]
+```
+
+- **Subject:** one line of at most 72 characters that says what changed, in sentence case, without a full stop. An area prefix (`Stream menu:`, `Docs:`, `Build:`) and the issue number `(#N)` at the end are welcome.
+- **Body:** after an empty line. What changed and why, measurements with device and date, and what was not verified. Lists of details belong here, not in the subject.
+- **One topic per commit.** No `WIP`, `fixup!` or `squash!` commits on `main`: tidy them up before the merge.
+- **`[skip ci]`** is the last line of the body of every commit to `main`. GitHub Actions does not start workflows for a pushed commit whose message contains it. The Delos workflow starts only by hand today, so the line has nothing to skip yet; the maintainer keeps it so that no push starts a run if an automatic trigger is ever added. A contributor's pull request does not need it.
+- The history of `main` is never rewritten. A mistake is fixed by a new commit.
+
+The hook `tools/hooks/commit-msg` checks the subject. Enable it once per clone:
+
+```sh
+git config core.hooksPath tools/hooks
 ```
 
 ## Principles
 
 - Controller first. Every screen must be usable with the D-pad or stick, A/B/X/Y and the two menu buttons. Touch is supported but is not the design target.
-- No confirmation dialogs in normal flows.
+- No confirmation dialogs in normal flows. A security prompt for something that comes from outside the app (a link, a shortcut made by another app) is the exception.
 - Visual changes start as a prototype or a discussion in an issue, before code.
 - Keep the Java package `com.limelight`.
+- The app is called Delos in every language: the name is never translated or inflected.
 - Delos is GPL-3.0. By contributing you agree your work is released under the same license.
 
 ## Pull requests
@@ -32,19 +80,28 @@ Welcome without prior discussion:
 
 - Bug fixes
 - Device compatibility reports and fixes
-- Translations (later, once the strings settle)
+- Corrections of translations by native speakers: ten languages ship, and they were not audited by a native speaker of each language yet ([docs/LOCALIZATION.md](docs/LOCALIZATION.md))
 
 Please discuss in an issue first:
 
 - New features
 - UI changes
 - Anything touching moonlight-common-c, which lives in a fork submodule
+- A new dependency or binary: each needs its origin, version, license and checksum recorded ([docs/THIRD_PARTY.md](docs/THIRD_PARTY.md))
 
-Keep PRs small and focused, and fill in the PR template.
+Keep PRs small and focused, and fill in the PR template. A change of behavior updates its document in `docs/` in the same pull request, and user-visible text exists in all ten languages.
 
 ## Code style
 
-Follow the patterns already in the code. The shell UI is Kotlin with Compose; the streaming core is Java. Do not reformat code you are not changing.
+Follow the patterns already in the code. The shell UI is Kotlin with Compose; the streaming core is Java. Do not reformat code you are not changing: files that come from Moonlight and Artemis must stay mergeable.
+
+## Documentation
+
+All documents are listed in [docs/README.md](docs/README.md). They follow one style, precise, direct and structured, defined in [docs/ENGINEERING_RULES.md](docs/ENGINEERING_RULES.md#documentation-style).
+
+## Claims
+
+README, changelog, release notes and the texts of the app state only what was tested, or say that it was not. A statement about speed, quality, latency or compatibility in a pull request names the device, the date and the number or observation behind it.
 
 ## AI tools
 

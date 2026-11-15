@@ -1,8 +1,19 @@
 # Diagnostics: logging, crash capture and problem reports
 
+## Purpose
+
 Delos keeps a small log of what it did, on the device, so that a problem can be reported with facts instead of memories.
 **Nothing leaves the device unless the user starts it**: there is no analytics, no automatic upload, no account and no token
-anywhere in this feature. The issue is [#71](https://github.com/Meitoncz/Delos/issues/71).
+anywhere in this feature. This document specifies what is logged, what is removed before anything is shared, how a crash
+is detected and offered for reporting, and the contract between the app and the GitHub issue forms.
+
+## Scope
+
+| Covered here | Specified elsewhere |
+|---|---|
+| The rolling log, its sources and its switch | The look of the report card and of the Debug info screen: [GUI.md](GUI.md) |
+| The scrubber and the device block | The security model as a whole: [SECURITY.md](../SECURITY.md) |
+| Sharing, crash capture, the report offer, the issue forms | The `ControllerSend` and rumble diagnostic lines: [CONTROLLER_STATE.md](CONTROLLER_STATE.md), [RUMBLE.md](RUMBLE.md) |
 
 ## What is logged
 
@@ -137,7 +148,49 @@ user in the browser: drag it into the **What happened?** box (a textarea with `r
 
 **Dismiss** resolves the problem and returns the focus to the screen.
 
-## How to test
+## Field-id contract of the issue forms
+
+The address that "Report this problem" opens names a form file (`template=`) and fills it in through query parameters named after
+the form's field ids. An installed app keeps sending the same names, so the names are a contract between every app build and
+`.github/ISSUE_TEMPLATE/`.
+
+| What the app sends (`IssueUrl.build`) | Must exist in the form |
+|---|---|
+| `template=` the value of `IssueUrl.TEMPLATE` (`bug_report.yml`) | A form file with exactly that name |
+| `title` | Nothing: GitHub's own parameter |
+| `labels=from-app` | The label `from-app` in the repository. GitHub applies a label from the address only for people who may label issues, so a form that should label every report sets the label itself |
+| `what-happened`, `device`, `build`, `stream-settings`, `logs` | Fields with these ids that take text |
+| `area` with the value `Other` or `Pairing/connection` | A dropdown with the id `area` that offers both options, spelled exactly so |
+
+Two forms carry these ids:
+
+| Form | For | Notes |
+|---|---|---|
+| `bug_report.yml` | People who write a report by hand, and app builds whose `IssueUrl.TEMPLATE` is `bug_report.yml` | Has more required fields than the app fills in |
+| `app_report.yml` | The app | Only "What happened?" and one confirmation checkbox are required; it sets the labels `bug` and `from-app` itself |
+
+Rules, repeated in the comment at the top of both forms:
+
+1. A form file that an app build names is never renamed or removed.
+2. The ids `what-happened`, `area`, `device`, `build`, `stream-settings` and `logs` and the two `area` options are never renamed or removed.
+3. A field that the app fills in keeps its type. New fields are optional.
+4. `IssueUrlTest` and `ProblemIssueTest` check the address that the app builds. No test reads the form files: a change of a form is checked
+   by hand against this table.
+
+## Code map
+
+| Path (under `app/src/main/java/com/limelight/`) | Role |
+|---|---|
+| `diag/DiagLog.kt`, `diag/DiagLogWriter.kt` | The log call, the queue and the writer thread |
+| `diag/StreamEvents.kt`, `diag/StreamSettingsSnapshot.kt` | Stream lines and the settings of the device block |
+| `diag/LogScrubber.kt`, `diag/ScrubContextCollector.kt` | The scrubber and the known names, addresses and secrets it is given |
+| `diag/DeviceInfo.kt`, `diag/DeviceInfoCollector.kt`, `diag/DiagnosticReport.kt`, `diag/DiagExport.kt` | The device block, the report text, sharing |
+| `diag/CrashReporter.kt`, `diag/CrashFile.kt`, `diag/CrashText.kt` | The uncaught-exception handler and the crash file |
+| `diag/ProblemDetector.kt`, `diag/ProblemMonitor.kt` | Detection at the next start, the ledger |
+| `diag/ProblemReporter.kt`, `diag/ProblemIssue.kt`, `diag/IssueUrl.kt` | The report, the issue draft and the prefilled address |
+| `shell/ui/ProblemOfferCard.kt` | The card |
+
+## Verification
 
 Automated: `./gradlew :app:testDebugUnitTest --tests 'com.limelight.diag.*'` (scrubber, writer, report, detector, crash file, issue address, settings snapshot).
 
@@ -153,3 +206,15 @@ On a device with a debug build (never while streaming):
 5. **Native crash:** with the app in the foreground, `adb shell run-as io.github.meitoncz.delos.debug kill -ABRT $(adb shell pidof io.github.meitoncz.delos.debug)`
    (expected to show as a native crash on Android 11+, and as an unclean exit on API 29). An ANR is offered the same way when the system reports one.
 6. `adb shell run-as io.github.meitoncz.delos.debug ls files/diagnostics` lists the log files, `crash.txt`, `crash.marker` and `session.marker`.
+
+### Not verified
+
+- This document records no dated device run of the steps above.
+- The scrubber does not remove app (game) titles, and names shorter than three characters are not recognized as names.
+- How the two issue forms render on GitHub, and that GitHub fills them in from the address, was not checked after the forms changed.
+
+## Related
+
+- Issue [#71](https://github.com/Meitoncz/Delos/issues/71).
+- [SECURITY.md](../SECURITY.md), "Diagnostics".
+- `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/app_report.yml`.

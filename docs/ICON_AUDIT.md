@@ -1,10 +1,14 @@
 # Icon audit
 
-Every icon of the app, screen by screen, with what it means and whether it was kept or replaced by the audit
-(this branch). Rules: [ICONS.md](ICONS.md). Glyph names are Phosphor 2.1.2 (Regular, with the Fill twin used on
-focus); the semantic names (`Symbols.X`) are in `tools/fonts/icons.txt`. The Settings rows are tested
-(`SettingIconsTest`): every catalogue row has its own entry in `settingIcon()`, no two rows of one tab share a
-glyph (except the named repeats below) and no row reuses the glyph of a tab pill.
+## Purpose
+
+The inventory of every icon of the app, screen by screen: what the icon means, and whether the icon audit of
+2026-11-10 kept or replaced it. It is the reference for choosing the icon of a new row or action.
+
+## Scope
+
+How icons are generated and how a glyph is added is in [ICONS.md](ICONS.md). Glyph names are Phosphor 2.1.2
+(Regular, with the Fill twin used on focus); the semantic names (`Symbols.X`) are in `tools/fonts/icons.txt`.
 
 ## Rules
 
@@ -16,7 +20,7 @@ glyph (except the named repeats below) and no row reuses the glyph of a tab pill
    Regular/Fill pairing are used everywhere.
 3. Not changed: the controller letters (A/B/X/Y glyph buttons), the Delos logo and the battery body (custom
    drawing), the toast kind rules (`toastKindFor` still reads ERROR, WIFI_OFF, LINK_OFF, CHECK_CIRCLE, CHECK, WARNING).
-4. Layout, sizes, colours and motion are untouched. Only the glyph a call site names changed.
+4. Layout, sizes, colors and motion are untouched. Only the glyph a call site names changed.
 
 ## Intentional repeats
 
@@ -25,11 +29,11 @@ glyph (except the named repeats below) and no row reuses the glyph of a tab pill
 | `drop` (opacity) | Keyboard opacity, OSC opacity, Free stick opacity (Controls); Game background opacity (Appearance) | the same property on different targets |
 | `arrow-u-up-left` (reset) | Reset on-screen controls / Reset keyboard layout, Reset all, Reset to profile value, Reset filters, Reset metadata match, toasts | the same action |
 | `file-arrow-down` (import) | Import keyboard layout, Import special buttons | the same action |
-| `floppy-disk` (remember) | Remember mouse mode (Controls), Remember zoom/pan (Appearance) | the same behaviour |
+| `floppy-disk` (remember) | Remember mouse mode (Controls), Remember zoom/pan (Appearance) | the same behavior |
 | `arrows-down-up` (swap axes) | Invert video resolution (Display), Swap trackpad axes (Controls) | swapping two axes |
 | `timer` | Ultra low latency, Latency impact chip | latency |
 | `wifi-high` | status bar, Network impact chip | the network connection |
-| `sliders-horizontal` (custom) | custom-settings badge, "N custom settings" chip, per-game "Custom for this game" | a value that differs from the profile |
+| `sliders-horizontal` (custom) | custom-settings badge, "N custom settings" chip, per-app "Custom for this app" | a value that differs from the profile |
 | `bezier-curve` (smoothing) | Gyro smoothing, stream menu gyro row, Debug smoothing | smoothing |
 | `boot` (kick) | Kick-start preset, Debug Start kick | the start kick |
 | `vibrate` | Enable rumble, More > Rumble, Debug Vibration motor | rumble / the vibration motor |
@@ -42,7 +46,7 @@ glyph (except the named repeats below) and no row reuses the glyph of a tab pill
 | `list` / `square` / `copy` | menu button hints | hardware glyphs, not features |
 | `pencil-simple` | Rename (devices, profile, dialog field) | rename |
 | `trash` | Delete profile, Remove from Delos, undo toast default | remove |
-| `gear-six` | Settings nav button, Game settings, side menu "All settings" | settings |
+| `gear-six` | Settings nav button, App settings, side menu "All settings" | settings |
 | `power` | Quit game on the context menu, bar tile, portal | quit |
 | `wifi-high` / `wifi-medium` ... | status bar levels | one glyph family; level 3 and "full" are the same code point |
 
@@ -55,13 +59,17 @@ gyroscope (compass), frame pacing (metronome), supersampling (high definition), 
 or Xbox Guide button (a plain disc), IGDB / HowLongToBeat / PCGamingWiki logos (database, countdown clock, article;
 only the Windows, Steam and Android logos exist). Nothing needed a font from another family.
 
-## Device checklist (eyeball on the Odin)
+## Verification
+
+The Settings rows are tested (`SettingIconsTest`): every catalog row has its own entry in `settingIcon()`, no two
+rows of one tab share a glyph (except the named repeats above) and no row reuses the glyph of a tab pill. The
+other screens are checked by eye on a device with this list:
 
 1. Settings: every tab (Stream, Display, Audio, Controls, Appearance, Covers, Devices, About): row glyphs read, tab pills
    differ from every row, Controls is the longest list (about 65 rows).
-2. Per-game settings: the same rows on Stream/Display, the custom badge and reset glyphs.
+2. Per-app settings: the same rows on Stream/Display, the custom badge and reset glyphs.
 3. Side menu rows and the status bar (haptics bell, battery bolt, wifi).
-4. Home: the context menu (Resume, Quit, Quit and start, Artwork, Metadata, Game settings, Hide), the game info chips
+4. Home: the context menu (Resume, Quit, Quit and start, Artwork, Metadata, App settings, Hide), the game info chips
    (Running, HDR, SDR, unverified HDR, HLTB, Virtual display), genre and theme pills, bundled tiles (Desktop, Remote
    input, Remote monitor, Steam Big Picture) while their artwork loads.
 5. Filter modal: four sections and the HDR chips; metadata and artwork screens (tabs, sheet rows, badges, loading).
@@ -70,11 +78,15 @@ only the Windows, Steam and Android logos exist). Nothing needed a font from ano
 8. Debug info: every section (device, haptics, rumble laboratory presets and patterns, advanced rows, controllers).
 9. Stream result (failure face, Try again, Back to library) and the exit/connect portals.
 
+### Not verified
+
+- This document records no dated device run of the list above.
+
 ## Inventory
 
 `Was` is the glyph before the audit, `Now` after it; `keep` rows are listed too so that nothing is unreviewed.
 
-# Settings tabs (header pills, also the per-game settings tab pills)
+# Settings tabs (header pills, also the per-app settings tab pills)
 
 | Item | Was | Now | Verdict | Why |
 |---|---|---|---|---|
@@ -104,7 +116,7 @@ only the Windows, Steam and Android logos exist). Nothing needed a font from ano
 | Low-latency frame balance | `sliders-horizontal` | `scales` | **replace** | scales; the sliders glyph is reserved for "custom settings" |
 | Ultra low latency | `lightning` | `timer` | **replace** | the bolt is the battery charging glyph; the timer is the Latency impact glyph too (same meaning) |
 | Video codec | `film-slate` | `file-video` | **replace** | a video file format; the film slate stays on the Artwork "Type" row |
-| PyroWave chroma | `palette` | `gradient` | **replace** | colour gradient, not the theme palette |
+| PyroWave chroma | `palette` | `gradient` | **replace** | color gradient, not the theme palette |
 | Prevent packet loss | `heartbeat` | `broadcast` | **replace** | broadcast (was a heartbeat, now the Debug heartbeat pattern) |
 | Test link (guidance row) | `wifi-high` | `network` | **replace** | network graph; wifi is the status bar and the Network impact axis |
 | Use recommended bitrate | `speedometer` | `thumbs-up` | **replace** | thumbs up = recommendation |
@@ -120,7 +132,7 @@ only the Windows, Steam and Android logos exist). Nothing needed a font from ano
 | Virtual display | `monitor-play` | `monitor-play` | keep | same as the Virtual display chip |
 | Auto orientation | `device-rotate` | `device-rotate` | keep |  |
 | Invert video resolution | `arrows-down-up` | `arrows-down-up` | keep (repeat) | repeat: swapping two axes, same meaning as Controls > Swap trackpad axes; other tab |
-| View at top centre | `align-top` | `align-top` | keep |  |
+| View at top center | `align-top` | `align-top` | keep |  |
 | Resolution scale | `arrows-out` | `arrows-out` | keep | the interface scale had the same glyph |
 | Video scale mode | `resize` | `resize` | keep |  |
 | Variable refresh rate | (new) | `wave-sine` | keep (repeat) | repeat: Hz, same glyph as Stream > Custom refresh rate; other tab |
@@ -131,7 +143,7 @@ only the Windows, Steam and Android logos exist). Nothing needed a font from ano
 | Compact overlay | `list-bullets` | `list-bullets` | keep |  |
 | Statistics position | `layout` | `layout` | keep |  |
 | Reduce refresh rate | `clock` | `trend-down` | **replace** | trending down; the clock is the Clock row |
-| Full colour range | `circle-half` | `circle-half` | keep |  |
+| Full color range | `circle-half` | `circle-half` | keep |  |
 
 # Settings > Audio
 
@@ -194,7 +206,7 @@ only the Windows, Steam and Android logos exist). Nothing needed a font from ano
 | Item | Was | Now | Verdict | Why |
 |---|---|---|---|---|
 | Force QWERTY | `grid-nine` | `text-t` | **replace** | the grid is the keyboard layout scheme row |
-| Right Alt as Meta | `command` | `command` | keep | the row is labelled "Right Alt as Command (Mac)", so the Command glyph is the right one (the same glyph names the stream menu "Send keys" row, a different screen). The Windows logo glyph was tried and reverted |
+| Right Alt as Meta | `command` | `command` | keep | the row is labeled "Right Alt as Command (Mac)", so the Command glyph is the right one (the same glyph names the stream menu "Send keys" row, a different screen). The Windows logo glyph was tried and reverted |
 | Ignore synthetic events | `shield-check` | `shield-check` | keep |  |
 | Commit text | `chat-text` | `chat-text` | keep |  |
 | Smart clipboard sync | `clipboard-text` | `clipboard-text` | keep |  |
@@ -210,7 +222,7 @@ only the Windows, Steam and Android logos exist). Nothing needed a font from ano
 | Hide controls when a gamepad is present | `eye-slash` | `eye-slash` | keep | same meaning as Hide game |
 | On-screen controls vibration | `vibrate` | `wave-sawtooth` | **replace** | the three tap-feedback rows each get one wave |
 | Only show L3/R3 | `target` | `radio-button` | **replace** | radio button = a stick click |
-| Show guide button | `house` | `disc` | **replace** | the house is the Home portal; the disc is the centre button |
+| Show guide button | `house` | `disc` | **replace** | the house is the Home portal; the disc is the center button |
 | Free analog stick | `arrows-out-cardinal` | `arrows-out-cardinal` | keep |  |
 | OSC opacity | `drop` | `drop` | keep (repeat) | repeat: see Keyboard opacity |
 | Free stick opacity | `drop` | `drop` | keep (repeat) | repeat: see Keyboard opacity |
@@ -234,9 +246,9 @@ only the Windows, Steam and Android logos exist). Nothing needed a font from ano
 | Item | Was | Now | Verdict | Why |
 |---|---|---|---|---|
 | Theme | `moon` | `moon` | keep | also the side menu row |
-| Material You colours | `swatches` | `swatches` | keep | also the side menu row |
-| Colour palette | `palette` | `palette` | keep | the user's choice; the tab and the chroma row gave theirs up |
-| Match the game's colours | `paint-brush` | `eyedropper` | **replace** | eyedropper = picks colours from the game (was a brush, which is the tab now) |
+| Material You colors | `swatches` | `swatches` | keep | also the side menu row |
+| Color palette | `palette` | `palette` | keep | the user's choice; the tab and the chroma row gave theirs up |
+| Match the game's colors | `paint-brush` | `eyedropper` | **replace** | eyedropper = picks colors from the game (was a brush, which is the tab now) |
 | Clock | `clock` | `clock` | keep |  |
 | Animated background | `sparkle` | `waves` | **replace** | waves = flowing shader (sparkle moved to HDR) |
 | Game background | `image` | `panorama` | **replace** | the Artwork "Background" glyph; the picture is the Cover |
@@ -340,7 +352,7 @@ only the Windows, Steam and Android logos exist). Nothing needed a font from ano
 
 | Item | Was | Now | Verdict | Why |
 |---|---|---|---|---|
-| Settings nav button | `gear-six` | `gear-six` | keep | also Game settings and the side menu "All settings" |
+| Settings nav button | `gear-six` | `gear-six` | keep | also App settings and the side menu "All settings" |
 | Profile nav button | `user-circle` | `user-circle` | keep | the profile concept everywhere |
 | Devices nav button | `devices` | `devices` | keep |  |
 | Status bar wifi | `wifi-high` | `wifi-high` | keep | the connection concept; levels use the same family |
@@ -404,9 +416,9 @@ only the Windows, Steam and Android logos exist). Nothing needed a font from ano
 | Context: Start game | `play` | `play` | keep |  |
 | Context: Artwork | `images` | `images` | keep |  |
 | Context: Metadata | `magnifying-glass` | `file-magnifying-glass` | **replace** | file with a magnifier |
-| Context: Game settings | `gear-six` | `gear-six` | keep |  |
+| Context: App settings | `gear-six` | `gear-six` | keep |  |
 | Context: Hide game / Show game | `eye-slash` / `eye` | `eye-slash` / `eye` | keep |  |
-| Custom settings badge / chip | `sliders-horizontal` | `sliders-horizontal` | keep | custom = adjusted; also the per-game "Custom for this game" box |
+| Custom settings badge / chip | `sliders-horizontal` | `sliders-horizontal` | keep | custom = adjusted; also the per-app "Custom for this app" box |
 | Info chip: Running on PC | `play` | `pulse` | **replace** | see Running section |
 | Info chip: HDR | `sparkle` | `sparkle` | keep | sparkle = HDR everywhere |
 | Info chip: SDR | `sun` | `sun-dim` | **replace** | dim sun |
