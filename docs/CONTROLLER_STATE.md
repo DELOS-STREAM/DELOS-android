@@ -86,7 +86,7 @@ These are the places a PlayStation emulation differs from an Xbox one. They are 
 
 ## Diagnostics (always on, cheap)
 
-Every line starts with one of four words; the pattern for `.gradle-agent/vibe-measure.py` and `adb logcat` is
+Every line starts with one of four words; the pattern for `adb logcat` is
 
 ```
 ControllerSend|ClickpadEmu|InputDeviceContext|MotionSend

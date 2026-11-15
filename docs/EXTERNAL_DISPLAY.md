@@ -1,8 +1,14 @@
 # External display support
 
-Implemented and accepted on the AYN Odin 2 Portal Max on 2026-10-27.
+## Purpose
 
-Only a display that Delos classifies as **external** (a monitor, a TV or a wireless display) is a target of this mode. A second panel that is part of the device (a dual-screen handheld), an overlay display and a virtual display are never chosen; the classification, its signals and the manual override are in [DUAL_SCREEN.md](DUAL_SCREEN.md).
+In the external-display mode Delos streams to an attached external display and keeps the device's own screen for control.
+This document specifies what the user sees and how controller and keyboard input reaches the stream and the
+stream menu on the other display.
+
+## Scope
+
+Only a display that Delos classifies as **external** (a monitor, a TV or a wireless display) is a target of this mode. A second panel that is part of the device (a dual-screen handheld), an overlay display and a virtual display are never chosen; the classification, its signals and the manual override are in [DUAL_SCREEN.md](DUAL_SCREEN.md). The stream menu itself is specified in [GUI.md](GUI.md), "Stream menu".
 
 ## Behavior
 
@@ -31,15 +37,30 @@ Android treats gamepads and keyboards as untargeted input. On a normal multi-dis
 
 The accessibility keyboard service uses the same routes: the controller activity's router when the external controller activity has focus, and `DelosStreamActivity.dispatchKeyEvent()` (menu shortcut first) when the stream window on the device has focus, so enabling it can never bypass the menu.
 
+## Code map
+
+| Path (under `app/src/main/java/com/limelight/`) | Role |
+|---|---|
+| `utils/ExternalDisplayControlActivity.java` | The activity on the device's screen that receives input for the stream on the other display |
+| `ui/ExternalControllerView.java` | `onKeyPreIme()`: keys that an input method claims |
+| `utils/ExternalDisplayFocus.java` | Focus changes between the two displays |
+| `DelosStreamActivity.java` | `handleExternalDisplayKeyEvent()`: the one entry of those keys into the stream |
+| `shell/StreamResult.kt` | `StreamOutcome`: where the shell opens after a stream on the external display ends |
+
 ## Verification
 
-The following is historical evidence from 2026-10-27, before flavor removal.
-Current equivalents are `:app:assembleDebug`, `:app:testDebugUnitTest` and
-`:app:lintDebug`; the recorded results do not claim a run of those renamed tasks.
+Regression tests cover analog edge/repeat behavior, pre-IME gamepad routing, and retained `commitText` support (`ExternalControllerViewTest`).
 
-- `assembleNonRoot_gameDebug`
-- `testNonRoot_gameDebugUnitTest` (68 tests)
-- `lintNonRoot_gameDebug` (0 errors)
-- Physical-device acceptance on the Odin with an external TV: loading transition, configured resolution, HDR, menu opening, D-pad, analog, A/B, adjustable controls and return behavior.
+### Not verified
 
-Regression tests cover analog edge/repeat behavior, pre-IME gamepad routing, and retained `commitText` support.
+- No run with an external display after 2026-10-27 is recorded in this document. The stream menu as a bottom bar,
+  the result overlay after a failed stream and the display classification were added after that date.
+
+## Related
+
+- [DUAL_SCREEN.md](DUAL_SCREEN.md), [GUI.md](GUI.md).
+- Issue [#22](https://github.com/Meitoncz/Delos/issues/22) (device and external-display compatibility).
+
+## Evidence (2026-10-27)
+
+AYN Odin 2 Portal Max with an external TV: loading transition, configured resolution, HDR, menu opening, D-pad, analog, A/B, adjustable controls and return behavior were accepted by the owner. The debug build, the unit tests of that day (68) and Android lint (0 errors) passed. The display classification of [DUAL_SCREEN.md](DUAL_SCREEN.md) was added later and is not part of this record.

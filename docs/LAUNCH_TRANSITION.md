@@ -1,10 +1,32 @@
 # Native launch transition
 
-## Approved reference and preserved shell behavior
+## Purpose
 
-The approved visual reference is the local `build/launchfx-proto/b_hyperspace_balanced.html`, preserved under `.gradle-agent/keep/`; neither local artifact is committed. The native constants are in `shell/ui/HyperspaceConfig.kt`. The tunnel and stream image are distinct layers: the tunnel has the approved fixed-center lens, while only the real video image receives elastic warp, skew, zoom, mip blur and temporary RGB separation.
+When an app is launched, the shell's tunnel animation ends by revealing the first frames of the stream with a
+short warp, zoom and blur that settle into the normal picture. This document specifies how each video path
+renders that arrival, its timeline and time limits, who owns the output surface at each step, and what happens
+when a step fails.
 
-The accepted main fixes are retained: CPU-integrated `HyperspaceTravel`, smoothed speed progress and travel handoff, single-use `LaunchHandoff.reset()`, side-effect-free parameter inspection off the UI thread, and the shell/exit-cover/flat-color window handover. Connection lines no longer hold back a usable game while their queue drains. The first-frame gate retains main's 3-second bound; reduced motion retains its static scene and 500 ms fade.
+## Scope
+
+| Covered here | Specified elsewhere |
+|---|---|
+| The arrival of the stream picture on every rendering path | The tunnel animation of the shell and the launch loader: [GUI.md](GUI.md), "Launching a game" |
+| Timeline, bounded waits, surface ownership, failure paths | The upscalers that the arrival reuses: [SGSR2_VIDEO.md](SGSR2_VIDEO.md), [STREAM_QUALITY.md](STREAM_QUALITY.md) |
+
+## Reference and shell behavior
+
+The effect was designed as an HTML prototype ("hyperspace, balanced") that is not part of this repository; the native constants in `shell/ui/HyperspaceConfig.kt` and the numbers in "Timeline, activation and bounded waits" below are the specification. The tunnel and stream image are distinct layers: the tunnel has the fixed-center lens of the reference, while only the real video image receives elastic warp, skew, zoom, mip blur and temporary RGB separation.
+
+The shell side:
+
+- `HyperspaceTravel` is integrated on the CPU; speed progress and the travel handoff are smoothed.
+- `LaunchHandoff.reset()` is single-use.
+- Launch parameters are inspected off the UI thread and without side effects.
+- The window hands over from the shell through the exit cover to a flat color.
+- Connection lines do not hold back a usable stream while their queue drains.
+- The first-frame gate waits at most 3 seconds.
+- Reduced motion shows a static scene and a 500 ms fade.
 
 ## Native rendering paths
 
@@ -68,20 +90,44 @@ A direct codec cannot populate a brand-new OES texture if the host supplies no f
 
 Ten-bit arrival needs the existing renderable/filterable FP16 and GPU P010/HDR output prerequisites. Missing support latches a specific error; the CPU HDR fallback is not advertised as an arrival implementation. PyroWave preparation must precede first decoded submission, as enforced by setup ordering; a late request reports an error rather than migrating a current HDR EGL context from an unrelated thread.
 
-PyroWave's normal SGSR presentation uses a nonlinear five-tap sharpening filter. The temporary arrival sampling is plain prefiltered RGB and the exact normal sharpened path resumes at identity. Whether that endpoint difference is visible is **not verified on a device**; a mathematically identical final filter cannot fit the three-sample arrival limit without an additional reconstruction/preprocessing pass. No extra pass or sample count was silently added for this unobserved case. The lead should inspect the endpoint with SGSR enabled.
+PyroWave's normal SGSR presentation uses a nonlinear five-tap sharpening filter. The temporary arrival sampling is plain prefiltered RGB and the exact normal sharpened path resumes at identity. Whether that endpoint difference is visible is **not verified on a device**; a mathematically identical final filter cannot fit the three-sample arrival limit without an additional reconstruction/preprocessing pass. No extra pass or sample count was added for this unobserved case.
 
-Hardware frame pacing, codec-specific `setOutputSurface` behavior, HDR10/PQ metadata, ten-bit SDR, static-host return-frame retention, external-display crop/rotation, and cancellation/surface loss during each ownership phase need physical-device validation. The user launches real PC games; no remote game was launched by this work.
+Hardware frame pacing, codec-specific `setOutputSurface` behavior, HDR10/PQ metadata, ten-bit SDR, static-host return-frame retention, external-display crop/rotation, and cancellation/surface loss during each ownership phase need physical-device validation. No device run of this matrix is recorded in this document.
 
-## Exercised standalone checks
+## Code map
 
-No Gradle, ADB, emulator, APK install, push or merge into main was run by Codex for Phase 2.
+| Path (under `app/src/main/java/com/limelight/`) | Role |
+|---|---|
+| `shell/ui/HyperspaceConfig.kt`, `shell/ui/HyperspaceTunnel.kt` | The constants and the tunnel of the shell |
+| `shell/StreamLoader.kt` | The launch loader and the handoff to the stream |
+| `binding/video/LaunchArrival.java` | `writePose()`: the pose curve shared by all paths |
+| `binding/video/LaunchArrivalHandover.java`, `binding/video/DirectLaunchArrival.java` | State, deadlines and the surface handover of the direct MediaCodec path |
+| `binding/video/StreamSurfaceController.java` | `reportLaunchArrivalError()`: failure and cancellation |
+| `app/src/main/jni/pyrowave-renderer/` | The PyroWave arrival passes |
 
-- **52 pure JUnit tests passed** via Kotlin/JVM and javac: approved pose anchors/finite bounds/focus/blur cap; actual bounded handover state and cancellation/deadline cases; effective-settings no-write regressions; accepted main tunnel travel, stage/progress and aperture suites.
-- Actual changed video Java classes, actual `StreamLoader.kt` and actual `Game.java` compiled against the Android SDK, cached real AndroidX/Compose dependencies and read-only accepted-main build dependency classes. No replacement production-API stubs were used for these final checks. This is not a full APK/D8/resource/manifest build.
-- NDK arm64 C++ syntax checks passed for the renderer, YUV bridge and SGSR HDR output. The read-only common-C headers matched the worktree's pinned submodule commit.
+## Verification
+
+`LaunchArrivalTest`, `LaunchArrivalHandoverTest`, `StreamSurfaceControllerTest` and `HyperspaceConfigTest` cover the
+pose curve, the handover states and deadlines, the failure report and the constants.
+
+### Not verified
+
+- No device run of the matrix in "Capabilities and device-only limits" is recorded in this document.
+- Whether the endpoint difference between the arrival sampling and PyroWave's sharpened SGSR presentation is visible.
+
+## Related
+
+- [GUI.md](GUI.md), [SGSR2_VIDEO.md](SGSR2_VIDEO.md), [STREAM_QUALITY.md](STREAM_QUALITY.md).
+- Issue [#62](https://github.com/Meitoncz/Delos/issues/62).
+
+## Evidence (2026-11-04)
+
+Checks made when the native arrival was written, without a Gradle build, an APK or a device. They are a record of that day, not a statement about the current code:
+
+- **52 pure JUnit tests passed** via Kotlin/JVM and javac: pose anchors/finite bounds/focus/blur cap of the reference; bounded handover state and cancellation/deadline cases; effective-settings no-write regressions; tunnel travel, stage/progress and aperture suites.
+- The changed video Java classes, `StreamLoader.kt` and the streaming activity (then `Game.java`, now `DelosStreamActivity`) compiled against the Android SDK and the real AndroidX/Compose dependencies. This was not a full APK/D8/resource/manifest build.
+- NDK arm64 C++ syntax checks passed for the renderer, YUV bridge and SGSR HDR output.
 - Java-generated JNI declarations were checked against the native definitions; unsupported-ABI stubs were checked with the NDK's ARM target.
-- All **13** native shaders compiled with the pinned NDK `glslc`; regenerated bytes matched `shaders_spv.h` (SHA-256 `8ab203b84a39650ee327b22750c69fd10e03d787f67c36b6574b7ab4e48eaae7`).
-- The actual GLES arrival fragment was exercised in headless WebGL2 after only adapting GLSL 3.10 declaration syntax to GLSL 3.00. Identity had zero channel error, warp changed 56,637 pixels of the synthetic coordinate/checker source, mip blur reduced checker variance, RGB path drew with GL error 0. This software-renderer shader smoke is not Android/HDR presentation or hardware-FPS proof.
-- Two independent final static reviews found no remaining demonstrated blocker/high regression in the Java/GL handover and native worker/HDR lifetime paths. Static review is not device evidence.
-
-The lead owns full Android build/tests/lint, safe installation outside an active stream, and the SDR/HDR/SGSR/PyroWave device matrix before integrating the feature branch into main.
+- All **13** native shaders compiled with the pinned NDK `glslc`; regenerated bytes matched `shaders_spv.h` of that day (SHA-256 `8ab203b84a39650ee327b22750c69fd10e03d787f67c36b6574b7ab4e48eaae7`).
+- The GLES arrival fragment was exercised in headless WebGL2 after only adapting GLSL 3.10 declaration syntax to GLSL 3.00. Identity had zero channel error, warp changed 56,637 pixels of the synthetic coordinate/checker source, mip blur reduced checker variance, RGB path drew with GL error 0. This software-renderer shader smoke is not Android/HDR presentation or hardware-FPS proof.
+- Two independent static reviews found no remaining demonstrated blocker/high regression in the Java/GL handover and native worker/HDR lifetime paths. Static review is not device evidence.

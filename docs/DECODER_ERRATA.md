@@ -1,3 +1,9 @@
+# MediaCodec decoder errata
+
+Inherited from [Moonlight Android](https://github.com/moonlight-stream/moonlight-android) and kept unchanged: notes
+of the Moonlight authors on hardware decoders of older devices, which explain the workarounds in
+`MediaCodecHelper.java` and `MediaCodecDecoderRenderer.java`. Delos has not re-tested any of them.
+
 This file serves to document some of the decoder errata when using MediaCodec hardware decoders on certain devices.
 
 1. num_ref_frames is set to 16 by NVENC which causes decoders to allocate 16+ buffers. This can cause an error or lag on some devices.

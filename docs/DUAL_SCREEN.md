@@ -1,10 +1,16 @@
 # Dual-screen and second displays
 
-Issue [#76](https://github.com/Meitoncz/Delos/issues/76). This page covers what Delos knows about the displays of a device
-(`DisplayInventory`, `DisplayClassifier`; phases 1 and 2 of the plan), the companion window that goes on a built-in second panel
-(phase 3: activity host, lifecycle, the Main screen setting), what it shows (phase 4: variant A, "Details and actions") and how to test it.
+## Purpose
 
-Two different things must never be mixed up:
+What Delos knows about the displays of a device and what it does with a second panel that is part of the device.
+This document specifies the display inventory and classification (`DisplayInventory`, `DisplayClassifier`), the
+companion window on a built-in second panel (activity host, lifecycle, the Main screen setting), what the
+companion shows, and how to test it.
+
+## Scope
+
+Streaming to an attached monitor or TV is specified in [EXTERNAL_DISPLAY.md](EXTERNAL_DISPLAY.md). Two different
+things must never be mixed up:
 
 - an **external display**: a monitor, a TV or a wireless display, attached for a while (the Odin to a TV over USB-C). The
   external-display mode streams to it ([EXTERNAL_DISPLAY.md](EXTERNAL_DISPLAY.md));
@@ -26,7 +32,7 @@ Two different things must never be mixed up:
 `ServerHelper.getExternalDisplay` (formerly `getSecondaryDisplay`, which returned the first display with an id other than 0)
 is `DisplayInventory.external`: the first display with the role `EXTERNAL`. `getActiveDisplay`, `createStartIntent`, the
 display listener of `DelosStreamActivity` and `ExternalDisplayControlActivity` all go through it. With a real monitor or TV
-the behaviour is the same as before.
+the behavior is the same as before.
 
 ## Classification rules
 
@@ -58,7 +64,7 @@ the feature without a visible reason.
 | `type` in `Display.toString()` (`type INTERNAL`, `type EXTERNAL`, `type OVERLAY`, ...). | **Best effort, absent on the API 33 emulator**: debug text of `DisplayInfo`, not API. The AOSP sources of Android 10, 12 and 14 print `, type <NAME>` there, but the text an app gets from `Display.toString()` on the emulator stops at `committedState` (observed), so the hint is "unknown" there and the other rules decide. `dumpsys display` shows the type, which is how the rules were checked. Debug info shows what the device returns ("type text"). |
 | `getDeviceProductInfo()` / connection to sink | **Known to exist from API 31**; what a given panel or monitor reports was **not seen on a real device**. The emulator's internal display has product info with sink type UNKNOWN (0), an overlay display has none. |
 | Display `FLAG_SECURE`, `FLAG_ROUND`, size, density, refresh rate, state | Listed in Debug info, **not used** as evidence (no size separates a small panel from a small monitor; a closed lid is a state). |
-| How the AYN Thor, the Ayaneo Pocket DS and the Retroid add-on report their second panel; whether a vendor builds it as a normal internal display | **Unknown**: no such device was available. The rules assume AOSP behaviour; the override and the Debug info listing are the way to correct and to report it. |
+| How the AYN Thor, the Ayaneo Pocket DS and the Retroid add-on report their second panel; whether a vendor builds it as a normal internal display | **Unknown**: no such device was available. The rules assume AOSP behavior; the override and the Debug info listing are the way to correct and to report it. |
 | What the Odin reports for a monitor on USB-C | **Not seen in this work** (no ADB to the Odin). AOSP gives it `type EXTERNAL`, `FLAG_PRESENTATION` and EDID product info, which all three rules classify as `EXTERNAL`. Confirm once with a monitor attached: Debug info > Displays must show it as External. |
 
 ## The override
@@ -197,8 +203,7 @@ The keyboard needs no key focus: it injects key events, it takes none.
 
 ## What the companion shows (issue #76: useful extra content on EVERY screen, never scrolling)
 
-Approved prototype: `.gradle-agent/companion-proto2/companion-A2.html` with its `NOTES.md` (the A prototype, `companion-A.html`, stays the visual base of the stream
-state). The user's rule behind it: *the second display is EXTRA room for what helps the main screen, never a place for the main screens*, so the companion shows the
+The rule behind the design: *the second display is EXTRA room for what helps the main screen, never a place for the main screens*, so the companion shows the
 focused item's details, an explanation, or a few touch buttons that run the controller's own paths, and **there is always something**: a screen without content of its own
 gets the fallback status card, never an empty "choose a game" card.
 
@@ -238,7 +243,7 @@ the callbacks of their touch buttons (owner side, the same code paths as the con
 | **Home** without games | `PcPage`, `LibraryNoticePage` | offline library: the PC card with Wake or Search and Rename; loading: "Reading the library" with Back to PCs; no PC; an empty library: "No applications" with Reconnect PC and PC details (a filtered-out library is the filter page's) |
 | **Artwork** | `ArtworkPage` | the focused image large at its own ratio (the thumbnail the tile already decoded, never cropped) with size · type, score, author, added, In use and Use this image (the tile's own `apply`); the first choice shows its source lines, built-in artwork the wide image |
 | **Library filters**, **Artwork filters** (sheets) | `FilterPage` | the active filters as up to 3 chips and "+N", the count of matching items, "Change criteria on the main display." and Reset filters (primary, only while filters are active; the sheet's own reset, that tab only; the sheet stays open) |
-| **Profile**, **Create profile**, **Boot** | `ProfilePage`, `CreateProfilePage`, `BootPage` | avatar, name, custom settings and per-game overrides (counted once per profile, off the main thread), default PC / the live draft ("not saved") / the explanation of the first-run step with its real hints (B only when Boot can go back); read-only, edits stay on the main display |
+| **Profile**, **Create profile**, **Boot** | `ProfilePage`, `CreateProfilePage`, `BootPage` | avatar, name, custom settings and per-app overrides (counted once per profile, off the main thread), default PC / the live draft ("not saved") / the explanation of the first-run step with its real hints (B only when Boot can go back); read-only, edits stay on the main display |
 | **Launch** (portal, `shell.launch`), **stream start** | `LoaderPage`, `PortalPage` | "Starting <game>", the PC and the requested picture, named steps with done / current / pending marks (Host found, Launch request accepted, Waiting for video, Stream ready; no invented percentage; short panels fold trailing steps into "+1 pending"); Cancel only while cancellation really exists. The loader never dims (`keepsAwake`) and has the same key in the shell and in the stream activity (`CompanionHost.forStream`: `onLaunchAccepted` / `onConnectionStarted` / `onLoaderDone`), so the hand-over is an update, not a fade |
 | **Stream result**, **problem**, **report card** | `ResultPage`, `ProblemPage`, `ReportPage` | the result's title and sentence cut at a sentence boundary (never claims the game stopped), the first line of the details (stage, error code), the recovery sentence, Reconnect / Try again and Back (the very callbacks of `StreamResultLayer`), Report / Dismiss of the report card |
 | **Settings**, **a game's settings**, **Debug info** (focused row) | `SettingsHelpPage` | see "The settings help" |
@@ -253,8 +258,8 @@ the callbacks of their touch buttons (owner side, the same code paths as the con
 
 `SettingsHelpPage` (`CompanionHelpContent.kt`), published by the three settings screens with `PublishCompanionHelp(CompanionHelp)` (identity = the row's key, so a changed
 value updates the same page and does not fade). One glass card, no scrolling: heading (disc with the row's icon, the row's name, the small line "Settings · Display" /
-"Game settings" / "Debug info"; a title too long for one line moves the section into the heading and the name under it), the **source block** of a per-game row (violet "Custom for
-this game · Profile value: 720p …" or neutral "From profile …", 2 lines, **always kept**), the body, the text value in the accent color, the palette's three swatches, the
+"App settings" / "Debug info"; a title too long for one line moves the section into the heading and the name under it), the **source block** of a per-app row (violet "Custom for
+this app · Profile value: 720p …" or neutral "From profile …", 2 lines, **always kept**), the body, the text value in the accent color, the palette's three swatches, the
 game-background preview (a proportional box that takes the leftover height), Debug info's monospace details (bounded, "+N lines"), "Unavailable with the current settings or on this
 device", "Saved automatically · applies next stream", and the **three impact chips always at the bottom** (dashes for a row without a stream cost). The body is
 `CompanionFit.summary(full, short, helpLines, …)`: complete leading sentences within 6 lines (3 on a short panel), else `CompanionHelp.short` (an authored short form the screens
@@ -384,33 +389,65 @@ take it). While an overlay display exists, the emulator's touch input to display
   removing it lets the system bring the shell back to display 0 (it moves again when the display returns).
 - The shell sent to Home: the companion finishes; a display added while the shell is stopped starts nothing; the shell back in front starts it.
 
-## What is verified, what is not
+## Code map
 
-Verified on the emulator (the real second display and the overlay): the display list and roles, the classification, the plan (unit tests),
-the companion activity with its own stage on the other display, its removal and return, the swap in both directions, no crash, no ANR, the key
-focus staying with the shell, the companion absent from the running shell's task and from Recents' UI (`excludeFromRecents`; the system's internal
-list shows the live task only). **Not run on the emulator**: a stream (the native library dies with SIGILL there), so the stream's companion
-(`CompanionHost.forStream`, `CompanionState.Stream`), the stream launch on the main panel and the shell-to-stream-to-shell hand-off are only
-compiled, as is the PC name in the shell's companion (the emulator has no PC). **Not verified without a dual-screen device**: how the
-Thor, the Pocket DS or the Retroid add-on report their panels (so whether Automatic picks the right companion and the shell may open on
-it), whether a real second panel's touch reaches the companion and whether a finger on it moves the top focus (see above), whether
-launching an activity on the other built-in panel is allowed on those devices' firmware, and whether an always-on companion burns in an
-AMOLED panel (the policy above is dimming and a slow pixel shift, not proven on a panel).
+| Path (under `app/src/main/java/com/limelight/`) | Role |
+|---|---|
+| `display/DisplayInventory.kt`, `display/DisplayClassifier.kt` | The list of displays, their roles and the reasons |
+| `shell/companion/CompanionActivity.kt`, `CompanionHost.kt`, `CompanionSession.kt`, `DualScreenState.kt` | The companion window, its lifecycle and which panel is main |
+| `shell/companion/CompanionContent.kt`, `CompanionPage.kt`, `Companion*Page*.kt`, `Companion*Content.kt` | The pages and what each screen publishes to them |
+| `shell/companion/CompanionHelp.kt`, `CompanionHelpContent.kt` | The settings help on the second panel |
+| `app/src/debug/java/com/limelight/shell/CompanionPreview.kt` | Debug previews |
 
-**Companion content (step 4), verified on the emulator** (real second display, `companion_fake`): the shell state with a fake focused game (nothing running and another
-game running), the stream state and the keyboard (a real tap on the Keyboard tile switched to it), no crash, the main panel's window still the focused one
-(`mTopFocusedDisplayId=0`) after the touches; the three states at 1240 x 1080, 960 x 720 and 1024 x 768 through the shape simulator. **Not verified**: anything
-that needs a stream (the emulator cannot run one): the tiles' effect (overlay, brightness, bitrate, upscaler, More, Disconnect, Quit), the keys reaching the PC
-and the statistics arriving in the window; the shell's buttons with a real PC (Start, Resume, Quit and start, Game settings) and the live follow of the focused game,
-real artwork and metadata in the banner; the layout on the real 4:3 panels beyond the simulated shape; touch focus behaviour on a real second panel.
-Left out of the stream's More page: rumble feel and gyro smoothing (the controller's own pages on the main panel).
+## Verification
 
-**Settings help (issue #76, the rule above), verified on the emulator** (real second display, Second display = Part of the device, the screen previews of
-Settings, a game's settings and Debug info on the main panel at 1920 x 1080, the D-pad driving the focus): the second panel follows every focus move (rows with
-impact chips, plain rows, an unavailable row, a text row, the palette and the game-background rows, a custom and a plain per-game row, the per-game screen with Reset all
-focused, Debug info's device and display rows), finger scroll and the scroll bar on a page longer than the card, the page in the simulator at 1240 x 1080 @ 420,
-960 x 720 @ 300 and 1024 x 768 @ 320; the main panel without its description (16:9 and compact) while the window shows the help; removing the display brings the panel back
-and adding it takes it away again, the keys reach the main panel in both states (`mTopFocusedDisplayId=0`), no crash; without a second display the three screens at
-1920 x 1080 @ 369 are identical to the build before this change (the only differences are the clock and the animated background's phase). **Not verified**: a real dual-screen
-device; a finger on the real second panel while a controller moves the focus on the main one; the crossfade between rows (only settled screenshots were looked at, no frame of the fade itself); the
-game-background preview with a real game's art (the previews have no hero, so only the empty frame with the name was seen).
+Unit tests cover the classification (`DisplayClassifierTest`), the stream display plan (`StreamDisplayPlannerTest`)
+and the companion's logic, paging, fit and pages (`Companion*Test`). Everything below was checked on the Android 13
+emulator, not on a dual-screen device.
+
+**Displays and the companion window** (the emulator's real second display and the overlay display): the display
+list and roles, the classification, the plan (unit tests), the companion activity with its own stage on the other
+display, its removal and return, the swap in both directions, no crash, no ANR, the key focus staying with the
+shell, the companion absent from the running shell's task and from Recents' UI (`excludeFromRecents`; the
+system's internal list shows the live task only).
+
+**Companion content** (real second display, `companion_fake`): the shell state with a fake focused game (nothing
+running and another game running), the stream state and the keyboard (a real tap on the Keyboard tile switched
+to it), no crash, the main panel's window still the focused one (`mTopFocusedDisplayId=0`) after the touches; the
+three states at 1240 x 1080, 960 x 720 and 1024 x 768 through the shape simulator. Left out of the stream's More
+page: rumble feel and gyro smoothing (the controller's own pages on the main panel).
+
+**Settings help** (real second display, Second display = Part of the device, the screen previews of Settings, an
+app's settings and Debug info on the main panel at 1920 x 1080, the D-pad driving the focus): the second panel
+follows every focus move (rows with impact chips, plain rows, an unavailable row, a text row, the palette and the
+game-background rows, a custom and a plain per-app row, the per-app screen with Reset all focused, Debug info's
+device and display rows), finger scroll and the scroll bar on a page longer than the card, the page in the
+simulator at 1240 x 1080 @ 420, 960 x 720 @ 300 and 1024 x 768 @ 320; the main panel without its description
+(16:9 and compact) while the window shows the help; removing the display brings the panel back and adding it
+takes it away again, the keys reach the main panel in both states (`mTopFocusedDisplayId=0`), no crash; without a
+second display the three screens at 1920 x 1080 @ 369 are identical to the build before the settings help was
+added (the only differences are the clock and the animated background's phase).
+
+### Not verified
+
+- **Anything on a real dual-screen device**: how the Thor, the Pocket DS or the Retroid add-on report their panels
+  (so whether Automatic picks the right companion and the shell may open on it), whether a real second panel's
+  touch reaches the companion and whether a finger on it moves the top focus, whether launching an activity on
+  the other built-in panel is allowed on those devices' firmware, the layout on the real 4:3 panels beyond the
+  simulated shape, a finger on the real second panel while a controller moves the focus on the main one, and
+  whether an always-on companion burns in an AMOLED panel (the policy is dimming and a slow pixel shift, not
+  proven on a panel).
+- **Anything that needs a stream** (the native library dies with SIGILL on the emulator): the stream's companion
+  (`CompanionHost.forStream`, `CompanionState.Stream`), the stream launch on the main panel and the
+  shell-to-stream-to-shell hand-off are only compiled; the tiles' effect (overlay, brightness, bitrate, upscaler,
+  More, Disconnect, Quit), the keys reaching the PC and the statistics arriving in the window.
+- **Anything that needs a PC** (the emulator has none): the PC name in the shell's companion, the shell's buttons
+  (Start, Resume, Quit and start, App settings), the live follow of the focused game, real artwork and metadata
+  in the banner, the game-background preview with a real game's art (the previews have no hero, so only the
+  empty frame with the name was seen).
+- The crossfade between rows of the settings help: only settled screenshots were looked at, no frame of the fade.
+
+## Related
+
+- [EXTERNAL_DISPLAY.md](EXTERNAL_DISPLAY.md), [GUI.md](GUI.md), [HANDHELD_DEVICES.md](HANDHELD_DEVICES.md), [DIAGNOSTICS.md](DIAGNOSTICS.md).
+- Issue [#76](https://github.com/Meitoncz/Delos/issues/76).
