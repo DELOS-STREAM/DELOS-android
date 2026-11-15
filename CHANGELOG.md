@@ -4,11 +4,14 @@ All notable changes to Delos are documented in this file, newest first.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and Delos adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html); what counts as its public API is declared in [docs/VERSIONING.md](docs/VERSIONING.md).
 
-The 0.x versions are reconstructed milestones of the development history, not published releases. 1.0.0 will be the first public release.
+The 0.x versions are development versions, not published releases; 0.1.0 to 0.14.0 are reconstructed milestones of the history. 1.0.0 will be the first public release.
 
 Not verified on real hardware yet: variable refresh rate (no VRR display was available) and dual-screen handhelds such as the AYN Thor (tested only on emulators and the shape simulator). HDR colour was judged by eye on one OLED handheld (2026-10-27); colour and luminance were not measured. Delos is developed and tested with one handheld (AYN Odin 2 Portal Max, Android 13) and Vibepollo on Windows; there is no recorded test with Apollo, Sunshine or a Linux host.
 
 ## [Unreleased]
+
+## [0.15.0] - 2026-11-15
+_Streaming time, stream encryption readout, security hardening, updated delos-common-c._
 
 ### Added
 - Streaming time: Delos counts how long each app was streamed, per profile and PC, and shows the total and when it was last streamed on the home screen ("0 hours" and "Never" before the first stream).
@@ -16,6 +19,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - The license texts of the bundled libraries are packaged in the APK. The app does not display them yet.
 
 ### Changed
+- The launch tunnel weights the palette colors: the main color is stronger (×1.5), the second color stronger (×1.3) and the third color weaker (×0.5).
 - Text that does not fit on one line (context menu titles and items, row values, app names) scrolls with a fading edge while it is focused instead of being cut off.
 - The stream start warnings (HDR10, HEVC, AV1, PyroWave), the connection messages of a stream start, the mouse emulation and custom key messages and the service labels are translated into the ten languages; they were English only.
 
@@ -294,7 +298,8 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 ### Removed
 - SBS 3D, performance logging and other dead code.
 
-[Unreleased]: https://github.com/Meitoncz/Delos/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/Meitoncz/Delos/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/Meitoncz/Delos/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/Meitoncz/Delos/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/Meitoncz/Delos/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/Meitoncz/Delos/compare/v0.11.0...v0.12.0
