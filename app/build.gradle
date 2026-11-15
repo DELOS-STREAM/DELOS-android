@@ -41,18 +41,6 @@ android {
 
         // Empty by default (CI builds): game metadata is then reported as unavailable.
         buildConfigField 'String', 'DELOS_METADATA_URL', metadataSetting('DELOS_METADATA_URL')
-        buildConfigField "boolean", "ROOT_BUILD", "false"
-
-        // Keep the upstream native non-root path; src/root stays inactive.
-        externalNativeBuild {
-            ndkBuild {
-                arguments "PRODUCT_FLAVOR=nonRoot"
-            }
-        }
-
-        resValue "string",
-                "obtainium_app_url",
-                "https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22io.github.meitoncz.delos%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FMeitoncz%2FDelos%22%2C%22author%22%3A%22Meitoncz%22%2C%22name%22%3A%22Delos%22%2C%22additionalSettings%22%3A%22%7B%5C%22apkFilterRegEx%5C%22%3A%5C%22arm64-v8a%5C%22%2C%5C%22matchGroutToUse%5C%22%3A%5C%22%241%5C%22%2C%5C%22versionExtractionRegEx%5C%22%3A%5C%22v(.%2B)%5C%22%7D%22%7D"
     }
 
     buildFeatures {

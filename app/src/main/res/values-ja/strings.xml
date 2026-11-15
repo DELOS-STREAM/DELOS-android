@@ -33,10 +33,6 @@
     <!-- Errors -->
     <string name="error_unknown_host">ホストを解決できませんでした</string>
     <string name="error_404">GFEがHTTP 404エラーを返しました。PCに対応するGPUが搭載されていることを確認してください。リモートデスクトップソフトの使用もこのエラーの原因になります。PCを再起動するか、GFEを再インストールしてください。</string>
-    <string name="title_decoding_error">ビデオデコーダーがクラッシュしました</string>
-    <string name="message_decoding_error">この端末のビデオデコーダーとの非互換により、Delosがクラッシュしました。クラッシュが続く場合は、ストリーミング設定を調整してください。</string>
-    <string name="title_decoding_reset">ビデオ設定をリセットしました</string>
-    <string name="message_decoding_reset">選択したストリーミング設定では、端末のビデオデコーダーがクラッシュし続けます。ストリーミング設定を初期値にリセットしました。</string>
     <string name="error_usb_prohibited">端末の管理者によってUSBアクセスが禁止されています。KnoxまたはMDMの設定を確認してください。</string>
 
     <!-- Start application messages -->
@@ -394,8 +390,6 @@
     <string name="mouse_mode_disabled">無効</string>
     <string name="mouse_mode_absolute_touch_swapped">絶対タッチ（左右クリック入れ替え）</string>
     <string name="keyboard_layout_set_1">プロフィール1</string>
-    <string name="vdisplay_not_ready">サーバーの仮想ディスプレイドライバーが準備できていません。SudoVDAドライバーがインストールされ、有効になっていることを確認してください。</string>
-    <string name="vdisplay_not_supported"><![CDATA[このサーバーは仮想ディスプレイに対応していません。ホストのストリーミングソフトウェアとして<a href=\"https://github.com/Nonary/Vibepollo\">Vibepollo</a>または<a href=\"https://github.com/ClassicOldSong/Apollo\">Apollo</a>を使用してください。]]></string>
     <string name="clipboard_sync_unsupported">このサーバーはクリップボード同期に対応していません。サーバーを最新版のApolloにインストールまたはアップグレードしてください。</string>
     <string name="send_clipboard_failed">クリップボードを送信できませんでした：</string>
     <string name="external_display_info">外部ディスプレイを接続しました：%1$dx%2$d、%3$.1fHz</string>
@@ -404,7 +398,6 @@
     <string name="get_clipboard_failed">クリップボードを取得できませんでした：</string>
     <string name="send_clipboard_success">クリップボードを送信しました</string>
     <string name="get_clipboard_success">クリップボードを取得しました</string>
-    <string name="proceed">続行</string>
     <string name="cancel">キャンセル</string>
     <string name="unlocking_or_starting">サーバーが起動中、またはPCのロックを解除中です。しばらくお待ちください…</string>
 

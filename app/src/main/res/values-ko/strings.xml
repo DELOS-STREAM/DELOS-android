@@ -23,10 +23,6 @@
     <string name="pair_pc_offline">컴퓨터가 오프라인이에요</string>
     <string name="error_unknown_host">호스트를 확인하지 못했어요</string>
     <string name="error_404">GFE가 HTTP 404 오류를 반환했어요. PC에 지원되는 GPU가 있는지 확인해 주세요. 원격 데스크톱 소프트웨어를 사용해도 이 오류가 생길 수 있어요. PC를 다시 시작하거나 GFE를 다시 설치해 보세요.</string>
-    <string name="title_decoding_error">비디오 디코더 충돌</string>
-    <string name="message_decoding_error">이 기기의 비디오 디코더와 호환되지 않아 Delos가 충돌했어요. 충돌이 계속되면 스트리밍 설정을 조정해 보세요.</string>
-    <string name="title_decoding_reset">비디오 설정 초기화됨</string>
-    <string name="message_decoding_reset">선택한 스트리밍 설정에서 기기의 비디오 디코더가 계속 충돌해요. 스트리밍 설정을 기본값으로 초기화했어요.</string>
     <string name="error_usb_prohibited">기기 관리자가 USB 접근을 금지했어요. Knox 또는 MDM 설정을 확인해 주세요.</string>
     <string name="conn_metered">경고: 현재 네트워크가 종량제 연결이에요!</string>
     <string name="conn_starting">시작하는 중</string>
@@ -355,8 +351,6 @@
     <string name="mouse_mode_disabled">사용 안 함</string>
     <string name="mouse_mode_absolute_touch_swapped">절대 터치 (좌/우 클릭 바꿈)</string>
     <string name="keyboard_layout_set_1">프로필 1</string>
-    <string name="vdisplay_not_ready">서버에서 가상 디스플레이 드라이버가 준비되지 않았어요. SudoVDA 드라이버가 설치되어 있고 켜져 있는지 확인해 주세요.</string>
-    <string name="vdisplay_not_supported"><![CDATA[이 서버는 가상 디스플레이를 지원하지 않아요. 호스트 스트리밍 소프트웨어로 <a href=\"https://github.com/Nonary/Vibepollo\">Vibepollo</a> 또는 <a href=\"https://github.com/ClassicOldSong/Apollo\">Apollo</a>를 사용해 주세요.]]></string>
     <string name="clipboard_sync_unsupported">이 서버는 클립보드 동기화를 지원하지 않아요. 서버를 최신 버전의 Apollo로 설치하거나 업그레이드해 주세요.</string>
     <string name="send_clipboard_failed">클립보드 전송 실패: </string>
     <string name="external_display_info">외부 디스플레이 연결됨: %1$dx%2$d, %3$.1fHz</string>
@@ -365,7 +359,6 @@
     <string name="get_clipboard_failed">클립보드 가져오기 실패: </string>
     <string name="send_clipboard_success">클립보드를 전송했어요</string>
     <string name="get_clipboard_success">클립보드를 가져왔어요</string>
-    <string name="proceed">계속</string>
     <string name="cancel">취소</string>
     <string name="unlocking_or_starting">서버가 시작 중이거나 컴퓨터 잠금을 해제하는 중이에요. 잠시 기다려 주세요…</string>
     <string name="keyboard_clear_all">모두 지우기</string>

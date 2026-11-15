@@ -1,29 +1,21 @@
 package com.limelight.utils;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.GameManager;
 import android.app.GameState;
 import android.app.UiModeManager;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.os.Build;
-import android.text.Html;
-import android.text.method.LinkMovementMethod;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowManager;
-import android.widget.TextView;
 
 import com.limelight.DelosStreamActivity;
 import com.limelight.LimeLog;
 import com.limelight.R;
-import com.limelight.nvstream.http.ComputerDetails;
-import com.limelight.preferences.PreferenceConfiguration;
 
 public class UiHelper {
 
@@ -141,92 +133,6 @@ public class UiHelper {
 
             activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
         }
-    }
-
-    public static void showDecoderCrashDialog(Activity activity) {
-        final SharedPreferences prefs = activity.getSharedPreferences("DecoderTombstone", 0);
-        final int crashCount = prefs.getInt("CrashCount", 0);
-        int lastNotifiedCrashCount = prefs.getInt("LastNotifiedCrashCount", 0);
-
-        // Remember the last crash count we notified at, so we don't
-        // display the crash dialog every time the app is started until
-        // they stream again
-        if (crashCount != 0 && crashCount != lastNotifiedCrashCount) {
-            if (crashCount % 3 == 0) {
-                // At 3 consecutive crashes, we'll forcefully reset their settings
-                PreferenceConfiguration.resetStreamingSettings(activity);
-                Dialog.displayDialog(activity,
-                        activity.getResources().getString(R.string.title_decoding_reset),
-                        activity.getResources().getString(R.string.message_decoding_reset),
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                // Mark notification as acknowledged on dismissal
-                                prefs.edit().putInt("LastNotifiedCrashCount", crashCount).apply();
-                            }
-                        });
-            }
-            else {
-                Dialog.displayDialog(activity,
-                        activity.getResources().getString(R.string.title_decoding_error),
-                        activity.getResources().getString(R.string.message_decoding_error),
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                // Mark notification as acknowledged on dismissal
-                                prefs.edit().putInt("LastNotifiedCrashCount", crashCount).apply();
-                            }
-                        });
-            }
-        }
-    }
-
-    public static <T> void displayConfirmationDialog(Activity parent, String title, String message, String btnYesText, String btnNoText, final Runnable onYes, final Runnable onNo) {
-        DialogInterface.OnClickListener dialogClickListener = (dialog, which) -> {
-            switch (which){
-                case DialogInterface.BUTTON_POSITIVE:
-                    if (onYes != null) {
-                        onYes.run();
-                    }
-                    break;
-
-                case DialogInterface.BUTTON_NEGATIVE:
-                    if (onNo != null) {
-                        onNo.run();
-                    }
-                    break;
-            }
-        };
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(parent);
-        builder.setMessage(Html.fromHtml(message));
-        if (title != null) {
-            builder.setTitle(title);
-        }
-        if (btnYesText != null) {
-            builder.setPositiveButton(btnYesText, dialogClickListener);
-        }
-        if (btnNoText != null) {
-            builder.setNegativeButton(btnNoText, dialogClickListener);
-        }
-        AlertDialog dialog = builder.create();
-        dialog.show();
-        ((TextView)dialog.findViewById(android.R.id.message)).setMovementMethod(LinkMovementMethod.getInstance());
-    }
-
-    public static void displayVdisplayConfirmationDialog(Activity parent, ComputerDetails computer, final Runnable onYes, final Runnable onNo) {
-        String message = computer.vDisplaySupported ?
-                parent.getResources().getString(R.string.vdisplay_not_ready) :
-                parent.getResources().getString(R.string.vdisplay_not_supported);
-        UiHelper.displayConfirmationDialog(
-                parent,
-                null,
-                message,
-                parent.getResources().getString(R.string.proceed),
-                parent.getResources().getString(R.string.cancel),
-                onYes,
-                onNo
-        );
     }
 
     public static float dpToPx(Context context, float dp) {

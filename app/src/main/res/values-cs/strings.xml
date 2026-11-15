@@ -33,10 +33,6 @@
     <!-- Errors -->
     <string name="error_unknown_host">Nepodařilo se přeložit adresu PC</string>
     <string name="error_404">GFE vrátilo chybu HTTP 404. Ověř, že tvé PC má podporovanou grafickou kartu. Tuto chybu může způsobit i software pro vzdálenou plochu. Zkus PC restartovat nebo přeinstalovat GFE.</string>
-    <string name="title_decoding_error">Selhání video dekodéru</string>
-    <string name="message_decoding_error">Aplikace Delos spadla kvůli nekompatibilitě s video dekodérem tohoto zařízení. Pokud pády pokračují, zkus upravit nastavení streamu.</string>
-    <string name="title_decoding_reset">Obnovení nastavení videa</string>
-    <string name="message_decoding_reset">Video dekodér tvého zařízení při zvoleném nastavení streamu stále padá. Nastavení streamu bylo obnoveno na výchozí hodnoty.</string>
     <string name="error_usb_prohibited">Přístup přes USB zakázal správce zařízení. Zkontroluj nastavení Knox nebo MDM.</string>
 
     <!-- Start application messages -->
@@ -397,8 +393,6 @@
     <string name="mouse_mode_disabled">Vypnuto</string>
     <string name="mouse_mode_absolute_touch_swapped">Absolutní dotyk (levé a pravé tlačítko prohozeno)</string>
     <string name="keyboard_layout_set_1">Profil 1</string>
-    <string name="vdisplay_not_ready">Ovladač virtuálního displeje na serveru není připraven. Ověř, že je nainstalovaný a zapnutý ovladač SudoVDA.</string>
-    <string name="vdisplay_not_supported"><![CDATA[Tento server virtuální displej nepodporuje. Jako streamovací software v PC použij <a href=\"https://github.com/Nonary/Vibepollo\">Vibepollo</a> nebo <a href=\"https://github.com/ClassicOldSong/Apollo\">Apollo</a>.]]></string>
     <string name="clipboard_sync_unsupported">Tento server nepodporuje synchronizaci schránky. Nainstaluj nebo aktualizuj server na nejnovější verzi Apollo.</string>
     <string name="send_clipboard_failed">Odeslání schránky se nezdařilo: </string>
     <string name="external_display_info">Externí displej připojen: %1$dx%2$d, %3$.1f Hz</string>
@@ -407,7 +401,6 @@
     <string name="get_clipboard_failed">Získání schránky se nezdařilo: </string>
     <string name="send_clipboard_success">Schránka byla úspěšně odeslána</string>
     <string name="get_clipboard_success">Schránka byla úspěšně získána</string>
-    <string name="proceed">Pokračovat</string>
     <string name="cancel">Zrušit</string>
     <string name="unlocking_or_starting">Server se spouští nebo se PC odemyká, počkej prosím…</string>
 

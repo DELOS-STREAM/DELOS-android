@@ -449,7 +449,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         performanceOverlayBig = findViewById(R.id.performanceOverlayBig);
         statsPanel = com.limelight.shell.StreamStatsPanel.attach(this, (android.view.ViewGroup) performanceOverlayView, prefConfig.enablePerfOverlayLite);
 
-        inputCaptureProvider = InputCaptureManager.getInputCaptureProvider(this, this);
+        inputCaptureProvider = InputCaptureManager.getInputCaptureProvider(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             streamContainer.setOnCapturedPointerListener(new View.OnCapturedPointerListener() {

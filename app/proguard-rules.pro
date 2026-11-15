@@ -1,9 +1,6 @@
 # Don't obfuscate code
 -dontobfuscate
 
-# Our code
--keep class com.limelight.binding.input.evdev.* {*;}
-
 # Called back from native code (latency_threads.c)
 -keep class com.limelight.binding.video.LatencyThreads {*;}
 

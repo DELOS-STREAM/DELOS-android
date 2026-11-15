@@ -30,10 +30,6 @@
     <string name="error_404">GFE 返回了 HTTP 404 错误。请确保你的 PC 使用的是受支持的 GPU。
 	    使用远程桌面软件也可能导致此错误。请尝试重启电脑或重新安装 GFE。
     </string>
-    <string name="title_decoding_error">视频解码器崩溃</string>
-    <string name="message_decoding_error">Delos 因与此设备的视频解码器不兼容而崩溃。如果持续崩溃，请尝试调整串流设置。</string>
-    <string name="title_decoding_reset">视频设置已重置</string>
-    <string name="message_decoding_reset">在你选择的串流设置下，设备的视频解码器持续崩溃。串流设置已重置为默认值。</string>
     <string name="error_usb_prohibited">你的设备管理员禁止了 USB 访问。请检查 Knox 或 MDM 设置。</string>
 
     <string name="conn_metered">警告：当前使用的网络连接为计费网络！</string>
@@ -387,8 +383,6 @@
     <string name="mouse_mode_disabled">禁用</string>
     <string name="mouse_mode_absolute_touch_swapped">绝对触控（左右键互换）</string>
     <string name="keyboard_layout_set_1">方案 1</string>
-    <string name="vdisplay_not_ready">服务器上的虚拟显示器驱动尚未就绪。请确保已安装并启用 SudoVDA 驱动。</string>
-    <string name="vdisplay_not_supported"><![CDATA[此服务器不支持虚拟显示器。请使用 <a href=\"https://github.com/Nonary/Vibepollo\">Vibepollo</a> 或 <a href=\"https://github.com/ClassicOldSong/Apollo\">Apollo</a> 作为 PC 端串流软件。]]></string>
     <string name="clipboard_sync_unsupported">此服务器不支持剪贴板同步。请安装或将服务器升级到最新版本的 Apollo。</string>
     <string name="send_clipboard_failed">发送剪贴板失败：</string>
     <string name="external_display_info">已连接外接显示器：%1$dx%2$d，%3$.1fHz</string>
@@ -397,7 +391,6 @@
     <string name="get_clipboard_failed">获取剪贴板失败：</string>
     <string name="send_clipboard_success">剪贴板发送成功</string>
     <string name="get_clipboard_success">剪贴板获取成功</string>
-    <string name="proceed">继续</string>
     <string name="cancel">取消</string>
     <string name="unlocking_or_starting">服务器正在启动或电脑正在解锁，请稍候…</string>
 
