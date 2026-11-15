@@ -104,6 +104,73 @@ public class ProfilesManagerTest {
         assertNull(fresh.getActive());
     }
 
+    @Test
+    public void aProfilesFileWithoutProfilesIsNoProfiles() throws Exception {
+        SettingsProfile p = new SettingsProfile(UUID.randomUUID(), "Kept in memory", 1L, 1L, null);
+        manager.add(p);
+
+        // An empty file and a file without the list: both load, and neither wipes what is in memory
+        for (String content : new String[] {"", "{}", "{\"activeProfileId\":null}"}) {
+            java.nio.file.Files.write(new File(profilesDir, "profiles.json").toPath(),
+                    content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            assertTrue(content, manager.load(context));
+            assertEquals(content, 1, manager.getProfiles().size());
+        }
+    }
+
+    @Test
+    public void aProfilesFileThatIsNotJsonFailsToLoadAndChangesNothing() throws Exception {
+        SettingsProfile p = new SettingsProfile(UUID.randomUUID(), "Kept in memory", 1L, 1L, null);
+        manager.add(p);
+        manager.setActive(p.getUuid());
+        java.nio.file.Files.write(new File(profilesDir, "profiles.json").toPath(),
+                "{\"profiles\": [".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        assertFalse(manager.load(context));
+
+        assertEquals(1, manager.getProfiles().size());
+        assertEquals(p.getUuid(), manager.getActive().getUuid());
+    }
+
+    @Test
+    public void theActiveNameIsEmptyWithoutAnActiveProfile() {
+        assertEquals("", manager.getActiveName());
+
+        SettingsProfile p = new SettingsProfile(UUID.randomUUID(), "Couch", 1L, 1L, null);
+        manager.add(p);
+        manager.setActive(p.getUuid());
+        assertEquals("Couch", manager.getActiveName());
+
+        // An id that names no profile (the profile was deleted elsewhere) is no active profile
+        manager.setActive(UUID.randomUUID());
+        assertNull(manager.getActive());
+        assertEquals("", manager.getActiveName());
+    }
+
+    @Test
+    public void listenersHearEveryChangeUntilTheyAreRemoved() {
+        int[] heard = {0};
+        ProfilesManager.ProfileChangeListener listener = () -> heard[0]++;
+        manager.addListener(listener);
+        SettingsProfile p = new SettingsProfile(UUID.randomUUID(), "Heard", 1L, 1L, null);
+
+        manager.add(p);
+        manager.update(p);
+        manager.setActive(p.getUuid());
+        manager.delete(p.getUuid());
+        assertEquals(4, heard[0]);
+
+        manager.removeListener(listener);
+        manager.add(p);
+        assertEquals(4, heard[0]);
+    }
+
+    @Test
+    public void loadAndSaveWithoutAContextDoNothing() {
+        assertFalse(manager.load(null));
+        assertFalse(manager.save(null));
+    }
+
     private void deleteRecursively(File f) {
         if (f == null || !f.exists()) return;
         if (f.isDirectory()) {

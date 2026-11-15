@@ -41,6 +41,20 @@ class StreamEncryptionTest {
     }
 
     @Test
+    @Config(sdk = [33], shadows = [com.limelight.shadows.ShadowMoonBridge::class])
+    fun whatTheConnectionNegotiatedIsRememberedForDebugInfo() {
+        // The test's native bridge reports no encrypted stream (flags 0)
+        val read = StreamEncryption.read("7.1.431.-1")
+
+        assertEquals(StreamEncryption(video = false, audio = false, control = true), read)
+        assertEquals(read, StreamEncryption.last)
+
+        // The next stream replaces it: an older host does not encrypt the control stream either
+        assertEquals("Stream encryption: video off, audio off, control off", StreamEncryption.read("7.1.415.0").logLine())
+        assertFalse(StreamEncryption.last!!.control)
+    }
+
+    @Test
     fun theControlStreamIsEncryptedFromAppVersion7_1_431() {
         assertTrue(StreamEncryption.controlEncrypted("7.1.431.-1"))
         assertTrue(StreamEncryption.controlEncrypted("7.1.450.0"))

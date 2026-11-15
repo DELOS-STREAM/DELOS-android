@@ -63,6 +63,19 @@ class IssueUrlTest {
         assertEquals(draft.whatHappened, params(url)["what-happened"])
     }
 
+    @Test fun aDescriptionTooLongForTheAddressIsCutAfterTheLog() {
+        val long = "What I did before the crash. ".repeat(2000)
+        val url = IssueUrl.build(draft.copy(whatHappened = long))
+        assertTrue("${url.length}", url.length <= IssueUrl.MAX_LENGTH)
+        val p = params(url)
+        // The log goes first and entirely; what is left of the description is its beginning
+        assertEquals("", p["logs"])
+        assertTrue(p["what-happened"]!!.isNotEmpty())
+        assertTrue(long.startsWith(p["what-happened"]!!))
+        assertEquals(draft.device, p["device"])
+        assertEquals(draft.title, p["title"])
+    }
+
     @Test fun aSmallerLimitStillHoldsAndNeverCutsInsideAnEscape() {
         val url = IssueUrl.build(draft.copy(logs = "é".repeat(5000)), maxLength = 900)
         assertTrue(url.length <= 900)
