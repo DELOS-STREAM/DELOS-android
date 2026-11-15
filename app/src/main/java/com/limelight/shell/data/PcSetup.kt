@@ -203,11 +203,17 @@ open class PcSetup(context: Context, private val repo: PcRepository, private val
         PlatformBinding.getCryptoProvider(app),
     )
 
-    /** Like AddComputerManually: 192.168.1.20, 192.168.1.20:47989, host.local, [::1] or ::1. */
+    /**
+     * The address the user typed as a URI with a host and an optional port (-1 without one). Accepted:
+     * `192.168.1.20`, `192.168.1.20:47989`, `host.local`, `host.local:47989`, `[2001:db8::1]`,
+     * `[2001:db8::1]:47989`, and an IPv6 address without brackets (`2001:db8::1`, `::1`), which cannot
+     * carry a port. Null when no host can be read.
+     */
     @androidx.annotation.VisibleForTesting
     internal fun parseAddress(input: String): Uri? {
         if (input.isEmpty()) return null
-        Uri.parse("art://$input").takeIf { !it.host.isNullOrEmpty() }?.let { return it }
-        return Uri.parse("art://[$input]").takeIf { !it.host.isNullOrEmpty() }
+        // Two or more colons outside brackets are an IPv6 address: its last group is not a port
+        val host = if (!input.startsWith("[") && input.count { it == ':' } >= 2) "[$input]" else input
+        return Uri.parse("art://$host").takeIf { !it.host.isNullOrEmpty() }
     }
 }
