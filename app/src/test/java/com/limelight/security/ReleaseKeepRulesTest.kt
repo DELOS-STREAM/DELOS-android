@@ -41,7 +41,11 @@ class ReleaseKeepRulesTest {
                 .filter { it.isFile && it.extension in setOf("c", "cpp", "h") }.toList()
         }
         val classes = own.flatMap { Regex("""FindClass\([^"]*"(com/limelight/[\w/$]+)"""").findAll(it.readText()).map { m -> m.groupValues[1] } }.toSet()
-        assertTrue("the native glue looks up MoonBridge", "com/limelight/nvstream/jni/MoonBridge" in classes)
+        // The search itself must keep finding them: an empty set would pass everything
+        assertTrue("the native glue looks up LatencyThreads", "com/limelight/binding/video/LatencyThreads" in classes)
+        // MoonBridge passes its own class to native init, which resolves the upcall methods by name (callbacks.c)
+        assertTrue("callbacks.c resolves MoonBridge upcalls by name", "GetStaticMethodID(env, clazz, methods[i].name" in File(jni, "moonlight-core/callbacks.c").readText())
+        assertTrue("no -keep rule for MoonBridge", kept("MoonBridge", "com.limelight.nvstream.jni"))
         for (name in classes) {
             val dotted = name.replace('/', '.')
             assertTrue("no -keep rule for the class native code looks up: $dotted", kept(dotted.substringAfterLast('.'), dotted.substringBeforeLast('.')))
