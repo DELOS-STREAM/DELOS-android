@@ -1310,7 +1310,10 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         }
         super.onDestroy();
 
-        instance = null;
+        // A stream started before this one was destroyed is the instance now: leave it alone
+        if (instance == this) {
+            instance = null;
+        }
         ActiveKeyboardInput.unregister(this);
         timerHandler.removeCallbacksAndMessages(null);
 
