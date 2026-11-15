@@ -81,6 +81,12 @@ public class ComputerDetails {
     public String runningGameUUID;
     public String rawAppList;
     public boolean nvidiaServer;
+    /**
+     * True while the last reply of a PC with a pinned certificate could not be authenticated
+     * ({@link NvHTTP.ServerInfo#unverified}): the PC shows as online and not paired, so it can be
+     * paired again, and nothing else of that reply is kept.
+     */
+    public boolean identityUnverified;
 
     // VDisplay info
     public boolean vDisplaySupported = false;
@@ -124,6 +130,11 @@ public class ComputerDetails {
     }
 
     public void update(ComputerDetails details) {
+        if (details.identityUnverified && this.serverCert != null) {
+            updateFromUnverified(details);
+            return;
+        }
+        this.identityUnverified = details.identityUnverified;
         this.state = details.state;
         this.name = details.name;
         this.uuid = details.uuid;
@@ -170,6 +181,24 @@ public class ComputerDetails {
         this.serverCommands = details.serverCommands;
 
         this.pyroWave = details.pyroWave;
+    }
+
+    /**
+     * What an unauthenticated reply may change about a PC whose certificate is pinned: that
+     * something answers for it (where, and on which HTTPS port, so it can be paired again) and that
+     * it has to be paired again. The name, the stored addresses, the MAC address and everything
+     * else stay as the paired host last reported them; none of this is written to the database.
+     */
+    private void updateFromUnverified(ComputerDetails details) {
+        this.identityUnverified = true;
+        this.state = details.state;
+        if (details.activeAddress != null) {
+            this.activeAddress = details.activeAddress;
+        }
+        this.httpsPort = details.httpsPort;
+        this.pairState = PairingManager.PairState.NOT_PAIRED;
+        this.runningGameId = 0;
+        this.runningGameUUID = null;
     }
 
     @NonNull
