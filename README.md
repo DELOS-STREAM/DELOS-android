@@ -30,14 +30,14 @@ Delos streams games from your PC to an Android handheld. It is built for the han
 
 ## 🔌 Works with
 
-| | What | Details |
+| | Area&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Details |
 |---|---|---|
 | 🖥️ | **Hosts** | [Vibepollo](https://github.com/Nonary/Vibepollo) (recommended, and the host Delos is tested with, on Windows). [Apollo](https://github.com/ClassicOldSong/Apollo), [Sunshine](https://github.com/LizardByte/Sunshine) and hosts on Linux use the same protocol and are expected to work, but are not tested yet: reports are welcome. |
 | 📱 | **Devices** | Android 10 or newer, made for gaming handhelds (landscape). Developed and tested on one 1080p handheld (AYN Odin 2 Portal Max, Android 13) with a Windows host. |
 
 ## 🎮 Highlights
 
-| | Feature | What you get |
+| | Area&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | What you get |
 |---|---|---|
 | 📚 | **Library** | A console-like shelf for games, Desktop and programs; every screen works with the controller, touch works too. |
 | 🖼️ | **Artwork and facts** | Covers, wide covers, backgrounds, logos and animated heroes from SteamGridDB with your own key; genres, themes, HowLongToBeat time and native-HDR badges; filter by genre, theme, HDR and length. Genres, themes and HDR facts come through a small Delos metadata service; a build without it does not show them. |
