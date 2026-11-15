@@ -18,6 +18,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - A USB Xbox controller announces its buttons to the PC, and an Xbox One controller no longer reports the guide button as held until it is pressed once.
 - Adding a PC by an IPv6 address typed without brackets (`2001:db8::1`) uses the whole address instead of reading its last group as the port.
 - The app list of a PC appears with its first answer instead of one poll later.
+- "Report this problem" opens the report form made for the app, which asks only for what the app cannot fill in.
 
 ## [0.14.0] - 2026-11-14
 

@@ -136,10 +136,10 @@ signal, system description) shown as it is. `Problem.summary`, the issue draft a
 1. builds the scrubbed report (header, device block, a `Problem` section with the full stack trace, the whole log) and the prefilled address;
 2. saves the report to **Downloads** as `delos-diagnostic-<time>.txt` through `MediaStore.Downloads` (no permission needed); a toast says
    `Log saved to Downloads as ... Attach it to the issue.` (or that it could not be saved and that Debug info can share it);
-3. after 0.9 s opens the **GitHub new-issue page in the browser** with the `bug_report.yml` form filled in through query parameters named after
+3. after 0.9 s opens the **GitHub new-issue page in the browser** with the `app_report.yml` form filled in through query parameters named after
    the field ids: `title`, `what-happened` (what happened, the file name to attach, a request to add what the user was doing), `area` (`Other`, or
-   `Pairing/connection` for a failed stream), `device`, `build`, `stream-settings`, `logs` (the summary and the first 12 stack frames), plus
-   `labels=from-app` (GitHub applies a label from the address only for people who may label issues; the **`from-app` label must exist** in the repository);
+   `Pairing/connection` for a failed stream), `device`, `build`, `stream-settings`, `logs` (the summary and the first 12 stack frames). The address carries
+   no `labels` parameter: the form sets the labels `bug`, `from-app` and `needs-triage` itself (they **must exist** in the repository);
 4. resolves the problem (the crash files are deleted).
 
 The address stays below 6000 characters: `logs` is cut first (a tenth at a time, with a note that the file has the rest), then `what-happened`; every
@@ -156,9 +156,9 @@ the form's field ids. An installed app keeps sending the same names, so the name
 
 | What the app sends (`IssueUrl.build`) | Must exist in the form |
 |---|---|
-| `template=` the value of `IssueUrl.TEMPLATE` (`bug_report.yml`) | A form file with exactly that name |
+| `template=` the value of `IssueUrl.TEMPLATE` (`app_report.yml`) | A form file with exactly that name |
 | `title` | Nothing: GitHub's own parameter |
-| `labels=from-app` | The label `from-app` in the repository. GitHub applies a label from the address only for people who may label issues, so a form that should label every report sets the label itself |
+| No `labels` parameter | The form's own `labels:` with `bug` and `from-app`. GitHub accepts `labels` in the address only from people who may label issues and documents a "404 Not Found" page for everyone else, so the form labels every report itself |
 | `what-happened`, `device`, `build`, `stream-settings`, `logs` | Fields with these ids that take text |
 | `area` with the value `Other` or `Pairing/connection` | A dropdown with the id `area` that offers both options, spelled exactly so |
 
@@ -166,7 +166,7 @@ Two forms carry these ids:
 
 | Form | For | Notes |
 |---|---|---|
-| `bug_report.yml` | People who write a report by hand, and app builds whose `IssueUrl.TEMPLATE` is `bug_report.yml` | Has more required fields than the app fills in |
+| `bug_report.yml` | People who write a report by hand, and app builds whose `IssueUrl.TEMPLATE` was `bug_report.yml` (they also sent `labels=from-app`) | Has more required fields than the app fills in |
 | `app_report.yml` | The app | Only "What happened?" and one confirmation checkbox are required; it sets the labels `bug` and `from-app` itself |
 
 Rules, repeated in the comment at the top of both forms:
@@ -174,8 +174,10 @@ Rules, repeated in the comment at the top of both forms:
 1. A form file that an app build names is never renamed or removed.
 2. The ids `what-happened`, `area`, `device`, `build`, `stream-settings` and `logs` and the two `area` options are never renamed or removed.
 3. A field that the app fills in keeps its type. New fields are optional.
-4. `IssueUrlTest` and `ProblemIssueTest` check the address that the app builds. No test reads the form files: a change of a form is checked
-   by hand against this table.
+4. `IssueUrlTest` and `ProblemIssueTest` check the address that the app builds. `IssueFormContractTest` reads both form files and fails
+   when the file that `IssueUrl.TEMPLATE` names is missing, when a field id that the app sends is missing or has another type, when an
+   `area` option that the app sends is missing, when `app_report.yml` requires a field that the app leaves empty, or when it no longer
+   sets the labels `bug` and `from-app`.
 
 ## Code map
 
