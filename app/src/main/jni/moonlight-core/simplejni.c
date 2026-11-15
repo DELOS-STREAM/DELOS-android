@@ -52,7 +52,7 @@ Java_com_limelight_nvstream_jni_MoonBridge_sendMultiControllerInput(JNIEnv *env,
                                                            jbyte leftTrigger, jbyte rightTrigger,
                                                            jshort leftStickX, jshort leftStickY,
                                                            jshort rightStickX, jshort rightStickY) {
-    LiSendMultiControllerEvent(controllerNumber, activeGamepadMask, buttonFlags,
+    LiSendMultiControllerEvent((uint8_t)controllerNumber, (uint16_t)activeGamepadMask, buttonFlags,
         leftTrigger, rightTrigger, leftStickX, leftStickY, rightStickX, rightStickY);
 }
 

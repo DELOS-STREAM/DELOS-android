@@ -1,4 +1,4 @@
-nanors (sleepybishop/nanors b1e3c22ca0cdc0bb83e3cd6ed1a2fc77869ed99a, built from source): https://github.com/sleepybishop/nanors/blob/b1e3c22ca0cdc0bb83e3cd6ed1a2fc77869ed99a/LICENSE
+nanors (sleepybishop/nanors a9b1636f9c98dbfdd0daeaf6982ccd24d1c30f29, built from source): https://github.com/sleepybishop/nanors/blob/a9b1636f9c98dbfdd0daeaf6982ccd24d1c30f29/LICENSE
 
 MIT License
 

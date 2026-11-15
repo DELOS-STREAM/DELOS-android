@@ -45,6 +45,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - The id a host sends is validated before it names files or database rows; a host with an invalid id is not added.
 - A game name in a SteamGridDB search is sent as one path segment, so a name with "/" cannot reach another endpoint with the user's API key.
 - Text that another app passes in an intent is no longer shown in the stream result overlay.
+- delos-common-c, the streaming core, is updated with the changes of moonlight-common-c: replayed RTSP and control messages, STUN answers from the wrong address or with a bad length, oversized or malformed video frames, empty audio packets and ENet disconnects meant for another peer are rejected; a use-after-free of queued controller input and uninitialised bytes in the keep-alive ping are fixed. Not yet tested on a real stream.
 
 ## [0.14.0] - 2026-11-14
 
