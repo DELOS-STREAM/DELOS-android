@@ -32,6 +32,10 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - PyroWave: release builds no longer send the stack-dump signal to a stalled video thread, which could deadlock it.
 - Native code: failed allocations, thread attaches and lookups are handled instead of crashing the process. Not verified on a device.
 - Release builds keep the class the SteamGridDB match file is read into; code shrinking could drop its fields.
+- A USB Xbox controller announces its buttons to the PC, and an Xbox One controller no longer reports the guide button as held until it is pressed once.
+- Adding a PC by an IPv6 address typed without brackets (`2001:db8::1`) uses the whole address instead of reading its last group as the port.
+- The app list of a PC appears with its first answer instead of one poll later.
+- "Report this problem" opens the report form made for the app, which asks only for what the app cannot fill in.
 
 ### Security
 - A launch from outside Delos (a shortcut made by another app, an intent of another app, an opened `.art` file) asks before it starts a game, opens a PC or sends Wake-on-LAN, like `art://launch` links. Launches that Delos makes itself are signed and start without a prompt.
@@ -41,12 +45,6 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - The id a host sends is validated before it names files or database rows; a host with an invalid id is not added.
 - A game name in a SteamGridDB search is sent as one path segment, so a name with "/" cannot reach another endpoint with the user's API key.
 - Text that another app passes in an intent is no longer shown in the stream result overlay.
-
-### Fixed
-- A USB Xbox controller announces its buttons to the PC, and an Xbox One controller no longer reports the guide button as held until it is pressed once.
-- Adding a PC by an IPv6 address typed without brackets (`2001:db8::1`) uses the whole address instead of reading its last group as the port.
-- The app list of a PC appears with its first answer instead of one poll later.
-- "Report this problem" opens the report form made for the app, which asks only for what the app cannot fill in.
 
 ## [0.14.0] - 2026-11-14
 
