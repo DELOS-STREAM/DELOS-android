@@ -1,0 +1,46 @@
+Third-party components shipped in the Delos app and where their licence text is in this folder.
+Provenance, versions and checksums: docs/THIRD_PARTY.md in the source repository (https://github.com/Meitoncz/Delos).
+Delos itself and the Moonlight / Artemis code it is built on are licensed under GPL-3.0 (LICENSE in the source repository).
+
+Component | Version | Licence | File
+
+Native code
+OpenSSL (libcrypto) | 4.0.2 | Apache-2.0 | OpenSSL-Apache-2.0.txt
+Opus (libopus) | 1.6.1 | BSD-3-Clause | opus-BSD-3-Clause.txt
+ENet | cgutman/enet aca87840 | MIT | ENet-MIT.txt
+nanors | sleepybishop/nanors b1e3c22c | MIT | nanors-MIT.txt
+PyroWave | Themaister/pyrowave 186f0393 with Nonary/moonlight-qt patches | MIT | PyroWave-MIT.txt
+Granite | Themaister/Granite b6cffd5c | MIT | Granite-MIT.txt
+volk | zeux/volk 47cddf7e | MIT | volk-MIT.txt
+Vulkan-Headers | KhronosGroup/Vulkan-Headers 6802bb47 | Apache-2.0 OR MIT | Vulkan-Headers.txt
+Snapdragon Game Super Resolution shaders | SnapdragonGameStudios/snapdragon-gsr d926f074 | BSD-3-Clause | sgsr.txt
+
+Java and Kotlin libraries
+AndroidX and Jetpack Compose (androidx.*) | appcompat 1.8.0, preference 1.2.1, annotation 1.11.0, activity 1.13.0, lifecycle 2.11.0, Compose 1.12.1 (BOM 2026.09.00) and their dependencies | Apache-2.0 | AndroidX-Apache-2.0.txt
+JetBrains Compose Multiplatform and AndroidX forks (org.jetbrains.compose.*, org.jetbrains.androidx.*) | 1.12.1, lifecycle 2.11.0, savedstate 1.3.6 | Apache-2.0 | JetBrains-Compose-Apache-2.0.txt
+Material Components for Android | 1.14.0 | Apache-2.0 | Material-Components-Apache-2.0.txt
+Kotlin standard library | 2.4.21 | Apache-2.0 | Kotlin-Apache-2.0.txt
+kotlinx.coroutines | 1.11.0 | Apache-2.0 | kotlinx-coroutines-Apache-2.0.txt
+kotlinx.serialization | 1.7.3 | Apache-2.0 | kotlinx-serialization-Apache-2.0.txt
+JetBrains annotations | 23.0.0 | Apache-2.0 | JetBrains-Annotations-Apache-2.0.txt
+OkHttp | 5.5.0 | Apache-2.0 | OkHttp-Apache-2.0.txt
+Okio | 3.18.1 | Apache-2.0 | Okio-Apache-2.0.txt
+Gson | 2.14.0 | Apache-2.0 | Gson-Apache-2.0.txt
+Error Prone annotations | 2.48.0 | Apache-2.0 | ErrorProne-Annotations-Apache-2.0.txt
+Guava ListenableFuture | 1.0 | Apache-2.0 | Guava-ListenableFuture-Apache-2.0.txt
+JSpecify | 1.0.0 | Apache-2.0 | JSpecify-Apache-2.0.txt
+JmDNS | 3.6.3 | Apache-2.0 | JmDNS-Apache-2.0.txt
+SLF4J API | 2.0.7 | MIT | SLF4J-MIT.txt
+Haze | 2.0.1 | Apache-2.0 | Haze-Apache-2.0.txt
+Bouncy Castle (bcprov, bcpkix, bcutil) | 1.85.2, 1.85, 1.85 | MIT | BouncyCastle-MIT.txt
+JCodec | 0.2.5 | BSD-2-Clause | JCodec-BSD-2-Clause.txt
+ShieldControllerExtensions | 1.0.1 | MIT | ShieldControllerExtensions-MIT.txt
+desugar_jdk_libs (core library desugaring) | 2.1.5 | GPL-2.0 with Classpath exception | desugar_jdk_libs-GPL-2.0-with-Classpath-exception.txt
+
+Fonts and icons
+Unbounded | google/fonts e7db6ca6 | OFL-1.1 | Unbounded-OFL.txt
+Figtree | google/fonts e7db6ca6 | OFL-1.1 | Figtree-OFL.txt
+Phosphor Icons | 2.1.2 | MIT | Phosphor-LICENSE.txt
+
+Adapted code
+HowLongToBeat client search flow (from howlongtobeatpy) | 1.0.24 | MIT | howlongtobeatpy.txt
