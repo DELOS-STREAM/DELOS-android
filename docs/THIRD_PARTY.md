@@ -286,6 +286,8 @@ Test-only, not shipped: JUnit 4.13.2 (EPL-1.0), `androidx.test:core` 1.7.0 (Apac
 `app/src/main/assets/licenses/` holds one file per project and `INDEX.txt`, which maps component and
 version to its file. Each file added in the 2026-11-15 review starts with one line naming the component,
 its version and the URL the text was read from, followed by the text exactly as the project publishes it.
+`Delos-GPL-3.0.txt` is the license of the app itself, a byte-identical copy of `LICENSE`. `LicenseAssetsTest`
+checks that copy and that `INDEX.txt` and the folder name the same files.
 The files are packaged into the APK. The app does not show them on a screen yet.
 
 ## 6. Known gaps

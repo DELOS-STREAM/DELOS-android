@@ -1,8 +1,10 @@
-Third-party components shipped in the Delos app and where their licence text is in this folder.
+Delos and the third-party components shipped in the app, and where their licence text is in this folder.
 Provenance, versions and checksums: docs/THIRD_PARTY.md in the source repository (https://github.com/Meitoncz/Delos).
-Delos itself and the Moonlight / Artemis code it is built on are licensed under GPL-3.0 (LICENSE in the source repository).
 
 Component | Version | Licence | File
+
+The app
+Delos, with the Moonlight and Artemis code it is built on | this build | GPL-3.0 | Delos-GPL-3.0.txt
 
 Native code
 OpenSSL (libcrypto) | 4.0.2 | Apache-2.0 | OpenSSL-Apache-2.0.txt
