@@ -1,3 +1,6 @@
+# Every class read or written through reflection needs a rule here: R8 does not see those uses and
+# would drop or constant-fold the fields. ReleaseKeepRulesTest checks the Gson and JNI classes.
+
 # Don't obfuscate code
 -dontobfuscate
 
@@ -24,6 +27,9 @@
 -keep class com.limelight.shell.data.HdrEvidence {*;}
 -keep class com.limelight.shell.data.CompletionTime {*;}
 -keep class com.limelight.shell.data.NativeHdr {*;}
+
+# SteamGridDB match of a game (artwork/<pc>/<app>/match.json) - read and written through Gson reflection
+-keep class com.limelight.shell.data.Match {*;}
 
 # Moonlight common
 -keep class com.limelight.nvstream.jni.* {*;}
