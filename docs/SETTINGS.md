@@ -110,7 +110,7 @@ preset keys through `RumblePreferences` (see [RUMBLE.md](RUMBLE.md)) and reads C
 
 `impact(key, values): SettingImpact?` in `shell/settings/SettingsImpact.kt` (pure, unit-tested in `SettingsImpactTest`)
 returns the cost of a setting's **current value** as three levels (`NONE`, `LOW`, `MEDIUM`, `HIGH`): `gpu`, `latency`,
-`network`. `SettingRow` draws them as chips on their own line above the title (docs/GUI.md, "Impact chips"). The global settings screen passes
+`network`. `SettingRow` draws them as chips on their own line above the title ([gui/MENUS_AND_SETTINGS.md](gui/MENUS_AND_SETTINGS.md#8-impact-chips)). The global settings screen passes
 `impact(spec.key, values)` through `SettingsItem.impact`; the per-app screen can do the same with its effective values map.
 Null means no chips (any other key, PyroWave chroma without PyroWave, supersampling with Sharpen only). With the upscaler off
 its on/off, mode, sharpness and supersampling rows return all-`NONE` (dimmed chips). A level is a bucket, never a measurement.
@@ -176,7 +176,7 @@ built-in key combinations switch (they feed Send keys), multi-touch gestures, cl
 rumble stay visible.
 
 The full-keyboard settings keep their keys, defaults and texts; how the redesigned keyboard applies them (automatic fit, width and
-height of the bar, alignment, opacity) is described under "Full keyboard" in [GUI.md](GUI.md).
+height of the bar, alignment, opacity) is described in [gui/FULL_KEYBOARD.md](gui/FULL_KEYBOARD.md).
 
 ## User profiles
 

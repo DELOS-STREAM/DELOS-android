@@ -161,7 +161,7 @@ What can be tested where:
   stream.
 - **The shell** (library, settings, layouts for other screen shapes, the dual-screen companion) can be checked on an
   Android emulator with the debug previews, which need no PC: `--es preview_screen <name>` on `ShellActivity`
-  ([GUI.md](GUI.md), "Screen shapes"; [DUAL_SCREEN.md](DUAL_SCREEN.md), "How to test the companion on the emulator").
+  ([gui/SCREEN_SHAPES.md](gui/SCREEN_SHAPES.md); [DUAL_SCREEN.md](DUAL_SCREEN.md#how-to-test-the-companion-on-the-emulator), "How to test the companion on the emulator").
   The scripts in `tools/layout/` drive those previews and refuse anything that is not an emulator.
 
 ## Continuous integration

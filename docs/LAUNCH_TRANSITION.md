@@ -11,7 +11,7 @@ when a step fails.
 
 | Covered here | Specified elsewhere |
 |---|---|
-| The arrival of the stream picture on every rendering path | The tunnel animation of the shell and the launch loader: [GUI.md](GUI.md), "Launching a game" |
+| The arrival of the stream picture on every rendering path | The tunnel animation of the shell and the launch loader: [gui/START_AND_HOME.md](gui/START_AND_HOME.md#6-launching-a-game) |
 | Timeline, bounded waits, surface ownership, failure paths | The upscalers that the arrival reuses: [SGSR2_VIDEO.md](SGSR2_VIDEO.md), [STREAM_QUALITY.md](STREAM_QUALITY.md) |
 
 ## Reference and shell behavior

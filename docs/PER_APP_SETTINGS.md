@@ -10,7 +10,7 @@ stored, and how a launch reads them.
 
 | Covered here | Specified elsewhere |
 |---|---|
-| The App settings screen, reset and Undo | Pixel positions of the screen: `GameSettingsLayout` and [GUI.md](GUI.md) |
+| The App settings screen, reset and Undo | Pixel positions of the screen: `GameSettingsLayout` and [gui/MENUS_AND_SETTINGS.md](gui/MENUS_AND_SETTINGS.md#12-per-app-settings) |
 | The per-app keys, inheritance, codec bitrate slots | The global settings and profiles: [SETTINGS.md](SETTINGS.md) |
 | Automatic saving from the stream menu | The upscaler and gyro smoothing themselves: [STREAM_QUALITY.md](STREAM_QUALITY.md) |
 | How a launch reads the values | |
