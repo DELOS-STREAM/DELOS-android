@@ -49,6 +49,6 @@ The local clone also has older upstream tags (v9.x, v10.x, v20.x). They belong t
 2. Update `versionMajor`, `versionMinor`, `versionPatch` in `app/build.gradle` (and the comment, if needed).
 3. In `CHANGELOG.md`, move the "Unreleased" entries under a new heading `## [X.Y.Z] - YYYY-MM-DD`, group them Added / Changed / Fixed / Removed, and update the compare links at the bottom.
 4. Commit, then create an annotated tag on that commit: `git tag -a vX.Y.Z -m "Delos X.Y.Z"` and push it.
-5. Create a GitHub release only when the owner announces it.
+5. Create a GitHub release only when the owner announces it. **The release text must always show the complete changelog of that version**, visible directly on the release page: paste the whole `## [X.Y.Z]` section from `CHANGELOG.md` (the theme line and every Added / Changed / Fixed / Removed list), never a shortened summary, a "see CHANGELOG.md" link alone or GitHub's auto-generated "what's changed" list instead of it. A link to the full `CHANGELOG.md` and the compare range may follow below the pasted section. (Owner rule, 2026-11-15.) A convenient way: `gh release create vX.Y.Z --title "Delos X.Y.Z" --notes-file <(awk '/^## \[X.Y.Z\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md)`.
 
 The version shown in Settings > About, in the diagnostic report and in the problem report comes from `BuildConfig.VERSION_NAME`, so there is nothing else to edit.
