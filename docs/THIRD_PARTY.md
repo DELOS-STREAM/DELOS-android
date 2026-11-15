@@ -216,19 +216,30 @@ cached file against it and fails the build on a mismatch or an unlisted artefact
 - Robolectric downloads its `android-all` runtime jars itself during unit tests. They do not pass through
   Gradle's resolution and are **not** covered.
 - The file also lists JaCoCo 0.8.13 (`org.jacoco`, `org.ow2.asm` 9.8) for the unit-test coverage report.
+- Verified on 2026-11-15 with an empty Gradle user home: the full build (unit tests, debug and release
+  APK, lint) and the coverage report pass with verification on.
 
-When a dependency or plugin is added or its version changes, regenerate the entries in the same commit:
+When a dependency or plugin is added or its version changes, regenerate the entries in the same commit.
+Use an empty Gradle user home, because a warm cache hides files that a fresh machine downloads:
 
 ```sh
+export GRADLE_USER_HOME=$(mktemp -d)
 ./gradlew --write-verification-metadata sha256 :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug
 ./gradlew --write-verification-metadata sha256 :app:jacocoDebugUnitTestReport
+rm -rf "$GRADLE_USER_HOME"; export GRADLE_USER_HOME=$(mktemp -d)
+./gradlew --no-daemon clean :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug
 ```
 
-Gradle adds the new entries and keeps the old ones. Review the diff: it must contain only the artefacts
-you meant to change. Remove entries of versions that are no longer used, and re-add the Linux and Windows
-`aapt2` lines when the Android Gradle plugin version changes. If a build fails with "Dependency
-verification failed", do not regenerate blindly: a changed checksum for an unchanged version is the event
-this file exists to catch.
+- Gradle adds the new entries and keeps the old ones. Review the diff: it must contain only the artefacts
+  you meant to change. Remove entries of versions that are no longer used.
+- The last command is the proof. Gradle's generator misses a few BOM and parent-POM files that only a
+  cold build fetches (four on 2026-11-15: `guava-parent-33.4.0-jre.pom`, two `junit-bom` module files,
+  `kotlinx-coroutines-bom-1.8.0.pom`). When the cold build reports "Dependency verification failed" for
+  such a file, compare its SHA-256 with the `.sha256` file next to it in the repository and add the entry
+  by hand, with an `origin` that says so.
+- Re-add the Linux and Windows `aapt2` lines when the Android Gradle plugin version changes.
+- If a build fails with "Dependency verification failed" for a version nobody changed, do not regenerate:
+  a changed checksum for an unchanged version is the event this file exists to catch.
 
 ### Build plugins
 
