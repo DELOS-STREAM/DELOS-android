@@ -14,6 +14,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 ### Changed
 - Text that does not fit on one line (context menu titles and items, row values, app names) scrolls with a fading edge while it is focused instead of being cut off.
 
+### Fixed
+- A USB Xbox controller announces its buttons to the PC, and an Xbox One controller no longer reports the guide button as held until it is pressed once.
+
 ## [0.14.0] - 2026-11-14
 
 _Variable refresh rate, new palettes and avatars, UI sounds, rumble fixes._
