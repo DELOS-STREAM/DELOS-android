@@ -286,6 +286,7 @@ Launch-parameter inspection is strictly read-only:
 | Tunnel render scale | **0.6** (1152×648 at 1920×1080) | `HyperspaceConfig.RENDER_SCALE` |
 | Streaks | 24 | `HyperspaceConfig.STREAK_COUNT` |
 | Dark clouds | 24 | `HyperspaceConfig.CLOUD_COUNT` |
+| Weight of the palette accents in the tunnel | `accent` **×1.5**, `accent2` **×1.3**, `accent3` **×0.5** | `HyperspaceConfig.ACCENT_GAIN`, `ACCENT2_GAIN`, `ACCENT3_GAIN` |
 | Visible dwell of a connection line | **1200 ms** | `HyperspaceConfig.LINE_MS` |
 | Wait for a presented video frame | **3 s** bound | `FRAME_WAIT_MS` in `StreamLoader.kt` |
 | Exit duration | **2200 ms** | `HyperspaceConfig.OPENING_MS` |

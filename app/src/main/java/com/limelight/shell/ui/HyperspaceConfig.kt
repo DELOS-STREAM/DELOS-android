@@ -57,6 +57,11 @@ internal object HyperspaceConfig {
     const val EXPOSURE = 1.55f
     const val EDGE_BLOOM = .16f
     const val CLOUD_RIM = .028f
+
+    // Weight of each palette accent in the tunnel: the main and second accent lead, the third stays a hint.
+    const val ACCENT_GAIN = 1.5f
+    const val ACCENT2_GAIN = 1.3f
+    const val ACCENT3_GAIN = .5f
 }
 
 /** CPU counterparts of the shader's exit equations; x/y and dimensions are physical pixels. */

@@ -64,9 +64,12 @@ internal fun HyperspaceTunnel(
             shader.setFloatUniform("uProgress", run.speedProgress)
             shader.setFloatUniform("uOpening", o)
             shader.setFloatUniform("uBg", colors.bg.red, colors.bg.green, colors.bg.blue)
-            shader.setFloatUniform("uGold", colors.accent.red, colors.accent.green, colors.accent.blue)
-            shader.setFloatUniform("uCyan", colors.accent2.red, colors.accent2.green, colors.accent2.blue)
-            shader.setFloatUniform("uIndigo", colors.accent3.red, colors.accent3.green, colors.accent3.blue)
+            val g1 = HyperspaceConfig.ACCENT_GAIN
+            val g2 = HyperspaceConfig.ACCENT2_GAIN
+            val g3 = HyperspaceConfig.ACCENT3_GAIN
+            shader.setFloatUniform("uGold", colors.accent.red * g1, colors.accent.green * g1, colors.accent.blue * g1)
+            shader.setFloatUniform("uCyan", colors.accent2.red * g2, colors.accent2.green * g2, colors.accent2.blue * g2)
+            shader.setFloatUniform("uIndigo", colors.accent3.red * g3, colors.accent3.green * g3, colors.accent3.blue * g3)
             drawRect(brush)
         }
     }
