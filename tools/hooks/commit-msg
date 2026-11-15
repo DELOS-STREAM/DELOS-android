@@ -1,0 +1,46 @@
+#!/bin/sh
+# Checks a commit message against the Delos convention (CONTRIBUTING.md, "Commit messages").
+# Enable once per clone:  git config core.hooksPath tools/hooks
+# Tests:                  sh tools/hooks/test-commit-msg.sh
+#
+# Rules: the subject (first line that is not a comment) is not empty, has at most 72 characters, is not a WIP,
+# fixup or squash commit, and is followed by an empty line when a body follows. Merge and revert subjects that git
+# writes itself are not measured. `[skip ci]` belongs on the last line of the body, not in the subject.
+
+MAX_SUBJECT=72
+
+fail() {
+    echo "commit-msg: $1" >&2
+    echo "commit-msg: see CONTRIBUTING.md, \"Commit messages\"" >&2
+    exit 1
+}
+
+[ -n "$1" ] && [ -f "$1" ] || { echo "commit-msg: usage: commit-msg <message file>" >&2; exit 2; }
+
+# The message as git will store it: without comment lines and without anything below the scissors line.
+message=$(sed -e '/^# -\{24\} >8 -\{24\}$/,$d' -e '/^#/d' "$1")
+subject=$(printf '%s\n' "$message" | sed -n '1p')
+second=$(printf '%s\n' "$message" | sed -n '2p')
+
+[ -n "$(printf '%s' "$subject" | tr -d '[:space:]')" ] || fail "the subject line is empty"
+
+case "$subject" in
+    Merge\ *|Revert\ \"*) exit 0 ;;
+esac
+
+if printf '%s' "$subject" | grep -Eqi '^(wip|fixup!|squash!|amend!)([^[:alnum:]]|$)|(^|[^[:alnum:]])wip([^[:alnum:]]|$)'; then
+    fail "work-in-progress commits (WIP, fixup!, squash!) do not belong on main: say what changed"
+fi
+
+length=$(printf '%s' "$subject" | wc -m | tr -d '[:space:]')
+if [ "$length" -gt "$MAX_SUBJECT" ]; then
+    fail "the subject has $length characters; the limit is $MAX_SUBJECT. Say what changed in the subject and move the details to the body"
+fi
+
+case "$subject" in
+    *"[skip ci]"*) fail "put [skip ci] on the last line of the body, not in the subject" ;;
+esac
+
+[ -z "$second" ] || fail "the second line must be empty (subject, empty line, body)"
+
+exit 0
