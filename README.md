@@ -16,7 +16,7 @@
 
 [Website](https://delos-stream.com) · [Releases](https://github.com/Meitoncz/Delos/releases) · [Issues](https://github.com/Meitoncz/Delos/issues) · [Add to Obtainium](obtainium://add/https://github.com/Meitoncz/Delos)
 
-<img src="docs/readme/dashboard.webp" alt="The Delos library on a handheld" width="760">
+<img src="docs/readme/dashboard.webp" alt="The Delos library on a handheld" width="820">
 
 </div>
 
