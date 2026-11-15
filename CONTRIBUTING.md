@@ -63,7 +63,7 @@ Refs: #123
 - **Breaking change:** `!` before the colon (`feat(host)!: ...`) or a footer `BREAKING CHANGE: <description>`. Breaking means an incompatible change of the public API declared in [docs/VERSIONING.md](docs/VERSIONING.md#public-api).
 - **Body:** after an empty line. What changed and why, measurements with device and date, and what was not verified.
 - **Footers:** after an empty line after the body. An issue is named as `Refs: #123`, or `Closes: #123` when the commit closes it.
-- **`[skip ci]`** is the last line of every commit to `main`, after the footers and an empty line. GitHub Actions does not start workflows for a pushed commit whose message contains it. The Delos workflow starts only by hand today, so the line has nothing to skip yet; the maintainer keeps it so that no push starts a run if an automatic trigger is ever added. A contributor's pull request does not need it.
+- **`[skip ci]`** is the last line of every commit to `main`, after the footers and an empty line, **until the first public release (1.0.0)**. GitHub Actions does not start workflows for a pushed commit whose message contains it. From the first public release on, the line is dropped and the Build workflow runs on every push to `main` and on every pull request. A contributor's pull request does not need it.
 - **One topic per commit.** No `WIP`, `fixup!` or `squash!` commits on `main`: tidy them up before the merge.
 - The convention applies from 2026-11-15. The history of `main` is never rewritten, so older commits keep their subjects; a mistake is fixed by a new commit.
 

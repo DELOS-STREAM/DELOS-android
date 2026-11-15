@@ -137,6 +137,7 @@ Every line holds before the tag of a release is pushed. The rules behind it: [EN
 | 9 | The release APKs are the real thing. | Built with `DELOS_METADATA_URL` set, signed with the release key, installed once on a device: pair, open the library, settings, artwork, start and end a stream. A file with the SHA-256 of each APK is attached to the release. |
 | 10 | Bundled libraries are current. | Compare the versions of OpenSSL, Opus and the `moonlight-common-c` pin in [THIRD_PARTY.md](THIRD_PARTY.md) with their upstreams (`git ls-remote --tags`); record what is behind and why. |
 | 11 | Issues are tidy. | `gh issue list --search "is:open no:milestone"` and `--search "is:open no:label"` are empty; the milestone of the release is closed. |
+| 12 | CI is no longer skipped. | For the first public release: `.github/workflows/build.yml` gains the `push` (branch `main`) and `pull_request` triggers, the `[skip ci]` rule is removed from `CONTRIBUTING.md`, [ENGINEERING_RULES.md](ENGINEERING_RULES.md) and `tools/hooks/commit-msg`, and no later commit carries the marker. |
 | 12 | The release text is the complete changelog section. | Step 5 of "Adding a new version" above. |
 
 Not defined yet: who holds the release signing key and how it is backed up. No release is made before that is written here.

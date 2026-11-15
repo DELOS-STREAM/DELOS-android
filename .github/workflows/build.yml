@@ -1,10 +1,10 @@
 name: Build
 
-# Owner's rule: CI runs only on request. Start it from the Actions tab (Build > Run workflow) or with
+# Owner's rule: until the first public release (1.0.0), CI runs only on request. Start it from the Actions tab
+# (Build > Run workflow) or with
 #   gh workflow run build.yml --ref <branch>
-# Nothing runs on a push or a pull request. Do not add `push` or `pull_request` triggers without the owner's
-# decision. Because of this, the `[skip ci]` line in commit messages has nothing to skip today; it stays in the
-# convention so that no commit starts a run if a trigger is ever added (CONTRIBUTING.md, "Commit messages").
+# From the first public release on, CI is never skipped: add the `push` (branch `main`) and `pull_request` triggers
+# in the release commit and stop writing `[skip ci]` (docs/VERSIONING.md, "Release checklist").
 on:
   workflow_dispatch:
 
