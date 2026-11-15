@@ -47,7 +47,7 @@ public class ServerHelper {
         i.putExtra(ShortcutTrampoline.NAME_EXTRA, computer.name);
         i.putExtra(ShortcutTrampoline.UUID_EXTRA, computer.uuid);
         i.setAction(Intent.ACTION_DEFAULT);
-        return i;
+        return LaunchAuth.sign(parent, i);
     }
 
     public static Intent createAppShortcutIntent(Activity parent, ComputerDetails computer, NvApp app) {
@@ -59,7 +59,7 @@ public class ServerHelper {
         i.putExtra(DelosStreamActivity.EXTRA_APP_ID, ""+app.getAppId());
         i.putExtra(DelosStreamActivity.EXTRA_APP_HDR, app.isHdrSupported());
         i.setAction(Intent.ACTION_DEFAULT);
-        return i;
+        return LaunchAuth.sign(parent, i);
     }
     public static Display getActiveDisplay(Context context, PreferenceConfiguration prefs) {
         Display external = getExternalDisplay(context);
