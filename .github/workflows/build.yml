@@ -1,12 +1,14 @@
 name: Build
 
-# Owner's rule: until the first public release (1.0.0), CI runs only on request. Start it from the Actions tab
-# (Build > Run workflow) or with
-#   gh workflow run build.yml --ref <branch>
-# From the first public release on, CI is never skipped: add the `push` (branch `main`) and `pull_request` triggers
-# in the release commit and stop writing `[skip ci]` (docs/VERSIONING.md, "Release checklist").
+# Owner's rule (2026-11-15): CI runs with every public release, starting with the first (1.0.0), and only then.
+# Pushing a version tag (`vX.Y.Z`, or a release candidate `vX.Y.Z-rc.N`) starts this workflow. The tagged commit
+# must not contain `[skip ci]`. There is no manual start, and nothing runs on an ordinary push or a pull request.
+# Do not add other triggers without the owner's decision.
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
 
 # Least privilege: the jobs only read the repository. No job may ask for more without a comment that says why.
 permissions:

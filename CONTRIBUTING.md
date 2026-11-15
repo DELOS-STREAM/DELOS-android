@@ -37,7 +37,7 @@ cd Delos
 | `python3 tools/docs/check_links.py` | Relative links and anchors of the Markdown files |
 | `python3 tools/l10n/find_literals.py` | User-visible text that is not a string resource |
 
-Run the first three before you open a pull request: CI runs only when the maintainer starts it, never by itself on a push or a pull request.
+Run the first three before you open a pull request: CI runs only with a public release (when its version tag is pushed), never on a push or a pull request.
 
 A bug fix comes with a regression test that fails without the fix. New logic comes with tests. Where a unit test cannot reach the code (native code, behavior that needs a device), say so in the commit body with a line `No test: <reason>`.
 
@@ -63,7 +63,7 @@ Refs: #123
 - **Breaking change:** `!` before the colon (`feat(host)!: ...`) or a footer `BREAKING CHANGE: <description>`. Breaking means an incompatible change of the public API declared in [docs/VERSIONING.md](docs/VERSIONING.md#public-api).
 - **Body:** after an empty line. What changed and why, measurements with device and date, and what was not verified.
 - **Footers:** after an empty line after the body. An issue is named as `Refs: #123`, or `Closes: #123` when the commit closes it.
-- **`[skip ci]`** is the last line of every commit to `main`, after the footers and an empty line, **until the first public release (1.0.0)**. GitHub Actions does not start workflows for a pushed commit whose message contains it. From the first public release on, the line is dropped and the Build workflow runs on every push to `main` and on every pull request. A contributor's pull request does not need it.
+- **`[skip ci]`** is the last line of every commit to `main`, after the footers and an empty line. GitHub Actions does not start workflows for a pushed commit whose message contains it. **CI runs with every public release, starting with the first (1.0.0):** pushing the tag `vX.Y.Z` starts the Build workflow, so the commit that gets a release tag is written without the line. It is not started by hand. A contributor's pull request does not need the line.
 - **One topic per commit.** No `WIP`, `fixup!` or `squash!` commits on `main`: tidy them up before the merge.
 - The convention applies from 2026-11-15. The history of `main` is never rewritten, so older commits keep their subjects; a mistake is fixed by a new commit.
 

@@ -10,7 +10,7 @@ build, report and contribute is in [CONTRIBUTING.md](../CONTRIBUTING.md); this d
 The rules apply to every change of this repository: code, tests, binaries, documents, GitHub files, release notes
 and the texts of the app. A rule changes only by a change of this file that the owner approves.
 
-"Check" names what catches a violation. "CI" is a step of `.github/workflows/build.yml`, which runs on request.
+"Check" names what catches a violation. "CI" is a step of `.github/workflows/build.yml`, which runs with every public release, when its version tag is pushed, and is not started by hand.
 "PR" is a line of `.github/pull_request_template.md`. "Review" means a person reads for it: no script exists.
 
 ## 1. Tests
@@ -130,7 +130,7 @@ The form is that of [Conventional Commits 1.0.0](https://www.conventionalcommits
 | Footers | Begin after one empty line after the body. Each is `Token: value` or `Token #value`; a token uses `-` in place of spaces. |
 | `BREAKING CHANGE: <description>` | The footer of an incompatible change; upper case. `BREAKING-CHANGE:` is the same. With `!` in the subject the footer may be left out; the description then describes the break. |
 | `Refs: #N` | The footer that names an issue. `Closes: #N` when the commit closes it. |
-| `[skip ci]` | Until the first public release (1.0.0): the last line of the message of every commit to `main`, after one empty line. It is a marker for GitHub Actions, not a footer of the specification: no workflow starts for a pushed commit that contains it. From the first public release on, no commit carries it: the Build workflow runs on every push to `main` and on every pull request (owner decision, 2026-11-15). A pull request of a contributor never needs it. |
+| `[skip ci]` | The last line of the message of every commit to `main`, after one empty line, **except the commit that gets a release tag**. It is a marker for GitHub Actions, not a footer of the specification: no workflow starts for a pushed commit that contains it. CI runs with every public release, starting with the first (1.0.0): pushing the tag `vX.Y.Z` starts the Build workflow, so the tagged commit must not carry the marker (owner decision, 2026-11-15). A pull request of a contributor never needs it. |
 | Merge and revert | The subjects git writes (`Merge ...`, `Revert "..."`) are accepted as they are. A revert written by hand uses the type `revert` and a footer `Refs: <hashes>`. |
 
 | Type | Use | Version ([VERSIONING.md](VERSIONING.md#which-number-increases)) | Changelog section |

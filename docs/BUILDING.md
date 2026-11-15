@@ -44,7 +44,7 @@ export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # the directory of your JD
 export ANDROID_HOME="$HOME/Android/Sdk"
 ```
 
-This is also what the manual CI workflow uses (`.github/workflows/build.yml`, `ubuntu-latest` with Temurin 21).
+This is also what the CI workflow uses (`.github/workflows/build.yml`, `ubuntu-latest` with Temurin 21).
 
 ### Windows
 
@@ -166,9 +166,9 @@ What can be tested where:
 
 ## Continuous integration
 
-The workflow `.github/workflows/build.yml` runs only when it is started by hand (Actions → Build → Run workflow). It
-runs the unit tests, lint, the debug and the unsigned release build and the repository checks listed above. Nothing
-runs automatically on a push or a pull request, so run the command above yourself before you open one.
+The workflow `.github/workflows/build.yml` runs with every public release: pushing a version tag (`vX.Y.Z`, or a release candidate `vX.Y.Z-rc.N`) starts it. It has
+no manual start. It runs the unit tests, lint, the debug and the unsigned release build and the repository checks listed above. Nothing
+runs on an ordinary push or a pull request, so run the command above yourself before you open one.
 
 ## Upstream remotes (optional)
 
