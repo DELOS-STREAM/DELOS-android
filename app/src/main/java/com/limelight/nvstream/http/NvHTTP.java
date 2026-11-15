@@ -50,6 +50,7 @@ import com.limelight.nvstream.ConnectionContext;
 import com.limelight.nvstream.http.PairingManager.PairState;
 import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.utils.DeviceUtils;
+import com.limelight.utils.HostIds;
 
 import okhttp3.Call;
 import okhttp3.ConnectionPool;
@@ -137,24 +138,7 @@ public class NvHTTP {
                 throw new IllegalStateException("Should never be called");
             }
             public void checkServerTrusted(X509Certificate[] certs, String authType) throws CertificateException {
-                try {
-                    // Try the default trust manager first to allow pairing with certificates
-                    // that chain up to a trusted root CA. This will raise CertificateException
-                    // if the certificate is not trusted (expected for GFE's self-signed certs).
-                    defaultTrustManager.checkServerTrusted(certs, authType);
-                } catch (CertificateException e) {
-                    // Check the server certificate if we've paired to this host
-                    if (certs.length == 1 && NvHTTP.this.serverCert != null) {
-                        if (!certs[0].equals(NvHTTP.this.serverCert)) {
-                            throw new CertificateException("Certificate mismatch");
-                        }
-                    }
-                    else {
-                        // The cert chain doesn't look like a self-signed cert or we don't have
-                        // a certificate pinned, so re-throw the original validation error.
-                        throw e;
-                    }
-                }
+                checkServerCertificate(certs, authType, NvHTTP.this.serverCert, defaultTrustManager);
             }
         };
 
@@ -162,7 +146,7 @@ public class NvHTTP {
             public boolean verify(String hostname, SSLSession session) {
                 try {
                     Certificate[] certificates = session.getPeerCertificates();
-                    if (certificates.length == 1 && certificates[0].equals(NvHTTP.this.serverCert)) {
+                    if (certificates.length >= 1 && certificates[0].equals(NvHTTP.this.serverCert)) {
                         // Allow any hostname if it's our pinned cert
                         return true;
                     }
@@ -341,7 +325,48 @@ public class NvHTTP {
         }
     }
     
+    /**
+     * Who the host is decided at pairing: once a certificate is pinned, only that certificate is
+     * the host, and a different one is a mismatch even when a public CA vouches for it (otherwise
+     * anyone able to obtain a certificate for the host's name could take its place). Without a pin
+     * (first contact with a host that has a CA-issued certificate) the system trust store decides.
+     */
+    static void checkServerCertificate(X509Certificate[] certs, String authType, X509Certificate pinned,
+                                       X509TrustManager defaultTrustManager) throws CertificateException {
+        if (pinned != null) {
+            if (certs == null || certs.length == 0 || !pinned.equals(certs[0])) {
+                throw new CertificateException("Certificate mismatch");
+            }
+            return;
+        }
+
+        // This will raise CertificateException if the certificate is not trusted
+        // (expected for the self-signed certs of a host that isn't paired yet).
+        defaultTrustManager.checkServerTrusted(certs, authType);
+    }
+
+    /** A {@code serverinfo} reply and whether it came from the paired host for certain. */
+    public static final class ServerInfo {
+        public final String xml;
+        /**
+         * True when a certificate is pinned for this PC but the reply was read over plain HTTP
+         * (the HTTPS certificate did not match, or the host no longer knows this client). Anyone
+         * on the network can have sent it: it may show that the PC has to be paired again, but
+         * nothing in it may replace what is stored about the PC.
+         */
+        public final boolean unverified;
+
+        ServerInfo(String xml, boolean unverified) {
+            this.xml = xml;
+            this.unverified = unverified;
+        }
+    }
+
     public String getServerInfo(boolean likelyOnline) throws IOException, XmlPullParserException {
+        return fetchServerInfo(likelyOnline).xml;
+    }
+
+    public ServerInfo fetchServerInfo(boolean likelyOnline) throws IOException, XmlPullParserException {
         String resp;
 
         // If we believe the PC is online, give it a little extra time to respond
@@ -376,19 +401,20 @@ public class NvHTTP {
             }
             catch (HostHttpResponseException e) {
                 if (e.getErrorCode() == 401) {
-                    // Cert validation error - fall back to HTTP
-                    return openHttpConnectionToString(client, baseUrlHttp, "serverinfo");
+                    // Cert validation error - fall back to HTTP. The host is reachable and can be
+                    // paired again, but this reply is not authenticated.
+                    return new ServerInfo(openHttpConnectionToString(client, baseUrlHttp, "serverinfo"), true);
                 }
 
                 // If it's not a cert validation error, throw it
                 throw e;
             }
 
-            return resp;
+            return new ServerInfo(resp, false);
         }
         else {
             // No pinned cert, so use HTTP
-            return openHttpConnectionToString(client, baseUrlHttp, "serverinfo");
+            return new ServerInfo(openHttpConnectionToString(client, baseUrlHttp, "serverinfo"), false);
         }
     }
 
@@ -410,6 +436,10 @@ public class NvHTTP {
 
         // UUID is mandatory to determine which machine is responding
         details.uuid = getXmlString(serverInfo, "uniqueid", true);
+        if (!HostIds.isValidUuid(details.uuid)) {
+            // The id names cache and artwork directories and keys the PC database
+            throw new XmlPullParserException("Invalid uniqueid in host response");
+        }
 
         String permStr = getXmlString(serverInfo, "Permission", false);
         if (permStr != null) {
@@ -458,7 +488,10 @@ public class NvHTTP {
     }
 
     public ComputerDetails getComputerDetails(boolean likelyOnline) throws IOException, XmlPullParserException {
-        return getComputerDetails(getServerInfo(likelyOnline));
+        ServerInfo info = fetchServerInfo(likelyOnline);
+        ComputerDetails details = getComputerDetails(info.xml);
+        details.identityUnverified = info.unverified;
+        return details;
     }
 
     // This hack is Android-specific but we do it on all platforms

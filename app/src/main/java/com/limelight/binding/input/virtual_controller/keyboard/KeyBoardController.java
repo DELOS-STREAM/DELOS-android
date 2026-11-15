@@ -562,7 +562,7 @@ public class KeyBoardController {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    DelosToast.show(context, "Error loading custom keys: " + e.getMessage(), DelosToast.SHORT, ToastKind.ERROR);
+                    DelosToast.show(context, context.getString(R.string.keyboard_custom_keys_error), DelosToast.SHORT, ToastKind.ERROR);
                 }
             }
 

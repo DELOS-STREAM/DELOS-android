@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Messages (toasts) of a stream that is being started: what the PC answered and why the start stops or changes -->
+    <string name="conn_server_version_malformed">Der PC hat eine ungültige Version gesendet</string>
+    <string name="conn_not_paired">Dieses Gerät ist nicht mit dem PC gekoppelt</string>
+    <string name="conn_hdr_unsupported_host">Die GPU des PCs kann kein HDR streamen · der Stream läuft in SDR</string>
+    <string name="conn_above_4k_host">Der PC kann nicht in Auflösungen über 4K streamen</string>
+    <string name="conn_above_4k_device">Für Auflösungen über 4K braucht dieses Gerät HEVC oder AV1</string>
+    <!-- Only the old NVIDIA GeForce Experience host software answers this -->
+    <string name="conn_4k_needs_update">Aktualisiere GeForce Experience auf dem PC, um in 4K zu streamen · der Stream läuft in 1080p</string>
+    <!-- %1$s: app name -->
+    <string name="conn_app_not_found">%1$s ist nicht in der App-Liste des PCs</string>
+    <string name="conn_resume_failed">Die laufende Sitzung konnte nicht fortgesetzt werden</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_resume_foreign">Diese Sitzung wurde von einem anderen Gerät gestartet und kann deshalb nicht fortgesetzt werden. Beende den Stream auf jenem Gerät oder am PC und versuch es erneut. (Fehler %1$d)</string>
+    <string name="conn_app_minimized">Die App ist minimiert. Setze sie am PC fort oder beende die Sitzung und starte den Stream erneut.</string>
+    <string name="conn_quit_failed">Die vorherige Sitzung konnte nicht beendet werden · beende sie am PC</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_quit_foreign">Diese Sitzung wurde von einem anderen Gerät gestartet und kann deshalb nicht beendet werden. Beende den Stream auf jenem Gerät oder am PC. (Fehler %1$d)</string>
+    <string name="conn_launch_failed">Der PC konnte die App nicht starten</string>
+</resources>

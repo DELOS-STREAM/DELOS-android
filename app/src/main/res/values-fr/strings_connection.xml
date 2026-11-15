@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Messages (toasts) of a stream that is being started: what the PC answered and why the start stops or changes -->
+    <string name="conn_server_version_malformed">Le PC a envoyé une version non valide</string>
+    <string name="conn_not_paired">Cet appareil n’est pas associé au PC</string>
+    <string name="conn_hdr_unsupported_host">Le GPU du PC ne peut pas streamer en HDR · le stream sera en SDR</string>
+    <string name="conn_above_4k_host">Le PC ne peut pas streamer au-delà de la 4K</string>
+    <string name="conn_above_4k_device">Cet appareil a besoin de HEVC ou d’AV1 pour streamer au-delà de la 4K</string>
+    <!-- Only the old NVIDIA GeForce Experience host software answers this -->
+    <string name="conn_4k_needs_update">Mets à jour GeForce Experience sur le PC pour streamer en 4K · le stream sera en 1080p</string>
+    <!-- %1$s: app name -->
+    <string name="conn_app_not_found">%1$s n’est pas dans la liste d’applis du PC</string>
+    <string name="conn_resume_failed">Impossible de reprendre la session en cours</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_resume_foreign">Cette session a été lancée par un autre appareil et ne peut donc pas être reprise. Arrête le stream sur cet appareil ou sur le PC, puis réessaie. (Erreur %1$d)</string>
+    <string name="conn_app_minimized">L’appli est réduite. Reprends-la sur le PC ou quitte la session et relance le stream.</string>
+    <string name="conn_quit_failed">Impossible de quitter la session précédente · quitte-la sur le PC</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_quit_foreign">Cette session a été lancée par un autre appareil et ne peut donc pas être quittée. Arrête le stream sur cet appareil ou sur le PC. (Erreur %1$d)</string>
+    <string name="conn_launch_failed">Le PC n’a pas pu lancer l’appli</string>
+</resources>

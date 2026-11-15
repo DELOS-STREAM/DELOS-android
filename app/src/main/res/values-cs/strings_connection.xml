@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Messages (toasts) of a stream that is being started: what the PC answered and why the start stops or changes -->
+    <string name="conn_server_version_malformed">PC poslalo neplatnou verzi</string>
+    <string name="conn_not_paired">Toto zařízení není s PC spárované</string>
+    <string name="conn_hdr_unsupported_host">Grafická karta PC neumí streamovat HDR · stream bude v SDR</string>
+    <string name="conn_above_4k_host">PC neumí streamovat v rozlišení vyšším než 4K</string>
+    <string name="conn_above_4k_device">Pro stream v rozlišení vyšším než 4K potřebuje toto zařízení HEVC nebo AV1</string>
+    <!-- Only the old NVIDIA GeForce Experience host software answers this -->
+    <string name="conn_4k_needs_update">Pro stream ve 4K aktualizuj na PC GeForce Experience · stream bude v 1080p</string>
+    <!-- %1$s: app name -->
+    <string name="conn_app_not_found">Aplikace %1$s není v seznamu aplikací PC</string>
+    <string name="conn_resume_failed">Běžící relaci se nepodařilo obnovit</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_resume_foreign">Tuto relaci spustilo jiné zařízení, takže ji nelze obnovit. Ukonči stream na tom zařízení nebo na PC a zkus to znovu. (Chyba %1$d)</string>
+    <string name="conn_app_minimized">Aplikace je minimalizovaná. Obnov ji na PC, nebo relaci ukonči a spusť stream znovu.</string>
+    <string name="conn_quit_failed">Předchozí relaci se nepodařilo ukončit · ukonči ji na PC</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_quit_foreign">Tuto relaci spustilo jiné zařízení, takže ji nelze ukončit. Ukonči stream na tom zařízení nebo na PC. (Chyba %1$d)</string>
+    <string name="conn_launch_failed">PC nedokázalo aplikaci spustit</string>
+</resources>

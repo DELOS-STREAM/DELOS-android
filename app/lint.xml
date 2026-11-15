@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
-    <issue id="InvalidPackage">
-        <ignore path="**/bcpkix-jdk15on-*.jar"/>
-    </issue>
-    <issue id="MissingThemeAttr" severity="error" />
+    <!-- Checks the tree passes today and must keep passing: a new hit fails lintDebug and lintRelease.
+         The security and correctness checks that still have known hits (StaticFieldLeak, ExportedContentProvider,
+         SetJavaScriptEnabled, DefaultLocale, ApplySharedPref, ObsoleteSdkInt) stay warnings until those are fixed. -->
+    <issue id="UnknownIssueId" severity="error" />
+    <issue id="UnusedResources" severity="error" />
+    <issue id="ExportedService" severity="error" />
+    <issue id="UnsafeIntentLaunch" severity="error" />
+    <issue id="NotShrinkingResources" severity="error" />
 </lint>

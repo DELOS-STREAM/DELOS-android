@@ -39,10 +39,6 @@
     <!-- Errors -->
     <string name="error_unknown_host">Host konnte nicht aufgelöst werden</string>
     <string name="error_404">GFE hat einen HTTP-404-Fehler zurückgegeben. Stelle sicher, dass auf deinem PC eine unterstützte GPU läuft. Auch Remote-Desktop-Software kann diesen Fehler auslösen. Starte deinen Rechner neu oder installiere GFE erneut.</string>
-    <string name="title_decoding_error">Videodecoder abgestürzt</string>
-    <string name="message_decoding_error">Delos ist wegen einer Inkompatibilität mit dem Videodecoder dieses Geräts abgestürzt. Passe die Streaming-Einstellungen an, falls die Abstürze weitergehen.</string>
-    <string name="title_decoding_reset">Videoeinstellungen zurückgesetzt</string>
-    <string name="message_decoding_reset">Der Videodecoder deines Geräts stürzt bei den gewählten Streaming-Einstellungen weiter ab. Deine Streaming-Einstellungen wurden auf die Standardwerte zurückgesetzt.</string>
     <string name="error_usb_prohibited">USB-Zugriff ist von deinem Geräteadministrator untersagt. Prüfe deine Knox- oder MDM-Einstellungen.</string>
 
     <!-- Start application messages -->
@@ -412,8 +408,6 @@
     <string name="mouse_mode_disabled">Deaktiviert</string>
     <string name="mouse_mode_absolute_touch_swapped">Absolutes Touch (Links-/Rechtsklick getauscht)</string>
     <string name="keyboard_layout_set_1">Profil 1</string>
-    <string name="vdisplay_not_ready">Der Treiber für das virtuelle Display ist auf dem Server nicht bereit. Stelle sicher, dass der SudoVDA-Treiber installiert und aktiviert ist.</string>
-    <string name="vdisplay_not_supported"><![CDATA[Das virtuelle Display wird auf diesem Server nicht unterstützt. Nutze <a href=\"https://github.com/Nonary/Vibepollo\">Vibepollo</a> oder <a href=\"https://github.com/ClassicOldSong/Apollo\">Apollo</a> als Host-Streaming-Software.]]></string>
     <string name="clipboard_sync_unsupported">Dieser Server unterstützt keinen Zwischenablage-Abgleich. Installiere die neueste Version von Apollo oder aktualisiere deinen Server darauf.</string>
     <string name="send_clipboard_failed">Zwischenablage konnte nicht gesendet werden: </string>
     <string name="external_display_info">Externes Display verbunden mit: %1$dx%2$d bei %3$.1fHz</string>
@@ -422,7 +416,6 @@
     <string name="get_clipboard_failed">Zwischenablage konnte nicht geholt werden: </string>
     <string name="send_clipboard_success">Zwischenablage gesendet</string>
     <string name="get_clipboard_success">Zwischenablage geholt</string>
-    <string name="proceed">Fortfahren</string>
     <string name="cancel">Abbrechen</string>
     <string name="unlocking_or_starting">Der Server startet oder der Computer wird entsperrt, bitte warten…</string>
 

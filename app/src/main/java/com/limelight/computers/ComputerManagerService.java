@@ -115,8 +115,9 @@ public class ComputerManagerService extends Service {
             activePolls.decrementAndGet();
         }
 
-        // If it's online, update our persistent state
-        if (details.state == ComputerDetails.State.ONLINE) {
+        // If it's online, update our persistent state. A reply that could not be authenticated
+        // for a PC with a pinned certificate changes nothing that is stored.
+        if (details.state == ComputerDetails.State.ONLINE && !details.identityUnverified) {
             ComputerDetails existingComputer = dbManager.getComputerByUUID(details.uuid);
 
             // Check if it's in the database because it could have been
@@ -152,8 +153,10 @@ public class ComputerManagerService extends Service {
             }
         }
 
-        // Don't call the listener if this is a failed lookup of a new PC
-        if ((!newPc || details.state == ComputerDetails.State.ONLINE) && listener != null) {
+        // Don't call the listener if this is a failed lookup of a new PC. A PC that was looked up
+        // by address and could not be authenticated is reported by addComputerBlocking() instead,
+        // from the stored entry rather than from the unauthenticated details.
+        if ((!newPc || (details.state == ComputerDetails.State.ONLINE && !details.identityUnverified)) && listener != null) {
             listener.notifyComputerUpdated(details);
         }
 
@@ -532,6 +535,10 @@ public class ComputerManagerService extends Service {
             runPoll(fakeDetails, true, 0);
         }
 
+        if (fakeDetails.identityUnverified) {
+            return reportUnverifiedHost(fakeDetails);
+        }
+
         // If the machine is reachable, it was successful
         if (fakeDetails.state == ComputerDetails.State.ONLINE) {
             LimeLog.info("New PC ("+fakeDetails.name+") is UUID "+fakeDetails.uuid);
@@ -543,6 +550,38 @@ public class ComputerManagerService extends Service {
         else {
             return false;
         }
+    }
+
+    /**
+     * Something answered at a looked-up address (mDNS or typed in) with the id of a PC whose
+     * certificate is pinned, but without that certificate. The stored PC keeps its name and
+     * addresses; it only learns that it has to be paired again and where that can be done, and
+     * only when the real PC is not answering right now.
+     */
+    private boolean reportUnverifiedHost(ComputerDetails unverified) {
+        ComputerDetails known = null;
+        synchronized (pollingTuples) {
+            for (PollingTuple tuple : pollingTuples) {
+                if (tuple.computer.uuid.equals(unverified.uuid)) {
+                    known = tuple.computer;
+                    break;
+                }
+            }
+        }
+        if (known == null || unverified.state != ComputerDetails.State.ONLINE) {
+            return false;
+        }
+        if (known.state == ComputerDetails.State.ONLINE && !known.identityUnverified) {
+            LimeLog.warning("Ignoring an unauthenticated reply for a paired PC that is online");
+            return false;
+        }
+
+        LimeLog.warning("A paired PC answered without its pinned certificate: it has to be paired again");
+        known.update(unverified);
+        if (listener != null) {
+            listener.notifyComputerUpdated(known);
+        }
+        return true;
     }
 
     public void removeComputer(ComputerDetails computer) {
@@ -674,6 +713,9 @@ public class ComputerManagerService extends Service {
         ParallelPollTuple manualInfo = new ParallelPollTuple(details.manualAddress, details);
         ParallelPollTuple remoteInfo = new ParallelPollTuple(details.remoteAddress, details);
         ParallelPollTuple ipv6Info = new ParallelPollTuple(details.ipv6Address, details);
+        // Where an unauthenticated reply for this paired PC came from (it is not stored): asked
+        // last, so the PC is found there once it has been paired again
+        ParallelPollTuple unverifiedInfo = new ParallelPollTuple(details.identityUnverified ? details.activeAddress : null, details);
 
         // These must be started in order of precedence for the deduplication algorithm
         // to result in the correct behavior.
@@ -682,6 +724,7 @@ public class ComputerManagerService extends Service {
         startParallelPollThread(manualInfo, uniqueAddresses);
         startParallelPollThread(remoteInfo, uniqueAddresses);
         startParallelPollThread(ipv6Info, uniqueAddresses);
+        startParallelPollThread(unverifiedInfo, uniqueAddresses);
 
         try {
             // Check local first
@@ -731,6 +774,17 @@ public class ComputerManagerService extends Service {
                     return ipv6Info.returnedDetails;
                 }
             }
+
+            synchronized (unverifiedInfo) {
+                while (!unverifiedInfo.complete) {
+                    unverifiedInfo.wait();
+                }
+
+                if (unverifiedInfo.returnedDetails != null) {
+                    unverifiedInfo.returnedDetails.activeAddress = unverifiedInfo.address;
+                    return unverifiedInfo.returnedDetails;
+                }
+            }
         } finally {
             // Stop any further polling if we've found a working address or we've been
             // interrupted by an attempt to stop polling.
@@ -738,6 +792,7 @@ public class ComputerManagerService extends Service {
             manualInfo.interrupt();
             remoteInfo.interrupt();
             ipv6Info.interrupt();
+            unverifiedInfo.interrupt();
         }
 
         return null;
@@ -944,7 +999,8 @@ public class ComputerManagerService extends Service {
                                         getCacheDir(), "applist", computer.uuid)
                                 ) {
                                     CacheHelper.writeStringToOutputStream(cacheOut, appList);
-                                } catch (IOException e) {
+                                } catch (IOException | IllegalArgumentException e) {
+                                    // IllegalArgumentException: CacheHelper refused the path component
                                     e.printStackTrace();
                                 }
 

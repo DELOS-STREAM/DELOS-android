@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 10 and 11 (fullBackupContent). Keep in step with backup_rules_s.xml; BackupRulesTest checks both. -->
 <full-backup-content>
     <!-- Don't sync preferences because it often contains device-specific data -->
     <exclude domain="sharedpref" path="."/>
+    <!-- The pairing identity of this device: its private key, certificate and client id. A restored
+         or transferred installation pairs again instead of carrying the key off the device. -->
+    <exclude domain="file" path="client.key"/>
+    <exclude domain="file" path="client.crt"/>
+    <exclude domain="file" path="uniqueid"/>
+    <!-- The PC database (addresses, MAC addresses, pinned certificates); it is the only database -->
+    <exclude domain="database" path="."/>
+    <!-- The raw diagnostic log and crash files (addresses and PC names, not yet scrubbed) and renderer captures -->
+    <exclude domain="file" path="diagnostics"/>
+    <exclude domain="file" path="sgsr-diagnostics"/>
 </full-backup-content>

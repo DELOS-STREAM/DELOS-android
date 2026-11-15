@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The stream activity and what starts it: warnings at the start of a stream, the encryption readout, shortcut files, service names -->
+
+    <!-- Warnings (toasts) when a stream starts with less than the settings asked for -->
+    <string name="stream_warn_display_no_hdr10">Dieses Display unterstützt kein HDR10</string>
+    <string name="stream_warn_decoder_no_hdr10">Der Decoder unterstützt kein HDR10</string>
+    <string name="stream_warn_no_hevc_decoder">Kein HEVC-Decoder gefunden</string>
+    <string name="stream_warn_no_av1_decoder">Kein AV1-Decoder gefunden</string>
+    <string name="stream_warn_pyrowave_unavailable">Dieses Gerät kann PyroWave nicht decodieren</string>
+    <string name="stream_warn_pyrowave_444_hdr">PyroWave 4:4:4 wird mit HDR nicht angeboten · 4:2:0 wird verwendet</string>
+    <!-- %1$s: game name. The PC was asked to quit the game and did not -->
+    <string name="stream_quit_failed">Der PC hat %1$s nicht beendet</string>
+    <!-- The controller moves the mouse pointer of the PC (toggled with a button combination) -->
+    <string name="stream_mouse_emulation_on">Mausemulation an</string>
+    <string name="stream_mouse_emulation_off">Mausemulation aus</string>
+    <string name="keyboard_custom_keys_error">Die eigenen Tasten konnten nicht geladen werden</string>
+    <!-- An opened .art shortcut file that is damaged, too large or not readable -->
+    <string name="scut_art_unreadable">Diese Verknüpfungsdatei kann nicht gelesen werden</string>
+
+    <!-- What the last stream negotiated with the PC: Debug info and the full statistics panel. The three values are the common On / Off words -->
+    <string name="stream_encryption_label">Stream-Verschlüsselung</string>
+    <string name="stream_stats_encryption">Verschlüsselung</string>
+    <!-- %1$s, %2$s, %3$s: On, Off or unknown -->
+    <string name="stream_encryption_value">Video: %1$s · Audio: %2$s · Steuerung: %3$s</string>
+    <string name="stream_encryption_unknown">unbekannt</string>
+    <string name="stream_encryption_none">Noch kein Stream</string>
+    <string name="stream_encryption_description">Was der letzte Stream mit dem PC ausgehandelt hat. Ob Video und Audio verschlüsselt werden, hängt von den Einstellungen des PCs und von diesem Gerät ab.</string>
+
+    <!-- Names of the background services, as Android's settings list them -->
+    <string name="service_label_discovery">PC-Suche</string>
+    <string name="service_label_computers">PC-Verbindungen</string>
+    <string name="service_label_usb">USB-Controller-Treiber</string>
+</resources>

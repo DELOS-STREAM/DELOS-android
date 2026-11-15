@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Messages (toasts) of a stream that is being started: what the PC answered and why the start stops or changes -->
+    <string name="conn_server_version_malformed">PCから無効なバージョンが送信されました</string>
+    <string name="conn_not_paired">このデバイスはPCとペアリングされていません</string>
+    <string name="conn_hdr_unsupported_host">PCのGPUはHDRをストリーミングできません · ストリームはSDRになります</string>
+    <string name="conn_above_4k_host">PCは4Kを超える解像度でストリーミングできません</string>
+    <string name="conn_above_4k_device">4Kを超える解像度には、このデバイスでHEVCまたはAV1が必要です</string>
+    <!-- Only the old NVIDIA GeForce Experience host software answers this -->
+    <string name="conn_4k_needs_update">4KでストリーミングするにはPCのGeForce Experienceを更新してください · ストリームは1080pになります</string>
+    <!-- %1$s: app name -->
+    <string name="conn_app_not_found">%1$sはPCのアプリ一覧にありません</string>
+    <string name="conn_resume_failed">実行中のセッションを再開できませんでした</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_resume_foreign">このセッションは別のデバイスで開始されたため、再開できません。そのデバイスまたはPCでストリームを終了してから、もう一度お試しください。（エラー %1$d）</string>
+    <string name="conn_app_minimized">アプリが最小化されています。PCで元に戻すか、セッションを終了してストリームを開始し直してください。</string>
+    <string name="conn_quit_failed">前のセッションを終了できませんでした · PCで終了してください</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_quit_foreign">このセッションは別のデバイスで開始されたため、終了できません。そのデバイスまたはPCでストリームを終了してください。（エラー %1$d）</string>
+    <string name="conn_launch_failed">PCでアプリを開始できませんでした</string>
+</resources>

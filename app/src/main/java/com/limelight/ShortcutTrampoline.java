@@ -30,18 +30,18 @@ import com.limelight.shell.ShortcutSplash;
 import com.limelight.shell.StreamOutcome;
 import com.limelight.shell.StreamResultKind;
 import com.limelight.shell.StreamResultKt;
+import com.limelight.utils.ArtFile;
+import com.limelight.utils.HostIds;
+import com.limelight.utils.LaunchAuth;
 import com.limelight.utils.ShortcutHelper;
 import com.limelight.utils.UiHelper;
 
 import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -218,12 +218,13 @@ public class ShortcutTrampoline extends AppCompatActivity {
         reject(getString(message));
     }
 
-    /** The PC's games in the Delos UI (it connects to the PC from the UUID). */
+    /** The PC's games in the Delos UI (it connects to the PC from the UUID). Only reached by a launch Delos trusts. */
     private void openPcInDelos() {
         // Close this activity
         finish();
 
-        Intent i = new Intent(getIntent());
+        // Signed again: the PC (and app) extras may have been filled in since the intent arrived
+        Intent i = LaunchAuth.sign(this, new Intent(getIntent()));
         i.setClass(ShortcutTrampoline.this, com.limelight.shell.ShellActivity.class);
         i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         intentStack.add(i);
@@ -254,7 +255,7 @@ public class ShortcutTrampoline extends AppCompatActivity {
 
         if (hostUUID != null && !hostUUID.isEmpty()) {
             try {
-                UUID.fromString(hostUUID);
+                HostIds.requireUuid(hostUUID);
             } catch (IllegalArgumentException ex) {
                 reject(R.string.scut_invalid_uuid);
                 return false;
@@ -318,43 +319,40 @@ public class ShortcutTrampoline extends AppCompatActivity {
         return true;
     }
 
+    /** The values of the opened {@code .art} file, or null (after a toast) when it cannot be read whole. */
     private Map<String, String> parseArtFileData(Uri fileUri) {
-        if (fileUri == null) {
+        try (InputStream inputStream = getContentResolver().openInputStream(fileUri)) {
+            return ArtFile.parse(inputStream);
+        } catch (IOException | RuntimeException e) {
+            // RuntimeException: the file comes from another app's provider, which can fail in any way
+            // (no permission, a bad URI, its own bug); none of that may crash this exported activity
+            Log.e(TAG, "Error reading .art file", e);
+            reject(R.string.scut_art_unreadable);
             return null;
         }
+    }
 
-        Map<String, String> artData = new HashMap<>();
+    /**
+     * A launch Delos did not sign (another app's intent, an opened {@code .art} file) starts nothing here: it
+     * goes to the Delos UI as an {@code art://launch} link, which asks first and then comes back signed.
+     */
+    private void askInDelos(String hostUUID, String hostName, String appUUID, String appIDStr, String appName) {
+        Uri.Builder link = new Uri.Builder().scheme("art").authority("launch");
+        appendIfPresent(link, ShortcutHelper.KEY_HOST_UUID, hostUUID);
+        appendIfPresent(link, ShortcutHelper.KEY_HOST_NAME, hostName);
+        appendIfPresent(link, ShortcutHelper.KEY_APP_UUID, appUUID);
+        appendIfPresent(link, ShortcutHelper.KEY_APP_ID, appIDStr);
+        appendIfPresent(link, ShortcutHelper.KEY_APP_NAME, appName);
 
-        try (InputStream inputStream = getContentResolver().openInputStream(fileUri);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (line.startsWith("#") || line.isEmpty()) {
-                    continue; // Skip comments and empty lines
-                }
+        finish();
+        startActivity(new Intent(Intent.ACTION_VIEW, link.build(), this, com.limelight.shell.ShellActivity.class)
+                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK));
+    }
 
-                if (!line.startsWith("[")) {
-                    throw new IOException("Invalid .art file format");
-                }
-
-                int separatorIndex = line.indexOf(' ');
-                if (separatorIndex > 0 && separatorIndex < line.length() - 1) {
-                    String key = line.substring(0, separatorIndex).trim();
-                    String value = line.substring(separatorIndex + 1).trim();
-                    if (key.endsWith("]")) {
-                        key = key.substring(1, key.length() - 1);
-                        artData.put(key, value);
-                    } else {
-                        throw new IOException("Invalid .art file format");
-                    }
-                }
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "Error reading .art file", e);
-            reject("Error reading .art file: " + e.getMessage());
+    private static void appendIfPresent(Uri.Builder link, String key, String value) {
+        if (value != null && !value.isEmpty()) {
+            link.appendQueryParameter(key, value);
         }
-        return artData;
     }
 
     // Android 10-12: puts the saved app language on this activity's resources (a no-op on Android 13+, where the system does it)
@@ -369,6 +367,14 @@ public class ShortcutTrampoline extends AppCompatActivity {
 
         UiHelper.notifyNewRootView(this);
         ComputerDatabaseManager dbManager = new ComputerDatabaseManager(this);
+        try {
+            startFromIntent(dbManager);
+        } finally {
+            dbManager.close();
+        }
+    }
+
+    private void startFromIntent(ComputerDatabaseManager dbManager) {
         ComputerDetails _computer = null;
 
         Intent intent = getIntent();
@@ -381,16 +387,22 @@ public class ShortcutTrampoline extends AppCompatActivity {
         String appUUID = null;
         String appIDStr = null;
 
-        if (Intent.ACTION_VIEW.equals(action) && dataUri != null) {
-            Map<String, String> artData = parseArtFileData(dataUri);
+        // A file is outside input whatever extras come with it
+        boolean fromFile = Intent.ACTION_VIEW.equals(action) && dataUri != null;
+        boolean trusted = !fromFile && LaunchAuth.isTrusted(this, intent);
 
-            if (artData != null) {
-                hostUUID = artData.get(ShortcutHelper.KEY_HOST_UUID);
-                hostName = artData.get(ShortcutHelper.KEY_HOST_NAME);
-                appName = artData.get(ShortcutHelper.KEY_APP_NAME);
-                appUUID = artData.get(ShortcutHelper.KEY_APP_UUID);
-                appIDStr = artData.get(ShortcutHelper.KEY_APP_ID);
+        if (fromFile) {
+            Map<String, String> artData = parseArtFileData(dataUri);
+            if (artData == null) {
+                // Unreadable or partial: nothing of it is used
+                return;
             }
+
+            hostUUID = artData.get(ShortcutHelper.KEY_HOST_UUID);
+            hostName = artData.get(ShortcutHelper.KEY_HOST_NAME);
+            appName = artData.get(ShortcutHelper.KEY_APP_NAME);
+            appUUID = artData.get(ShortcutHelper.KEY_APP_UUID);
+            appIDStr = artData.get(ShortcutHelper.KEY_APP_ID);
         }
 
         {
@@ -416,7 +428,11 @@ public class ShortcutTrampoline extends AppCompatActivity {
 
         if (!validateHostInput(hostUUID, hostName)) {
             // Invalid input, so just return
-//            finish();
+            return;
+        }
+
+        if (!trusted) {
+            askInDelos(hostUUID, hostName, appUUID, appIDStr, appName);
             return;
         }
 
@@ -459,7 +475,8 @@ public class ShortcutTrampoline extends AppCompatActivity {
                     String rawAppList = CacheHelper.readInputStreamToString(CacheHelper.openCacheFileForInput(getCacheDir(), "applist", uuidString));
 
                     if (rawAppList.isEmpty()) {
-                        reject(getString(R.string.scut_invalid_app_id) + " (applist cache empty or unreadable)");
+                        Log.w(TAG, "App list cache empty or unreadable");
+                        reject(R.string.scut_invalid_app_id);
 //                    finish();
                         return;
                     }
@@ -473,7 +490,8 @@ public class ShortcutTrampoline extends AppCompatActivity {
                         }
                     }
                     if (appID < 0 && appUuidFromFile == null) { // Need at least one
-                        reject(getString(R.string.scut_invalid_app_id) + " (app not found in cache)");
+                        Log.w(TAG, "App not found in the app list cache");
+                        reject(R.string.scut_invalid_app_id);
 //                    finish();
                         return;
                     }
@@ -490,13 +508,16 @@ public class ShortcutTrampoline extends AppCompatActivity {
                             appUuidFromFile,
                             appID,
                             getIntent().getBooleanExtra(DelosStreamActivity.EXTRA_APP_HDR, false));
-                } catch (IOException | XmlPullParserException e) {
+                } catch (IOException | XmlPullParserException | IllegalArgumentException e) {
                     Log.e(TAG, "Error processing app list from cache", e);
-                    reject(getString(R.string.scut_invalid_app_id) + " (error parsing applist cache)");
+                    reject(R.string.scut_invalid_app_id);
 //                finish();
                     return;
                 }
             }
+        } else if (isFinishing()) {
+            // The app named by the launch is not valid (already reported): do not open the PC instead
+            return;
         }
 
         // Bind to the computer manager service

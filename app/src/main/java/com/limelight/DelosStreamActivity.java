@@ -41,6 +41,7 @@ import com.limelight.nvstream.http.NvHTTP;
 import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.diag.DiagLog;
+import com.limelight.diag.StreamEncryption;
 import com.limelight.preferences.GlPreferences;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.ExternalControllerView;
@@ -142,7 +143,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     public NvConnection conn;
     private StreamLoader spinner;
     private boolean endedWithResult = false;
-    private boolean connecting = false;
+    // True from the start of the connection until it is established or stopped. Written on the UI thread,
+    // read by the connection callbacks.
+    private volatile boolean connecting = false;
     public boolean connected = false;
     // The frame rate passed to Surface.setFrameRate() once the surface exists (StreamDisplayPlanner.Plan#surfaceFrameRate)
     private float surfaceFrameRate;
@@ -446,7 +449,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         performanceOverlayBig = findViewById(R.id.performanceOverlayBig);
         statsPanel = com.limelight.shell.StreamStatsPanel.attach(this, (android.view.ViewGroup) performanceOverlayView, prefConfig.enablePerfOverlayLite);
 
-        inputCaptureProvider = InputCaptureManager.getInputCaptureProvider(this, this);
+        inputCaptureProvider = InputCaptureManager.getInputCaptureProvider(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             streamContainer.setOnCapturedPointerListener(new View.OnCapturedPointerListener() {
@@ -511,11 +514,8 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
                     if (!willStreamHdr) {
                         // Nope, no HDR for us :(
-                        DelosToast.show(this, "Display does not support HDR10", DelosToast.LONG, ToastKind.WARNING);
+                        DelosToast.show(this, getString(R.string.stream_warn_display_no_hdr10), DelosToast.LONG, ToastKind.WARNING);
                     }
-                }
-                else {
-                    DelosToast.show(this, "HDR requires Android 7.0 or later", DelosToast.LONG, ToastKind.WARNING);
                 }
             }
         }
@@ -527,7 +527,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             if (PyroWaveRenderer.isAvailable()) {
                 offerPyroWave = true;
             } else {
-                DelosToast.show(this, "This device cannot decode PyroWave", DelosToast.LONG, ToastKind.WARNING);
+                DelosToast.show(this, getString(R.string.stream_warn_pyrowave_unavailable), DelosToast.LONG, ToastKind.WARNING);
             }
         }
 
@@ -587,16 +587,16 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         // Don't stream HDR if the decoder can't support it
         if (willStreamHdr && !offerPyroWave && !decoderRenderer.isHevcMain10Hdr10Supported() && !decoderRenderer.isAv1Main10Supported()) {
             willStreamHdr = false;
-            DelosToast.show(this, "Decoder does not support HDR10 profile", DelosToast.LONG, ToastKind.WARNING);
+            DelosToast.show(this, getString(R.string.stream_warn_decoder_no_hdr10), DelosToast.LONG, ToastKind.WARNING);
         }
         // Display a message to the user if HEVC was forced on but we still didn't find a decoder
         if (prefConfig.videoFormat == PreferenceConfiguration.FormatOption.FORCE_HEVC && !decoderRenderer.isHevcSupported()) {
-            DelosToast.show(this, "No HEVC decoder found", DelosToast.LONG, ToastKind.WARNING);
+            DelosToast.show(this, getString(R.string.stream_warn_no_hevc_decoder), DelosToast.LONG, ToastKind.WARNING);
         }
 
         // Display a message to the user if AV1 was forced on but we still didn't find a decoder
         if (prefConfig.videoFormat == PreferenceConfiguration.FormatOption.FORCE_AV1 && !decoderRenderer.isAv1Supported()) {
-            DelosToast.show(this, "No AV1 decoder found", DelosToast.LONG, ToastKind.WARNING);
+            DelosToast.show(this, getString(R.string.stream_warn_no_av1_decoder), DelosToast.LONG, ToastKind.WARNING);
         }
 
         // H.264 is always supported
@@ -616,7 +616,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         if (offerPyroWave) {
             supportedVideoFormats |= PyroWaveFormats.offered(willStreamHdr, prefConfig.pyroWaveChroma444);
             if (willStreamHdr && prefConfig.pyroWaveChroma444) {
-                DelosToast.show(this, "PyroWave 4:4:4 is not offered with HDR; using 4:2:0", DelosToast.LONG, ToastKind.WARNING);
+                DelosToast.show(this, getString(R.string.stream_warn_pyrowave_444_hdr), DelosToast.LONG, ToastKind.WARNING);
             }
         }
 
@@ -973,11 +973,13 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
         @Override
         public boolean isConnected() {
-            return connected;
+            // A connection that is still being set up has to be stopped as well when the surface goes away
+            return connecting || connected;
         }
 
         @Override
         public void startConnection() {
+            connecting = true;
             conn.start(new AndroidAudioRenderer(DelosStreamActivity.this, prefConfig.playHostAudio),
                     decoderRenderer, DelosStreamActivity.this);
         }
@@ -1308,7 +1310,10 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         }
         super.onDestroy();
 
-        instance = null;
+        // A stream started before this one was destroyed is the instance now: leave it alone
+        if (instance == this) {
+            instance = null;
+        }
         ActiveKeyboardInput.unregister(this);
         timerHandler.removeCallbacksAndMessages(null);
 
@@ -1596,7 +1601,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
                         final ToastKind messageKind = quit ? ToastKind.SUCCESS : ToastKind.ERROR;
                         final String message = quit
                                 ? app.getResources().getString(R.string.applist_quit_success) + " " + quitName
-                                : (failure != null && !failure.isEmpty() ? failure : "The PC did not quit " + quitName);
+                                : (failure != null && !failure.isEmpty() ? failure : app.getResources().getString(R.string.stream_quit_failed, quitName));
                         com.limelight.shell.StreamExit.INSTANCE.setQuitting(false);
                         new Handler(Looper.getMainLooper()).post(() -> DelosToast.show(app, message, DelosToast.LONG, messageKind));
                     } else {
@@ -1713,7 +1718,14 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     @Override
     public void connectionStarted() {
+        if (!connecting) {
+            // The stream was left while it was being set up; NvConnection.stop() ends this connection
+            LimeLog.info("Connection started after the stream was left");
+            return;
+        }
         DiagLog.i("Stream", "Stream started");
+        StreamEncryption encryption = StreamEncryption.read(conn.getServerAppVersion());
+        DiagLog.i("Stream", encryption.logLine());
         playtime.setConnected(true);
         timerHandler.removeCallbacks(playtimeFlush);
         timerHandler.postDelayed(playtimeFlush, PLAYTIME_FLUSH_MS);
@@ -1721,6 +1733,10 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if (!connecting) {
+                    // Stopped between the callback and this turn of the UI thread
+                    return;
+                }
                 if (spinner != null) {
                     spinner.dismiss();
                     spinner = null;

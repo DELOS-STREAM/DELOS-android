@@ -28,10 +28,6 @@
 
     <string name="error_unknown_host">No se pudo resolver el host</string>
     <string name="error_404">GFE devolvió un error HTTP 404. Asegúrate de que tu PC tiene una GPU compatible. El software de escritorio remoto también puede causar este error. Prueba a reiniciar el equipo o a reinstalar GFE.</string>
-    <string name="title_decoding_error">El decodificador de vídeo se ha bloqueado</string>
-    <string name="message_decoding_error">Delos se ha cerrado por una incompatibilidad con el decodificador de vídeo de este dispositivo. Si los cierres continúan, prueba a cambiar los ajustes de streaming.</string>
-    <string name="title_decoding_reset">Ajustes de vídeo restablecidos</string>
-    <string name="message_decoding_reset">El decodificador de vídeo de tu dispositivo sigue bloqueándose con los ajustes de streaming elegidos. Tus ajustes de streaming se han restablecido a los valores predeterminados.</string>
     <string name="error_usb_prohibited">El administrador de tu dispositivo prohíbe el acceso USB. Revisa los ajustes de Knox o MDM.</string>
 
     <string name="conn_metered">Aviso: ¡tu conexión de red activa es de datos limitados!</string>
@@ -383,8 +379,6 @@
     <string name="mouse_mode_disabled">Desactivado</string>
     <string name="mouse_mode_absolute_touch_swapped">Toque absoluto (clic izquierdo/derecho intercambiados)</string>
     <string name="keyboard_layout_set_1">Perfil 1</string>
-    <string name="vdisplay_not_ready">El controlador de pantalla virtual no está listo en el servidor. Asegúrate de que el controlador SudoVDA está instalado y activado.</string>
-    <string name="vdisplay_not_supported"><![CDATA[La pantalla virtual no es compatible con este servidor. Usa <a href=\"https://github.com/Nonary/Vibepollo\">Vibepollo</a> o <a href=\"https://github.com/ClassicOldSong/Apollo\">Apollo</a> como software de streaming del host.]]></string>
     <string name="clipboard_sync_unsupported">Este servidor no admite la sincronización del portapapeles. Instala o actualiza tu servidor a la última versión de Apollo.</string>
     <string name="send_clipboard_failed">No se pudo enviar el portapapeles: </string>
     <string name="external_display_info">Pantalla externa conectada con: %1$dx%2$d a %3$.1f Hz</string>
@@ -393,7 +387,6 @@
     <string name="get_clipboard_failed">No se pudo obtener el portapapeles: </string>
     <string name="send_clipboard_success">Portapapeles enviado correctamente</string>
     <string name="get_clipboard_success">Portapapeles obtenido correctamente</string>
-    <string name="proceed">Continuar</string>
     <string name="cancel">Cancelar</string>
     <string name="unlocking_or_starting">El servidor se está iniciando o el equipo se está desbloqueando, espera…</string>
 

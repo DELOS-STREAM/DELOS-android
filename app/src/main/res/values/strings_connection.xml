@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Messages (toasts) of a stream that is being started: what the PC answered and why the start stops or changes -->
+    <string name="conn_server_version_malformed">The PC sent an invalid version</string>
+    <string name="conn_not_paired">This device is not paired with the PC</string>
+    <string name="conn_hdr_unsupported_host">The PC\'s GPU cannot stream HDR · the stream will be SDR</string>
+    <string name="conn_above_4k_host">The PC cannot stream at resolutions above 4K</string>
+    <string name="conn_above_4k_device">This device needs HEVC or AV1 to stream at resolutions above 4K</string>
+    <!-- Only the old NVIDIA GeForce Experience host software answers this -->
+    <string name="conn_4k_needs_update">Update GeForce Experience on the PC to stream in 4K · the stream will be 1080p</string>
+    <!-- %1$s: app name -->
+    <string name="conn_app_not_found">%1$s is not in the PC\'s app list</string>
+    <string name="conn_resume_failed">The running session could not be resumed</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_resume_foreign">This session was started by another device, so it cannot be resumed. End the stream on that device or on the PC and try again. (Error %1$d)</string>
+    <string name="conn_app_minimized">The app is minimized. Resume it on the PC or quit the session and start the stream again.</string>
+    <string name="conn_quit_failed">The previous session could not be quit · quit it on the PC</string>
+    <!-- %1$d: the PC's error code -->
+    <string name="conn_quit_foreign">This session was started by another device, so it cannot be quit. End the stream on that device or on the PC. (Error %1$d)</string>
+    <string name="conn_launch_failed">The PC could not start the app</string>
+</resources>

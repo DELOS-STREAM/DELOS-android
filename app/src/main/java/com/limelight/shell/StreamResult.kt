@@ -42,10 +42,11 @@ data class StreamResult(
     /** Tells one result from the next (the shell shows each once). */
     val id: Long = System.nanoTime(),
 ) {
-    /** The extras that carry this result to the shell's activity. */
+    /** The extras that carry this result to the shell's activity, marked as written by this process. */
     fun putInto(intent: Intent): Intent = intent
         .putExtra(KIND, kind.name).putExtra(TITLE, title).putExtra(SENTENCE, sentence).putExtra(DETAILS, details)
         .putExtra(PC_UUID, pcUuid).putExtra(PC_NAME, pcName).putExtra(APP_ID, appId).putExtra(APP_NAME, appName)
+        .putExtra(ORIGIN, origin)
 
     companion object {
         private const val KIND = "DelosResultKind"
@@ -56,6 +57,14 @@ data class StreamResult(
         private const val PC_NAME = "DelosResultPcName"
         private const val APP_ID = "DelosResultAppId"
         private const val APP_NAME = "DelosResultAppName"
+        private const val ORIGIN = "DelosResultOrigin"
+
+        /**
+         * The shell's activity is exported, so another app could send these extras to put its own text into
+         * the result overlay. The stream and the shell run in one process: only a result that carries this
+         * process's random mark is shown.
+         */
+        private val origin: String = java.util.UUID.randomUUID().toString()
 
         /**
          * The result [intent] carries, taken out of it: shown once, so a recreated or resumed activity
@@ -63,6 +72,7 @@ data class StreamResult(
          */
         fun take(intent: Intent?): StreamResult? {
             intent ?: return null
+            if (intent.getStringExtra(ORIGIN) != origin) return null
             val kind = intent.getStringExtra(KIND)?.let { name -> StreamResultKind.entries.firstOrNull { it.name == name } } ?: return null
             val result = StreamResult(
                 kind,
@@ -82,6 +92,7 @@ data class StreamResult(
             intent.removeExtra(PC_NAME)
             intent.removeExtra(APP_ID)
             intent.removeExtra(APP_NAME)
+            intent.removeExtra(ORIGIN)
             return result
         }
     }

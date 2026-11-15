@@ -30,10 +30,6 @@
     <string name="error_404">GFE a renvoyé une erreur HTTP 404. Vérifie que ton PC dispose d’un GPU compatible.
 	    L’utilisation d’un logiciel de bureau à distance peut aussi provoquer cette erreur. Essaie de redémarrer ta machine ou de réinstaller GFE.
     </string>
-    <string name="title_decoding_error">Plantage du décodeur vidéo</string>
-    <string name="message_decoding_error">Delos a planté à cause d’une incompatibilité avec le décodeur vidéo de cet appareil. Si les plantages continuent, essaie d’ajuster les réglages de streaming.</string>
-    <string name="title_decoding_reset">Réglages vidéo réinitialisés</string>
-    <string name="message_decoding_reset">Le décodeur vidéo de ton appareil continue de planter avec les réglages de streaming choisis. Tes réglages de streaming ont été remis par défaut.</string>
     <string name="error_usb_prohibited">L’accès USB est interdit par l’administrateur de ton appareil. Vérifie tes réglages Knox ou MDM.</string>
 
     <string name="conn_metered">Attention : ta connexion réseau active est limitée !</string>
@@ -387,8 +383,6 @@
     <string name="mouse_mode_disabled">Désactivé</string>
     <string name="mouse_mode_absolute_touch_swapped">Toucher absolu (clic gauche/droit inversés)</string>
     <string name="keyboard_layout_set_1">Profil 1</string>
-    <string name="vdisplay_not_ready">Le pilote d’écran virtuel n’est pas prêt sur le serveur. Vérifie que le pilote SudoVDA est installé et activé.</string>
-    <string name="vdisplay_not_supported"><![CDATA[L’écran virtuel n’est pas pris en charge par ce serveur. Utilise <a href=\"https://github.com/Nonary/Vibepollo\">Vibepollo</a> ou <a href=\"https://github.com/ClassicOldSong/Apollo\">Apollo</a> comme logiciel de streaming hôte.]]></string>
     <string name="clipboard_sync_unsupported">Ce serveur ne gère pas la synchro du presse-papiers. Installe ou mets à jour ton serveur avec la dernière version d’Apollo.</string>
     <string name="send_clipboard_failed">Échec de l’envoi du presse-papiers : </string>
     <string name="external_display_info">Écran externe connecté : %1$dx%2$d à %3$.1f Hz</string>
@@ -397,7 +391,6 @@
     <string name="get_clipboard_failed">Échec de la récupération du presse-papiers : </string>
     <string name="send_clipboard_success">Presse-papiers envoyé</string>
     <string name="get_clipboard_success">Presse-papiers récupéré</string>
-    <string name="proceed">Continuer</string>
     <string name="cancel">Annuler</string>
     <string name="unlocking_or_starting">Le serveur démarre ou l’ordinateur se déverrouille, patiente…</string>
 

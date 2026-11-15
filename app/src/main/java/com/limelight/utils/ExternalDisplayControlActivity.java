@@ -171,6 +171,7 @@ public class ExternalDisplayControlActivity extends AppCompatActivity implements
             if (failCount > 10) {
                 DelosToast.show(this, getString(R.string.no_game_instance), DelosToast.LONG, ToastKind.ERROR);
                 finish();
+                return;
             }
             // Wait for the intent to get started
             handler.postDelayed(this::initViews, 500);
@@ -233,7 +234,11 @@ public class ExternalDisplayControlActivity extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        instance = null;
+        // No retry of initViews() or dimming may outlive the activity
+        handler.removeCallbacksAndMessages(null);
+        if (instance == this) {
+            instance = null;
+        }
         // Its full keyboard goes with it: the controller is the game's again
         if (DelosStreamActivity.instance != null) {
             DelosStreamActivity.instance.onFullKeyboardVisibilityChanged();

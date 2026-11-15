@@ -12,11 +12,13 @@ import com.limelight.LimeLog;
 import com.limelight.preferences.PreferenceConfiguration;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -73,7 +75,7 @@ public class ProfilesManager {
                 // We don't want to warn user about profile not exist
                 return true;
             }
-            try (Reader reader = new FileReader(file)) {
+            try (Reader reader = new InputStreamReader(new android.util.AtomicFile(file).openRead(), StandardCharsets.UTF_8)) {
                 Gson gson = new Gson();
                 Type type = new TypeToken<ProfilesData>(){}.getType();
                 ProfilesData data = gson.fromJson(reader, type);
@@ -108,14 +110,24 @@ public class ProfilesManager {
             if (!dir.exists() && !dir.mkdirs()) {
                 return false;
             }
-            File file = new File(dir, PROFILES_FILE);
-            try (Writer writer = new FileWriter(file)) {
+            // Written to a new file that replaces the old one only when it is complete: a process killed (or a
+            // value that cannot be written) in the middle leaves the stored profiles as they were
+            android.util.AtomicFile file = new android.util.AtomicFile(new File(dir, PROFILES_FILE));
+            FileOutputStream out = null;
+            try {
+                out = file.startWrite();
+                Writer writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
                 Gson gson = new Gson();
                 ProfilesData data = new ProfilesData();
                 data.profiles = new ArrayList<>(profiles.values());
                 data.activeProfileId = activeProfileId;
                 gson.toJson(data, writer);
-            } catch (IOException e) {
+                writer.flush();
+                file.finishWrite(out);
+            } catch (IOException | RuntimeException e) {
+                if (out != null) {
+                    file.failWrite(out);
+                }
                 LimeLog.warning("Profiles: Failed to save profiles to file:" + e);
                 e.printStackTrace();
                 return false;

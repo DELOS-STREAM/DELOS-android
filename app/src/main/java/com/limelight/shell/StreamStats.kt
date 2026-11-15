@@ -267,6 +267,7 @@ class StreamStatsPanel internal constructor(
                 add(stringResource(R.string.stream_stats_total_latency) to "${format(s.totalMs)} ms") // l10n-ignore
                 if (s.bandwidthKb >= 0f) add(stringResource(R.string.stream_stats_bandwidth) to bandwidth(s.bandwidthKb))
                 add(stringResource(R.string.stream_stats_lost_frames) to "${format(s.lossPercent, 2)} %")
+                com.limelight.diag.StreamEncryption.last?.let { add(stringResource(R.string.stream_stats_encryption) to it.text(res)) }
                 s.backlog?.let { b ->
                     add(stringResource(R.string.stream_stats_backlog) to "")
                     add(stringResource(R.string.stream_stats_stall) to "${format(b.stallAvgMs)} / ${format(b.stallMaxMs)} ms avg/max") // l10n-ignore

@@ -302,7 +302,7 @@ class StreamLoader private constructor(
 
         /** Existing stored logo only; no downloader or network operation during launch. */
         fun loadLogo(context: Context, pcUuid: String, appId: Int): ImageBitmap? = runCatching {
-            val file = File(context.filesDir, "artwork/$pcUuid/$appId/logo")
+            val file = File(artworkDir(context, pcUuid, appId), "logo")
             if (!file.isFile || file.length() == 0L) return@runCatching null
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(file.path, bounds)
@@ -312,9 +312,13 @@ class StreamLoader private constructor(
         }.getOrNull()
 
         fun loadCover(context: Context, pcUuid: String, appId: Int): ImageBitmap? = runCatching {
-            val sgdb = File(context.filesDir, "artwork/$pcUuid/$appId/cover")
+            val sgdb = File(artworkDir(context, pcUuid, appId), "cover")
             val file = if (sgdb.exists() && sgdb.length() > 0) sgdb else CacheHelper.openPath(false, context.cacheDir, "boxart", pcUuid, "$appId.png")
             if (file.exists()) BitmapFactory.decodeFile(file.path)?.asImageBitmap() else null
         }.getOrNull()
+
+        /** The ids arrive in an intent: an invalid one throws, and the callers then show no image. */
+        private fun artworkDir(context: Context, pcUuid: String, appId: Int) =
+            com.limelight.utils.HostIds.appDir(File(context.filesDir, "artwork"), pcUuid, appId)
     }
 }

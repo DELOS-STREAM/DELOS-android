@@ -49,6 +49,7 @@
     <string name="artwork_error_no_key">Ajoute d’abord ta clé API SteamGridDB</string>
     <string name="artwork_error_key_rejected">SteamGridDB n’a pas accepté la clé API</string>
     <string name="artwork_error_api_http">SteamGridDB a répondu %1$d</string>
+    <string name="artwork_error_bad_reply">SteamGridDB a envoyé une réponse illisible</string>
     <string name="artwork_error_too_large">image trop grande</string>
     <string name="artwork_error_save_failed">impossible d’enregistrer l’image</string>
     <string name="artwork_tab_cover">Jaquette</string>

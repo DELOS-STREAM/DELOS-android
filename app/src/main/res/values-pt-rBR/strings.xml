@@ -28,10 +28,6 @@
 
     <string name="error_unknown_host">Falha ao resolver o host</string>
     <string name="error_404">O GFE retornou um erro HTTP 404. Verifique se o seu PC tem uma GPU compatível. Usar software de área de trabalho remota também pode causar esse erro. Tente reiniciar o computador ou reinstalar o GFE.</string>
-    <string name="title_decoding_error">O decodificador de vídeo travou</string>
-    <string name="message_decoding_error">O app Delos travou por uma incompatibilidade com o decodificador de vídeo deste dispositivo. Se os travamentos continuarem, tente ajustar as configurações de transmissão.</string>
-    <string name="title_decoding_reset">Configurações de vídeo redefinidas</string>
-    <string name="message_decoding_reset">O decodificador de vídeo do seu dispositivo continua travando com as configurações de transmissão escolhidas. As configurações de transmissão foram redefinidas para o padrão.</string>
     <string name="error_usb_prohibited">O acesso USB é proibido pelo administrador do dispositivo. Verifique as configurações do Knox ou do MDM.</string>
 
     <string name="conn_metered">Aviso: sua conexão de rede ativa tem franquia de dados!</string>
@@ -383,8 +379,6 @@
     <string name="mouse_mode_disabled">Desativado</string>
     <string name="mouse_mode_absolute_touch_swapped">Toque absoluto (cliques esquerdo/direito trocados)</string>
     <string name="keyboard_layout_set_1">Perfil 1</string>
-    <string name="vdisplay_not_ready">O driver de tela virtual não está pronto no servidor. Verifique se o driver SudoVDA está instalado e ativado.</string>
-    <string name="vdisplay_not_supported"><![CDATA[A tela virtual não é compatível com este servidor. Use o <a href=\"https://github.com/Nonary/Vibepollo\">Vibepollo</a> ou o <a href=\"https://github.com/ClassicOldSong/Apollo\">Apollo</a> como software de transmissão no PC.]]></string>
     <string name="clipboard_sync_unsupported">Este servidor não é compatível com a sincronização da área de transferência. Instale ou atualize seu servidor para a versão mais recente do Apollo.</string>
     <string name="send_clipboard_failed">Falha ao enviar a área de transferência: </string>
     <string name="external_display_info">Tela externa conectada com: %1$dx%2$d a %3$.1fHz</string>
@@ -393,7 +387,6 @@
     <string name="get_clipboard_failed">Falha ao obter a área de transferência: </string>
     <string name="send_clipboard_success">Área de transferência enviada com sucesso</string>
     <string name="get_clipboard_success">Área de transferência obtida com sucesso</string>
-    <string name="proceed">Continuar</string>
     <string name="cancel">Cancelar</string>
     <string name="unlocking_or_starting">O servidor está iniciando ou o computador está sendo desbloqueado, aguarde…</string>
 

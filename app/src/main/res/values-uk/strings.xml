@@ -28,10 +28,6 @@
 
     <string name="error_unknown_host">Не вдалося визначити адресу хоста</string>
     <string name="error_404">GFE повернув помилку HTTP 404. Переконайся, що на ПК встановлено підтримуваний GPU. Ця помилка також може виникати через програми віддаленого робочого столу. Спробуй перезавантажити ПК або перевстановити GFE.</string>
-    <string name="title_decoding_error">Збій відеодекодера</string>
-    <string name="message_decoding_error">Delos аварійно завершився через несумісність із відеодекодером цього пристрою. Якщо збої повторюються, змінюй налаштування стріму.</string>
-    <string name="title_decoding_reset">Налаштування відео скинуто</string>
-    <string name="message_decoding_reset">Відеодекодер твого пристрою й далі збоїть за вибраних налаштувань стріму. Налаштування стріму скинуто до типових.</string>
     <string name="error_usb_prohibited">Адміністратор пристрою заборонив доступ до USB. Перевір налаштування Knox або MDM.</string>
 
     <string name="conn_metered">Увага: активне мережеве з’єднання з обмеженим трафіком!</string>
@@ -383,8 +379,6 @@
     <string name="mouse_mode_disabled">Вимкнено</string>
     <string name="mouse_mode_absolute_touch_swapped">Абсолютний дотик (лівий/правий клік поміняно)</string>
     <string name="keyboard_layout_set_1">Профіль 1</string>
-    <string name="vdisplay_not_ready">Драйвер віртуального екрана на сервері не готовий. Переконайся, що драйвер SudoVDA встановлено й увімкнено.</string>
-    <string name="vdisplay_not_supported"><![CDATA[Віртуальний екран не підтримується на цьому сервері. Використовуй <a href=\"https://github.com/Nonary/Vibepollo\">Vibepollo</a> або <a href=\"https://github.com/ClassicOldSong/Apollo\">Apollo</a> як програму стріму на хості.]]></string>
     <string name="clipboard_sync_unsupported">Цей сервер не підтримує синхронізацію буфера обміну. Встанови або онови сервер до останньої версії Apollo.</string>
     <string name="send_clipboard_failed">Не вдалося надіслати буфер обміну: </string>
     <string name="external_display_info">Підключено зовнішній екран: %1$dx%2$d, %3$.1fHz</string>
@@ -393,7 +387,6 @@
     <string name="get_clipboard_failed">Не вдалося отримати буфер обміну: </string>
     <string name="send_clipboard_success">Буфер обміну успішно надіслано</string>
     <string name="get_clipboard_success">Буфер обміну успішно отримано</string>
-    <string name="proceed">Продовжити</string>
     <string name="cancel">Скасувати</string>
     <string name="unlocking_or_starting">Сервер запускається або ПК розблоковується, зачекай…</string>
 

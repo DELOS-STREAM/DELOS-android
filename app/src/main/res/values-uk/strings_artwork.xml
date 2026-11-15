@@ -49,6 +49,7 @@
     <string name="artwork_error_no_key">Спершу додай свій ключ API SteamGridDB</string>
     <string name="artwork_error_key_rejected">SteamGridDB не прийняв ключ API</string>
     <string name="artwork_error_api_http">SteamGridDB відповів %1$d</string>
+    <string name="artwork_error_bad_reply">SteamGridDB надіслав нечитабельну відповідь</string>
     <string name="artwork_error_too_large">зображення завелике</string>
     <string name="artwork_error_save_failed">не вдалося зберегти зображення</string>
     <string name="artwork_tab_cover">Обкладинка</string>

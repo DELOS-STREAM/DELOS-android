@@ -20,7 +20,10 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.preference.PreferenceManager
 import com.google.gson.Gson
+import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
 import com.google.gson.JsonParser
 import com.limelight.LimeLog
 import androidx.compose.runtime.mutableStateMapOf
@@ -136,7 +139,7 @@ private data class Match(
 )
 
 /** Why a SteamGridDB call failed; [SteamGridDbException.text] is the sentence for the user. */
-enum class SgdbFailure { NO_KEY, KEY_REJECTED, API_HTTP, DOWNLOAD_HTTP, IMAGE_TOO_LARGE, SAVE_FAILED }
+enum class SgdbFailure { NO_KEY, KEY_REJECTED, API_HTTP, BAD_REPLY, DOWNLOAD_HTTP, IMAGE_TOO_LARGE, SAVE_FAILED }
 
 /** [code] is the HTTP status for [SgdbFailure.API_HTTP] and [SgdbFailure.DOWNLOAD_HTTP]. The exception's own message is English, for logs. */
 class SteamGridDbException(val failure: SgdbFailure, val code: Int = 0) : IOException(
@@ -144,6 +147,7 @@ class SteamGridDbException(val failure: SgdbFailure, val code: Int = 0) : IOExce
         SgdbFailure.NO_KEY -> "no SteamGridDB API key" // l10n-ignore
         SgdbFailure.KEY_REJECTED -> "SteamGridDB did not accept the API key" // l10n-ignore
         SgdbFailure.API_HTTP -> "SteamGridDB answered $code" // l10n-ignore
+        SgdbFailure.BAD_REPLY -> "SteamGridDB sent an unreadable reply" // l10n-ignore
         SgdbFailure.DOWNLOAD_HTTP -> "HTTP $code" // l10n-ignore
         SgdbFailure.IMAGE_TOO_LARGE -> "image too large" // l10n-ignore
         SgdbFailure.SAVE_FAILED -> "could not save the image" // l10n-ignore
@@ -153,6 +157,7 @@ class SteamGridDbException(val failure: SgdbFailure, val code: Int = 0) : IOExce
         SgdbFailure.NO_KEY -> res.getString(R.string.artwork_error_no_key)
         SgdbFailure.KEY_REJECTED -> res.getString(R.string.artwork_error_key_rejected)
         SgdbFailure.API_HTTP -> res.getString(R.string.artwork_error_api_http, code)
+        SgdbFailure.BAD_REPLY -> res.getString(R.string.artwork_error_bad_reply)
         SgdbFailure.DOWNLOAD_HTTP -> res.getString(R.string.artwork_error_download_http, code)
         SgdbFailure.IMAGE_TOO_LARGE -> res.getString(R.string.artwork_error_too_large)
         SgdbFailure.SAVE_FAILED -> res.getString(R.string.artwork_error_save_failed)
@@ -164,15 +169,29 @@ fun sgdbErrorText(res: Resources, error: Throwable, @StringRes fallback: Int): S
     (error as? SteamGridDbException)?.text(res) ?: res.getString(fallback)
 
 /** The SteamGridDB API (v2) with the user's own key. Blocking calls, run them off the main thread. */
-class SteamGridDbClient(private val key: String, private val http: OkHttpClient) {
+class SteamGridDbClient(private val key: String, private val http: OkHttpClient, private val base: String = BASE) {
     fun search(term: String): List<SgdbGame> {
-        val json = get("search/autocomplete/${term.trim()}")
-        return json.getAsJsonArray("data")?.mapNotNull { e ->
-            val o = e.asJsonObject
-            val year = o.get("release_date")?.takeIf { !it.isJsonNull }?.asLong
+        // The name comes from the PC: one path segment, whatever it contains ("Fate/Grand Order", "..")
+        val name = term.trim()
+        // A URL cannot carry these as a segment of their own ("." and ".." are resolved away): no such game
+        if (name.isEmpty() || name == "." || name == "..") return emptyList()
+        val json = get("search/autocomplete", segment = name)
+        return data(json)?.mapNotNull { e ->
+            val o = e as? JsonObject ?: return@mapNotNull null
+            val id = o.get("id").numberOrNull()?.toInt() ?: return@mapNotNull null
+            val name = o.get("name")?.takeIf { it.isJsonPrimitive }?.asString ?: return@mapNotNull null
+            val year = o.get("release_date").numberOrNull()?.toLong()
                 ?.let { Calendar.getInstance().apply { timeInMillis = it * 1000 }.get(Calendar.YEAR) }
-            SgdbGame(o.get("id").asInt, o.get("name").asString, year)
+            SgdbGame(id, name, year)
         }.orEmpty()
+    }
+
+    private fun JsonElement?.numberOrNull(): Number? = this?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }?.asNumber
+
+    /** The `data` list of a reply (null when it has none); a `data` of another shape is [SgdbFailure.BAD_REPLY]. */
+    private fun data(json: JsonObject): JsonArray? {
+        val data = json.get("data")?.takeIf { !it.isJsonNull } ?: return null
+        return data as? JsonArray ?: throw SteamGridDbException(SgdbFailure.BAD_REPLY)
     }
 
     /**
@@ -189,7 +208,7 @@ class SteamGridDbClient(private val key: String, private val http: OkHttpClient)
         val queries = ArtFilterRules.queries(kind, filters)
         val lists = queries.map { query ->
             try {
-                val data = get(path, query.params).getAsJsonArray("data") ?: return@map emptyList()
+                val data = data(get(path, params = query.params)) ?: return@map emptyList()
                 data.mapNotNull { e -> (e as? JsonObject)?.let { SgdbImage.parse(it, query.animated) } }
             } catch (e: SteamGridDbException) {
                 // Both types asked: the still images are still worth showing when the animated request fails
@@ -215,8 +234,9 @@ class SteamGridDbClient(private val key: String, private val http: OkHttpClient)
         }
     }
 
-    private fun get(path: String, params: Map<String, String> = emptyMap()): JsonObject {
-        val url = "$BASE/".toHttpUrl().newBuilder().addPathSegments(path).apply {
+    private fun get(path: String, segment: String? = null, params: Map<String, String> = emptyMap()): JsonObject {
+        val url = "$base/".toHttpUrl().newBuilder().addPathSegments(path).apply {
+            segment?.let { addPathSegment(it) }
             params.forEach { (k, v) -> addQueryParameter(k, v) }
         }.build()
         val request = Request.Builder().url(url).header("Authorization", "Bearer $key").build() // l10n-ignore
@@ -226,7 +246,12 @@ class SteamGridDbClient(private val key: String, private val http: OkHttpClient)
                 404 -> return JsonObject()
             }
             if (!response.isSuccessful) throw SteamGridDbException(SgdbFailure.API_HTTP, response.code)
-            return JsonParser.parseString(response.body.string()).asJsonObject
+            // A captive portal or a maintenance page answers 200 with HTML: that is a failed call, not a crash
+            return try {
+                JsonParser.parseString(response.body.string()) as? JsonObject
+            } catch (e: JsonParseException) {
+                null
+            } ?: throw SteamGridDbException(SgdbFailure.BAD_REPLY)
         }
     }
 
@@ -527,7 +552,8 @@ open class ArtworkStore(context: Context) {
         return Bitmap.createScaledBitmap(bitmap, target.first, target.second, true).also { if (it !== bitmap) bitmap.recycle() }.asImageBitmap()
     }
 
-    private fun dir(pc: Pc, app: App) = File(root, "${pc.uuid}/${app.id}")
+    /** The PC id comes from the host: [HostIds.appDir] keeps the directory below [root]. */
+    private fun dir(pc: Pc, app: App) = com.limelight.utils.HostIds.appDir(root, pc.uuid, app.id)
     private fun file(pc: Pc, app: App, kind: ArtKind) = File(dir(pc, app).apply { mkdirs() }, kind.file)
     private fun memoryKey(pc: Pc, app: App, kind: ArtKind) = "${pc.uuid}/${app.id}/${kind.file}"
 
