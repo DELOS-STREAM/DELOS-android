@@ -29,9 +29,11 @@
 #include <android/surface_control.h>
 #include <poll.h>
 #include <unistd.h>
-#include <signal.h>
 #include <sys/syscall.h>
+#if defined(LC_DEBUG)
+#include <signal.h>
 #include <unwind.h>
+#endif
 #include <sys/system_properties.h>
 #include <dlfcn.h>
 #include <time.h>
@@ -354,9 +356,14 @@ namespace {
     std::atomic<uint64_t> videoStageSinceUs{0};
     std::atomic<uint64_t> lastFrameUs{0};
 
-    // A stuck video thread logs its own stack (signal sent from nativeTakeStats); frames are library
-    // offsets, symbolised offline against the unstripped libmoonlight-core.so
+    // The thread that submits frames, for the stall report of nativeTakeStats
     std::atomic<pid_t> videoTid{0};
+
+#if defined(LC_DEBUG)
+    // Debug builds only: a stuck video thread logs its own stack (signal sent from nativeTakeStats); frames
+    // are library offsets, symbolised offline against the unstripped libmoonlight-core.so. The handler is not
+    // async-signal-safe (it unwinds, calls dladdr and logs), so it can deadlock a thread that is stuck inside
+    // the loader or the logger: acceptable on a developer's device, never in a release build.
     constexpr int STACK_SIGNAL = 50;
 
     struct StackState {
@@ -394,10 +401,13 @@ namespace {
         std::call_once(once, [] {
             struct sigaction action = {};
             action.sa_handler = logOwnStack;
+            // The interrupted system call resumes instead of failing with EINTR
+            action.sa_flags = SA_RESTART;
             sigemptyset(&action.sa_mask);
             sigaction(STACK_SIGNAL, &action, nullptr);
         });
     }
+#endif
 
     std::string readTaskFile(pid_t tid, const char *file) {
         char path[64];
@@ -3922,7 +3932,9 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeGetLastGpuDecodeUs(JNIEn
     return result;
 }
 
+#if defined(LC_DEBUG)
 JNIEXPORT void JNICALL
+#endif
 Java_com_limelight_binding_video_PyroWaveRenderer_nativeSetHdrMode(JNIEnv *, jclass, jlong handle, jboolean enabled) {
     withLiveRenderer(handle, [&](Renderer &renderer) { renderer.setHdrMode(enabled); });
 }
@@ -4021,7 +4033,7 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeTakeStats(JNIEnv *env, j
     const uint64_t lastFrame = lastFrameUs.load(std::memory_order_relaxed);
     if (stage != STAGE_IDLE && since != 0 && now - since > 500'000) {
         LOGW("Video thread stuck %llu ms: %s", (unsigned long long) ((now - since) / 1000), STAGE_NAMES[stage]);
-        // Once per stall, after two seconds: the thread's state, kernel wait and native stack
+        // Once per stall, after two seconds: the thread's state and kernel wait, in debug builds its native stack too
         static uint64_t dumpedStall = 0;
         const pid_t tid = videoTid.load(std::memory_order_relaxed);
         if (now - since > 2'000'000 && dumpedStall != since && tid != 0) {
@@ -4079,4 +4091,6 @@ Java_com_limelight_binding_video_PyroWaveRenderer_nativeDestroy(JNIEnv *, jclass
     }).detach();
 }
 
+#if defined(LC_DEBUG)
 }  // extern "C"
+#endif
