@@ -1,4 +1,7 @@
 #include <Limelight.h>
+// The negotiated encryption state (EncryptionFeaturesEnabled, AudioEncryptionEnabled), which the public
+// header does not expose
+#include <Limelight-internal.h>
 
 #include <jni.h>
 #include <android/log.h>
@@ -216,13 +219,13 @@ Java_com_limelight_nvstream_jni_MoonBridge_stringifyPortFlags(JNIEnv *env, jclas
     const char* separatorStr = separator != NULL ? (*env)->GetStringUTFChars(env, separator, NULL) : NULL;
     char outputBuffer[512];
 
-    LiStringifyPortFlags(portFlags, separatorStr, outputBuffer, sizeof(outputBuffer));
-
-    (*env)->ReleaseStringUTFChars(env, separator, separatorStr);
     if (separatorStr == NULL) {
         return NULL;
     }
 
+    LiStringifyPortFlags(portFlags, separatorStr, outputBuffer, sizeof(outputBuffer));
+
+    (*env)->ReleaseStringUTFChars(env, separator, separatorStr);
     return (*env)->NewStringUTF(env, outputBuffer);
 }
 
@@ -240,6 +243,13 @@ Java_com_limelight_nvstream_jni_MoonBridge_getEstimatedRttInfo(JNIEnv *env, jcla
 JNIEXPORT jstring JNICALL
 Java_com_limelight_nvstream_jni_MoonBridge_getLaunchUrlQueryParameters(JNIEnv *env, jclass clazz) {
     return (*env)->NewStringUTF(env, LiGetLaunchUrlQueryParameters());
+}
+
+// What the host and Delos agreed to encrypt for the current (or last) connection: bit 0 video, bit 1 audio.
+// Only meaningful once the connection has started.
+JNIEXPORT jint JNICALL
+Java_com_limelight_nvstream_jni_MoonBridge_getStreamEncryption(JNIEnv *env, jclass clazz) {
+    return ((EncryptionFeaturesEnabled & SS_ENC_VIDEO) ? 1 : 0) | (AudioEncryptionEnabled ? 2 : 0);
 }
 
 JNIEXPORT jbyte JNICALL
