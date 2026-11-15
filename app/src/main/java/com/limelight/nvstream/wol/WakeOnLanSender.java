@@ -128,7 +128,8 @@ public class WakeOnLanSender {
         }
     }
     
-    private static byte[] createWolPayload(ComputerDetails computer) {
+    @androidx.annotation.VisibleForTesting
+    static byte[] createWolPayload(ComputerDetails computer) {
         byte[] payload = new byte[102];
         byte[] macAddress = macStringToBytes(computer.macAddress);
         int i;
