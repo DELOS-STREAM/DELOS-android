@@ -1,30 +1,37 @@
 # SGSR2-DV
 
-Initially implemented on `feature/stream-quality` on 2026-10-26 after the user requested
-optical-flow research and then explicitly prioritized SGSR 2. The user accepted `SGSR2-DV
-Quality` as the best of the four modes in a 480p HDR comparison while retaining every mode.
-Physical-display verification is tracked in [#22](https://github.com/Meitoncz/Delos/issues/22),
-separately from this recorded acceptance.
-This is an adaptation for decoded video, not engine-integrated SGSR 2 with game depth and jitter.
-Background and hardware capability evidence: [VIDEO_OPTICAL_FLOW_RESEARCH.md](VIDEO_OPTICAL_FLOW_RESEARCH.md).
+## Purpose
 
-Dated test/acceptance entries below are historical evidence, not a live queue. Current codec,
-quality and sustained-performance verification is tracked in [#19](https://github.com/Meitoncz/Delos/issues/19).
+SGSR2-DV ("Delos Video") is an adaptation of Qualcomm's SGSR 2 for decoded video, not engine-integrated
+SGSR 2 with game depth and jitter. It is optional and experimental. This document specifies its two modes on the
+MediaCodec (GLES) path and on the PyroWave (Vulkan) path, and records what was verified.
+
+## Scope
+
+| Covered here | Specified elsewhere |
+|---|---|
+| SGSR2-DV and SGSR2-DV (Quality): behavior, pipeline, differences from the Qualcomm reference | SGSR 1, Sharpen only, supersampling, the stream menu's Upscaler page: [STREAM_QUALITY.md](STREAM_QUALITY.md) |
+| The PyroWave Vulkan implementation of all four upscaler modes | Why optical flow, and what the hardware offers: [VIDEO_OPTICAL_FLOW_RESEARCH.md](VIDEO_OPTICAL_FLOW_RESEARCH.md) |
+
+"Behavior", "Pipeline", "Credits and exact changes", "Official quality variant and tuning audit" and "PyroWave
+Vulkan path" describe the current design. A section whose heading starts with "Evidence (date)" is a dated record
+and is not updated afterwards. In the one recorded viewing comparison (480p HDR on the Odin, 2026-10-26) the owner
+chose `SGSR2-DV (Quality)` as the best of the four modes and called the gain modest; all modes stay available.
 
 ## Behavior
 
 Stream menu → Upscaler → Mode offers SGSR 1 (Normal), SGSR 1 (Quality), **SGSR2-DV**
 and **SGSR2-DV (Quality)**.
 All remain opt-in, retain live On/Off and independent sharpness, and use the existing HDR/P010 output.
-The mode also participates in global and per-game settings through `list_sgsr_quality=temporal`.
+The mode also participates in global and per-app settings through `list_sgsr_quality=temporal`.
 Live changes only affect the session; changing modes resets temporal history without reconnecting.
 PyroWave uses separate Vulkan implementations of all four modes; it does not feed this GLES stage.
 A fifth mode, **Sharpen only** (`list_sgsr_quality=sharpen`), does no scaling and no temporal work: it is documented in
 [STREAM_QUALITY.md](STREAM_QUALITY.md#sharpen-only-mode) together with how its cost is measured.
 
-The user reported SGSR 1 made the overall game look worse even though identical-frame diagnostics
-showed stronger text edges than bilinear. Do not claim SGSR 1 visual acceptance or dismiss this report.
-The user chose 480p for comparison on the 7-inch OLED; 720p already looks close to native to them.
+SGSR 1 has no visual acceptance: in the 2026-10-26 comparison the owner found that it made the overall picture
+worse, even though identical-frame diagnostics showed stronger text edges than bilinear. The comparison used
+480p on the 7-inch OLED, because 720p already looked close to native there.
 
 ## Pipeline
 
@@ -58,7 +65,7 @@ of about a second of failed frames stops SGSR and recovers to direct output.
 The current flow implementation uses ordinary GLES compute, not QCOM block-matching instructions.
 The simple SAD prototype was rejected after synthetic periodic patterns exposed incorrect vectors.
 Lucas-Kanade performed substantially better in that fixture. Qualcomm Vulkan block matching is a
-possible later optimization, not the algorithm currently shipping in this branch.
+possible later optimization, not the algorithm that ships.
 
 ## Credits and exact changes
 
@@ -74,7 +81,7 @@ possible later optimization, not the algorithm currently shipping in this branch
   are original Delos code under the project's GPL license. No optical-flow library or model weights
   were imported. The mathematical Lucas-Kanade method is implemented directly.
 
-## Verification performed on the physical Odin
+## Evidence (2026-10-26): GPU fixtures on the Odin
 
 - Native headless GLES fixture on Adreno 740 executed the actual flow shader at 854x480 and 1280x720.
   Known shifts (3,-2), (12,7), (0.5,-0.25), (0,0) had mean endpoint error 0.003–0.021 source pixels,
@@ -103,23 +110,42 @@ The headless check is debug-only and invoked with:
 adb shell am instrument -w io.github.meitoncz.delos.debug/com.limelight.binding.video.SgsrGpuInstrumentation
 ```
 
-Do not run it while streaming: instrumentation restarts the app process. Inspect foreground first.
-Native fixture logs/scripts remain in ignored `build/stream-quality/`; headless Java checks are
-versioned under `app/src/debug/` and excluded from release. The stream build has been installed after
-checking ShellActivity was foreground. User was asked to compare 480p HDR On/Off, slow/fast pans,
-ghosting, smoothness, color/luminance and live toggling. Results are pending.
+Do not run it while streaming: instrumentation restarts the app process. The headless Java checks are
+versioned under `app/src/debug/` and excluded from release; the native fixture scripts of that day were
+not committed. The viewing comparison that followed is recorded in the next two evidence sections.
 
-## Remaining uncertainty
+## Code map
+
+| Path | Role |
+|---|---|
+| `app/src/main/java/com/limelight/binding/video/SgsrRenderer.java`, `SgsrTemporal.java`, `SgsrDimensions.java` | The GLES renderer, the temporal stage, the sizes |
+| `app/src/main/assets/sgsr/` | The GLES shaders, including the adapted `sgsr2_video.frag` |
+| `app/src/main/jni/pyrowave-renderer/` | The Vulkan implementation for PyroWave and its shaders |
+| `app/src/debug/java/com/limelight/binding/video/SgsrGpuInstrumentation.java`, `PyroWaveGpuInstrumentation.java` | Headless GPU checks on a device |
+
+## Verification
+
+The two debug instrumentations run the shipped shaders on a device's GPU and compare the output with known
+values; the commands are in "Evidence (2026-10-26): GPU fixtures on the Odin" and "GPU regression probe". The
+dated results are in the Evidence sections.
+
+### Not verified
 
 Optical flow can fail on motion blur, occlusions, transparency, particles, repeated textures, tiny
 HUD text and compression. Rejection/clamping reduces risk but does not establish good game quality.
 No engine depth or actual render jitter is available; stationary 480p input cannot recover detail it
-never contains. Long-session performance, thermal behavior and difficult game motion require device
-validation before marking this feature complete or merging the branch.
+never contains. Long-session performance, thermal behavior and difficult game motion have not been
+validated on a device.
+Any display other than the Odin's has no record ([#22](https://github.com/Meitoncz/Delos/issues/22) tracks other devices).
 
-## First game feedback and phase-noise correction
+## Related
 
-The user tested 480p HDR and reported smooth playback without ghosting, but a spray/dotted appearance
+- [STREAM_QUALITY.md](STREAM_QUALITY.md), [VIDEO_OPTICAL_FLOW_RESEARCH.md](VIDEO_OPTICAL_FLOW_RESEARCH.md), [LAUNCH_TRANSITION.md](LAUNCH_TRANSITION.md).
+- Issues [#19](https://github.com/Meitoncz/Delos/issues/19), [#22](https://github.com/Meitoncz/Delos/issues/22), [#74](https://github.com/Meitoncz/Delos/issues/74).
+
+## Evidence (2026-10-26): first game feedback and phase-noise correction
+
+The owner tested 480p HDR and reported smooth playback without ghosting, but a spray/dotted appearance
 across the picture and text. Reproduced a related failure on the physical GPU with a linear-ramp
 fixture at 2.25x scale: max reconstruction error 0.03194 despite constant-color tests passing.
 The engine-oriented footprint, when widened by output/input ratio without engine render jitter,
@@ -130,31 +156,27 @@ to the versioned Java GPU instrumentation so constants alone cannot mask a recur
 The full Java/GPU instrumentation also passed the new ramp regression (max error 0.00377), plus
 existing color/reset/resize checks. Corrected static-stage timing was about 2.06 ms median / 2.61 ms
 p95 at 480p and 2.80 / 3.00 ms at 720p in the short fixture. Assembly, all 63 JVM tests and lint passed.
-Installed outside a stream and reopened ShellActivity. The user's game retest is pending.
 
-The user also asked about perceived sharpening with SGSR disabled. Inspected the decoder surface
+A second question was perceived sharpening with SGSR disabled. Inspected the decoder surface
 selection: on disable, SGSR is closed (including hiding/clearing the HDR child layer), and MediaCodec
 is configured with the original `renderTarget`. No Delos sharpening shader is applied on that path.
 Added an explicit configuration log to verify live toggles reach direct output. This does not establish
 whether the game, host, decoder/display scaler or device software applies its own enhancement.
 
-A/B verification then used the actual pre-feature CI APK from main `714f21a3`, temporarily re-signed
-with the existing local debug key for a data-preserving update. User tested the same 480p HDR game
-and confirmed the original build is equally oversharpened. This rules out today's changes as the
+A/B verification then used a build from before the upscaler work. The owner tested the same 480p HDR
+game and confirmed that the older build is equally oversharpened. This rules out the upscaler work as the
 origin of that baseline appearance; it does not identify the exact upstream/display component.
-The current feature APK was restored outside a stream. The user declined a neutral bilinear mode;
-Off retains the original direct output. New persistence of session upscaler choices per game was
-explicitly deferred by the user.
+A neutral bilinear mode was not added; Off retains the original direct output.
 
-## Returnal edge capture and anti-ringing correction
+## Evidence (2026-10-26): Returnal edge capture and anti-ringing correction
 
 Continuous one-second captures compared the same 480p HDR Returnal menu through direct AV1, direct
-HEVC and SGSR 2 at zero presentation sharpness. The user judged AV1 and HEVC equally over-sharp.
+HEVC and SGSR 2 at zero presentation sharpness. The owner judged AV1 and HEVC equally over-sharp.
 Both Qualcomm decoders reported zero enabled pipeline filters and identical HDR color metadata.
 The direct screenshots also looked alike, excluding an AV1-specific post-process as the cause.
 
 SGSR 2 itself made the high-contrast UI edges worse even at zero presentation sharpness. The older
-2-pass shader allowed its signed-Lanczos result to exceed the actual 3x3 source neighbourhood by
+2-pass shader allowed its signed-Lanczos result to exceed the actual 3x3 source neighborhood by
 `0.075`. On the captured yellow focus rectangle, the lower edge reached screenshot luma about 212
 against an interior near 179. The adapted shader now clamps reconstruction to the actual local
 minimum and maximum. The repeated capture measured the edge near 173 against an interior near 178,
@@ -185,10 +207,10 @@ jitter can preserve source aliasing on static thin features. Decoded video still
 object motion vectors, camera matrices or render jitter, so this is a video-specific adaptation, not
 an unchanged copy of the engine integration.
 
-The mode passed the real Adreno 740 shader compiler and headless GPU checks for constant colors,
-scene/reset/resize/HDR transitions and the 2.25x phase-noise regression. At 854x480 to 1920x1079 the
-full temporal stage measured 3.26 ms median / 3.99 ms p95; at 1280x720 to 1920x1080 it measured
-3.90 / 4.26 ms. The user found the improvement modest at 480p but selected this as the best mode;
+Evidence (2026-10-26): the mode passed the real Adreno 740 shader compiler and headless GPU checks for
+constant colors, scene/reset/resize/HDR transitions and the 2.25x phase-noise regression. At 854x480 to
+1920x1079 the full temporal stage measured 3.26 ms median / 3.99 ms p95; at 1280x720 to 1920x1080 it measured
+3.90 / 4.26 ms. The owner found the improvement modest at 480p but selected this as the best mode;
 remaining static logo aliasing is consistent with missing source detail at that resolution.
 
 The Sharpness control is not a SGSR 2 reconstruction-quality parameter. It controls a separate,
@@ -250,7 +272,7 @@ reads back real GPU output without launching a game or opening a streaming conne
 adb -s <device> shell am instrument -w io.github.meitoncz.delos.debug/com.limelight.binding.video.PyroWaveGpuInstrumentation
 ```
 
-The Odin Adreno 740 run passed constant preservation, Standard/HQ textured edges and local bounds,
+Evidence (2026-10-28): the Odin Adreno 740 run passed constant preservation, Standard/HQ textured edges and local bounds,
 bidirectional motion, distinct regular/Quality output, activation/reset and scene transitions,
 16-bit BT.2020 values, zero/nonzero sharpening and limited-range P010 packing.
 Standard/HQ maximum pixel difference was 0.0620117; regular/Quality was 0.0114746.
@@ -261,15 +283,15 @@ dispatch, actual applied modes, both supersampling levels, the downscale case, O
 swapchain-format rebuild of SDR → HDR → SDR. It does not run `present()`, so the swapchain/P010
 present passes, the P010 pack pass and the GL bridge are not covered by it.
 
-### Earlier SGSR2-DV acceptance
+### Evidence (2026-10-27): first SGSR2-DV acceptance on PyroWave
 
 The target is the real display size, aspect-fitted from the stream dimensions; the first implementation
 incorrectly inherited a fixed surface size and reconstructed 720p back to 720p. Device logs after the
 fix confirmed `1280x720 -> 1920x1080`. A fused reconstruction/clipping shader reduced draw cost from
 about 6.5-6.8 ms to mostly 3.9-4.9 ms, allowing about 118-119 fps during the tested 120 Hz HDR stream.
-The user accepted the improved latency, HDR colour, live toggle and processing-time statistics.
+The owner accepted the improved latency, HDR color, live toggle and processing-time statistics.
 
-## Verification against the official reference (2026-11)
+## Evidence (2026-11-07): verification against the official reference
 
 Source audit for [#74](https://github.com/Meitoncz/Delos/issues/74), performed on 2026-11-07.
 This verifies the implementation against the specific references below, **not** pixel-identical
@@ -364,10 +386,10 @@ Adreno/driver behavior. The same case is now in `SgsrGpuInstrumentation` alongsi
 the phase ramp; its updated Java compiled against the real Android API. It was **not run on Odin**
 in this audit. The shader and GPU regression are isolated in commit `e5ad4ce3`.
 
-### Concrete on-device comparison
+### On-device comparison recipe (not run)
 
-The lead owns builds, tests, lint, safe installation and device execution. Do not run instrumentation
-while streaming: it restarts the app. Let the user launch games normally.
+This comparison has not been run; it is the recipe for whoever does it. Do not run instrumentation
+while streaming: it restarts the app.
 
 1. **Record the real path first:** codec, decoded/cropped size, SDR/HDR and color metadata,
    presentation/internal sizes, applied mode, supersampling level and sharpness. Include the
@@ -397,15 +419,15 @@ while streaming: it restarts the app. Let the user launch games normally.
    retain constants, ramp, resize/reset checks and native source/P010 probes. Then measure actual
    processing time, frame cadence and thermals during sustained 60/120 FPS playback separately.
 
-Unverified here: physical same-frame renderer comparisons, actual crop/SurfaceTexture matrices,
+Unverified in this audit: physical same-frame renderer comparisons, actual crop/SurfaceTexture matrices,
 first-frame EGL/view sizing, driver external-YUV conversion/chroma siting, SurfaceFlinger filtering,
-P010 display colorimetry, real-game flow/occlusion accuracy and sustained latency/power. No Gradle,
-ADB, installation or game launch was performed. Other differences above were documented rather
+P010 display colorimetry, real-game flow/occlusion accuracy and sustained latency/power. Nothing was
+built, installed or run on a device for it. Other differences above were documented rather
 than silently retuned; the source audit does not establish one universal cause of perceived softness.
 
 ## SGSR 1 fixed-gain follow-up (2026-11-07)
 
-The user approved restoring the official **2.0 reconstruction gain** for SGSR 1 (Normal) and
+The owner approved restoring the official **2.0 reconstruction gain** for SGSR 1 (Normal) and
 High Quality in both MediaCodec/GLES and PyroWave/Vulkan. This supersedes the two historical
 SGSR 1 gain/slider rows above, without changing their audit evidence or the earlier device results.
 
@@ -439,9 +461,9 @@ to P010 belongs to the existing final-output helper, not to the reconstruction t
 has its compute intermediate and final presentation/pack stage. The added GLES pass, intermediate
 storage and bandwidth cost are **unmeasured**; target reuse is not a claim of zero extra GPU cost.
 
-The lead's device comparison should keep the same scene, source/output sizes, host AA/sharpening
-and bitrate: compare main versus this follow-up at 50% for Standard and HQ in each pipeline,
-then 0/50/100% to isolate final sharpening. Unlike the historical comparison recipe above, all
+A device comparison should keep the same scene, source/output sizes, host AA/sharpening
+and bitrate: compare the build before this follow-up with the current one at 50% for Standard and HQ in each pipeline,
+then 0/50/100% to isolate final sharpening. Unlike the comparison recipe above, all
 three SGSR 1 slider positions now use the official gain. Include SDR/HDR/P010, the launch arrival
 effect, live mode changes, halos, fine text, texture and sustained processing time. Stronger
 reconstruction detail is expected **[INFERENCE]**, but ringing or compression visibility may also
@@ -465,4 +487,4 @@ same bounded results on a center `0.5` / cross-neighbor `0.4` fixture:
 
 At 100% the local-range limit clamps the correction to `0.025`, as intended. These are filter
 runtime checks, not an Android Vulkan presentation, a physical HDR test, or a reconstruction
-quality/performance comparison. Gradle and ADB were not run.
+quality/performance comparison. No Gradle build and no device run were part of these checks.
