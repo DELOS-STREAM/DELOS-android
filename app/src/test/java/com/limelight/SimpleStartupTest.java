@@ -3,6 +3,8 @@ package com.limelight;
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.limelight.profiles.ProfilesManager;
+import com.limelight.profiles.ProfilesManagerReset;
+import com.limelight.profiles.SettingsProfile;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -12,15 +14,20 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
-import com.limelight.TestLogSuppressor;
-
+/** What the application does when its process starts: the profiles are loaded and usable whatever is on disk. */
 @Config(sdk = {33}, shadows = {com.limelight.shadows.ShadowMoonBridge.class, com.limelight.shadows.ShadowGameManager.class})
 @RunWith(RobolectricTestRunner.class)
 public class SimpleStartupTest {
     private Context context;
+    private File profilesFile;
 
     @BeforeClass
     public static void suppressInvalidIdLogs() {
@@ -29,130 +36,128 @@ public class SimpleStartupTest {
 
     @Before
     public void setUp() {
-        // Reset ProfilesManager instance using reflection since it's package-private
-        try {
-            java.lang.reflect.Field instanceField = ProfilesManager.class.getDeclaredField("instance");
-            instanceField.setAccessible(true);
-            instanceField.set(null, null);
-        } catch (Exception e) {
-            // Ignore reflection errors
-        }
+        ProfilesManagerReset.reset();
         context = ApplicationProvider.getApplicationContext();
-
-        // Clean up any existing profiles
         File profilesDir = new File(context.getFilesDir(), "profiles");
-        deleteRecursively(profilesDir);
+        profilesFile = new File(profilesDir, "profiles.json");
+        profilesFile.delete();
+    }
+
+    private static SettingsProfile profile(String name) {
+        Map<String, Object> options = new HashMap<>();
+        options.put("list_fps", "120");
+        return new SettingsProfile(UUID.randomUUID(), name, 1000, 2000, options);
     }
 
     @Test
-    public void testApplicationCreation() {
-        // Test basic application creation
-        DelosApplication app = new DelosApplication();
-        assertNotNull("Application should be created", app);
+    public void applicationStartLoadsTheStoredProfiles() {
+        SettingsProfile stored = profile("Couch");
+        ProfilesManager writer = ProfilesManager.getInstance();
+        writer.load(context);
+        writer.add(stored);
+        writer.setActive(stored.getUuid());
+        assertTrue(writer.save(context));
+        ProfilesManagerReset.reset();
+
+        // The application Robolectric created from the manifest (it has a base context)
+        DelosApplication app = ApplicationProvider.getApplicationContext();
+        app.onCreate();
+
+        ProfilesManager manager = ProfilesManager.getInstance();
+        assertEquals(1, manager.getProfiles().size());
+        assertEquals("Couch", manager.getProfiles().get(0).getName());
+        assertEquals(stored.getUuid(), manager.getActive().getUuid());
+        assertEquals("120", manager.getActive().getOptions().get("list_fps"));
     }
 
     @Test
-    public void testApplicationOnCreate() {
-        // Test application onCreate which initializes ProfilesManager
-        // After the fix, this should no longer crash
-        try {
-            // Use the application Robolectric created from the manifest (it has a base context)
-            DelosApplication app = ApplicationProvider.getApplicationContext();
-            app.onCreate();
+    public void applicationStartOnAFreshInstallHasNoProfilesAndNoActiveOne() {
+        DelosApplication app = ApplicationProvider.getApplicationContext();
+        app.onCreate();
 
-            // Should now work without crashing
-            ProfilesManager manager = ProfilesManager.getInstance();
-            assertNotNull("ProfilesManager should be initialized", manager);
-            assertNotNull("Profiles list should be initialized", manager.getProfiles());
-
-            LimeLog.info("SUCCESS: Application startup no longer crashes!");
-        } catch (Exception e) {
-            fail("Application onCreate should not crash after fix: " + e.getMessage());
-        }
+        ProfilesManager manager = ProfilesManager.getInstance();
+        assertTrue(manager.getProfiles().isEmpty());
+        assertNull(manager.getActive());
     }
 
     @Test
-    public void testProfilesManagerSingleton() {
-        // Test ProfilesManager singleton behavior
-        ProfilesManager manager1 = ProfilesManager.getInstance();
-        ProfilesManager manager2 = ProfilesManager.getInstance();
-
-        assertNotNull("First instance should not be null", manager1);
-        assertNotNull("Second instance should not be null", manager2);
-        assertSame("Should return same instance", manager1, manager2);
+    public void theManagerIsOnePerProcess() {
+        assertSame(ProfilesManager.getInstance(), ProfilesManager.getInstance());
     }
 
     @Test
-    public void testProfilesManagerLoad() {
-        // Test ProfilesManager load with valid context
-        try {
-            ProfilesManager manager = ProfilesManager.getInstance();
-            manager.load(context);
-
-            assertNotNull("Profiles should be loaded", manager.getProfiles());
-            assertEquals("Should start with empty profiles", 0, manager.getProfiles().size());
-        } catch (Exception e) {
-            fail("ProfilesManager load should not crash: " + e.getMessage());
-        }
-    }
-
-    @Test
-    public void testProfilesManagerSave() {
-        // Test ProfilesManager save functionality
-        try {
-            ProfilesManager manager = ProfilesManager.getInstance();
-            manager.load(context);
-            manager.save(context);
-
-            // Should not crash
-            assertTrue("Save operation should complete", true);
-        } catch (Exception e) {
-            fail("ProfilesManager save should not crash: " + e.getMessage());
-        }
-    }
-
-    @Test
-    public void testContextFileAccess() {
-        // Test basic file system access that the app needs
-        try {
-            File filesDir = context.getFilesDir();
-            assertNotNull("Files directory should be accessible", filesDir);
-
-            File testDir = new File(filesDir, "test");
-            boolean created = testDir.mkdirs();
-            assertTrue("Should be able to create directories", created || testDir.exists());
-
-            boolean deleted = testDir.delete();
-            assertTrue("Should be able to delete directories", deleted);
-        } catch (Exception e) {
-            fail("Basic file operations should work: " + e.getMessage());
-        }
-    }
-
-    @Test
-    public void testNullContextHandling() {
-        // Test ProfilesManager with null context - after fix, it should handle gracefully
+    public void aFreshInstallLoadsWithoutProfiles() {
         ProfilesManager manager = ProfilesManager.getInstance();
 
-        try {
-            manager.load(null);
-            // Should now handle null context gracefully without crashing
-            assertTrue("Should handle null context gracefully", true);
-        } catch (Exception e) {
-            fail("Should handle null context gracefully: " + e.getMessage());
-        }
+        assertTrue(manager.load(context));
+        assertTrue(manager.getProfiles().isEmpty());
     }
 
-    private void deleteRecursively(File f) {
-        if (f == null || !f.exists()) return;
-        if (f.isDirectory()) {
-            File[] children = f.listFiles();
-            if (children != null) {
-                for (File c : children) {
-                    deleteRecursively(c);
-                }
-            }
-        }
-        f.delete();
+    @Test
+    public void savedProfilesComeBackAfterARestart() {
+        ProfilesManager manager = ProfilesManager.getInstance();
+        manager.load(context);
+        SettingsProfile first = profile("Desk");
+        SettingsProfile second = profile("Travel");
+        manager.add(first);
+        manager.add(second);
+        manager.setActive(second.getUuid());
+        assertTrue(manager.save(context));
+
+        ProfilesManagerReset.reset();
+        ProfilesManager restarted = ProfilesManager.getInstance();
+        assertTrue(restarted.load(context));
+
+        assertEquals(2, restarted.getProfiles().size());
+        assertEquals(second.getUuid(), restarted.getActive().getUuid());
+        assertEquals("Travel", restarted.getActiveName());
+        assertEquals(1000, restarted.getActive().getCreatedUtc());
+    }
+
+    @Test
+    public void aDeletedProfileStaysDeletedAfterARestart() {
+        ProfilesManager manager = ProfilesManager.getInstance();
+        manager.load(context);
+        SettingsProfile keep = profile("Keep");
+        SettingsProfile drop = profile("Drop");
+        manager.add(keep);
+        manager.add(drop);
+        manager.delete(drop.getUuid());
+        manager.save(context);
+
+        ProfilesManagerReset.reset();
+        ProfilesManager restarted = ProfilesManager.getInstance();
+        restarted.load(context);
+
+        assertEquals(1, restarted.getProfiles().size());
+        assertEquals(keep.getUuid(), restarted.getProfiles().get(0).getUuid());
+    }
+
+    @Test
+    public void aCorruptProfilesFileIsReportedAndLeavesTheManagerUsable() throws Exception {
+        profilesFile.getParentFile().mkdirs();
+        Files.write(profilesFile.toPath(), "{\"profiles\": [ {".getBytes(StandardCharsets.UTF_8));
+        ProfilesManager manager = ProfilesManager.getInstance();
+
+        assertFalse("the caller must learn that the profiles could not be read", manager.load(context));
+
+        assertTrue(manager.getProfiles().isEmpty());
+        assertNull(manager.getActive());
+        // The app keeps working: a new profile can be made and stored.
+        manager.add(profile("New"));
+        assertTrue(manager.save(context));
+        ProfilesManagerReset.reset();
+        assertTrue(ProfilesManager.getInstance().load(context));
+        assertEquals(1, ProfilesManager.getInstance().getProfiles().size());
+    }
+
+    @Test
+    public void withoutAContextNothingIsLoadedOrSaved() {
+        ProfilesManager manager = ProfilesManager.getInstance();
+
+        assertFalse(manager.load(null));
+        assertFalse(manager.save(null));
+        assertTrue(manager.getProfiles().isEmpty());
+        assertFalse(profilesFile.exists());
     }
 }
