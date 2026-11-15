@@ -1,10 +1,19 @@
 # Native settings (Phase 6.7)
 
-The new shell edits the same keys and value types as `app/src/main/res/xml/preferences.xml`.
-The XML originally contained **116 controls in 13 categories** at step 6.7. After the deliberate
-cleanup and feature additions it contains **105 controls**, plus **30 native shell rows**.
-The earlier count of 126 included ten category keys; category keys are headings, not ten additional
-options.
+## Purpose
+
+The Settings screen of the shell edits the same keys and value types as `app/src/main/res/xml/preferences.xml` and
+adds its own native rows (`NativeSettings.kt`). This document specifies the tabs, the catalog that is read from the
+XML, the impact chips, the help texts, the hidden settings and how settings belong to user profiles.
+
+## Scope
+
+| Covered here | Specified elsewhere |
+|---|---|
+| Tabs, rows, search, help texts, impact chips | The look and motion of the screen: [GUI.md](GUI.md) |
+| The settings catalog and the stores that write preferences | Overrides of one app: [PER_APP_SETTINGS.md](PER_APP_SETTINGS.md) |
+| Hidden phone-oriented settings | What the stream settings do: [STREAM_QUALITY.md](STREAM_QUALITY.md) |
+| User profiles and their storage | Languages and translated texts: [LOCALIZATION.md](LOCALIZATION.md) |
 
 ## Tabs
 
@@ -69,9 +78,9 @@ preset keys through `RumblePreferences` (see [RUMBLE.md](RUMBLE.md)) and reads C
   their bitrate on those changes. Returning to PyroWave with a saved value restores it instead of
   recalculating just because the codec changed.
   Codec bitrate slots are private profile data, copied/deleted with the profile, never settings rows
-  or effective stream values. For per-game settings they are isolated by profile, PC and game:
-  inherited rates are never saved into game slots, and leaving PyroWave for an unsaved ordinary
-  codec restores profile inheritance. See [PER_GAME_SETTINGS.md](PER_GAME_SETTINGS.md).
+  or effective stream values. For per-app settings they are isolated by profile, PC and app:
+  inherited rates are never saved into app slots, and leaving PyroWave for an unsaved ordinary
+  codec restores profile inheritance. See [PER_APP_SETTINGS.md](PER_APP_SETTINGS.md).
   Custom numeric input rejects invalid and non-finite values before writing.
 - `screens/SettingsScreen.kt`, `NativeSettings.kt` and `SettingsActions.kt` render the design system's
   rows, description panel, tab bar and search, and handle editing, reset, import/export and links.
@@ -200,9 +209,8 @@ current Mac workstation (JDK 21; see [MAC_SETUP.md](MAC_SETUP.md)):
 For Windows environment setup and the equivalent `gradlew.bat` command, see
 [WINDOWS_SETUP.md](WINDOWS_SETUP.md).
 
-Device checks use the Odin, never an emulator. Final acceptance also requires the user to start a
-stream and verify a changed resolution or bitrate in the performance overlay. Agents must not launch
-games on the PC themselves.
+- [PER_APP_SETTINGS.md](PER_APP_SETTINGS.md), [GUI.md](GUI.md), [STREAM_QUALITY.md](STREAM_QUALITY.md), [RUMBLE.md](RUMBLE.md), [LOCALIZATION.md](LOCALIZATION.md).
+- Issues [#40](https://github.com/Meitoncz/Delos/issues/40) (impact chips), [#65](https://github.com/Meitoncz/Delos/issues/65) (hidden settings), [#77](https://github.com/Meitoncz/Delos/issues/77) (gyro smoothing).
 
 2026-10-23: the user confirmed that a changed resolution was applied in a real stream. All eight tabs,
 controller search/jump, the Y shortcut/hint, single feedback per tab switch and complete headings after

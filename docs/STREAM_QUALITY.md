@@ -383,9 +383,9 @@ fall back to direct rendering and are exposed in the menu/logs; HDR is not silen
 
 Every change on this page is also kept for the running game, automatically: it applies live and, about 500 ms after the
 last change (a slider drag or held D-pad writes once; the menu closing or the stream ending writes at once), the current
-upscaler on/off, mode, sharpness and supersampling level are written as that game's per-game overrides (see
-[PER_GAME_SETTINGS.md](PER_GAME_SETTINGS.md#the-menu-keeps-the-live-upscaler-for-the-game)) and apply from its next
-launch. Nothing else is written (no bitrate, no other display setting) and neither the profile nor other games change; the
+upscaler on/off, mode, sharpness and supersampling level are written as that app's per-app overrides (see
+[PER_APP_SETTINGS.md](PER_APP_SETTINGS.md#the-menu-keeps-the-live-upscaler-and-gyro-smoothing-for-the-app)) and apply from its next
+launch. Nothing else is written (no bitrate, no other display setting) and neither the profile nor other apps change; the
 running stream keeps its live values. A stream started without its launch identity stays session-only.
 
 Both renderers implement SGSR 1 (Normal), SGSR 1 (Quality), SGSR2-DV and SGSR2-DV (Quality), and
@@ -730,26 +730,36 @@ Empty until the device is measured. One row per run.
 ## Validation and device acceptance
 
 Unit tests cover applied bitrate parsing and XML failures, Nano Pacer lock/reset/rate handling and
-MediaCodec flush/restart generation ordering. The settings catalog includes the three new controls.
-At the first HDR build checkpoint: 61 unit tests passed, debug build and lint passed (zero errors,
-383 warnings); the packaged ARM64 native library was checked for the SGSR JNI entry points.
+MediaCodec flush/restart generation ordering. Runtime bitrate is host/encoder-dependent; an HTTP
+acknowledgement alone is not proof that every codec's measured traffic changes as requested.
 
-The ARM64 build was installed on the Odin after checking that no Game activity was foreground.
-The user was asked to start HEVC at 720p with HDR, Fast V-Sync and async decoding, change runtime
-bitrate, and toggle SGSR/sharpness live. Check actual image orientation, HDR color/luminance, stable
-frames, connection continuity and logs confirming the GPU/P010 path rather than fallback. Repeat
-SDR, existing pacing/async-off, repeated toggles and stream reconnect/teardown. The user starts games
-and performs navigation; agents only install/start the app and read diagnostics.
+A device check of this area: start HEVC at 720p with HDR, Fast V-Sync and async decoding, change the runtime
+bitrate, and toggle SGSR/sharpness live. Check image orientation, HDR color/luminance, stable
+frames, connection continuity and logs confirming the GPU/P010 path rather than fallback. Repeat with
+SDR, the other pacing modes, async off, repeated toggles and stream reconnect/teardown.
 
-Do not mark these roadmap items complete or merge until the user's device results and any resulting
-fixes are recorded. Runtime bitrate is host/encoder-dependent; an HTTP acknowledgement alone is not
-proof that every codec's measured traffic changes as requested.
+### Not verified
 
-### Odin feedback, 2026-10-26
+- The effect of the latency work, and any input-to-photon latency: not measured ("Latency", "Results").
+- The link test beyond one network: no variance between runs, no second network, no comparison of the
+  recommendation with a real stream. The thresholds of the passive hint are not calibrated.
+- Variable refresh rate on a display that reports adaptive refresh: no such device was available.
+- Gyro smoothing in a game: the numbers are filter numbers from `GyroSmootherTest`.
+- Sustained performance and heat in long sessions, for every upscaler mode.
+- Any host other than Vibepollo on Windows.
 
-The user confirmed Fast V-Sync, asynchronous decoding and runtime bitrate changes work. SGSR's first
-HDR test exposed a vertically inverted image and an enlarged/cropped viewport; HDR colors could not
-be assessed. The correction keeps the HDR parent SurfaceView at its original stream buffer size,
+## Related
+
+- [SGSR2_VIDEO.md](SGSR2_VIDEO.md), [PER_APP_SETTINGS.md](PER_APP_SETTINGS.md), [SETTINGS.md](SETTINGS.md), [GUI.md](GUI.md), [SECURITY.md](../SECURITY.md).
+- Issues [#18](https://github.com/Meitoncz/Delos/issues/18) (link guidance), [#19](https://github.com/Meitoncz/Delos/issues/19) (PyroWave quality and performance), [#67](https://github.com/Meitoncz/Delos/issues/67) (Sharpen only),
+  [#74](https://github.com/Meitoncz/Delos/issues/74) (SGSR reference check), [#75](https://github.com/Meitoncz/Delos/issues/75) (latency), [#77](https://github.com/Meitoncz/Delos/issues/77) (gyro smoothing), [#24](https://github.com/Meitoncz/Delos/issues/24) (variable refresh rate).
+
+## Evidence (2026-10-26): first device feedback
+
+AYN Odin 2 Portal Max, Vibepollo on Windows. The owner confirmed that Fast V-Sync, asynchronous decoding and
+runtime bitrate changes work. SGSR's first
+HDR test exposed a vertically inverted image and an enlarged/cropped viewport. The correction keeps the HDR
+parent SurfaceView at its original stream buffer size,
 maps the display-sized P010 child into that parent's coordinate space, and explicitly flips the raw
 GL framebuffer vertically at presentation. Unlike an EGL window swap, raw SurfaceControl buffer
 submission does not supply the GL-to-Android orientation conversion. Repeat visual acceptance after
