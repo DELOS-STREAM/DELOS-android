@@ -62,18 +62,33 @@ public final class StreamSurfaceController implements StreamSurfaceHost {
         STREAM
     }
 
+    /** How the decoder thread waits for the UI thread; tests replace the real timed wait. */
+    interface Waiter {
+        /** True once {@code done} was counted down, false when {@code timeoutMs} passed first. */
+        boolean await(CountDownLatch done, long timeoutMs) throws InterruptedException;
+    }
+
+    static final Waiter TIMED_WAIT = (done, timeoutMs) -> done.await(timeoutMs, TimeUnit.MILLISECONDS);
+
     private final Executor uiThread;
     private final PreferenceConfiguration prefConfig;
     private final Host host;
+    private final Waiter waiter;
     private MediaCodecDecoderRenderer decoder;
     private boolean surfaceCreated = false;
     private boolean attemptedConnection = false;
 
     /** {@code uiThread} runs a task on the UI thread, at once when called on it (Activity.runOnUiThread). */
     public StreamSurfaceController(Executor uiThread, PreferenceConfiguration prefConfig, Host host) {
+        this(uiThread, prefConfig, host, TIMED_WAIT);
+    }
+
+    @androidx.annotation.VisibleForTesting
+    StreamSurfaceController(Executor uiThread, PreferenceConfiguration prefConfig, Host host, Waiter waiter) {
         this.uiThread = uiThread;
         this.prefConfig = prefConfig;
         this.host = host;
+        this.waiter = waiter;
     }
 
     /** The decoder the controls apply to; until it is set the launch arrival reads as not started. */
@@ -210,7 +225,7 @@ public final class StreamSurfaceController implements StreamSurfaceHost {
         boolean resized = runAndAwait(uiThread, () -> {
             SurfaceView view = host.streamSurfaceView();
             if (view != null) view.getHolder().setSizeFromLayout();
-        }, RESIZE_WAIT_MS);
+        }, RESIZE_WAIT_MS, waiter);
         if (!resized) {
             LimeLog.warning("Stream surface resize is still pending after " + RESIZE_WAIT_MS +
                     " ms; the upscaler starts at the old size and follows the resize when it lands");
@@ -223,6 +238,10 @@ public final class StreamSurfaceController implements StreamSurfaceHost {
      * gets to it. A failure of the action is logged; an interrupt ends the wait and stays set on the calling thread.
      */
     static boolean runAndAwait(Executor executor, Runnable action, long timeoutMs) {
+        return runAndAwait(executor, action, timeoutMs, TIMED_WAIT);
+    }
+
+    static boolean runAndAwait(Executor executor, Runnable action, long timeoutMs, Waiter waiter) {
         final CountDownLatch resized = new CountDownLatch(1);
         final AtomicBoolean waitMissed = new AtomicBoolean();
         executor.execute(() -> {
@@ -238,7 +257,7 @@ public final class StreamSurfaceController implements StreamSurfaceHost {
             }
         });
         try {
-            if (resized.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+            if (waiter.await(resized, timeoutMs)) {
                 return true;
             }
         } catch (InterruptedException e) {
