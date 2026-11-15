@@ -1,7 +1,7 @@
-# Application.mk for Moonlight
+# Application.mk for Delos
 
-# Our minimum version is Android 5.0
-APP_PLATFORM := android-21
+# The same as minSdk in app/build.gradle (Android 10)
+APP_PLATFORM := android-29
 
 # C++ for the PyroWave codec and renderer
 APP_STL := c++_static

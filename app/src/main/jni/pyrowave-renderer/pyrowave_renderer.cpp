@@ -454,8 +454,8 @@ namespace {
         }
     }
 
-    // Delos: SurfaceControl and AHardwareBuffer (API 29 / 26), looked up at run time because the native
-    // code builds for API 21. They carry the P010 HDR output (see "YUV output" in Renderer).
+    // Delos: SurfaceControl and AHardwareBuffer (API 29 / 26), looked up at run time (a leftover from the
+    // time the native code built for API 21). They carry the P010 HDR output (see "YUV output" in Renderer).
     struct SurfaceApi {
         ASurfaceControl *(*createFromWindow)(ANativeWindow *, const char *) = nullptr;
         void (*releaseControl)(ASurfaceControl *) = nullptr;
@@ -590,7 +590,7 @@ namespace {
                     bool tenBitStream, int upscalingMode, int supersamplingLevel, float sharpness,
                     const SgsrLimits &limits) {
             window = nativeWindow;
-            // API 28; Delos builds the native code for API 21
+            // API 28, looked up at run time (a leftover from the time the native code built for API 21)
             void *android = dlopen("libandroid.so", RTLD_NOW | RTLD_NOLOAD);
             if (android == nullptr) {
                 android = dlopen("libandroid.so", RTLD_NOW);
