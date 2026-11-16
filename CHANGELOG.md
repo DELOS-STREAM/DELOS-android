@@ -10,6 +10,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-16
+_Hold Back for Guide and updated libraries._
+
 ### Added
 - Hold Back for Guide (Settings → Controls, off by default): holding a gamepad's Back button for half a second sends Guide (the Xbox button) to the PC, for handhelds without a Guide button; a short press still sends Back, on release. Requested on Reddit ([#90](https://github.com/Meitoncz/DELOS/issues/90)); tested in a stream on the AYN Odin 2 Portal Max.
 
@@ -320,7 +323,8 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 ### Removed
 - SBS 3D, performance logging and other dead code.
 
-[Unreleased]: https://github.com/Meitoncz/Delos/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Meitoncz/Delos/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Meitoncz/Delos/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Meitoncz/Delos/compare/v0.15.0...v1.0.0
 [0.15.0]: https://github.com/Meitoncz/Delos/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/Meitoncz/Delos/compare/v0.13.0...v0.14.0
