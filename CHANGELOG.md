@@ -11,7 +11,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 ## [Unreleased]
 
 ### Added
-- Hold Back for Guide (Settings → Controls, off by default): holding a gamepad's Back button for half a second sends Guide (the Xbox button) to the PC, for handhelds without a Guide button; a short press still sends Back, on release. Requested on Reddit ([#90](https://github.com/Meitoncz/DELOS/issues/90)). Not verified in a stream yet.
+- Hold Back for Guide (Settings → Controls, off by default): holding a gamepad's Back button for half a second sends Guide (the Xbox button) to the PC, for handhelds without a Guide button; a short press still sends Back, on release. Requested on Reddit ([#90](https://github.com/Meitoncz/DELOS/issues/90)); tested in a stream on the AYN Odin 2 Portal Max.
 
 ## [1.0.0] - 2026-11-16
 _The first public release: console-style streaming client for Android handhelds with in-app updates and report upload._
