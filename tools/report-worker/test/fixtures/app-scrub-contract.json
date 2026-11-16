@@ -1,197 +1,200 @@
-[
-  {
-    "raw": "Starting parallel poll for Meiton-PC (192.168.0.200:47989, null, null, null)",
-    "scrubbed": "Starting parallel poll for <pc-1> (<ip-1>:47989, null, null, null)",
-    "patternsOnly": false
-  },
-  {
-    "raw": "https://192.168.0.200:47984/applist?devicename=roth&uniqueid=0123456789ABCDEF&uuid=11111111-2222-3333-4444-555555555555",
-    "scrubbed": "https://<ip-1>:47984/applist?devicename=<redacted>&uniqueid=<redacted>&uuid=<redacted>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "http://10.0.0.5:47989/launch?appid=1234&mode=1920x1080x60&rikey=00112233445566778899aabbccddeeff",
-    "scrubbed": "http://<ip-1>:47989/launch?appid=1234&mode=1920x1080x60&rikey=<redacted>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "GET https://user:hunter2@meiton.example.org/api/v1/status?token=abc123 failed",
-    "scrubbed": "GET https://<host>/api/v1/status?token=<redacted> failed",
-    "patternsOnly": true
-  },
-  {
-    "raw": "GET https://www.steamgriddb.com/api/v2/grids/game/5254?types=static",
-    "scrubbed": "GET https://www.steamgriddb.com/api/v2/grids/game/5254?types=<redacted>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "GET https://github.com/Meitoncz/Delos/issues/new?template=app_report.yml&title=x",
-    "scrubbed": "GET https://github.com/Meitoncz/Delos/issues/new?template=<redacted>&title=<redacted>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "UID is now: fedcba9876543210",
-    "scrubbed": "UID is now: <hex>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "192.168.0.200 -> 8.8.8.8 -> 192.168.0.200",
-    "scrubbed": "<ip-1> -> <ip-2> -> <ip-1>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "version 999.1.2.3 built",
-    "scrubbed": "version 999.1.2.3 built",
-    "patternsOnly": true
-  },
-  {
-    "raw": "addr fe80::1c2d:3eff:fe4f:5a6b%wlan0 used",
-    "scrubbed": "addr <ip-1> used",
-    "patternsOnly": true
-  },
-  {
-    "raw": "connect [2001:db8::1]:47989",
-    "scrubbed": "connect [<ip-1>]:47989",
-    "patternsOnly": true
-  },
-  {
-    "raw": "mapped 2001:db8:0:0:0:0:0:1",
-    "scrubbed": "mapped <ip-1>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "mapped ::ffff:192.168.1.7",
-    "scrubbed": "mapped <ip-1>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "seen fe80::1.",
-    "scrubbed": "seen <ip-1>.",
-    "patternsOnly": true
-  },
-  {
-    "raw": "2026-11-10 12:34:56.789 I/Lime [main] ratio 16:9 at 12:34:56 on port 47989 (Foo::bar)",
-    "scrubbed": "2026-11-10 12:34:56.789 I/Lime [main] ratio 16:9 at 12:34:56 on port 47989 (Foo::bar)",
-    "patternsOnly": true
-  },
-  {
-    "raw": "wake 00:1A:2B:3C:4D:5E and aa-bb-cc-dd-ee-ff and 00:1a:2b:3c:4d:5e",
-    "scrubbed": "wake <mac-1> and <mac-2> and <mac-1>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "api_key=abcDEF123",
-    "scrubbed": "api_key=<redacted>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "Authorization: Bearer abc.def-ghi",
-    "scrubbed": "Authorization: <redacted>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "sent 9fB3kQ7xL2mZ8vC1nR5tY0uW4pH6jD3s done",
-    "scrubbed": "sent <token> done",
-    "patternsOnly": true
-  },
-  {
-    "raw": "steamgriddb 0123456789abcdef0123456789abcdef",
-    "scrubbed": "steamgriddb <hex>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "/Users/meiton/Library/Caches/x",
-    "scrubbed": "/Users/<user>/Library/Caches/x",
-    "patternsOnly": true
-  },
-  {
-    "raw": "C:\\Users\\Meiton\\AppData\\x",
-    "scrubbed": "C:\\Users\\<user>\\AppData\\x",
-    "patternsOnly": true
-  },
-  {
-    "raw": "/home/bob/.config",
-    "scrubbed": "/home/<user>/.config",
-    "patternsOnly": true
-  },
-  {
-    "raw": "/storage/1A2B-3C4D/Download/log.txt",
-    "scrubbed": "/storage/<volume>/Download/log.txt",
-    "patternsOnly": true
-  },
-  {
-    "raw": "/storage/emulated/0/Download/log.txt",
-    "scrubbed": "/storage/emulated/0/Download/log.txt",
-    "patternsOnly": true
-  },
-  {
-    "raw": "connected to SSID: \"Home Wifi 5G\"",
-    "scrubbed": "connected to SSID: <redacted>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "BSSID=aa:bb:cc:dd:ee:ff",
-    "scrubbed": "BSSID=<redacted>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "serial: R5CT1234ABC",
-    "scrubbed": "serial: <redacted>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "from bob@example.com",
-    "scrubbed": "from <email>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "cannot reach desktop-4f2k.local",
-    "scrubbed": "cannot reach <host>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "java.net.UnknownHostException: gamingrig",
-    "scrubbed": "java.net.UnknownHostException: <host>",
-    "patternsOnly": true
-  },
-  {
-    "raw": "Unable to resolve host \"gamingrig\": No address",
-    "scrubbed": "Unable to resolve host \"<host>\": No address",
-    "patternsOnly": true
-  },
-  {
-    "raw": "2026-11-10 12:34:56.789 I/Stream [main] Negotiated HEVC Main10 4:2:0 HDR at 1920x1080@120, bitrate 80000 kbps",
-    "scrubbed": "2026-11-10 12:34:56.789 I/Stream [main] Negotiated HEVC Main10 4:2:0 HDR at 1920x1080@120, bitrate 80000 kbps",
-    "patternsOnly": true
-  },
-  {
-    "raw": "Process started: Delos 0.1.0 (debug), pid 12345",
-    "scrubbed": "Process started: Delos 0.1.0 (debug), pid 12345",
-    "patternsOnly": true
-  },
-  {
-    "raw": "poll Meiton-PC (192.168.0.200:47989) https://192.168.0.200:47984/applist?uniqueid=0123456789abcdef mac 00:1A:2B:3C:4D:5E",
-    "scrubbed": "poll <pc-1> (<ip-1>:47989) https://<ip-1>:47984/applist?uniqueid=<redacted> mac <mac-1>",
-    "patternsOnly": false
-  },
-  {
-    "raw": "living room is online, MEITON-PC's games, homepage; hello meiton on Odin Portal",
-    "scrubbed": "<pc-2> is online, <pc-1>'s games, homepage; hello <name> on <name>",
-    "patternsOnly": false
-  },
-  {
-    "raw": "resolving meiton.example.org failed; key sgdbSecretKey99 rejected; UID is now: 0123456789abcdef",
-    "scrubbed": "resolving <host> failed; key <secret> rejected; UID is now: <id>",
-    "patternsOnly": false
-  },
-  {
-    "raw": "Sending WoL to 00:1A:2B:3C:4D:5E for Living Room via meiton.example.org; password=hunter2; SSID: \"Home Wifi\" owner meiton@example.com",
-    "scrubbed": "Sending WoL to <mac-1> for <pc-2> via <host>; password=<redacted>; SSID: <redacted> owner <name>@example.com",
-    "patternsOnly": false
-  },
-  {
-    "raw": "(a whole report)",
-    "scrubbed": "Delos diagnostic report\nGenerated: 2026-11-10 12:34:56 (device time)\nAddresses, PC names, ids and keys were removed from this text on the device before it was written. Delos sends it only when you choose to report a problem or to share it.\n\n== Device ==\nDelos: 0.15.0 (release), version code 1500\nDevice: AYN Odin2 Portal (odin2portal)\nAndroid: 13 (API 33), security patch 2026-09-05, build TKQ1.240503.001\nSoC: QTI SM8550 (arm64-v8a)\nGPU: Adreno (TM) 740\nScreen: 1920x1080 at 120.0 Hz, 400 dpi\nNetwork: Wi-Fi\nLocale: en-US, time zone UTC+01:00\nStream settings:\n  Codec: hevc\n  Resolution: 1920x1080\n  Frame rate: 60\n  HDR: off\n\n== Problem ==\nKind: JAVA_CRASH\nDetected: 2026-11-10 12:34:56.789 (device time)\nSummary: IllegalStateException: boom\n\njava.lang.IllegalStateException: boom\n\tat com.limelight.Foo.bar(Foo.kt:12)\n\n== Log (39 lines, oldest first) ==\n2026-11-10 12:34:56.789 I/Lime [main] Starting parallel poll for <pc-1> (<ip-1>:47989, null, null, null)\n2026-11-10 12:34:56.789 I/Lime [main] https://<ip-1>:47984/applist?devicename=<redacted>&uniqueid=<redacted>&uuid=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] http://<ip-2>:47989/launch?appid=1234&mode=1920x1080x60&rikey=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] GET https://<host>/api/v1/status?token=<redacted> failed\n2026-11-10 12:34:56.789 I/Lime [main] GET https://www.steamgriddb.com/api/v2/grids/game/5254?types=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] GET https://github.com/Meitoncz/Delos/issues/new?template=<redacted>&title=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] UID is now: <hex>\n2026-11-10 12:34:56.789 I/Lime [main] <ip-1> -> <ip-8> -> <ip-1>\n2026-11-10 12:34:56.789 I/Lime [main] version 999.1.2.3 built\n2026-11-10 12:34:56.789 I/Lime [main] addr <ip-3> used\n2026-11-10 12:34:56.789 I/Lime [main] connect [<ip-4>]:47989\n2026-11-10 12:34:56.789 I/Lime [main] mapped <ip-5>\n2026-11-10 12:34:56.789 I/Lime [main] mapped <ip-6>\n2026-11-10 12:34:56.789 I/Lime [main] seen <ip-7>.\n2026-11-10 12:34:56.789 I/Lime [main] 2026-11-10 12:34:56.789 I/Lime [main] ratio 16:9 at 12:34:56 on port 47989 (Foo::bar)\n2026-11-10 12:34:56.789 I/Lime [main] wake <mac-1> and <mac-2> and <mac-1>\n2026-11-10 12:34:56.789 I/Lime [main] api_key=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] Authorization: <redacted>\n2026-11-10 12:34:56.789 I/Lime [main] sent <token> done\n2026-11-10 12:34:56.789 I/Lime [main] steamgriddb <hex>\n2026-11-10 12:34:56.789 I/Lime [main] /Users/<user>/Library/Caches/x\n2026-11-10 12:34:56.789 I/Lime [main] C:\\Users\\<user>\\AppData\\x\n2026-11-10 12:34:56.789 I/Lime [main] /home/<user>/.config\n2026-11-10 12:34:56.789 I/Lime [main] /storage/<volume>/Download/log.txt\n2026-11-10 12:34:56.789 I/Lime [main] /storage/emulated/0/Download/log.txt\n2026-11-10 12:34:56.789 I/Lime [main] connected to SSID: <redacted>\n2026-11-10 12:34:56.789 I/Lime [main] BSSID=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] serial: <redacted>\n2026-11-10 12:34:56.789 I/Lime [main] from <email>\n2026-11-10 12:34:56.789 I/Lime [main] cannot reach <host>\n2026-11-10 12:34:56.789 I/Lime [main] java.net.UnknownHostException: <host>\n2026-11-10 12:34:56.789 I/Lime [main] Unable to resolve host \"<host>\": No address\n2026-11-10 12:34:56.789 I/Lime [main] 2026-11-10 12:34:56.789 I/Stream [main] Negotiated HEVC Main10 4:2:0 HDR at 1920x1080@120, bitrate 80000 kbps\n2026-11-10 12:34:56.789 I/Lime [main] Process started: Delos 0.1.0 (debug), pid 12345\n2026-11-10 12:34:56.789 I/Lime [main] poll <pc-1> (<ip-1>:47989) https://<ip-1>:47984/applist?uniqueid=<redacted> mac <mac-1>\n2026-11-10 12:34:56.789 I/Lime [main] <pc-2> is online, <pc-1>'s games, homepage; hello <name> on <name>\n2026-11-10 12:34:56.789 I/Lime [main] resolving <host> failed; key <secret> rejected; UID is now: <id>\n2026-11-10 12:34:56.789 I/Lime [main] Sending WoL to <mac-1> for <pc-2> via <host>; password=<redacted>; SSID: <redacted> owner <name>@example.com\n2026-11-10 12:34:57.001 W/Stream [Thread-9] Connection to https://www.steamgriddb.com/api/v2?x=1 took 5 s\n",
-    "patternsOnly": false
-  }
-]
+{
+  "maxBytes": 131072,
+  "cases": [
+    {
+      "raw": "Starting parallel poll for Meiton-PC (192.168.0.200:47989, null, null, null)",
+      "scrubbed": "Starting parallel poll for <pc-1> (<ip-1>:47989, null, null, null)",
+      "patternsOnly": false
+    },
+    {
+      "raw": "https://192.168.0.200:47984/applist?devicename=roth&uniqueid=0123456789ABCDEF&uuid=11111111-2222-3333-4444-555555555555",
+      "scrubbed": "https://<ip-1>:47984/applist?devicename=<redacted>&uniqueid=<redacted>&uuid=<redacted>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "http://10.0.0.5:47989/launch?appid=1234&mode=1920x1080x60&rikey=00112233445566778899aabbccddeeff",
+      "scrubbed": "http://<ip-1>:47989/launch?appid=1234&mode=1920x1080x60&rikey=<redacted>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "GET https://user:hunter2@meiton.example.org/api/v1/status?token=abc123 failed",
+      "scrubbed": "GET https://<host>/api/v1/status?token=<redacted> failed",
+      "patternsOnly": true
+    },
+    {
+      "raw": "GET https://www.steamgriddb.com/api/v2/grids/game/5254?types=static",
+      "scrubbed": "GET https://www.steamgriddb.com/api/v2/grids/game/5254?types=<redacted>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "GET https://github.com/Meitoncz/Delos/issues/new?template=app_report.yml&title=x",
+      "scrubbed": "GET https://github.com/Meitoncz/Delos/issues/new?template=<redacted>&title=<redacted>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "UID is now: fedcba9876543210",
+      "scrubbed": "UID is now: <hex>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "192.168.0.200 -> 8.8.8.8 -> 192.168.0.200",
+      "scrubbed": "<ip-1> -> <ip-2> -> <ip-1>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "version 999.1.2.3 built",
+      "scrubbed": "version 999.1.2.3 built",
+      "patternsOnly": true
+    },
+    {
+      "raw": "addr fe80::1c2d:3eff:fe4f:5a6b%wlan0 used",
+      "scrubbed": "addr <ip-1> used",
+      "patternsOnly": true
+    },
+    {
+      "raw": "connect [2001:db8::1]:47989",
+      "scrubbed": "connect [<ip-1>]:47989",
+      "patternsOnly": true
+    },
+    {
+      "raw": "mapped 2001:db8:0:0:0:0:0:1",
+      "scrubbed": "mapped <ip-1>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "mapped ::ffff:192.168.1.7",
+      "scrubbed": "mapped <ip-1>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "seen fe80::1.",
+      "scrubbed": "seen <ip-1>.",
+      "patternsOnly": true
+    },
+    {
+      "raw": "2026-11-10 12:34:56.789 I/Lime [main] ratio 16:9 at 12:34:56 on port 47989 (Foo::bar)",
+      "scrubbed": "2026-11-10 12:34:56.789 I/Lime [main] ratio 16:9 at 12:34:56 on port 47989 (Foo::bar)",
+      "patternsOnly": true
+    },
+    {
+      "raw": "wake 00:1A:2B:3C:4D:5E and aa-bb-cc-dd-ee-ff and 00:1a:2b:3c:4d:5e",
+      "scrubbed": "wake <mac-1> and <mac-2> and <mac-1>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "api_key=abcDEF123",
+      "scrubbed": "api_key=<redacted>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "Authorization: Bearer abc.def-ghi",
+      "scrubbed": "Authorization: <redacted>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "sent 9fB3kQ7xL2mZ8vC1nR5tY0uW4pH6jD3s done",
+      "scrubbed": "sent <token> done",
+      "patternsOnly": true
+    },
+    {
+      "raw": "steamgriddb 0123456789abcdef0123456789abcdef",
+      "scrubbed": "steamgriddb <hex>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "/Users/meiton/Library/Caches/x",
+      "scrubbed": "/Users/<user>/Library/Caches/x",
+      "patternsOnly": true
+    },
+    {
+      "raw": "C:\\Users\\Meiton\\AppData\\x",
+      "scrubbed": "C:\\Users\\<user>\\AppData\\x",
+      "patternsOnly": true
+    },
+    {
+      "raw": "/home/bob/.config",
+      "scrubbed": "/home/<user>/.config",
+      "patternsOnly": true
+    },
+    {
+      "raw": "/storage/1A2B-3C4D/Download/log.txt",
+      "scrubbed": "/storage/<volume>/Download/log.txt",
+      "patternsOnly": true
+    },
+    {
+      "raw": "/storage/emulated/0/Download/log.txt",
+      "scrubbed": "/storage/emulated/0/Download/log.txt",
+      "patternsOnly": true
+    },
+    {
+      "raw": "connected to SSID: \"Home Wifi 5G\"",
+      "scrubbed": "connected to SSID: <redacted>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "BSSID=aa:bb:cc:dd:ee:ff",
+      "scrubbed": "BSSID=<redacted>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "serial: R5CT1234ABC",
+      "scrubbed": "serial: <redacted>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "from bob@example.com",
+      "scrubbed": "from <email>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "cannot reach desktop-4f2k.local",
+      "scrubbed": "cannot reach <host>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "java.net.UnknownHostException: gamingrig",
+      "scrubbed": "java.net.UnknownHostException: <host>",
+      "patternsOnly": true
+    },
+    {
+      "raw": "Unable to resolve host \"gamingrig\": No address",
+      "scrubbed": "Unable to resolve host \"<host>\": No address",
+      "patternsOnly": true
+    },
+    {
+      "raw": "2026-11-10 12:34:56.789 I/Stream [main] Negotiated HEVC Main10 4:2:0 HDR at 1920x1080@120, bitrate 80000 kbps",
+      "scrubbed": "2026-11-10 12:34:56.789 I/Stream [main] Negotiated HEVC Main10 4:2:0 HDR at 1920x1080@120, bitrate 80000 kbps",
+      "patternsOnly": true
+    },
+    {
+      "raw": "Process started: Delos 0.1.0 (debug), pid 12345",
+      "scrubbed": "Process started: Delos 0.1.0 (debug), pid 12345",
+      "patternsOnly": true
+    },
+    {
+      "raw": "poll Meiton-PC (192.168.0.200:47989) https://192.168.0.200:47984/applist?uniqueid=0123456789abcdef mac 00:1A:2B:3C:4D:5E",
+      "scrubbed": "poll <pc-1> (<ip-1>:47989) https://<ip-1>:47984/applist?uniqueid=<redacted> mac <mac-1>",
+      "patternsOnly": false
+    },
+    {
+      "raw": "living room is online, MEITON-PC's games, homepage; hello meiton on Odin Portal",
+      "scrubbed": "<pc-2> is online, <pc-1>'s games, homepage; hello <name> on <name>",
+      "patternsOnly": false
+    },
+    {
+      "raw": "resolving meiton.example.org failed; key sgdbSecretKey99 rejected; UID is now: 0123456789abcdef",
+      "scrubbed": "resolving <host> failed; key <secret> rejected; UID is now: <id>",
+      "patternsOnly": false
+    },
+    {
+      "raw": "Sending WoL to 00:1A:2B:3C:4D:5E for Living Room via meiton.example.org; password=hunter2; SSID: \"Home Wifi\" owner meiton@example.com",
+      "scrubbed": "Sending WoL to <mac-1> for <pc-2> via <host>; password=<redacted>; SSID: <redacted> owner <name>@example.com",
+      "patternsOnly": false
+    },
+    {
+      "raw": "(a whole report)",
+      "scrubbed": "Delos diagnostic report\nGenerated: 2026-11-10 12:34:56 (device time)\nAddresses, PC names, ids and keys were removed from this text on the device before it was written. Delos sends it only when you choose to report a problem or to share it.\n\n== Device ==\nDelos: 0.15.0 (release), version code 1500\nDevice: AYN Odin2 Portal (odin2portal)\nAndroid: 13 (API 33), security patch 2026-09-05, build TKQ1.240503.001\nSoC: QTI SM8550 (arm64-v8a)\nGPU: Adreno (TM) 740\nScreen: 1920x1080 at 120.0 Hz, 400 dpi\nNetwork: Wi-Fi\nLocale: en-US, time zone UTC+01:00\nStream settings:\n  Codec: hevc\n  Resolution: 1920x1080\n  Frame rate: 60\n  HDR: off\n\n== Problem ==\nKind: JAVA_CRASH\nDetected: 2026-11-10 12:34:56.789 (device time)\nSummary: IllegalStateException: boom\n\njava.lang.IllegalStateException: boom\n\tat com.limelight.Foo.bar(Foo.kt:12)\n\n== Log (39 lines, oldest first) ==\n2026-11-10 12:34:56.789 I/Lime [main] Starting parallel poll for <pc-1> (<ip-1>:47989, null, null, null)\n2026-11-10 12:34:56.789 I/Lime [main] https://<ip-1>:47984/applist?devicename=<redacted>&uniqueid=<redacted>&uuid=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] http://<ip-2>:47989/launch?appid=1234&mode=1920x1080x60&rikey=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] GET https://<host>/api/v1/status?token=<redacted> failed\n2026-11-10 12:34:56.789 I/Lime [main] GET https://www.steamgriddb.com/api/v2/grids/game/5254?types=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] GET https://github.com/Meitoncz/Delos/issues/new?template=<redacted>&title=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] UID is now: <hex>\n2026-11-10 12:34:56.789 I/Lime [main] <ip-1> -> <ip-8> -> <ip-1>\n2026-11-10 12:34:56.789 I/Lime [main] version 999.1.2.3 built\n2026-11-10 12:34:56.789 I/Lime [main] addr <ip-3> used\n2026-11-10 12:34:56.789 I/Lime [main] connect [<ip-4>]:47989\n2026-11-10 12:34:56.789 I/Lime [main] mapped <ip-5>\n2026-11-10 12:34:56.789 I/Lime [main] mapped <ip-6>\n2026-11-10 12:34:56.789 I/Lime [main] seen <ip-7>.\n2026-11-10 12:34:56.789 I/Lime [main] 2026-11-10 12:34:56.789 I/Lime [main] ratio 16:9 at 12:34:56 on port 47989 (Foo::bar)\n2026-11-10 12:34:56.789 I/Lime [main] wake <mac-1> and <mac-2> and <mac-1>\n2026-11-10 12:34:56.789 I/Lime [main] api_key=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] Authorization: <redacted>\n2026-11-10 12:34:56.789 I/Lime [main] sent <token> done\n2026-11-10 12:34:56.789 I/Lime [main] steamgriddb <hex>\n2026-11-10 12:34:56.789 I/Lime [main] /Users/<user>/Library/Caches/x\n2026-11-10 12:34:56.789 I/Lime [main] C:\\Users\\<user>\\AppData\\x\n2026-11-10 12:34:56.789 I/Lime [main] /home/<user>/.config\n2026-11-10 12:34:56.789 I/Lime [main] /storage/<volume>/Download/log.txt\n2026-11-10 12:34:56.789 I/Lime [main] /storage/emulated/0/Download/log.txt\n2026-11-10 12:34:56.789 I/Lime [main] connected to SSID: <redacted>\n2026-11-10 12:34:56.789 I/Lime [main] BSSID=<redacted>\n2026-11-10 12:34:56.789 I/Lime [main] serial: <redacted>\n2026-11-10 12:34:56.789 I/Lime [main] from <email>\n2026-11-10 12:34:56.789 I/Lime [main] cannot reach <host>\n2026-11-10 12:34:56.789 I/Lime [main] java.net.UnknownHostException: <host>\n2026-11-10 12:34:56.789 I/Lime [main] Unable to resolve host \"<host>\": No address\n2026-11-10 12:34:56.789 I/Lime [main] 2026-11-10 12:34:56.789 I/Stream [main] Negotiated HEVC Main10 4:2:0 HDR at 1920x1080@120, bitrate 80000 kbps\n2026-11-10 12:34:56.789 I/Lime [main] Process started: Delos 0.1.0 (debug), pid 12345\n2026-11-10 12:34:56.789 I/Lime [main] poll <pc-1> (<ip-1>:47989) https://<ip-1>:47984/applist?uniqueid=<redacted> mac <mac-1>\n2026-11-10 12:34:56.789 I/Lime [main] <pc-2> is online, <pc-1>'s games, homepage; hello <name> on <name>\n2026-11-10 12:34:56.789 I/Lime [main] resolving <host> failed; key <secret> rejected; UID is now: <id>\n2026-11-10 12:34:56.789 I/Lime [main] Sending WoL to <mac-1> for <pc-2> via <host>; password=<redacted>; SSID: <redacted> owner <name>@example.com\n2026-11-10 12:34:57.001 W/Stream [Thread-9] Connection to https://www.steamgriddb.com/api/v2?x=1 took 5 s\n",
+      "patternsOnly": false
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { MAX_BYTES } from "../src/handler.js";
 import { rescrub } from "../src/scrub.js";
 
 const scrub = (text) => rescrub(text).text;
@@ -160,23 +161,22 @@ describe("the second pass over a clean report", () => {
   });
 });
 
-describe("hostile input", () => {
-  const MIB = 1024 * 1024;
+describe("hostile input of the largest size the Worker accepts", () => {
   const cases = {
-    "one letter": "a".repeat(2 * MIB),
-    "hex and colons": "a:".repeat(MIB),
-    "colons": ":".repeat(2 * MIB),
-    "labels": "a.".repeat(MIB),
-    "dashes": "a-".repeat(MIB),
-    "dots and digits": "1.".repeat(MIB),
-    "address characters": "[email@".repeat(300_000),
-    "spaces after a key": `pin${" ".repeat(2 * MIB)}`,
+    "one letter": "a".repeat(MAX_BYTES),
+    "hex and colons": "a:".repeat(MAX_BYTES / 2),
+    "colons": ":".repeat(MAX_BYTES),
+    "labels": "a.".repeat(MAX_BYTES / 2),
+    "dashes": "a-".repeat(MAX_BYTES / 2),
+    "dots and digits": "1.".repeat(MAX_BYTES / 2),
+    "address characters": "[email@".repeat(MAX_BYTES / 7),
+    "spaces after a key": `pin${" ".repeat(MAX_BYTES)}`,
   };
   for (const [name, text] of Object.entries(cases)) {
-    it(`takes bounded time on 2 MiB of ${name}`, () => {
+    it(`takes bounded time on ${MAX_BYTES / 1024} KiB of ${name}`, () => {
       const started = performance.now();
       rescrub(text);
-      expect(performance.now() - started).toBeLessThan(2500);
+      expect(performance.now() - started).toBeLessThan(500);
     });
   }
 });
@@ -184,10 +184,15 @@ describe("hostile input", () => {
 // tools/report-worker/test/fixtures/app-scrub-contract.json is written by the app's ScrubContractTest from the app's own
 // scrubber, so the two implementations cannot drift apart unnoticed.
 describe("the contract with the app's scrubber", () => {
-  const fixtures = JSON.parse(readFileSync(new URL("./fixtures/app-scrub-contract.json", import.meta.url), "utf8"));
+  const contract = JSON.parse(readFileSync(new URL("./fixtures/app-scrub-contract.json", import.meta.url), "utf8"));
+  const fixtures = contract.cases;
 
   it("has fixtures", () => {
     expect(fixtures.length).toBeGreaterThan(30);
+  });
+
+  it("agrees with the app on the largest report: ReportUploader.MAX_BYTES is the Worker's MAX_BYTES", () => {
+    expect(contract.maxBytes).toBe(MAX_BYTES);
   });
 
   for (const fixture of fixtures) {

@@ -2,7 +2,7 @@
 // report a second time before it is stored. The rules and their order are the app's. Two kinds of difference are deliberate:
 //   * What only the device knows (PC names, host addresses, profile names, the client id, the API key) is not here: the app
 //     removed those before the upload and the Worker cannot know them.
-//   * Patterns that could take quadratic time on hostile input (2 MiB of one repeated character) are written so that they
+//   * Patterns that could take quadratic time on hostile input (a report of the maximum size made of one repeated character) are written so that they
 //     cannot: anchored with a lookbehind, bounded, or matched as a whole run and then judged in code. The matches are the same.
 // The text the app sends is already clean, so every rule here is expected to find nothing; a rule that does find something
 // is counted, and the count goes back to the app (`rescrubbed`). Rules are idempotent: a placeholder is never replaced again.
@@ -16,8 +16,10 @@ const QUOTED_HOST = /(\bhost\s+")([^"]*)(")/gi;
 const UNKNOWN_HOST = /(UnknownHostException:\s*)(\S+)/g;
 const MAC = /(?<![0-9a-f:-])(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}(?![0-9a-f]|[:-][0-9a-f])/gi;
 const IPV4 = /(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?!\d|\.\d)/g;
-// A run of hex digits and colons (then dots, for an IPv4 tail, and a zone); the code decides whether it is an address.
-const IPV6_CANDIDATE = /(?<![0-9A-Za-z_:.])[0-9A-Fa-f:]+[0-9A-Fa-f:.]*(?:%[A-Za-z0-9_.-]+)?/g;
+// A run of hex digits and colons that can be an address: it holds "::" or at least five groups of 1-4 hex digits each followed
+// by a colon (an address without "::" has eight groups). Then dots (an IPv4 tail) and a zone. Times and ratios ("12:34:56",
+// "4:2:0") never match, so the code only judges real candidates.
+const IPV6_CANDIDATE = /(?<![0-9A-Za-z_:.])(?:[0-9A-Fa-f:]*::[0-9A-Fa-f:.]*|(?:[0-9A-Fa-f]{1,4}:){5,}[0-9A-Fa-f:.]*)(?:%[A-Za-z0-9_.-]+)?/g;
 const UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 const LONG_HEX = /\b[0-9a-f]{16,}\b/gi;
 // The whole run, then judged for a digit and a letter (the app's pattern does that with lookaheads).
@@ -29,6 +31,8 @@ const EMAIL = /(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0
 // DNS limits (labels of at most 63 characters, at most 9 labels) bound the scan.
 const LOCAL_HOST =
   /\b[a-z0-9][a-z0-9_-]{0,62}(?:\.[a-z0-9_-]{1,63}){0,8}\.(?:local|lan|home|internal|localdomain|home\.arpa|ts\.net|duckdns\.org|dyndns\.[a-z]+|no-ip\.[a-z]+|myfritz\.net|ddns\.net)\b/gi;
+
+const LOCAL_SUFFIX = /\.(?:local|lan|home|internal|localdomain|ts\.net|duckdns|dyndns|no-ip|myfritz|ddns)/i;
 
 const SAFE_QUERY_VALUE = /^(?:\d{1,6}|\d{2,5}x\d{2,5}(?:x\d{1,3})?|true|false)$/i;
 const PUBLIC_HOSTS = ["github.com", "steamgriddb.com", "igdb.com", "steampowered.com", "howlongtobeat.com", "pcgamingwiki.com"];
@@ -182,7 +186,8 @@ export function rescrub(text) {
   out = replace(out, LONG_TOKEN, (match) => (/[0-9]/.test(match) && /[A-Za-z]/.test(match) ? "<token>" : match));
   out = replace(out, USER_PATH, (_m, prefix) => `${prefix}<user>`);
   out = replace(out, VOLUME_PATH, (_m, prefix) => `${prefix}<volume>`);
-  out = replace(out, EMAIL, () => "<email>");
-  out = replace(out, LOCAL_HOST, () => "<host>");
+  // Rules that need a character or a word that most reports do not contain are skipped by a plain search first.
+  if (out.includes("@")) out = replace(out, EMAIL, () => "<email>");
+  if (LOCAL_SUFFIX.test(out)) out = replace(out, LOCAL_HOST, () => "<host>");
   return { text: out, count };
 }

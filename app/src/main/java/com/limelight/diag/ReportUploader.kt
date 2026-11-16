@@ -91,8 +91,12 @@ class ReportUploader(baseUrl: String = BuildConfig.DELOS_REPORTS_URL, http: OkHt
         private const val TEXT_UTF8 = "text/plain; charset=utf-8"
         private const val MAX_ANSWER_BYTES = 4096L
 
-        /** What the service accepts (`MAX_BYTES` of `tools/report-worker/src/handler.js`): 2 MiB of text. */
-        const val MAX_BYTES = 2 * 1024 * 1024
+        /**
+         * What the service accepts (`MAX_BYTES` of `tools/report-worker/src/handler.js`): 128 KiB of text, which its second scrub can
+         * check within the CPU time of the free Cloudflare plan. `ScrubContractTest` writes this value into the contract file that the
+         * Worker's tests compare with its own constant.
+         */
+        const val MAX_BYTES = 128 * 1024
 
         /** How long the service keeps a report (`TTL_SECONDS` of the Worker), for the texts that say so. */
         const val KEPT_DAYS = 30
@@ -133,8 +137,8 @@ class ReportUploader(baseUrl: String = BuildConfig.DELOS_REPORTS_URL, http: OkHt
         }
 
         /**
-         * [text] cut to what the service accepts: the header, the device block and the sections stay, the oldest log lines go
-         * first and a note says so. Text that fits is returned as it is.
+         * [text] cut to what the service accepts: the header, the device block and the sections (the problem) stay whole, the oldest log
+         * lines go first (the newest matter most) and a note says so. Text that fits is returned as it is.
          */
         fun fit(text: String, maxBytes: Int = MAX_BYTES): String {
             if (text.toByteArray(Charsets.UTF_8).size <= maxBytes) return text
@@ -152,6 +156,6 @@ class ReportUploader(baseUrl: String = BuildConfig.DELOS_REPORTS_URL, http: OkHt
             return (head + kept).joinToString("\n")
         }
 
-        private const val NOTE = "(older log lines were left out: the report service accepts 2 MiB)"
+        private const val NOTE = "(older log lines were left out: the report service accepts 128 KiB)"
     }
 }

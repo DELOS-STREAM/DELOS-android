@@ -109,7 +109,9 @@ class ReportSubmissionTest {
     @Test fun aHugeReportIsCutToWhatTheServiceAcceptsBeforeTheUpload() {
         val server = working()
         val log = (1..40_000).joinToString("\n") { "2026-11-10 12:34:56.789 I/Stream [main] a log line of ordinary length number $it" }
-        val big = DiagnosticReport("Delos diagnostic report\n== Log (40000 lines, oldest first) ==\n$log\n", 40_000)
+        val head = "Delos diagnostic report\n== Device ==\nModel x\n== Problem ==\n${ProblemIssue.section(problem, "2026-11-10 12:34:56")}\n"
+        val big = DiagnosticReport("$head== Log (40000 lines, oldest first) ==\n$log\n", 40_000)
+        assertEquals(128 * 1024, ReportUploader.MAX_BYTES)
         assertTrue(big.bytes > ReportUploader.MAX_BYTES)
         val result = runBlocking {
             ReportSubmission.run(ProblemReporter.Prepared(big, "f.txt") { prepared.issueUrl(it) }, ReportMode.UPLOAD, ReportUploader(server.url)) { _, _ -> true }
@@ -117,6 +119,7 @@ class ReportSubmissionTest {
         assertTrue(result is ReportResult.Uploaded)
         val sent = server.requests.single().text
         assertTrue(sent.toByteArray().size <= ReportUploader.MAX_BYTES)
+        assertTrue("the header, the device block and the problem stay whole", sent.startsWith(head))
         assertTrue(sent.contains("number 40000"))
         assertFalse(sent.contains("number 1\n"))
     }

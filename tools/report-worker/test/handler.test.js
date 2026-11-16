@@ -105,13 +105,13 @@ describe("what the Worker accepts", () => {
     expect((await client.request(`/r/${created.json().id}`)).text).toBe(text);
   });
 
-  it("rejects a body over 2 MiB, announced or not", async () => {
+  it("rejects a body over 128 KiB, announced or not", async () => {
     const client = createClient({ env: { UPLOAD_LIMITER: undefined } });
-    expect(MAX_BYTES).toBe(2 * 1024 * 1024);
+    expect(MAX_BYTES).toBe(128 * 1024);
     const announced = await client.upload("x", { "content-length": String(MAX_BYTES + 1) });
     expect(announced.status).toBe(413);
     expect(announced.json()).toEqual({ error: "too_large" });
-    const chunk = new Uint8Array(1024 * 1024).fill(97);
+    const chunk = new Uint8Array(MAX_BYTES / 2).fill(97);
     const stream = () =>
       new ReadableStream({
         start(controller) {

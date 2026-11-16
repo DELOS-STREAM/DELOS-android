@@ -1,7 +1,9 @@
 import { createBucket } from "./limits.js";
 import { rescrub } from "./scrub.js";
 
-export const MAX_BYTES = 2 * 1024 * 1024;
+// The second scrub of a report takes about 5 ms of CPU per 128 KiB (README, "Evidence"); the Workers Free plan allows 10 ms of CPU per
+// request. The app cuts its report to the same size (ReportUploader.MAX_BYTES); ScrubContractTest and scrub.test.js check that they agree.
+export const MAX_BYTES = 128 * 1024;
 export const TTL_SECONDS = 30 * 24 * 60 * 60;
 export const WORK_MS = 5000;
 // The Workers Free plan allows 1000 KV writes per day and an upload makes two (the report and the counter): 400 uploads

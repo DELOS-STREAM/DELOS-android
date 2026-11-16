@@ -95,7 +95,7 @@ class ScrubContractTest {
         val rows = cases.map { case ->
             mapOf("raw" to case.raw, "scrubbed" to LogScrubber(context).scrub(case.raw), "patternsOnly" to case.patternsOnly)
         } + fullReport().let { mapOf("raw" to "(a whole report)", "scrubbed" to fullReportText, "patternsOnly" to false) }
-        val current = gson.toJson(rows) + "\n"
+        val current = gson.toJson(mapOf("maxBytes" to ReportUploader.MAX_BYTES, "cases" to rows)) + "\n"
         if (System.getenv("DELOS_UPDATE_SCRUB_CONTRACT") == "1") file().writeText(current)
         assertTrue("${file().path} is missing: run this test with DELOS_UPDATE_SCRUB_CONTRACT=1", file().exists())
         assertEquals(
