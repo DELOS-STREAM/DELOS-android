@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_card_title">O Delos %1$s está disponível</string>
+    <string name="update_card_question">Atualizar agora? O Delos baixa, confere e entrega ao Android para instalar.</string>
+    <string name="update_card_needs_permission">O Android precisa primeiro permitir que o Delos instale atualizações. Abra as configurações, ative e volte.</string>
+    <string name="update_card_downloading">Baixando a atualização…</string>
+    <string name="update_card_installing">O Android está instalando a atualização…</string>
+    <string name="update_card_percent">%1$d %%</string>
+    <string name="update_card_update">Atualizar</string>
+    <string name="update_card_later">Depois</string>
+    <string name="update_card_allow">Abrir configurações</string>
+    <string name="update_card_cancel">Cancelar</string>
+    <string name="update_card_retry">Tentar de novo</string>
+    <string name="update_card_failed_download">O download falhou. Verifique sua conexão e tente de novo.</string>
+    <string name="update_card_failed_too_large">O download é maior do que o Delos permite, então foi interrompido.</string>
+    <string name="update_card_failed_storage">Não há espaço suficiente para salvar a atualização.</string>
+    <string name="update_card_failed_checksum">O arquivo não confere com a soma de verificação publicada, então foi apagado e não foi instalado.</string>
+    <string name="update_card_failed_signature">O Android recusou a atualização: ela não está assinada com a mesma chave do Delos instalado.</string>
+    <string name="update_card_failed_install">O Android não conseguiu instalar a atualização.</string>
+    <string name="settings_native_section_updates">Atualizações</string>
+    <string name="settings_native_update_check_title">Verificar atualizações</string>
+    <string name="settings_native_update_check_description">Consulta o api.github.com uma vez por dia sobre a versão mais recente do Delos e a oferece aqui. O GitHub vê o endereço IP deste dispositivo; nada mais é enviado. Desativado: nenhuma solicitação.</string>
+    <string name="settings_native_update_now_title">Verificar agora</string>
+    <string name="settings_native_update_now_description">Consulta o GitHub agora. Uma versão nova é oferecida na tela inicial.</string>
+    <string name="settings_native_update_now_value">Verificar</string>
+    <string name="settings_native_update_checking">Verificando…</string>
+    <string name="settings_native_update_result_current">Atualizado</string>
+    <string name="settings_native_update_result_available">Versão nova %1$s</string>
+    <string name="settings_native_update_result_no_download">A versão %1$s não tem download para este dispositivo</string>
+    <string name="settings_native_update_result_network">Não foi possível acessar o GitHub</string>
+    <string name="settings_native_update_result_rate_limited">O GitHub está ocupado, tente mais tarde</string>
+    <string name="settings_native_update_result_failed">A resposta do GitHub não pôde ser usada</string>
+    <string name="settings_native_update_result_disabled">Desativado</string>
+    <string name="settings_native_update_result_debug">Não em builds de depuração</string>
+    <string name="help_about_update_check">Uma vez por dia, ao iniciar, o Delos consulta o api.github.com sobre a versão mais recente. O GitHub vê o endereço IP deste dispositivo; nada mais é enviado. Se houver uma versão mais nova, a tela inicial a oferece com as notas da versão. Só quando você toca em Atualizar o Delos a baixa do GitHub e confere o SHA-256 pela lista publicada com a versão; depois o Android pergunta antes de instalar e recusa uma atualização assinada com outra chave. Desativado: nenhuma solicitação. Ainda não testado em um dispositivo.</string>
+    <string name="help_about_update_now">Consulta o GitHub agora, mesmo que tenha consultado há menos de um dia. Uma versão mais nova é oferecida na tela inicial. Exige que Verificar atualizações esteja ativado.</string>
+</resources>

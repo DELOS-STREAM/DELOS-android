@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_card_title">Delos %1$s 可用</string>
+    <string name="update_card_question">现在更新吗？Delos 会下载并校验它，然后交给 Android 安装。</string>
+    <string name="update_card_needs_permission">需要先在 Android 中允许 Delos 安装更新。打开设置，开启后再回来。</string>
+    <string name="update_card_downloading">正在下载更新…</string>
+    <string name="update_card_installing">Android 正在安装更新…</string>
+    <string name="update_card_percent">%1$d %%</string>
+    <string name="update_card_update">更新</string>
+    <string name="update_card_later">稍后</string>
+    <string name="update_card_allow">打开设置</string>
+    <string name="update_card_cancel">取消</string>
+    <string name="update_card_retry">重试</string>
+    <string name="update_card_failed_download">下载失败。请检查网络连接后重试。</string>
+    <string name="update_card_failed_too_large">下载文件超过 Delos 允许的大小，已停止。</string>
+    <string name="update_card_failed_storage">空间不足，无法保存更新。</string>
+    <string name="update_card_failed_checksum">文件与发布页公布的校验和不符，已删除且未安装。</string>
+    <string name="update_card_failed_signature">Android 拒绝了该更新：它与已安装的 Delos 不是用同一密钥签名的。</string>
+    <string name="update_card_failed_install">Android 无法安装该更新。</string>
+    <string name="settings_native_section_updates">更新</string>
+    <string name="settings_native_update_check_title">检查更新</string>
+    <string name="settings_native_update_check_description">每天向 api.github.com 询问一次 Delos 的最新版本，并在这里提示。GitHub 能看到这台设备的 IP 地址，不会发送其他任何内容。关闭：完全不发出请求。</string>
+    <string name="settings_native_update_now_title">立即检查</string>
+    <string name="settings_native_update_now_description">立即询问 GitHub。新版本会在开始屏幕上提示。</string>
+    <string name="settings_native_update_now_value">检查</string>
+    <string name="settings_native_update_checking">正在检查…</string>
+    <string name="settings_native_update_result_current">已是最新</string>
+    <string name="settings_native_update_result_available">新版本 %1$s</string>
+    <string name="settings_native_update_result_no_download">版本 %1$s 没有适用于这台设备的下载</string>
+    <string name="settings_native_update_result_network">无法连接 GitHub</string>
+    <string name="settings_native_update_result_rate_limited">GitHub 繁忙，请稍后再试</string>
+    <string name="settings_native_update_result_failed">GitHub 的回复无法使用</string>
+    <string name="settings_native_update_result_disabled">已关闭</string>
+    <string name="settings_native_update_result_debug">调试版本中不可用</string>
+    <string name="help_about_update_check">Delos 每天启动时向 api.github.com 询问一次最新版本。GitHub 能看到这台设备的 IP 地址，不会发送其他任何内容。如有更新版本，开始屏幕会连同发布说明一起提示。只有当你点按“更新”后，Delos 才会从 GitHub 下载，并按随版本公布的列表校验其 SHA-256；之后 Android 会在安装前征求你的同意，并拒绝用其他密钥签名的更新。关闭：完全不发出请求。尚未在设备上测试。</string>
+    <string name="help_about_update_now">即使不到一天前刚询问过，也立即询问 GitHub。更新的版本会在开始屏幕上提示。需要先开启“检查更新”。</string>
+</resources>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_card_title">Delos %1$s está disponible</string>
+    <string name="update_card_question">¿Actualizar ahora? Delos la descarga, la comprueba y se la entrega a Android para instalarla.</string>
+    <string name="update_card_needs_permission">Android tiene que permitir antes que Delos instale actualizaciones. Abre los ajustes, actívalo y vuelve.</string>
+    <string name="update_card_downloading">Descargando la actualización…</string>
+    <string name="update_card_installing">Android está instalando la actualización…</string>
+    <string name="update_card_percent">%1$d %%</string>
+    <string name="update_card_update">Actualizar</string>
+    <string name="update_card_later">Más tarde</string>
+    <string name="update_card_allow">Abrir ajustes</string>
+    <string name="update_card_cancel">Cancelar</string>
+    <string name="update_card_retry">Reintentar</string>
+    <string name="update_card_failed_download">La descarga ha fallado. Revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="update_card_failed_too_large">La descarga es mayor de lo que Delos permite, así que se ha detenido.</string>
+    <string name="update_card_failed_storage">No hay espacio suficiente para guardar la actualización.</string>
+    <string name="update_card_failed_checksum">El archivo no coincide con la suma de comprobación publicada, así que se ha borrado y no se ha instalado.</string>
+    <string name="update_card_failed_signature">Android ha rechazado la actualización: no está firmada con la misma clave que el Delos instalado.</string>
+    <string name="update_card_failed_install">Android no ha podido instalar la actualización.</string>
+    <string name="settings_native_section_updates">Actualizaciones</string>
+    <string name="settings_native_update_check_title">Buscar actualizaciones</string>
+    <string name="settings_native_update_check_description">Pregunta una vez al día a api.github.com por la última versión de Delos y la ofrece aquí. GitHub ve la dirección IP de este dispositivo; no se envía nada más. Desactivado: ninguna solicitud.</string>
+    <string name="settings_native_update_now_title">Buscar ahora</string>
+    <string name="settings_native_update_now_description">Pregunta a GitHub ahora. Una versión nueva se ofrece en la pantalla de inicio.</string>
+    <string name="settings_native_update_now_value">Buscar</string>
+    <string name="settings_native_update_checking">Buscando…</string>
+    <string name="settings_native_update_result_current">Al día</string>
+    <string name="settings_native_update_result_available">Versión nueva %1$s</string>
+    <string name="settings_native_update_result_no_download">La versión %1$s no tiene descarga para este dispositivo</string>
+    <string name="settings_native_update_result_network">No se pudo contactar con GitHub</string>
+    <string name="settings_native_update_result_rate_limited">GitHub está ocupado, inténtalo más tarde</string>
+    <string name="settings_native_update_result_failed">La respuesta de GitHub no era utilizable</string>
+    <string name="settings_native_update_result_disabled">Desactivado</string>
+    <string name="settings_native_update_result_debug">No en compilaciones de depuración</string>
+    <string name="help_about_update_check">Una vez al día, al iniciarse, Delos pregunta a api.github.com por la última versión. GitHub ve la dirección IP de este dispositivo; no se envía nada más. Si hay una versión más nueva, la pantalla de inicio la ofrece con sus notas. Solo cuando pulsas Actualizar, Delos la descarga de GitHub y comprueba su SHA-256 con la lista publicada junto a la versión; después Android te pregunta antes de instalar y rechaza una actualización firmada con otra clave. Desactivado: ninguna solicitud. Aún no probado en un dispositivo.</string>
+    <string name="help_about_update_now">Pregunta a GitHub ahora, aunque lo haya hecho hace menos de un día. Una versión más nueva se ofrece en la pantalla de inicio. Requiere que Buscar actualizaciones esté activado.</string>
+</resources>

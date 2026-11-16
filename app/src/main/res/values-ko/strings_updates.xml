@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_card_title">Delos %1$s을(를) 사용할 수 있어요</string>
+    <string name="update_card_question">지금 업데이트할까요? Delos가 내려받고 확인한 뒤 설치하도록 Android에 넘겨요.</string>
+    <string name="update_card_needs_permission">먼저 Android에서 Delos의 업데이트 설치를 허용해야 해요. 설정을 열어 켠 다음 돌아오세요.</string>
+    <string name="update_card_downloading">업데이트를 내려받는 중…</string>
+    <string name="update_card_installing">Android가 업데이트를 설치하는 중…</string>
+    <string name="update_card_percent">%1$d %%</string>
+    <string name="update_card_update">업데이트</string>
+    <string name="update_card_later">나중에</string>
+    <string name="update_card_allow">설정 열기</string>
+    <string name="update_card_cancel">취소</string>
+    <string name="update_card_retry">다시 시도</string>
+    <string name="update_card_failed_download">내려받지 못했어요. 연결을 확인하고 다시 시도하세요.</string>
+    <string name="update_card_failed_too_large">내려받는 파일이 Delos가 허용하는 크기보다 커서 중단했어요.</string>
+    <string name="update_card_failed_storage">업데이트를 저장할 공간이 부족해요.</string>
+    <string name="update_card_failed_checksum">파일이 릴리스에 공개된 체크섬과 맞지 않아 삭제했고 설치하지 않았어요.</string>
+    <string name="update_card_failed_signature">Android가 업데이트를 거부했어요. 설치된 Delos와 같은 키로 서명되지 않았어요.</string>
+    <string name="update_card_failed_install">Android가 업데이트를 설치하지 못했어요.</string>
+    <string name="settings_native_section_updates">업데이트</string>
+    <string name="settings_native_update_check_title">업데이트 확인</string>
+    <string name="settings_native_update_check_description">하루에 한 번 api.github.com에 Delos 최신 릴리스를 물어보고 여기에 알려요. GitHub는 이 기기의 IP 주소를 볼 수 있고, 그 밖에는 아무것도 보내지 않아요. 끄면 요청을 전혀 보내지 않아요.</string>
+    <string name="settings_native_update_now_title">지금 확인</string>
+    <string name="settings_native_update_now_description">지금 GitHub에 물어봐요. 새 버전은 시작 화면에 표시돼요.</string>
+    <string name="settings_native_update_now_value">확인</string>
+    <string name="settings_native_update_checking">확인 중…</string>
+    <string name="settings_native_update_result_current">최신 버전</string>
+    <string name="settings_native_update_result_available">새 버전 %1$s</string>
+    <string name="settings_native_update_result_no_download">버전 %1$s에는 이 기기용 다운로드가 없어요</string>
+    <string name="settings_native_update_result_network">GitHub에 연결할 수 없어요</string>
+    <string name="settings_native_update_result_rate_limited">GitHub가 바빠요. 나중에 다시 시도하세요</string>
+    <string name="settings_native_update_result_failed">GitHub의 응답을 사용할 수 없어요</string>
+    <string name="settings_native_update_result_disabled">끔</string>
+    <string name="settings_native_update_result_debug">디버그 빌드에서는 사용 안 함</string>
+    <string name="help_about_update_check">Delos는 시작할 때 하루에 한 번 api.github.com에 최신 버전을 물어봐요. GitHub는 이 기기의 IP 주소를 볼 수 있고, 그 밖에는 아무것도 보내지 않아요. 더 새로운 버전이 있으면 시작 화면이 릴리스 노트와 함께 알려줘요. 업데이트를 누를 때만 Delos가 GitHub에서 내려받고, 릴리스와 함께 공개된 목록으로 SHA-256을 확인해요. 그다음 Android가 설치 전에 물어보고, 다른 키로 서명된 업데이트는 거부해요. 끄면 요청을 전혀 보내지 않아요. 아직 기기에서 테스트하지 않았어요.</string>
+    <string name="help_about_update_now">하루가 지나지 않았어도 지금 GitHub에 물어봐요. 더 새로운 버전은 시작 화면에 표시돼요. 업데이트 확인이 켜져 있어야 해요.</string>
+</resources>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_card_title">Delos %1$s ist verfügbar</string>
+    <string name="update_card_question">Jetzt aktualisieren? Delos lädt es herunter, prüft es und übergibt es zur Installation an Android.</string>
+    <string name="update_card_needs_permission">Android muss Delos zuerst erlauben, Updates zu installieren. Öffne die Einstellungen, schalte es ein und komm zurück.</string>
+    <string name="update_card_downloading">Update wird heruntergeladen…</string>
+    <string name="update_card_installing">Android installiert das Update…</string>
+    <string name="update_card_percent">%1$d %%</string>
+    <string name="update_card_update">Aktualisieren</string>
+    <string name="update_card_later">Später</string>
+    <string name="update_card_allow">Einstellungen öffnen</string>
+    <string name="update_card_cancel">Abbrechen</string>
+    <string name="update_card_retry">Erneut versuchen</string>
+    <string name="update_card_failed_download">Der Download ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="update_card_failed_too_large">Der Download ist größer, als Delos erlaubt, und wurde deshalb gestoppt.</string>
+    <string name="update_card_failed_storage">Für das Update ist nicht genug Platz.</string>
+    <string name="update_card_failed_checksum">Die Datei passt nicht zur veröffentlichten Prüfsumme und wurde deshalb gelöscht und nicht installiert.</string>
+    <string name="update_card_failed_signature">Android hat das Update abgelehnt: Es ist nicht mit demselben Schlüssel signiert wie das installierte Delos.</string>
+    <string name="update_card_failed_install">Android konnte das Update nicht installieren.</string>
+    <string name="settings_native_section_updates">Updates</string>
+    <string name="settings_native_update_check_title">Nach Updates suchen</string>
+    <string name="settings_native_update_check_description">Fragt einmal am Tag bei api.github.com nach der neuesten Delos-Version und bietet sie hier an. GitHub sieht die IP-Adresse dieses Geräts, sonst wird nichts gesendet. Aus: keine Anfrage.</string>
+    <string name="settings_native_update_now_title">Jetzt prüfen</string>
+    <string name="settings_native_update_now_description">Fragt GitHub jetzt. Eine neue Version wird auf dem Startbildschirm angeboten.</string>
+    <string name="settings_native_update_now_value">Prüfen</string>
+    <string name="settings_native_update_checking">Prüfe…</string>
+    <string name="settings_native_update_result_current">Aktuell</string>
+    <string name="settings_native_update_result_available">Neue Version %1$s</string>
+    <string name="settings_native_update_result_no_download">Version %1$s hat keinen Download für dieses Gerät</string>
+    <string name="settings_native_update_result_network">GitHub nicht erreichbar</string>
+    <string name="settings_native_update_result_rate_limited">GitHub ist ausgelastet, versuche es später</string>
+    <string name="settings_native_update_result_failed">Die Antwort von GitHub war nicht verwendbar</string>
+    <string name="settings_native_update_result_disabled">Aus</string>
+    <string name="settings_native_update_result_debug">Nicht in Debug-Builds</string>
+    <string name="help_about_update_check">Einmal am Tag fragt Delos beim Start bei api.github.com nach der neuesten Version. GitHub sieht die IP-Adresse dieses Geräts, sonst wird nichts gesendet. Gibt es eine neuere Version, bietet sie der Startbildschirm mit den Versionshinweisen an. Erst wenn du Aktualisieren drückst, lädt Delos sie von GitHub herunter und prüft ihre SHA-256-Summe anhand der mit der Version veröffentlichten Liste; Android fragt dich vor der Installation und lehnt ein mit einem anderen Schlüssel signiertes Update ab. Aus: keine Anfrage. Auf einem Gerät noch nicht getestet.</string>
+    <string name="help_about_update_now">Fragt GitHub jetzt, auch wenn es vor weniger als einem Tag gefragt hat. Eine neuere Version wird auf dem Startbildschirm angeboten. Setzt voraus, dass Nach Updates suchen an ist.</string>
+</resources>

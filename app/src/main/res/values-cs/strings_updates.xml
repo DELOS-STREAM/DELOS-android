@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_card_title">Delos %1$s je k dispozici</string>
+    <string name="update_card_question">Aktualizovat teď? Delos ji stáhne, zkontroluje a předá Androidu k instalaci.</string>
+    <string name="update_card_needs_permission">Android musí nejdřív aplikaci Delos povolit instalovat aktualizace. Otevři nastavení, zapni to a vrať se.</string>
+    <string name="update_card_downloading">Stahuji aktualizaci…</string>
+    <string name="update_card_installing">Android instaluje aktualizaci…</string>
+    <string name="update_card_percent">%1$d %%</string>
+    <string name="update_card_update">Aktualizovat</string>
+    <string name="update_card_later">Později</string>
+    <string name="update_card_allow">Otevřít nastavení</string>
+    <string name="update_card_cancel">Zrušit</string>
+    <string name="update_card_retry">Zkusit znovu</string>
+    <string name="update_card_failed_download">Stažení se nepodařilo. Zkontroluj připojení a zkus to znovu.</string>
+    <string name="update_card_failed_too_large">Stahovaný soubor je větší, než Delos dovoluje, proto byl zastaven.</string>
+    <string name="update_card_failed_storage">Na uložení aktualizace není dost místa.</string>
+    <string name="update_card_failed_checksum">Soubor nesedí s kontrolním součtem zveřejněným u vydání, proto byl smazán a nenainstaloval se.</string>
+    <string name="update_card_failed_signature">Android aktualizaci odmítl: není podepsaná stejným klíčem jako nainstalovaný Delos.</string>
+    <string name="update_card_failed_install">Android aktualizaci nemohl nainstalovat.</string>
+    <string name="settings_native_section_updates">Aktualizace</string>
+    <string name="settings_native_update_check_title">Kontrolovat aktualizace</string>
+    <string name="settings_native_update_check_description">Jednou denně se zeptá api.github.com na nejnovější vydání aplikace Delos a nabídne ho tady. GitHub vidí IP adresu tohoto zařízení, nic dalšího se neposílá. Vypnuto: žádný požadavek.</string>
+    <string name="settings_native_update_now_title">Zkontrolovat teď</string>
+    <string name="settings_native_update_now_description">Zeptá se GitHubu hned. Nová verze se nabídne na úvodní obrazovce.</string>
+    <string name="settings_native_update_now_value">Zkontrolovat</string>
+    <string name="settings_native_update_checking">Kontroluji…</string>
+    <string name="settings_native_update_result_current">Aktuální</string>
+    <string name="settings_native_update_result_available">Nová verze %1$s</string>
+    <string name="settings_native_update_result_no_download">Verze %1$s nemá stažení pro toto zařízení</string>
+    <string name="settings_native_update_result_network">GitHub není dostupný</string>
+    <string name="settings_native_update_result_rate_limited">GitHub je vytížený, zkus to později</string>
+    <string name="settings_native_update_result_failed">Odpověď GitHubu nešla použít</string>
+    <string name="settings_native_update_result_disabled">Vypnuto</string>
+    <string name="settings_native_update_result_debug">Ne v ladicích sestaveních</string>
+    <string name="help_about_update_check">Jednou denně při spuštění se Delos zeptá api.github.com na nejnovější vydání. GitHub vidí IP adresu tohoto zařízení, nic dalšího se neposílá. Pokud existuje novější verze, úvodní obrazovka ji nabídne s poznámkami k vydání. Teprve když stiskneš Aktualizovat, Delos ji stáhne z GitHubu a zkontroluje její SHA-256 podle seznamu zveřejněného u vydání; Android se pak před instalací zeptá a odmítne aktualizaci podepsanou jiným klíčem. Vypnuto: žádný požadavek. Na zařízení zatím netestováno.</string>
+    <string name="help_about_update_now">Zeptá se GitHubu hned, i když se ptal před méně než dnem. Novější verze se nabídne na úvodní obrazovce. Vyžaduje zapnuté Kontrolovat aktualizace.</string>
+</resources>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- In-app updates (docs/UPDATES.md): the offer card, the Settings > About rows and their help -->
+    <string name="update_card_title">Delos %1$s is available</string>
+    <string name="update_card_question">Update now? Delos downloads it, checks it and hands it to Android to install.</string>
+    <string name="update_card_needs_permission">Android has to allow Delos to install updates first. Open the settings, switch it on, then come back.</string>
+    <string name="update_card_downloading">Downloading the update…</string>
+    <string name="update_card_installing">Android is installing the update…</string>
+    <string name="update_card_percent">%1$d %%</string>
+    <string name="update_card_update">Update</string>
+    <string name="update_card_later">Later</string>
+    <string name="update_card_allow">Open settings</string>
+    <string name="update_card_cancel">Cancel</string>
+    <string name="update_card_retry">Try again</string>
+    <string name="update_card_failed_download">The download failed. Check your connection and try again.</string>
+    <string name="update_card_failed_too_large">The download is larger than Delos allows, so it was stopped.</string>
+    <string name="update_card_failed_storage">There is not enough room to save the update.</string>
+    <string name="update_card_failed_checksum">The file does not match its published checksum, so it was deleted and not installed.</string>
+    <string name="update_card_failed_signature">Android refused the update: it is not signed with the same key as the installed Delos.</string>
+    <string name="update_card_failed_install">Android could not install the update.</string>
+    <string name="settings_native_section_updates">Updates</string>
+    <string name="settings_native_update_check_title">Check for updates</string>
+    <string name="settings_native_update_check_description">Asks api.github.com once a day for the latest Delos release and offers it here. GitHub sees this device’s IP address; nothing else is sent. Off: no request at all.</string>
+    <string name="settings_native_update_now_title">Check now</string>
+    <string name="settings_native_update_now_description">Asks GitHub now. A new version is offered on the start screen.</string>
+    <string name="settings_native_update_now_value">Check</string>
+    <string name="settings_native_update_checking">Checking…</string>
+    <string name="settings_native_update_result_current">Up to date</string>
+    <string name="settings_native_update_result_available">New version %1$s</string>
+    <string name="settings_native_update_result_no_download">Version %1$s has no download for this device</string>
+    <string name="settings_native_update_result_network">Could not reach GitHub</string>
+    <string name="settings_native_update_result_rate_limited">GitHub is busy, try later</string>
+    <string name="settings_native_update_result_failed">GitHub’s answer was unusable</string>
+    <string name="settings_native_update_result_disabled">Off</string>
+    <string name="settings_native_update_result_debug">Not in debug builds</string>
+    <string name="help_about_update_check">Once a day, when Delos starts, it asks api.github.com for the newest release. GitHub sees this device’s IP address; nothing else is sent. If a newer version exists, the start screen offers it with its release notes. Only when you press Update does Delos download it from GitHub and check its SHA-256 against the list published with the release; Android then asks you before it installs, and refuses an update signed with another key. Off: no request at all. Not tested on a device yet.</string>
+    <string name="help_about_update_now">Asks GitHub now, even if it asked less than a day ago. A newer version is offered on the start screen. Needs Check for updates to be on.</string>
+</resources>
