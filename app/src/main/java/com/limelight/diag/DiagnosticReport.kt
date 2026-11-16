@@ -44,7 +44,7 @@ class DiagnosticReport(val text: String, val logLines: Int) {
 /** Builds the text of the report and of the short summary from the raw log; everything passes the scrubber last. */
 object DiagnosticReports {
     private const val INTRO = "Addresses, PC names, ids and keys were removed from this text on the device before it was written. " +
-        "Nothing is sent anywhere by Delos; you decide who gets it."
+        "Delos sends it only when you choose to report a problem or to share it."
 
     /**
      * The whole report: header, [sections] (such as the crash of an earlier run) and the log. [tailLines] keeps only that

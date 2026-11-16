@@ -12,9 +12,11 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ### Added
 - In-app updates: Delos checks the latest GitHub release once a day (Settings → About → Check for updates, on by default; Check now asks at once), shows a card on the start and home screens with the release notes, and on Update downloads the APK, checks its SHA-256 against the release's `SHA256SUMS.txt` and hands it to Android's installer. Nothing is installed without your yes and Android's prompt; Later hides the offer for 3 days. Not verified on a device.
+- Problem reports with the log attached: in a build that has the Delos report service (`DELOS_REPORTS_URL`), "Report this problem" (the card, and a new "Report a problem" row in Debug info) uploads the cleaned log to a small Cloudflare Worker (`tools/report-worker/`) that keeps it for 30 days behind a link, and opens the GitHub draft with that link in it. "Save the log to Downloads instead" keeps the earlier behavior, and a failed upload falls back to it with a toast that names the reason. Nothing is sent before the user chooses. The Worker, the upload and the new texts (ten languages) were tested with unit tests and a local Worker run; not verified on Cloudflare or on a device.
 
 ### Security
 - The updater contacts only `api.github.com` (and the GitHub download host after you press Update), over HTTPS with redirects checked and a 250 MB limit; the downloaded file is deleted unless its SHA-256 matches the published checksum. See [docs/UPDATES.md](docs/UPDATES.md).
+- A report log is cleaned twice before it is stored: on the device by the scrubber, and by the report service, which repeats the pattern rules (addresses, e-mail addresses, URL queries, ids, keys, tokens) and says how many matches it still changed. Anyone who has the link can read the log for 30 days; the service holds no credentials and keeps no address.
 
 ## [0.15.0] - 2026-11-15
 _Streaming time, stream encryption readout, security hardening, updated delos-common-c._

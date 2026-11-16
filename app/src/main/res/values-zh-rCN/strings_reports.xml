@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Problem report with the log uploaded to the Delos report service (docs/DIAGNOSTICS.md, "The report service") -->
+    <string name="shell_problem_note_upload">点击“报告”会把清理后的日志发送到 Delos 报告服务（保存 30 天，任何拿到链接的人都能查看），并打开 GitHub 草稿供你检查。在你选择之前不会发送任何内容。</string>
+    <string name="companion_flow_report_short_upload">点击“报告”会上传清理后的日志（保存 30 天），并打开 GitHub 草稿供你检查。</string>
+    <string name="report_save_downloads">改为把日志保存到“下载”文件夹</string>
+    <string name="report_uploading">正在上传清理后的日志…</string>
+    <string name="report_uploaded">日志已上传，链接在草稿中，保存 30 天。</string>
+    <string name="report_upload_failed_saved">日志未能上传（%1$s）。已以 %2$s 为文件名保存到“下载”文件夹，请将其附在问题反馈中。</string>
+    <string name="report_upload_failed_not_saved">日志未能上传（%1$s），也无法保存。请在 设置 > 关于 > 调试信息 中分享。</string>
+    <string name="report_reason_offline">没有网络连接</string>
+    <string name="report_reason_timeout">未在时限内响应</string>
+    <string name="report_reason_busy">报告服务繁忙，请稍后再试</string>
+    <string name="report_reason_too_large">日志过大</string>
+    <string name="report_reason_service">报告服务未接受</string>
+    <string name="debug_report_label">报告问题</string>
+    <string name="debug_report_save_description">把同一份清理后的日志保存到“下载”文件夹，并打开 GitHub 草稿供你附加。不会上传任何内容。</string>
+</resources>

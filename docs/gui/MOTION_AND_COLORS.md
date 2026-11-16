@@ -276,7 +276,7 @@ toast's place.
 | Title: *Delos had a problem*, or *A stream could not run* | Unbounded 28 |
 | One sentence for the kind of problem | Figtree 22 |
 | The one-line technical summary | 18, at most two lines, ellipsis |
-| The note that nothing is sent automatically and what Report does | 20 |
+| The note: what Report does and that nothing is sent before the user chooses. With the report service (`DELOS_REPORTS_URL`) it is `shell_problem_note_upload`: Report sends a cleaned log to the Delos report service, kept 30 days, readable by anyone who has the link, and opens a GitHub draft | 20 |
 
 The card has two `PillButton`s (compact):
 
@@ -284,6 +284,10 @@ The card has two `PillButton`s (compact):
 |---|---|
 | **Report this problem** | Primary, GitHub logo, an **A** glyph |
 | **Dismiss** | Close icon, a **B** glyph |
+
+With the report service the card has a third `PillButton` in its own row under those two, **Save the log to Downloads instead**: compact, not primary, the
+download icon, no button glyph. It reuses the pill of Dismiss; no new visual was designed for it. A build without the report service has no such row and
+shows the old note.
 
 ### 3.2 Behavior
 
@@ -295,16 +299,19 @@ The card has two `PillButton`s (compact):
 |---|---|
 | Initial focus | On Report this problem (silently, like a layer). |
 | A | Activates the focused button. |
-| Left / right | Moves between the two buttons. |
+| Left / right | Moves between the two buttons of the first row. Down reaches **Save the log to Downloads instead**. |
 | B | Dismiss from anywhere while the card shows (a back handler registered after the layers'). |
 | D-pad | Can leave the card for the dashboard. |
-| Touch | Tap either button. |
+| Touch | Tap any button. |
 
 - Dismiss returns the focus to the screen.
 - Motion: `popEnter` / `popExit` from the top right corner (`Motion.POP_IN` with the overshooting spring,
   `Motion.EXIT` out; reduced motion: fades).
-- Report saves the cleaned log to Downloads, shows a toast (`Log saved to Downloads as ... Attach it to the issue.`)
-  and opens the prefilled GitHub issue in the browser 0.9 s later.
+- Report uploads the cleaned log and opens the prefilled GitHub issue in the browser 0.9 s later with the link of the log in it; a toast says so
+  (`Log uploaded; its link is in the draft. It is kept for 30 days.`). Without the report service, after a failed upload, or for **Save the log to
+  Downloads instead**, it saves the log to Downloads and shows a toast (`Log saved to Downloads as ... Attach it to the issue.`, or with the reason of
+  a failed upload). The rules are in [DIAGNOSTICS.md](../DIAGNOSTICS.md).
+- The card on the second panel of a dual-screen device (`CompanionFlowPages.kt`) has Report and Dismiss and the same note; it has no Downloads row.
 
 ### 3.3 Diagnostics rows
 
@@ -313,6 +320,8 @@ The card has two `PillButton`s (compact):
 | Row | Notes |
 |---|---|
 | *Diagnostic log* | An info row with the size and line count of what Share sends. Its panel previews the scrubbed text. |
+| *Report a problem* | Only with the report service. An action row with the report icon; its help is the note of the card. Starts the same report as the card, without a detected problem. |
+| *Save the log to Downloads instead* | Only with the report service. An action row with the download icon; saves the log and opens the draft, uploads nothing. |
 | *Share diagnostic log* | |
 | *Copy diagnostic summary* | |
 | *Clear diagnostic logs* | |

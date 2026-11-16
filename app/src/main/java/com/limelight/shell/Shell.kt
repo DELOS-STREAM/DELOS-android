@@ -131,6 +131,9 @@ import com.limelight.update.UpdateState
 import com.limelight.update.Updates
 import com.limelight.diag.ProblemMonitor
 import com.limelight.diag.ProblemReporter
+import com.limelight.diag.ReportMode
+import com.limelight.diag.ReportOutcomeText
+import com.limelight.diag.ReportUploader
 import com.limelight.shell.ui.LocalImeAvoidance
 import com.limelight.shell.ui.rememberImeAvoidance
 import com.limelight.shell.data.LocalArtwork
@@ -306,18 +309,18 @@ fun Shell(
             runCatching { shell.restoreScreenFocus?.invoke() }
         }
     }
-    // Report: save the cleaned log to Downloads, then open the prefilled GitHub issue in the browser; the user attaches the file
-    fun reportProblem() {
+    // Report: upload the cleaned log to the report service and open the prefilled GitHub issue with its link; when the upload is
+    // off, fails or the user chose Downloads, save the log there and let the user attach it (docs/DIAGNOSTICS.md)
+    fun reportProblem(mode: ReportMode) {
         val p = shell.problem ?: return
         shell.problem = null
         scope.launch {
-            val prepared = ProblemReporter.prepare(appContext, p)
-            val saved = ProblemReporter.saveToDownloads(appContext, prepared.report, prepared.fileName)
+            if (mode == ReportMode.UPLOAD && ReportUploader.shared.enabled) shell.showToast(ReportOutcomeText.uploading(res), Symbols.REPORT_ISSUE)
+            val result = ProblemReporter.report(appContext, p, mode)
             ProblemMonitor.resolve(p)
-            if (saved != null) shell.showToast(res.getString(R.string.shell_report_saved, prepared.fileName), Symbols.CHECK_CIRCLE, durationMs = 6_500)
-            else shell.showToast(res.getString(R.string.shell_report_save_failed), Symbols.WARNING, durationMs = 6_500)
+            shell.showToast(ReportOutcomeText.text(res, result), if (ReportOutcomeText.succeeded(result)) Symbols.CHECK_CIRCLE else Symbols.WARNING, durationMs = 6_500)
             delay(900)
-            if (!ProblemReporter.openIssue(appContext, prepared.url)) {
+            if (!ProblemReporter.openIssue(appContext, result.issueUrl)) {
                 feedback.play(Cue.ERROR)
                 shell.showToast(res.getString(R.string.shell_report_no_browser), Symbols.ERROR)
             }
@@ -836,14 +839,14 @@ fun Shell(
                 appearance.reducedMotion,
                 instantExit = launchExitInstant.value,
             )
-            ProblemOfferCard(if (shell.offerShown) shell.problem else null, appearance.reducedMotion, onReport = ::reportProblem, onDismiss = ::dismissProblem)
+            ProblemOfferCard(if (shell.offerShown) shell.problem else null, appearance.reducedMotion, onReport = { reportProblem(ReportMode.UPLOAD) }, onSaveToDownloads = { reportProblem(ReportMode.DOWNLOADS) }, onDismiss = ::dismissProblem)
             UpdateOfferCard(
                 if (updateShown) updateState else null, appearance.reducedMotion,
                 onUpdate = { updates.accept() }, onAllow = updates::openPermissionSettings, onCancel = ::updateBack, onLater = ::updateBack,
             )
             // The second panel of a dual-screen device shows the launch, the portal, the result and the problem too, with the callbacks of these layers
             com.limelight.shell.companion.PublishCompanionOverlays(
-                launchParameters, ::cancelLaunch, devices::cancelPortal, ::retryStream, ::dismissResult, ::reportProblem, ::dismissProblem,
+                launchParameters, ::cancelLaunch, devices::cancelPortal, ::retryStream, ::dismissResult, { reportProblem(ReportMode.UPLOAD) }, ::dismissProblem,
             )
             ToastHost(shell.toast, onHidden = { shell.hideToast(it) }, onAction = { shell.runToastAction() }, actionPress = shell.toastPress)
         }

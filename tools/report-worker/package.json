@@ -1,0 +1,17 @@
+{
+  "name": "delos-reports",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker that keeps the cleaned problem-report logs of Delos for 30 days behind an unguessable link",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "license": "GPL-3.0-only",
+  "devDependencies": {
+    "vitest": "^5.1.0",
+    "wrangler": "^4.156.2"
+  }
+}

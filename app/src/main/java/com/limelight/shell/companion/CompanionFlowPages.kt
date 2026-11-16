@@ -167,14 +167,16 @@ internal data class ReportPage(val title: String, val sentence: String, val summ
 
     @Composable
     override fun Content() {
+        val uploads = remember { com.limelight.diag.ReportUploader.shared.enabled }
         ProblemCard(
             title = title,
             fallbackTitle = stringResource(R.string.shell_problem_title_generic),
             subtitle = null,
             errorLine = summary,
             errorText = { b, metrics, _, last -> CompanionFit.summary(sentence, sentence, b.errorLines, b.innerWidth, metrics, last) },
-            recovery = stringResource(R.string.shell_problem_note),
-            recoveryShort = stringResource(R.string.companion_flow_report_short),
+            // With the report service the note says what Report uploads, as on the main display's card (docs/DIAGNOSTICS.md)
+            recovery = stringResource(if (uploads) R.string.shell_problem_note_upload else R.string.shell_problem_note),
+            recoveryShort = stringResource(if (uploads) R.string.companion_flow_report_short_upload else R.string.companion_flow_report_short),
             actions = listOf(
                 PageAction(stringResource(R.string.shell_problem_report), onReport, ButtonStyle.PRIMARY, Symbols.REPORT_ISSUE),
                 PageAction(stringResource(R.string.shell_problem_dismiss), onDismiss, icon = Symbols.CLOSE),

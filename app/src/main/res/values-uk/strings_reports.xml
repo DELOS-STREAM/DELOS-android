@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Problem report with the log uploaded to the Delos report service (docs/DIAGNOSTICS.md, "The report service") -->
+    <string name="shell_problem_note_upload">«Повідомити» надсилає очищений журнал до служби звітів Delos (зберігається 30 днів, його може прочитати кожен, хто має посилання) і відкриває чернетку GitHub для перевірки. Нічого не надсилається, доки ти не обереш.</string>
+    <string name="companion_flow_report_short_upload">«Повідомити» надсилає очищений журнал (зберігається 30 днів) і відкриває чернетку GitHub для перевірки.</string>
+    <string name="report_save_downloads">Натомість зберегти журнал у Завантаження</string>
+    <string name="report_uploading">Надсилаю очищений журнал…</string>
+    <string name="report_uploaded">Журнал надіслано, посилання в чернетці. Він зберігається 30 днів.</string>
+    <string name="report_upload_failed_saved">Журнал не надіслано (%1$s). Збережено в Завантаження як %2$s. Додай його до звернення.</string>
+    <string name="report_upload_failed_not_saved">Журнал не надіслано (%1$s), і його не вдалося зберегти. Поділися ним у Налаштування → Про застосунок → Налагодження.</string>
+    <string name="report_reason_offline">немає зв’язку</string>
+    <string name="report_reason_timeout">немає відповіді вчасно</string>
+    <string name="report_reason_busy">служба звітів перевантажена, спробуй пізніше</string>
+    <string name="report_reason_too_large">журнал завеликий</string>
+    <string name="report_reason_service">служба звітів його не прийняла</string>
+    <string name="debug_report_label">Повідомити про проблему</string>
+    <string name="debug_report_save_description">Зберігає той самий очищений журнал у Завантаження й відкриває чернетку GitHub, щоб ти його додав. Нічого не надсилається.</string>
+</resources>

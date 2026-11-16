@@ -102,4 +102,50 @@ class IssueUrlTest {
     @Test fun theTitleIsCapped() {
         assertEquals(120, params(IssueUrl.build(draft.copy(title = "x".repeat(500))))["title"]!!.length)
     }
+
+    @Test fun theLogLinkIsTheFirstLineOfWhatHappenedAndIsNotScrubbed() {
+        val link = "https://delos-reports.example.workers.dev/r/AbCdEfGhIjKlMnOpQrStUv"
+        // The scrubber replaces an unknown host, as it must for text; the link of the report service is added after it
+        val scrubber = LogScrubber()
+        val url = IssueUrl.build(draft.copy(logLink = link), scrub = scrubber::scrub)
+        assertEquals("Diagnostic log: $link\n\n" + draft.whatHappened, params(url)["what-happened"])
+        assertTrue(scrubber.scrub(link).contains("<host>"))
+    }
+
+    @Test fun theLinkSurvivesTheLengthLimitWhileTheTextIsCut() {
+        val link = "https://delos-reports.example.workers.dev/r/AbCdEfGhIjKlMnOpQrStUv"
+        val long = draft.copy(logLink = link, whatHappened = "word ".repeat(3000), logs = "line\n".repeat(3000))
+        val url = IssueUrl.build(long)
+        assertTrue(url.length.toString(), url.length <= IssueUrl.MAX_LENGTH)
+        assertTrue(params(url)["what-happened"]!!.startsWith("Diagnostic log: $link\n\n"))
+        // Even when "What happened?" has to give up everything, the link stays
+        val tiny = IssueUrl.build(long, maxLength = 700)
+        assertTrue(params(tiny)["what-happened"]!!.startsWith("Diagnostic log: $link"))
+    }
+
+    @Test fun noLinkMeansNoLinkLine() {
+        assertEquals(draft.whatHappened, params(IssueUrl.build(draft))["what-happened"])
+    }
+
+    @Test fun theNameOfTheSavedFileIsNotTakenForATokenByTheScrubber() {
+        // "delos-diagnostic-20261110-120000" has 32 characters of letters and digits, which the scrubber's token rule removes
+        val name = "delos-diagnostic-20261110-120000.txt"
+        val scrubber = LogScrubber()
+        assertTrue(scrubber.scrub(name).startsWith("<token>"))
+        val info = DeviceInfo(
+            "0.1.0", "release", 100, "AYN", "Odin2 Portal", "odin2portal", "13", 33, "2026-09-05", "TKQ1", "QTI SM8550", "arm64-v8a",
+            "Adreno (TM) 740", "1920x1080 at 120.0 Hz, 400 dpi", "Wi-Fi", "en-US", "UTC+01:00", emptyList(),
+        )
+        val problem = Problem("c", ProblemKind.JAVA_CRASH, 1, "IllegalStateException: boom", "trace")
+        val url = IssueUrl.build(ProblemIssue.draft(problem, info, ReportAttachment.File(name)), scrub = scrubber::scrub)
+        assertTrue(params(url)["what-happened"]!!.contains("`$name`"))
+    }
+
+    @Test fun theAttachmentNoteComesLastAndIsNeverCut() {
+        val note = "The diagnostic log was saved by Delos as `delos-diagnostic-20261110-120000.txt` in the Downloads folder."
+        val url = IssueUrl.build(draft.copy(whatHappened = "word ".repeat(3000), attachmentNote = note))
+        assertTrue(url.length <= IssueUrl.MAX_LENGTH)
+        assertTrue(params(url)["what-happened"]!!.endsWith("\n\n$note"))
+        assertEquals(draft.whatHappened, params(IssueUrl.build(draft))["what-happened"])
+    }
 }

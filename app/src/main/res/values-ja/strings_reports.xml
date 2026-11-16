@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Problem report with the log uploaded to the Delos report service (docs/DIAGNOSTICS.md, "The report service") -->
+    <string name="shell_problem_note_upload">「報告」を押すと、整理済みのログが、Delosの報告サービスに送信され（30日間保存され、リンクを知っている人なら誰でも読めます）、確認用のGitHubの下書きがブラウザで開きます。あなたが選ぶまで何も送信されません。</string>
+    <string name="companion_flow_report_short_upload">「報告」を押すと、整理済みのログがアップロードされ（30日間保存）、確認用のGitHubの下書きが開きます。</string>
+    <string name="report_save_downloads">代わりにログをダウンロードフォルダに保存</string>
+    <string name="report_uploading">整理済みのログをアップロードしています…</string>
+    <string name="report_uploaded">ログをアップロードしました。リンクは下書きに入っています。30日間保存されます。</string>
+    <string name="report_upload_failed_saved">ログをアップロードできませんでした（%1$s）。ダウンロードフォルダに%2$sとして保存しました。Issueに添付してください。</string>
+    <string name="report_upload_failed_not_saved">ログをアップロードできず（%1$s）、保存もできませんでした。設定 → バージョン情報 → デバッグ情報から共有してください。</string>
+    <string name="report_reason_offline">接続がありません</string>
+    <string name="report_reason_timeout">時間内に応答がありません</string>
+    <string name="report_reason_busy">報告サービスが混み合っています。しばらくしてからお試しください</string>
+    <string name="report_reason_too_large">ログが大きすぎます</string>
+    <string name="report_reason_service">報告サービスが受け付けませんでした</string>
+    <string name="debug_report_label">問題を報告</string>
+    <string name="debug_report_save_description">同じ整理済みのログをダウンロードフォルダに保存し、添付できるようにGitHubの下書きを開きます。何もアップロードされません。</string>
+</resources>

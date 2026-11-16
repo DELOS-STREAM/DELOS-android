@@ -80,6 +80,13 @@ class IssueFormContractTest {
     private fun sentFields(): Set<String> = URI(IssueUrl.build(draft)).rawQuery.split('&')
         .map { it.substringBefore('=') }.toSet() - setOf("template", "title")
 
+    @Test fun aLogLinkAddsNoFieldToTheAddress() {
+        // The link goes into the text of "What happened?", so an installed app and the form keep agreeing on the ids
+        val withLink = URI(IssueUrl.build(draft.copy(logLink = "https://r.example/r/AAAAAAAAAAAAAAAAAAAAAA"))).rawQuery.split('&')
+            .map { it.substringBefore('=') }.toSet() - setOf("template", "title")
+        assertEquals(sentFields(), withLink)
+    }
+
     @Test fun theParserReadsAForm() {
         val parsed = parse(
             """

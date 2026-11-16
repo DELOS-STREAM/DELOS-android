@@ -29,7 +29,7 @@ not to be.
 |---|---|
 | The Delos Android app: this repository, including the native code under `app/src/main/jni/` | The host software on the PC ([Vibepollo](https://github.com/Nonary/Vibepollo), [Apollo](https://github.com/ClassicOldSong/Apollo), [Sunshine](https://github.com/LizardByte/Sunshine)): report there |
 | The streaming core fork [Meitoncz/Delos-common-c](https://github.com/Meitoncz/Delos-common-c) | Problems that need a rooted or already compromised device |
-| The metadata service in `tools/metadata-worker/` | The third-party services Delos reads from (SteamGridDB, HowLongToBeat, IGDB, PCGamingWiki, Steam) |
+| The metadata service in `tools/metadata-worker/` and the report service in `tools/report-worker/` | The third-party services Delos reads from (SteamGridDB, HowLongToBeat, IGDB, PCGamingWiki, Steam) |
 | The GitHub workflow and the build files of this repository | A stream that the host sends without encryption (see "What is encrypted") |
 
 A problem inherited from Moonlight or Artemis is in scope; it is also reported upstream.
@@ -92,6 +92,7 @@ Outbound connections:
 | The Delos metadata service (see below) | Game facts are loaded, in builds that have its address | App names |
 | `stun.moonlight-stream.org` (Moonlight project) | A PC on the local network is added or found, to learn the public address for streaming from elsewhere | A STUN request; the server sees the public IP address |
 | `android.conntest.moonlight-stream.org` (Moonlight project) | A stream fails to connect or is cut off, to tell the user which ports are blocked | A connection test; the server sees the public IP address |
+| The Delos report service (see below) | The user reports a problem, in builds that have its address | The cleaned diagnostic log, over HTTPS |
 | GitHub, in the browser | The user opens a link or reports a problem | What the user submits |
 | `api.github.com` | Once a day when Delos starts, and on Settings → About → Check now, unless "Check for updates" is off | A request for the latest release of Meitoncz/Delos with `User-Agent: Delos/<version>`; GitHub sees the public IP address |
 | `github.com` and the download host it redirects to | Only when a newer release exists (the checksum list) and after the user presses Update (the APK) | A plain download request |
@@ -126,8 +127,10 @@ storage. After restoring a backup to a new device, each PC must be paired again.
 - Delos keeps a small rolling log and, after a crash, a crash file on the device. "Keep diagnostic logs" in
   Settings → About switches both off.
 - **Nothing is uploaded automatically.** A log leaves the device only when the user shares it from Debug info or
-  chooses "Report this problem", which saves a file to Downloads and opens a GitHub issue draft in the browser for
-  the user to read and submit.
+  chooses "Report this problem" (or "Report a problem" in Debug info). In a build that has the report service (below)
+  that uploads the cleaned log and opens a GitHub issue draft with its link in the browser for the user to read and
+  submit; "Save the log to Downloads instead", and a build without the service, save a file to Downloads for the user to
+  attach.
 - Everything that is shared is cleaned first: IP and MAC addresses, PC and account names, ids, keys and tokens
   are replaced. Known gaps: app (game) titles are not removed, and names shorter than three characters are not
   recognized. Read a report before submitting it.
@@ -146,6 +149,17 @@ storage. After restoring a backup to a new device, each PC must be paired again.
   download, not a release that was published with a wrong file by someone who holds the release account; the signature
   check of Android covers that case only for the key. Not verified on a device.
 - How it works: [docs/UPDATES.md](docs/UPDATES.md).
+
+### The report service
+
+The cleaned log of "Report this problem" goes to a small Cloudflare Worker (`tools/report-worker/`, in builds that have
+its address) that stores it for 30 days behind a link that nobody can guess and returns the link for the GitHub draft.
+The log is cleaned twice: by the app's scrubber on the device, and by the Worker, which repeats the pattern rules
+(addresses, e-mail addresses, URL queries, ids, keys and tokens) before it stores the text. Anyone who has the link can
+read the log until it expires, and the link in a public issue is public. The Worker holds no credentials, calls no other
+service, keeps no address or account, logs no body, and limits uploads per client and per day. It has no endpoint that
+lists or deletes reports. Cloudflare, which runs it, sees the sender's IP address like any web host. The upload is
+started by the user for each report. Not verified on Cloudflare yet: [tools/report-worker/README.md](tools/report-worker/README.md).
 
 ### Known limits
 

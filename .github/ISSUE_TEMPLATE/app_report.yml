@@ -19,16 +19,18 @@ body:
   - type: markdown
     attributes:
       value: |
-        Delos filled in this draft after a crash or a failed stream. **Nothing has been sent yet.** Read it, add what you were doing just before, and attach the diagnostic file Delos saved to your Downloads folder: drag it into the "What happened?" box (the log box at the end cannot take files).
+        Delos filled in this draft after a crash, a failed stream or a report you started. **Nothing has been posted to GitHub yet.** Read it and add what you were doing just before.
 
-        The draft and the file were cleaned by Delos (addresses, PC and account names, ids and keys are removed). Check them anyway before you submit.
+        If the first line of "What happened?" is a link to the diagnostic log, Delos uploaded the cleaned log to its report service: it is kept for 30 days and anyone who has the link can read it, which includes everyone who can see this issue. Without that link, attach the diagnostic file Delos saved to your Downloads folder: drag it into the "What happened?" box (the log box at the end cannot take files).
+
+        The draft and the log were cleaned by Delos (addresses, PC and account names, ids and keys are removed). Check them anyway before you submit.
 
         Security problem? Do not submit it here: use [Report a vulnerability](https://github.com/Meitoncz/Delos/security/advisories/new).
   - type: textarea
     id: what-happened
     attributes:
       label: What happened?
-      description: What Delos recorded, and what you were doing just before. Drag the diagnostic file in here.
+      description: What Delos recorded, and what you were doing just before. Without a log link, drag the diagnostic file in here.
     validations:
       required: true
   - type: dropdown

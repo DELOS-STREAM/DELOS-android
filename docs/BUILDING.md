@@ -102,8 +102,18 @@ Optional: genres, themes and native-HDR facts come through the Delos metadata se
 DELOS_METADATA_URL=https://<your-worker>.workers.dev
 ```
 
-Without it the build works and the app shows those facts as unavailable. Never put keys, tokens or passwords into a
-tracked file.
+Without it the build works and the app shows those facts as unavailable.
+
+Optional: the report service, which keeps the cleaned log of a problem report for 30 days behind a link
+([tools/report-worker/README.md](../tools/report-worker/README.md), [DIAGNOSTICS.md](DIAGNOSTICS.md)). Its base URL is not a secret either. Set it
+the same way, in `local.properties` or in the environment variable `DELOS_REPORTS_URL` (the environment wins when it is not blank):
+
+```properties
+DELOS_REPORTS_URL=https://delos-reports.<your-account>.workers.dev
+```
+
+Without it the build works and has no upload: "Report this problem" saves the log to Downloads, for the user to attach to the GitHub issue. The address
+must be HTTPS. Never put keys, tokens or passwords into a tracked file.
 
 ## Build, test and lint
 
@@ -145,6 +155,7 @@ python3 -m unittest discover -s tools/coverage             # tests of the covera
 python3 tools/l10n/find_literals.py                        # user-visible text that is not in a string resource
 sh tools/verify-binaries.sh                                # every tracked binary against its recorded checksum
 (cd tools/metadata-worker && npm ci && npm test)           # the metadata service
+(cd tools/report-worker && npm ci && npm test)             # the report service
 ```
 
 ## Run it
