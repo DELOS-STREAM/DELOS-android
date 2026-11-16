@@ -34,6 +34,15 @@ MINOR=$(sed -n 's/.*def versionMinor = \([0-9]*\).*/\1/p' "$ROOT/app/build.gradl
 PATCH=$(sed -n 's/.*def versionPatch = \([0-9]*\).*/\1/p' "$ROOT/app/build.gradle")
 [ "$BASE" = "$MAJOR.$MINOR.$PATCH" ] || die "app/build.gradle says $MAJOR.$MINOR.$PATCH, not $BASE"
 
+# apksigner needs Java. A terminal without JAVA_HOME finds only macOS's stub `java`, so use the JDK the build uses (docs/BUILDING.md).
+if [ -z "${JAVA_HOME:-}" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
+  for J in /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home /usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home; do
+    [ -x "$J/bin/java" ] && { JAVA_HOME=$J; break; }
+  done
+fi
+[ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ] || die "no Java found: install it with 'brew install openjdk@21' (docs/BUILDING.md)"
+export JAVA_HOME PATH="$JAVA_HOME/bin:$PATH"
+
 # Build tools: the newest installed
 SDK=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}
 BT=$(ls -d "$SDK"/build-tools/* 2>/dev/null | sort -V | tail -1)
