@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_card_title">Delos %1$s доступний</string>
+    <string name="update_card_question">Оновити зараз? Delos завантажить оновлення, перевірить його й передасть Android для встановлення.</string>
+    <string name="update_card_needs_permission">Спершу Android має дозволити Delos встановлювати оновлення. Відкрий налаштування, увімкни це й повернись.</string>
+    <string name="update_card_downloading">Завантаження оновлення…</string>
+    <string name="update_card_installing">Android встановлює оновлення…</string>
+    <string name="update_card_percent">%1$d %%</string>
+    <string name="update_card_update">Оновити</string>
+    <string name="update_card_later">Пізніше</string>
+    <string name="update_card_allow">Відкрити налаштування</string>
+    <string name="update_card_cancel">Скасувати</string>
+    <string name="update_card_retry">Спробувати ще раз</string>
+    <string name="update_card_failed_download">Не вдалося завантажити. Перевір з’єднання й спробуй ще раз.</string>
+    <string name="update_card_failed_too_large">Завантаження більше, ніж дозволяє Delos, тому його зупинено.</string>
+    <string name="update_card_failed_storage">Недостатньо місця, щоб зберегти оновлення.</string>
+    <string name="update_card_failed_checksum">Файл не збігається з опублікованою контрольною сумою, тому його видалено й не встановлено.</string>
+    <string name="update_card_failed_signature">Android відхилив оновлення: воно підписане не тим самим ключем, що встановлений Delos.</string>
+    <string name="update_card_failed_install">Android не зміг встановити оновлення.</string>
+    <string name="settings_native_section_updates">Оновлення</string>
+    <string name="settings_native_update_check_title">Перевіряти оновлення</string>
+    <string name="settings_native_update_check_description">Раз на день запитує api.github.com про останню версію Delos і пропонує її тут. GitHub бачить IP-адресу цього пристрою, більше нічого не надсилається. Вимкнено: жодних запитів.</string>
+    <string name="settings_native_update_now_title">Перевірити зараз</string>
+    <string name="settings_native_update_now_description">Запитує GitHub зараз. Нову версію буде запропоновано на початковому екрані.</string>
+    <string name="settings_native_update_now_value">Перевірити</string>
+    <string name="settings_native_update_checking">Перевірка…</string>
+    <string name="settings_native_update_result_current">Остання версія</string>
+    <string name="settings_native_update_result_available">Нова версія %1$s</string>
+    <string name="settings_native_update_result_no_download">Для версії %1$s немає завантаження для цього пристрою</string>
+    <string name="settings_native_update_result_network">GitHub недоступний</string>
+    <string name="settings_native_update_result_rate_limited">GitHub зайнятий, спробуй пізніше</string>
+    <string name="settings_native_update_result_failed">Відповідь GitHub непридатна</string>
+    <string name="settings_native_update_result_disabled">Вимкнено</string>
+    <string name="settings_native_update_result_debug">Не в налагоджувальних збірках</string>
+    <string name="help_about_update_check">Раз на день під час запуску Delos запитує api.github.com про найновішу версію. GitHub бачить IP-адресу цього пристрою, більше нічого не надсилається. Якщо є новіша версія, початковий екран пропонує її з нотатками до випуску. Лише коли ти натиснеш Оновити, Delos завантажить її з GitHub і перевірить SHA-256 за списком, опублікованим разом із версією; потім Android запитає тебе перед встановленням і відхилить оновлення, підписане іншим ключем. Вимкнено: жодних запитів. На пристрої ще не перевірено.</string>
+    <string name="help_about_update_now">Запитує GitHub зараз, навіть якщо востаннє запитував менш ніж добу тому. Новішу версію буде запропоновано на початковому екрані. Потрібно, щоб Перевіряти оновлення було ввімкнено.</string>
+</resources>

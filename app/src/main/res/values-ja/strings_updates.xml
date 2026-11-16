@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_card_title">Delos %1$s が利用できます</string>
+    <string name="update_card_question">今すぐ更新しますか? Delos がダウンロードして確認し、インストールのために Android に渡します。</string>
+    <string name="update_card_needs_permission">先に Android で Delos によるアップデートのインストールを許可する必要があります。設定を開いてオンにし、戻ってきてください。</string>
+    <string name="update_card_downloading">アップデートをダウンロード中…</string>
+    <string name="update_card_installing">Android がアップデートをインストール中…</string>
+    <string name="update_card_percent">%1$d %%</string>
+    <string name="update_card_update">更新</string>
+    <string name="update_card_later">あとで</string>
+    <string name="update_card_allow">設定を開く</string>
+    <string name="update_card_cancel">キャンセル</string>
+    <string name="update_card_retry">やり直す</string>
+    <string name="update_card_failed_download">ダウンロードに失敗しました。接続を確認してもう一度お試しください。</string>
+    <string name="update_card_failed_too_large">ダウンロードが Delos の上限より大きいため、中止しました。</string>
+    <string name="update_card_failed_storage">アップデートを保存する空き容量が足りません。</string>
+    <string name="update_card_failed_checksum">ファイルがリリースで公開されたチェックサムと一致しないため、削除してインストールしませんでした。</string>
+    <string name="update_card_failed_signature">Android がアップデートを拒否しました。インストール済みの Delos と同じ鍵で署名されていません。</string>
+    <string name="update_card_failed_install">Android がアップデートをインストールできませんでした。</string>
+    <string name="settings_native_section_updates">アップデート</string>
+    <string name="settings_native_update_check_title">アップデートを確認</string>
+    <string name="settings_native_update_check_description">1 日に 1 回 api.github.com に Delos の最新リリースを問い合わせ、ここで知らせます。GitHub にはこの端末の IP アドレスが見えます。ほかには何も送信しません。オフ: リクエストは一切しません。</string>
+    <string name="settings_native_update_now_title">今すぐ確認</string>
+    <string name="settings_native_update_now_description">今すぐ GitHub に問い合わせます。新しいバージョンはスタート画面で知らせます。</string>
+    <string name="settings_native_update_now_value">確認</string>
+    <string name="settings_native_update_checking">確認中…</string>
+    <string name="settings_native_update_result_current">最新です</string>
+    <string name="settings_native_update_result_available">新しいバージョン %1$s</string>
+    <string name="settings_native_update_result_no_download">バージョン %1$s にはこの端末用のダウンロードがありません</string>
+    <string name="settings_native_update_result_network">GitHub に接続できません</string>
+    <string name="settings_native_update_result_rate_limited">GitHub が混み合っています。後でお試しください</string>
+    <string name="settings_native_update_result_failed">GitHub の応答を使用できませんでした</string>
+    <string name="settings_native_update_result_disabled">オフ</string>
+    <string name="settings_native_update_result_debug">デバッグビルドでは使えません</string>
+    <string name="help_about_update_check">Delos は起動時に 1 日 1 回、api.github.com に最新バージョンを問い合わせます。GitHub にはこの端末の IP アドレスが見えます。ほかには何も送信しません。新しいバージョンがあると、スタート画面がリリースノートとともに知らせます。「更新」を押したときだけ、Delos が GitHub からダウンロードし、リリースと一緒に公開されたリストで SHA-256 を確認します。そのあと Android がインストール前に確認し、別の鍵で署名されたアップデートは拒否します。オフ: リクエストは一切しません。端末ではまだテストしていません。</string>
+    <string name="help_about_update_now">1 日以内に問い合わせていても、今すぐ GitHub に問い合わせます。新しいバージョンはスタート画面で知らせます。「アップデートを確認」がオンのときに使えます。</string>
+</resources>

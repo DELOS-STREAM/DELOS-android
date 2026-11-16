@@ -46,6 +46,7 @@ import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.hsl
 import com.limelight.shell.ui.systemAccentHue
 import com.limelight.shell.ui.textResources
+import com.limelight.update.Updates
 
 internal data class SettingsItem(
     val key: String,
@@ -252,6 +253,37 @@ internal fun nativeSettings(
         res.getString(R.string.settings_native_based_description), tab = SettingsTab.ABOUT, section = delosSection)
     row("about_welcome", Symbols.REPLAY, res.getString(R.string.settings_native_welcome_title), RowValue.Action { shell.navigate(Screen.Boot(back = Screen.Settings)) },
         res.getString(R.string.settings_native_welcome_description), tab = SettingsTab.ABOUT, section = delosSection)
+    // In-app updates (docs/UPDATES.md): the switch is device-wide and on by default; off means no request at all
+    val updateSection = res.getString(R.string.settings_native_section_updates)
+    val updateStore = remember { Updates.store(context) }
+    val updateController = remember { Updates.controller(context) }
+    var updatesOn by remember { mutableStateOf(updateStore.enabled) }
+    var updateStatus by remember { mutableStateOf<String?>(null) }
+    row("about_update_check", Symbols.CLOUD_DOWNLOAD, res.getString(R.string.settings_native_update_check_title), RowValue.Toggle(updatesOn) { on ->
+        updatesOn = on
+        updateStore.enabled = on
+        updateStatus = null
+    }, res.getString(R.string.settings_native_update_check_description), tab = SettingsTab.ABOUT, section = updateSection)
+    row("about_update_now", Symbols.REFRESH, res.getString(R.string.settings_native_update_now_title), RowValue.Text(updateStatus ?: res.getString(R.string.settings_native_update_now_value)) {
+        updateStatus = res.getString(R.string.settings_native_update_checking)
+        scope.launch { updateStatus = updateResultText(res, updateController.checkNow()) }
+    }, res.getString(R.string.settings_native_update_now_description), updatesOn, SettingsTab.ABOUT, updateSection)
+    if (BuildConfig.DEBUG) {
+        // Debug builds never offer an update; with a test server (docs/UPDATES.md "Testing") the flow can be tried against it
+        row("about_update_debug_server", Symbols.DEBUG, "Update test server", // l10n-ignore: debug build only
+            RowValue.Text(updateStore.debugServer ?: "off") { // l10n-ignore: debug build only
+                shell.openLayer(Layer.Dialog(DialogSpec(
+                    "Update test server", // l10n-ignore: debug build only
+                    "URL of a release JSON, http allowed. Empty turns it off.", // l10n-ignore: debug build only
+                    listOf(DialogField(Symbols.DOWNLOAD, updateStore.debugServer.orEmpty(), "http://10.0.2.2:8080/latest", maxLength = 300)), // l10n-ignore: debug build only
+                    "Save", // l10n-ignore: debug build only
+                ) { values ->
+                    updateStore.debugServer = values.first()
+                    true
+                }), tracker)
+            }, "Debug builds only: where the update check asks instead of GitHub.", // l10n-ignore: debug build only
+            tab = SettingsTab.ABOUT, section = updateSection)
+    }
     var diagnosticLogs by remember { mutableStateOf(DiagLog.enabled) }
     row("about_diag_logs", Symbols.DIAGNOSTIC_LOGS, res.getString(R.string.settings_native_diag_logs_title), RowValue.Toggle(diagnosticLogs) { on ->
         diagnosticLogs = on

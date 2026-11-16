@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_card_title">Delos %1$s est disponible</string>
+    <string name="update_card_question">Mettre à jour maintenant ? Delos la télécharge, la vérifie et la confie à Android pour l’installer.</string>
+    <string name="update_card_needs_permission">Android doit d’abord autoriser Delos à installer des mises à jour. Ouvre les réglages, active l’option, puis reviens.</string>
+    <string name="update_card_downloading">Téléchargement de la mise à jour…</string>
+    <string name="update_card_installing">Android installe la mise à jour…</string>
+    <string name="update_card_percent">%1$d %%</string>
+    <string name="update_card_update">Mettre à jour</string>
+    <string name="update_card_later">Plus tard</string>
+    <string name="update_card_allow">Ouvrir les réglages</string>
+    <string name="update_card_cancel">Annuler</string>
+    <string name="update_card_retry">Réessayer</string>
+    <string name="update_card_failed_download">Le téléchargement a échoué. Vérifie ta connexion et réessaie.</string>
+    <string name="update_card_failed_too_large">Le téléchargement dépasse la taille que Delos autorise, il a donc été arrêté.</string>
+    <string name="update_card_failed_storage">Il n’y a pas assez de place pour enregistrer la mise à jour.</string>
+    <string name="update_card_failed_checksum">Le fichier ne correspond pas à la somme de contrôle publiée ; il a été supprimé et n’a pas été installé.</string>
+    <string name="update_card_failed_signature">Android a refusé la mise à jour : elle n’est pas signée avec la même clé que le Delos installé.</string>
+    <string name="update_card_failed_install">Android n’a pas pu installer la mise à jour.</string>
+    <string name="settings_native_section_updates">Mises à jour</string>
+    <string name="settings_native_update_check_title">Rechercher les mises à jour</string>
+    <string name="settings_native_update_check_description">Interroge api.github.com une fois par jour pour connaître la dernière version de Delos et la propose ici. GitHub voit l’adresse IP de cet appareil ; rien d’autre n’est envoyé. Désactivé : aucune requête.</string>
+    <string name="settings_native_update_now_title">Vérifier maintenant</string>
+    <string name="settings_native_update_now_description">Interroge GitHub maintenant. Une nouvelle version est proposée sur l’écran d’accueil.</string>
+    <string name="settings_native_update_now_value">Vérifier</string>
+    <string name="settings_native_update_checking">Vérification…</string>
+    <string name="settings_native_update_result_current">À jour</string>
+    <string name="settings_native_update_result_available">Nouvelle version %1$s</string>
+    <string name="settings_native_update_result_no_download">La version %1$s n’a pas de téléchargement pour cet appareil</string>
+    <string name="settings_native_update_result_network">GitHub est injoignable</string>
+    <string name="settings_native_update_result_rate_limited">GitHub est occupé, réessaie plus tard</string>
+    <string name="settings_native_update_result_failed">La réponse de GitHub était inutilisable</string>
+    <string name="settings_native_update_result_disabled">Désactivé</string>
+    <string name="settings_native_update_result_debug">Pas dans les versions de débogage</string>
+    <string name="help_about_update_check">Une fois par jour, au démarrage, Delos interroge api.github.com pour connaître la dernière version. GitHub voit l’adresse IP de cet appareil ; rien d’autre n’est envoyé. S’il existe une version plus récente, l’écran d’accueil la propose avec ses notes. Ce n’est que lorsque tu appuies sur Mettre à jour que Delos la télécharge depuis GitHub et vérifie son SHA-256 d’après la liste publiée avec la version ; Android te demande ensuite avant d’installer et refuse une mise à jour signée avec une autre clé. Désactivé : aucune requête. Pas encore testé sur un appareil.</string>
+    <string name="help_about_update_now">Interroge GitHub maintenant, même s’il l’a fait il y a moins d’un jour. Une version plus récente est proposée sur l’écran d’accueil. Nécessite que Rechercher les mises à jour soit activé.</string>
+</resources>

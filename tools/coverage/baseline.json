@@ -1,7 +1,7 @@
 {
   "overall": {
-    "line": 29,
-    "branch": 21
+    "line": 30,
+    "branch": 22
   },
   "packages": {
     "com.limelight": {
@@ -147,6 +147,10 @@
     "com.limelight.ui": {
       "line": 26,
       "branch": 28
+    },
+    "com.limelight.update": {
+      "line": 81,
+      "branch": 77
     },
     "com.limelight.utils": {
       "line": 62,

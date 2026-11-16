@@ -126,6 +126,9 @@ import com.limelight.shell.ui.DialogLayer
 import com.limelight.shell.ui.PortalOverlay
 import com.limelight.shell.ui.StreamResultLayer
 import com.limelight.shell.ui.ProblemOfferCard
+import com.limelight.shell.ui.UpdateOfferCard
+import com.limelight.update.UpdateState
+import com.limelight.update.Updates
 import com.limelight.diag.ProblemMonitor
 import com.limelight.diag.ProblemReporter
 import com.limelight.shell.ui.LocalImeAvoidance
@@ -318,6 +321,26 @@ fun Shell(
                 feedback.play(Cue.ERROR)
                 shell.showToast(res.getString(R.string.shell_report_no_browser), Symbols.ERROR)
             }
+        }
+    }
+    // An update (docs/UPDATES.md): the check on app start is silent unless a newer version can be installed; the card follows the
+    // problem card and shows on the same screens and never over a layer, the portal, the launch loader or the result
+    val updates = remember { Updates.controller(appContext) }
+    val updateState by updates.state.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { updates.checkInBackground() }
+    val updateShown = updateState !is UpdateState.Idle && shell.problem == null && (shell.screen == Screen.Home || shell.screen == Screen.Start) &&
+        shell.layer == null && shell.portal == null && shell.launch == null && shell.result == null
+    // The verified file goes to the system installer only while the card shows, so Android's prompt never lands on a stream or a loader
+    LaunchedEffect(updateShown, updateState) { if (updateShown && updateState is UpdateState.Verified) updates.installVerified() }
+    // Back from the system page where the user allowed installing: the update goes on
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { updates.onResume() }
+    fun updateBack() {
+        feedback.play(Cue.BACK)
+        if (updateState is UpdateState.Downloading) updates.cancel() else updates.later()
+        scope.launch {
+            delay(400)
+            feedback.silenceNextFocus()
+            runCatching { shell.restoreScreenFocus?.invoke() }
         }
     }
     fun dismissResult() {
@@ -597,6 +620,9 @@ fun Shell(
         dismissProblem()
     }
 
+    // B on the update card is Later (Cancel while downloading), registered after the report card's so the report wins while both could show
+    BackHandler(enabled = updateShown && updateState !is UpdateState.Verified && updateState !is UpdateState.Installing) { updateBack() }
+
     // The filter modal belongs to a ready library: a PC that goes offline takes it down with it
     LaunchedEffect(shell.layer, library is Library.Ready) {
         if (shell.layer == Layer.Filters && library !is Library.Ready) shell.closeLayer()
@@ -811,6 +837,10 @@ fun Shell(
                 instantExit = launchExitInstant.value,
             )
             ProblemOfferCard(if (shell.offerShown) shell.problem else null, appearance.reducedMotion, onReport = ::reportProblem, onDismiss = ::dismissProblem)
+            UpdateOfferCard(
+                if (updateShown) updateState else null, appearance.reducedMotion,
+                onUpdate = { updates.accept() }, onAllow = updates::openPermissionSettings, onCancel = ::updateBack, onLater = ::updateBack,
+            )
             // The second panel of a dual-screen device shows the launch, the portal, the result and the problem too, with the callbacks of these layers
             com.limelight.shell.companion.PublishCompanionOverlays(
                 launchParameters, ::cancelLaunch, devices::cancelPortal, ::retryStream, ::dismissResult, ::reportProblem, ::dismissProblem,

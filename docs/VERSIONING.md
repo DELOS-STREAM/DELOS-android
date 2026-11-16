@@ -33,7 +33,7 @@ depend on. An incompatible change of any row is a MAJOR change from `1.0.0` on.
 | A5 | Host compatibility | The hosts that the README names as tested keep working: Vibepollo on Windows, reporting protocol `appversion` `7.1.431` (measured 2026-11-16 on the test host). Newer host versions that keep the protocol are expected to work. Apollo, Sunshine and Linux hosts are not part of the promise until a test is recorded. | Dropping the tested host, or a change that stops the protocol version above from working. |
 | A6 | Minimum Android version | `minSdk` in `app/build.gradle` (`29`, Android 10). | Raising `minSdk`. |
 
-Not part of the public API: the field ids of the issue form `app_report.yml` (a contract between the app and GitHub, kept by `IssueFormContractTest`), the look and layout of the screens, texts and translations, default values of
+Not part of the public API: the asset names of a release (a contract with the in-app updater, [Release assets](#release-assets)), the field ids of the issue form `app_report.yml` (a contract between the app and GitHub, kept by `IssueFormContractTest`), the look and layout of the screens, texts and translations, default values of
 settings, the diagnostic log format, debug previews and their intent extras, everything in `tools/`, and the
 internal classes of the app.
 
@@ -103,6 +103,22 @@ The 0.x versions were set retroactively on the milestones of the history (Delos'
 
 Rows 0.1.0 to 0.14.0 were set when the history was organized; later versions are tagged when they are made. Anything newer than the last row is under "Unreleased" in the changelog.
 
+## Release assets
+
+The in-app updater ([UPDATES.md](UPDATES.md)) depends on the files of a release. A release that does not follow this
+contract is not offered by the updater.
+
+| # | Rule |
+|---|---|
+| 1 | The tag is `vX.Y.Z` (or `vX.Y.Z-rc.N` for a pre-release); the release is published, not a draft. |
+| 2 | One APK per ABI named `delos-<version>-<abi>.apk`, where `<version>` is the tag without `v` and `<abi>` is an Android ABI name: `delos-1.0.0-arm64-v8a.apk`, `delos-1.0.0-armeabi-v7a.apk`. |
+| 3 | One file `SHA256SUMS.txt` with a line `<sha256>  <file name>` for every APK, as `sha256sum` writes it (lower-case hex, two spaces). |
+| 4 | Every APK is signed with the release key. An update over an installed Delos needs the same key. |
+| 5 | An asset is never replaced after publication (policy rule 2). A wrong asset is a new version. |
+
+The first release candidate that is published is also the first test of this contract with the real updater. A pre-release is
+not offered by the updater (GitHub's latest-release endpoint skips it); it is installed by hand.
+
 ## Tags
 
 Tags are named `vMAJOR.MINOR.PATCH` (for example `v0.4.0`) and are annotated. The `v` is a convention of tag names; it is not part of the version: the tag is `v1.2.3`, the version is `1.2.3`. `tools/versioning/create-tags.sh` creates the tags v0.1.0 to v0.14.0 locally on the commits above; it is idempotent, refuses to overwrite an existing tag and pushes only with `--push`.
@@ -138,5 +154,6 @@ Every line holds before the tag of a release is pushed. The rules behind it: [EN
 | 11 | Issues are tidy. | `gh issue list --search "is:open no:milestone"` and `--search "is:open no:label"` are empty; the milestone of the release is closed. |
 | 12 | CI runs for the release. | The commit that gets the tag has no `[skip ci]` line. Pushing the tag `vX.Y.Z` starts the Build workflow; the release is published only after that run is green. This applies to every public release, starting with 1.0.0. The workflow has no manual start. A tag cannot be moved or deleted: when the run fails, the fix is released under the next PATCH number. A release candidate tag (`vX.Y.Z-rc.N`) runs the same workflow first. |
 | 12 | The release text is the complete changelog section. | Step 5 of "Adding a new version" above. |
+| 13 | The release assets follow the contract. | [Release assets](#release-assets): both APKs and `SHA256SUMS.txt` are attached, each APK has its line, and `sha256sum -c SHA256SUMS.txt` passes in the download folder. |
 
 Not defined yet: who holds the release signing key and how it is backed up. No release is made before that is written here.
