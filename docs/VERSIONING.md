@@ -156,4 +156,16 @@ Every line holds before the tag of a release is pushed. The rules behind it: [EN
 | 12 | The release text is the complete changelog section. | Step 5 of "Adding a new version" above. |
 | 13 | The release assets follow the contract. | [Release assets](#release-assets): both APKs and `SHA256SUMS.txt` are attached, each APK has its line, and `sha256sum -c SHA256SUMS.txt` passes in the download folder. |
 
-Not defined yet: who holds the release signing key and how it is backed up. No release is made before that is written here.
+## Release signing key
+
+| Item | Value |
+|---|---|
+| Holder | The owner (Meitoncz). The key never reaches the repository, a message or an agent. |
+| File | `delos-release.jks` (PKCS12/JKS keystore), alias `delos`, RSA 4096, valid for 100 years; created on the owner's Mac on 2026-11-16. |
+| Certificate SHA-256 | `25:04:1A:F8:28:29:CF:51:6E:E1:E5:54:52:33:33:80:BA:D4:2C:8F:53:F2:FA:B1:79:AD:4B:F5:20:E8:D1:25` |
+| Backup | Kept by the owner in at least two places outside the Mac, with the password stored separately. The backup was not checked by the lead. |
+| Signing | The owner signs the release APKs with the keystore (script `tools/release/sign-apk.sh`, which asks for the password and stores nothing). |
+
+The certificate fingerprint is public. A user can compare it with the one of an installed APK (`apksigner verify --print-certs`) to see that an
+update comes from the owner. A lost key cannot be replaced: an update signed with another key is refused by Android, and users would have to
+uninstall Delos. No release is made while the backup is not in place.
