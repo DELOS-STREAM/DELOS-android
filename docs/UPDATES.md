@@ -158,17 +158,21 @@ Unit tests (`app/src/test/java/com/limelight/update/`, `shell/ui/UpdateOfferCard
 
 The network is a fake `OkHttpClient` interceptor; no test makes a request.
 
+### Evidence (2026-11-16)
+
+AYN Odin 2 Portal Max, Android 13, release 1.0.0 published on GitHub: a signed 0.15.0 test build (the same code with a lower
+version, signed with the release key) was installed over the existing data. **Check now** offered DELOS 1.0.0, **Update**
+downloaded the real `delos-1.0.0-arm64-v8a.apk` from GitHub, verified it and handed it to Android's installer; after the
+system prompt the app was at 1.0.0 with its settings and pairing kept. The owner ran the flow with the controller.
+
 ### Not verified
 
-On no device. Needs the AYN Odin (or another Android 10 and later device) and a published release:
-
-- Android's install prompt, and whether `USER_ACTION_NOT_REQUIRED` suppresses it.
-- The redirect to "install unknown apps" and the resume after returning.
+- The redirect to "install unknown apps" on a device where DELOS did not have that permission yet, and the resume after returning.
+- Whether `USER_ACTION_NOT_REQUIRED` suppresses Android's prompt for a later update.
 - The status and message the system reports for an APK signed with another key (the mapping to the signature message is
   from the documented `INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
-- Controller focus and B on the card, the card on every screen shape, the dual-screen device.
-- The download of a real release asset from GitHub and its redirect host.
-- Updating over an APK installed by Obtainium.
+- The card on every screen shape and on the dual-screen device.
+- The `armeabi-v7a` asset, and updating over an APK installed by Obtainium.
 
 ## Related
 
