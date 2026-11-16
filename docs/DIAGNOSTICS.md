@@ -279,5 +279,5 @@ On a device with a debug build (never while streaming):
 ## Related
 
 - [SECURITY.md](../SECURITY.md), "Diagnostics" and "The report service".
-- Issues [#71](https://github.com/Meitoncz/Delos/issues/71) and [#83](https://github.com/Meitoncz/Delos/issues/83).
+- Issues [#71](https://github.com/DELOS-STREAM/DELOS-android/issues/71) and [#83](https://github.com/DELOS-STREAM/DELOS-android/issues/83).
 - `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/app_report.yml`.

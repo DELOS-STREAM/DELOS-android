@@ -218,7 +218,7 @@ The start screen is shown on every launch.
 ## 6. Launching a game
 
 The specification of the effect is [LAUNCH_TRANSITION.md](../LAUNCH_TRANSITION.md). See
-[#62](https://github.com/Meitoncz/Delos/issues/62).
+[#62](https://github.com/DELOS-STREAM/DELOS-android/issues/62).
 
 ### 6.1 The tunnel
 
@@ -301,7 +301,7 @@ Launch-parameter inspection is strictly read-only:
 ### 6.6 Game-window readiness
 
 1. Game-window readiness behavior and its proposed host protocol are recorded in
-   [#13](https://github.com/Meitoncz/Delos/issues/13) and [#14](https://github.com/Meitoncz/Delos/issues/14).
+   [#13](https://github.com/DELOS-STREAM/DELOS-android/issues/13) and [#14](https://github.com/DELOS-STREAM/DELOS-android/issues/14).
 2. A visible game window is not a guarantee that gameplay loading has finished.
 
 ### 6.7 Cancelling a launch
@@ -617,7 +617,7 @@ The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verifi
 - [LAUNCH_TRANSITION.md](../LAUNCH_TRANSITION.md): the launch transition.
 - [SCREEN_SHAPES.md](SCREEN_SHAPES.md): standard and compact stages.
 - [CONTROLS_AND_TEXT.md](CONTROLS_AND_TEXT.md): text that does not fit.
-- [#13](https://github.com/Meitoncz/Delos/issues/13) and [#14](https://github.com/Meitoncz/Delos/issues/14):
+- [#13](https://github.com/DELOS-STREAM/DELOS-android/issues/13) and [#14](https://github.com/DELOS-STREAM/DELOS-android/issues/14):
   game-window readiness and its proposed host protocol.
-- [#62](https://github.com/Meitoncz/Delos/issues/62): the hyperspace launch effect.
+- [#62](https://github.com/DELOS-STREAM/DELOS-android/issues/62): the hyperspace launch effect.
 - Issue #85: the stat block on the home screen.

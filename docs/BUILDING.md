@@ -66,12 +66,12 @@ sdkmanager 'platforms;android-37.0' 'platform-tools' 'ndk;29.0.14206865'
 ## Get the source
 
 ```sh
-git clone --recurse-submodules https://github.com/Meitoncz/Delos.git
+git clone --recurse-submodules https://github.com/DELOS-STREAM/DELOS-android.git
 cd Delos
 ```
 
 In an existing clone: `git submodule update --init --recursive`. The submodule is the streaming core,
-`app/src/main/jni/moonlight-core/moonlight-common-c` ([Meitoncz/Delos-common-c](https://github.com/Meitoncz/Delos-common-c)),
+`app/src/main/jni/moonlight-core/moonlight-common-c` ([DELOS-STREAM/Delos-common-c](https://github.com/DELOS-STREAM/Delos-common-c)),
 which brings its own nested submodules; the build fails without it.
 
 Not everything native is built from source in this repository:

@@ -246,7 +246,7 @@ The editor is specified in [FULL_KEYBOARD.md](FULL_KEYBOARD.md).
 
 ## 6. `DelosStreamActivity` structure
 
-The structure is tracked in [#29](https://github.com/Meitoncz/Delos/issues/29).
+The structure is tracked in [#29](https://github.com/DELOS-STREAM/DELOS-android/issues/29).
 
 ### 6.1 What the activity keeps
 
@@ -345,4 +345,4 @@ The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verifi
 - [ARTWORK.md](ARTWORK.md): SteamGridDB.
 - [CONTROLS_AND_TEXT.md](CONTROLS_AND_TEXT.md): controls and hints.
 - [ICONS.md](../ICONS.md): Phosphor icon generation and licensing.
-- [#29](https://github.com/Meitoncz/Delos/issues/29): `DelosStreamActivity` structure.
+- [#29](https://github.com/DELOS-STREAM/DELOS-android/issues/29): `DelosStreamActivity` structure.

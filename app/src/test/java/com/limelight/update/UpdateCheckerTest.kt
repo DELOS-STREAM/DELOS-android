@@ -61,7 +61,7 @@ class UpdateCheckerTest {
         val c = result.candidate
         assertEquals("v1.1.0", c.tag)
         assertEquals("delos-1.1.0-arm64-v8a.apk", c.apkName)
-        assertEquals("https://github.com/Meitoncz/Delos/releases/download/v1.1.0/delos-1.1.0-arm64-v8a.apk", c.apkUrl)
+        assertEquals("https://github.com/DELOS-STREAM/DELOS-android/releases/download/v1.1.0/delos-1.1.0-arm64-v8a.apk", c.apkUrl)
         assertEquals(sha256Hex(apk), c.sha256)
         assertEquals("Added\n• Something new", c.notes)
         // The request names the app and asks for the GitHub JSON, over HTTPS, without credentials

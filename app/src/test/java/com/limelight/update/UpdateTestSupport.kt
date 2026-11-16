@@ -46,14 +46,14 @@ fun sha256Hex(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256").d
 fun releaseJson(
     tag: String, body: String = "## Added\\n- Something new", draft: Boolean = false, prerelease: Boolean = false,
     assets: List<Triple<String, String, Long>> = listOf(
-        Triple("delos-${tag.removePrefix("v")}-arm64-v8a.apk", "https://github.com/Meitoncz/Delos/releases/download/$tag/delos-${tag.removePrefix("v")}-arm64-v8a.apk", 52_428_800L),
-        Triple("delos-${tag.removePrefix("v")}-armeabi-v7a.apk", "https://github.com/Meitoncz/Delos/releases/download/$tag/delos-${tag.removePrefix("v")}-armeabi-v7a.apk", 41_943_040L),
-        Triple("SHA256SUMS.txt", "https://github.com/Meitoncz/Delos/releases/download/$tag/SHA256SUMS.txt", 220L),
+        Triple("delos-${tag.removePrefix("v")}-arm64-v8a.apk", "https://github.com/DELOS-STREAM/DELOS-android/releases/download/$tag/delos-${tag.removePrefix("v")}-arm64-v8a.apk", 52_428_800L),
+        Triple("delos-${tag.removePrefix("v")}-armeabi-v7a.apk", "https://github.com/DELOS-STREAM/DELOS-android/releases/download/$tag/delos-${tag.removePrefix("v")}-armeabi-v7a.apk", 41_943_040L),
+        Triple("SHA256SUMS.txt", "https://github.com/DELOS-STREAM/DELOS-android/releases/download/$tag/SHA256SUMS.txt", 220L),
     ),
 ): String = """
 {
-  "url": "https://api.github.com/repos/Meitoncz/Delos/releases/1",
-  "html_url": "https://github.com/Meitoncz/Delos/releases/tag/$tag",
+  "url": "https://api.github.com/repos/DELOS-STREAM/DELOS-android/releases/1",
+  "html_url": "https://github.com/DELOS-STREAM/DELOS-android/releases/tag/$tag",
   "id": 1,
   "author": {"login": "Meitoncz", "id": 7},
   "tag_name": "$tag",
@@ -64,7 +64,7 @@ fun releaseJson(
   "created_at": "2026-12-01T10:00:00Z",
   "published_at": "2026-12-01T10:05:00Z",
   "assets": [${assets.joinToString(",") { (name, url, size) -> """{"id": 9, "name": "$name", "content_type": "application/octet-stream", "state": "uploaded", "size": $size, "download_count": 3, "browser_download_url": "$url"}""" }}],
-  "tarball_url": "https://api.github.com/repos/Meitoncz/Delos/tarball/$tag",
+  "tarball_url": "https://api.github.com/repos/DELOS-STREAM/DELOS-android/tarball/$tag",
   "body": "$body"
 }
 """.trimIndent()

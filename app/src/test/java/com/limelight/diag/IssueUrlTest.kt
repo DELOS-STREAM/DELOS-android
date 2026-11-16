@@ -25,7 +25,7 @@ class IssueUrlTest {
 
     @Test fun theAddressOpensTheFormMadeForTheApp() {
         val url = IssueUrl.build(draft)
-        assertTrue(url, url.startsWith("https://github.com/Meitoncz/Delos/issues/new?template=app_report.yml&title="))
+        assertTrue(url, url.startsWith("https://github.com/DELOS-STREAM/DELOS-android/issues/new?template=app_report.yml&title="))
         assertEquals("app_report.yml", params(url)["template"])
     }
 

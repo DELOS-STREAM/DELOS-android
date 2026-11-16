@@ -118,7 +118,7 @@ pose curve, the handover states and deadlines, the failure report and the consta
 ## Related
 
 - [GUI.md](GUI.md), [SGSR2_VIDEO.md](SGSR2_VIDEO.md), [STREAM_QUALITY.md](STREAM_QUALITY.md).
-- Issue [#62](https://github.com/Meitoncz/Delos/issues/62).
+- Issue [#62](https://github.com/DELOS-STREAM/DELOS-android/issues/62).
 
 ## Evidence (2026-11-04)
 

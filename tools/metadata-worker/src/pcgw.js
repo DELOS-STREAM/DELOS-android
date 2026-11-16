@@ -1,7 +1,7 @@
 import { HttpError, readText, rejectStatus, upstreamFetch } from "./errors.js";
 
 const API = "https://www.pcgamingwiki.com/w/api.php";
-const USER_AGENT = "Delos-metadata-proxy/1.0 (https://github.com/Meitoncz/Delos)";
+const USER_AGENT = "Delos-metadata-proxy/1.0 (https://github.com/DELOS-STREAM/DELOS-android)";
 const REFUSED_LOGIN_COOLDOWN_MS = 10 * 60 * 1000;
 // MediaWiki error codes that mean "the session is gone"; anything else is a request problem, not an auth one.
 const SESSION_ERRORS = new Set(["assertuserfailed", "assertnameduserfailed", "readapidenied", "notloggedin"]);

@@ -12,7 +12,7 @@ Delos 1.0.0 is the first release. Reports against the latest release and the cur
 
 ## Reporting a vulnerability
 
-Report it privately through GitHub: [Report a vulnerability](https://github.com/Meitoncz/Delos/security/advisories/new)
+Report it privately through GitHub: [Report a vulnerability](https://github.com/DELOS-STREAM/DELOS-android/security/advisories/new)
 (repository → Security → Advisories → Report a vulnerability). Do not open a public issue and do not post details in
 a discussion or a pull request.
 
@@ -28,7 +28,7 @@ not to be.
 | In scope | Out of scope |
 |---|---|
 | The Delos Android app: this repository, including the native code under `app/src/main/jni/` | The host software on the PC ([Vibepollo](https://github.com/Nonary/Vibepollo), [Apollo](https://github.com/ClassicOldSong/Apollo), [Sunshine](https://github.com/LizardByte/Sunshine)): report there |
-| The streaming core fork [Meitoncz/Delos-common-c](https://github.com/Meitoncz/Delos-common-c) | Problems that need a rooted or already compromised device |
+| The streaming core fork [DELOS-STREAM/Delos-common-c](https://github.com/DELOS-STREAM/Delos-common-c) | Problems that need a rooted or already compromised device |
 | The metadata service in `tools/metadata-worker/` and the report service in `tools/report-worker/` | The third-party services Delos reads from (SteamGridDB, HowLongToBeat, IGDB, PCGamingWiki, Steam) |
 | The GitHub workflow and the build files of this repository | A stream that the host sends without encryption (see "What is encrypted") |
 
@@ -94,7 +94,7 @@ Outbound connections:
 | `android.conntest.moonlight-stream.org` (Moonlight project) | A stream fails to connect or is cut off, to tell the user which ports are blocked | A connection test; the server sees the public IP address |
 | The Delos report service (see below) | The user reports a problem, in builds that have its address | The cleaned diagnostic log, over HTTPS |
 | GitHub, in the browser | The user opens a link or reports a problem | What the user submits |
-| `api.github.com` | Once a day when Delos starts, and on Settings → About → Check now, unless "Check for updates" is off | A request for the latest release of Meitoncz/Delos with `User-Agent: Delos/<version>`; GitHub sees the public IP address |
+| `api.github.com` | Once a day when Delos starts, and on Settings → About → Check now, unless "Check for updates" is off | A request for the latest release of DELOS-STREAM/DELOS-android with `User-Agent: Delos/<version>`; GitHub sees the public IP address |
 | `github.com` and the download host it redirects to | Only when a newer release exists (the checksum list) and after the user presses Update (the APK) | A plain download request |
 
 Delos has no account, no analytics and no advertising code.

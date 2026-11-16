@@ -13,7 +13,7 @@ the rules for writing a string, the glossary of each language and the tests that
 | Tone, glossaries and terminology per language | The settings catalog that reads its texts from resources: [SETTINGS.md](SETTINGS.md) |
 | Text fit, fonts and scripts, tooling | |
 
-Tracking issue: [#10](https://github.com/Meitoncz/Delos/issues/10).
+Tracking issue: [#10](https://github.com/DELOS-STREAM/DELOS-android/issues/10).
 
 ## Languages
 
@@ -974,4 +974,4 @@ Entkoppeln, Abendrot, Fehler, З’єднати, Роз’єднати, Recentes
 - [GUI.md](GUI.md): where a text appears on screen and how much room it has.
 - [SETTINGS.md](SETTINGS.md): the settings catalog that reads its texts from resources.
 - [DUAL_SCREEN.md](DUAL_SCREEN.md): the companion screen whose texts are in the `strings_companion*.xml` files.
-- Tracking issue: [#10](https://github.com/Meitoncz/Delos/issues/10).
+- Tracking issue: [#10](https://github.com/DELOS-STREAM/DELOS-android/issues/10).

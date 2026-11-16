@@ -33,7 +33,7 @@ class ScrubContractTest {
         Case("http://10.0.0.5:47989/launch?appid=1234&mode=1920x1080x60&rikey=00112233445566778899aabbccddeeff", true),
         Case("GET https://user:hunter2@meiton.example.org/api/v1/status?token=abc123 failed", true),
         Case("GET https://www.steamgriddb.com/api/v2/grids/game/5254?types=static", true),
-        Case("GET https://github.com/Meitoncz/Delos/issues/new?template=app_report.yml&title=x", true),
+        Case("GET https://github.com/DELOS-STREAM/DELOS-android/issues/new?template=app_report.yml&title=x", true),
         Case("UID is now: fedcba9876543210", true),
         Case("192.168.0.200 -> 8.8.8.8 -> 192.168.0.200", true),
         Case("version 999.1.2.3 built", true),

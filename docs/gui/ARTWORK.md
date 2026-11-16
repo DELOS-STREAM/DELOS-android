@@ -41,7 +41,7 @@ bundled assets are rebuilt.
 5. Selected hero artwork takes precedence over the SteamGridDB cover and the PC fallback. Clearing it restores that
    fallback order.
 6. NSFW and humor images are never requested and never shown.
-7. Host artwork synchronization decisions are recorded in [#15](https://github.com/Meitoncz/Delos/issues/15).
+7. Host artwork synchronization decisions are recorded in [#15](https://github.com/DELOS-STREAM/DELOS-android/issues/15).
 
 ## 2. Hero on the home screen
 
@@ -428,4 +428,4 @@ The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verifi
 - [SHELL_ARCHITECTURE.md](SHELL_ARCHITECTURE.md)
 - [LAUNCH_TRANSITION.md](../LAUNCH_TRANSITION.md)
 - [SETTINGS.md](../SETTINGS.md)
-- [#15](https://github.com/Meitoncz/Delos/issues/15): host artwork synchronization decisions
+- [#15](https://github.com/DELOS-STREAM/DELOS-android/issues/15): host artwork synchronization decisions

@@ -7,14 +7,14 @@
 
 **Game streaming for Android handhelds**, with a console-like interface you can drive entirely with a gamepad.
 
-[![License: GPL v3](https://img.shields.io/github/license/Meitoncz/Delos?color=fbbd44&labelColor=151b2b)](LICENSE)
+[![License: GPL v3](https://img.shields.io/github/license/DELOS-STREAM/DELOS-android?color=fbbd44&labelColor=151b2b)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-4fd2ee?logo=android&logoColor=white&labelColor=151b2b)](docs/BUILDING.md)
-[![Stars](https://img.shields.io/github/stars/Meitoncz/Delos?style=flat&color=fbbd44&labelColor=151b2b)](https://github.com/Meitoncz/Delos/stargazers)
-[![Open issues](https://img.shields.io/github/issues/Meitoncz/Delos?color=e8639a&labelColor=151b2b)](https://github.com/Meitoncz/Delos/issues)
-[![Last commit](https://img.shields.io/github/last-commit/Meitoncz/Delos?color=4fd2ee&labelColor=151b2b)](https://github.com/Meitoncz/Delos/commits/main)
+[![Stars](https://img.shields.io/github/stars/DELOS-STREAM/DELOS-android?style=flat&color=fbbd44&labelColor=151b2b)](https://github.com/DELOS-STREAM/DELOS-android/stargazers)
+[![Open issues](https://img.shields.io/github/issues/DELOS-STREAM/DELOS-android?color=e8639a&labelColor=151b2b)](https://github.com/DELOS-STREAM/DELOS-android/issues)
+[![Last commit](https://img.shields.io/github/last-commit/DELOS-STREAM/DELOS-android?color=4fd2ee&labelColor=151b2b)](https://github.com/DELOS-STREAM/DELOS-android/commits/main)
 [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-support-e8639a?logo=kofi&logoColor=white&labelColor=151b2b)](https://ko-fi.com/delos_stream)
 
-[Website](https://delos-stream.com) · [Releases](https://github.com/Meitoncz/Delos/releases) · [Issues](https://github.com/Meitoncz/Delos/issues) · [Add to Obtainium](obtainium://add/https://github.com/Meitoncz/Delos)
+[Website](https://delos-stream.com) · [Releases](https://github.com/DELOS-STREAM/DELOS-android/releases) · [Issues](https://github.com/DELOS-STREAM/DELOS-android/issues) · [Add to Obtainium](obtainium://add/https://github.com/DELOS-STREAM/DELOS-android)
 
 <img src="docs/readme/dashboard.webp" alt="The Delos library on a handheld" width="820">
 
@@ -63,11 +63,11 @@ Delos streams games from your PC to an Android handheld. It is built for the han
 
 ## 📥 Get Delos
 
-Download the APK for your device from the [releases page](https://github.com/Meitoncz/Delos/releases): `arm64-v8a` for almost every handheld and phone, `armeabi-v7a` only for old 32-bit devices. `SHA256SUMS.txt` on the same page lists the checksums. To get updates, add the repository to [Obtainium](obtainium://add/https://github.com/Meitoncz/Delos). Delos can also check for a new release itself once a day (it contacts only api.github.com, can be switched off in Settings → About) and, when you agree, download, verify and install it; [docs/UPDATES.md](docs/UPDATES.md). The updater has not been tested with a real release yet.
+Download the APK for your device from the [releases page](https://github.com/DELOS-STREAM/DELOS-android/releases): `arm64-v8a` for almost every handheld and phone, `armeabi-v7a` only for old 32-bit devices. `SHA256SUMS.txt` on the same page lists the checksums. To get updates, add the repository to [Obtainium](obtainium://add/https://github.com/DELOS-STREAM/DELOS-android). Delos can also check for a new release itself once a day (it contacts only api.github.com, can be switched off in Settings → About) and, when you agree, download, verify and install it; [docs/UPDATES.md](docs/UPDATES.md). The updater has not been tested with a real release yet.
 
 ## 🤝 Community and contributing
 
-The goal is to maintain Delos for the long term, build a community around it and keep improving it from your feedback. Found a problem or have an idea? Open an [issue](https://github.com/Meitoncz/Delos/issues/new/choose). Code contributions are welcome too: see [CONTRIBUTING.md](CONTRIBUTING.md); building from source is described in [docs/BUILDING.md](docs/BUILDING.md) and the rest of the documentation starts at [docs/README.md](docs/README.md). Security problems are reported privately: [SECURITY.md](SECURITY.md). Delos keeps a small diagnostic log on your device (never uploaded); details in [docs/DIAGNOSTICS.md](docs/DIAGNOSTICS.md).
+The goal is to maintain Delos for the long term, build a community around it and keep improving it from your feedback. Found a problem or have an idea? Open an [issue](https://github.com/DELOS-STREAM/DELOS-android/issues/new/choose). Code contributions are welcome too: see [CONTRIBUTING.md](CONTRIBUTING.md); building from source is described in [docs/BUILDING.md](docs/BUILDING.md) and the rest of the documentation starts at [docs/README.md](docs/README.md). Security problems are reported privately: [SECURITY.md](SECURITY.md). Delos keeps a small diagnostic log on your device (never uploaded); details in [docs/DIAGNOSTICS.md](docs/DIAGNOSTICS.md).
 
 ## 📜 License and credits
 

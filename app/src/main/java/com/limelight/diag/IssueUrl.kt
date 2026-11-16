@@ -41,7 +41,7 @@ data class IssueDraft(
  * "404 Not Found" page for everyone else. The form sets its labels (`bug`, `from-app`, `needs-triage`) itself, for everyone.
  */
 object IssueUrl {
-    const val NEW_ISSUE = "https://github.com/Meitoncz/Delos/issues/new"
+    const val NEW_ISSUE = "https://github.com/DELOS-STREAM/DELOS-android/issues/new"
     const val TEMPLATE = "app_report.yml"
 
     /** The two options of the form's Area dropdown that the app sends. */

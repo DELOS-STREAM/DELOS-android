@@ -242,7 +242,7 @@ The observations behind items 2 to 4 are in
 
 ## 7. Companion content
 
-Issue [#76](https://github.com/Meitoncz/Delos/issues/76): useful extra content on EVERY screen, never scrolling.
+Issue [#76](https://github.com/DELOS-STREAM/DELOS-android/issues/76): useful extra content on EVERY screen, never scrolling.
 
 The rule behind the design: *the second display is EXTRA room for what helps the main screen, never a place for
 the main screens*.
@@ -839,7 +839,7 @@ app's settings and Debug info on the main panel at 1920 x 1080, the D-pad drivin
 
 - [EXTERNAL_DISPLAY.md](EXTERNAL_DISPLAY.md), [GUI.md](GUI.md), [HANDHELD_DEVICES.md](HANDHELD_DEVICES.md),
   [DIAGNOSTICS.md](DIAGNOSTICS.md).
-- Issue [#76](https://github.com/Meitoncz/Delos/issues/76).
+- Issue [#76](https://github.com/DELOS-STREAM/DELOS-android/issues/76).
 
 ## Evidence (2026-11-11): emulator display dumps
 

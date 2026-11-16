@@ -59,7 +59,7 @@ Regression tests cover analog edge/repeat behavior, pre-IME gamepad routing, and
 ## Related
 
 - [DUAL_SCREEN.md](DUAL_SCREEN.md), [GUI.md](GUI.md).
-- Issue [#22](https://github.com/Meitoncz/Delos/issues/22) (device and external-display compatibility).
+- Issue [#22](https://github.com/DELOS-STREAM/DELOS-android/issues/22) (device and external-display compatibility).
 
 ## Evidence (2026-10-27)
 

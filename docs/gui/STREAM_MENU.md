@@ -25,7 +25,7 @@ context menu and the stream menu without a stream.
 - SGSR upscaling and independent sharpening are implemented.
 - Codec-specific behavior and measured results are documented in [STREAM_QUALITY.md](../STREAM_QUALITY.md) and
   [SGSR2_VIDEO.md](../SGSR2_VIDEO.md).
-- Current quality/performance acceptance is tracked only in [#19](https://github.com/Meitoncz/Delos/issues/19).
+- Current quality/performance acceptance is tracked only in [#19](https://github.com/DELOS-STREAM/DELOS-android/issues/19).
 
 ### 1.2 Upscaler page
 
@@ -546,4 +546,4 @@ The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verifi
 - [SHELL_ARCHITECTURE.md](SHELL_ARCHITECTURE.md)
 - [STREAM_QUALITY.md](../STREAM_QUALITY.md)
 - [SGSR2_VIDEO.md](../SGSR2_VIDEO.md)
-- [#19](https://github.com/Meitoncz/Delos/issues/19)
+- [#19](https://github.com/DELOS-STREAM/DELOS-android/issues/19)

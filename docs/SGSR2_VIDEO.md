@@ -311,7 +311,7 @@ been run either.
 - No engine depth or actual render jitter is available; stationary 480p input cannot recover detail it never
   contains.
 - Long-session performance, thermal behavior and difficult game motion have not been validated on a device.
-- Any display other than the Odin's has no record ([#22](https://github.com/Meitoncz/Delos/issues/22) tracks other
+- Any display other than the Odin's has no record ([#22](https://github.com/DELOS-STREAM/DELOS-android/issues/22) tracks other
   devices).
 - The scene-change detector is a heuristic; that every game scene cut is recognized is not verified.
 - The on-device comparison recipe has not been run.
@@ -325,7 +325,7 @@ been run either.
 ## Related
 
 - [STREAM_QUALITY.md](STREAM_QUALITY.md), [VIDEO_OPTICAL_FLOW_RESEARCH.md](VIDEO_OPTICAL_FLOW_RESEARCH.md), [LAUNCH_TRANSITION.md](LAUNCH_TRANSITION.md).
-- Issues [#19](https://github.com/Meitoncz/Delos/issues/19), [#22](https://github.com/Meitoncz/Delos/issues/22), [#74](https://github.com/Meitoncz/Delos/issues/74).
+- Issues [#19](https://github.com/DELOS-STREAM/DELOS-android/issues/19), [#22](https://github.com/DELOS-STREAM/DELOS-android/issues/22), [#74](https://github.com/DELOS-STREAM/DELOS-android/issues/74).
 
 ## Evidence (2026-10-26): GPU fixtures on the Odin
 
@@ -451,7 +451,7 @@ game.
 
 ## Evidence (2026-11-07): verification against the official reference
 
-Source audit for [#74](https://github.com/Meitoncz/Delos/issues/74), performed on 2026-11-07.
+Source audit for [#74](https://github.com/DELOS-STREAM/DELOS-android/issues/74), performed on 2026-11-07.
 This verifies the implementation against the specific references below, **not** pixel-identical
 engine integration, physical HDR accuracy, sustained performance or subjective quality.
 The two video renderers are not interchangeable implementations of an unchanged Qualcomm pipeline.

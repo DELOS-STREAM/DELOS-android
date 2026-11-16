@@ -59,7 +59,7 @@ class ReportSubmissionTest {
         assertTrue(what, what.contains("2026-12-20"))
         assertFalse("no file name when the log is a link", what.contains(".txt"))
         assertTrue(result.issueUrl.length.toString(), result.issueUrl.length <= IssueUrl.MAX_LENGTH)
-        assertTrue(result.issueUrl.startsWith("https://github.com/Meitoncz/Delos/issues/new?template=app_report.yml"))
+        assertTrue(result.issueUrl.startsWith("https://github.com/DELOS-STREAM/DELOS-android/issues/new?template=app_report.yml"))
     }
 
     @Test fun aFailedUploadFallsBackToDownloadsAndSaysWhy() {

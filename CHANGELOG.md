@@ -40,7 +40,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 _Hold Back for Guide and updated libraries._
 
 ### Added
-- Hold Back for Guide (Settings → Controls, off by default): holding a gamepad's Back button for half a second sends Guide (the Xbox button) to the PC, for handhelds without a Guide button; a short press still sends Back, on release. Requested on Reddit ([#90](https://github.com/Meitoncz/DELOS/issues/90)); tested in a stream on the AYN Odin 2 Portal Max.
+- Hold Back for Guide (Settings → Controls, off by default): holding a gamepad's Back button for half a second sends Guide (the Xbox button) to the PC, for handhelds without a Guide button; a short press still sends Back, on release. Requested on Reddit ([#90](https://github.com/DELOS-STREAM/DELOS-android/issues/90)); tested in a stream on the AYN Odin 2 Portal Max.
 
 ### Security
 - Libraries updated: BouncyCastle 1.87 (fixes in certificate and key parsing), OkHttp 5.5.1, jmDNS 3.6.5, Gson 2.15.0, Haze 2.1.0, and the build tool Gradle 9.9.1.
@@ -349,21 +349,21 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 ### Removed
 - SBS 3D, performance logging and other dead code.
 
-[Unreleased]: https://github.com/Meitoncz/Delos/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/Meitoncz/Delos/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/Meitoncz/Delos/compare/v0.15.0...v1.0.0
-[0.15.0]: https://github.com/Meitoncz/Delos/compare/v0.14.0...v0.15.0
-[0.14.0]: https://github.com/Meitoncz/Delos/compare/v0.13.0...v0.14.0
-[0.13.0]: https://github.com/Meitoncz/Delos/compare/v0.12.0...v0.13.0
-[0.12.0]: https://github.com/Meitoncz/Delos/compare/v0.11.0...v0.12.0
-[0.11.0]: https://github.com/Meitoncz/Delos/compare/v0.10.0...v0.11.0
-[0.10.0]: https://github.com/Meitoncz/Delos/compare/v0.9.0...v0.10.0
-[0.9.0]: https://github.com/Meitoncz/Delos/compare/v0.8.0...v0.9.0
-[0.8.0]: https://github.com/Meitoncz/Delos/compare/v0.7.0...v0.8.0
-[0.7.0]: https://github.com/Meitoncz/Delos/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/Meitoncz/Delos/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/Meitoncz/Delos/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/Meitoncz/Delos/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/Meitoncz/Delos/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/Meitoncz/Delos/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/Meitoncz/Delos/releases/tag/v0.1.0
+[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.15.0...v1.0.0
+[0.15.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.14.0...v0.15.0
+[0.14.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.13.0...v0.14.0
+[0.13.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.12.0...v0.13.0
+[0.12.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.11.0...v0.12.0
+[0.11.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/DELOS-STREAM/DELOS-android/releases/tag/v0.1.0

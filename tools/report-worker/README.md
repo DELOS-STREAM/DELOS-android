@@ -179,7 +179,7 @@ the code, every scrub rule with the fixtures of the app's `LogScrubberTest`, and
 
 - [docs/DIAGNOSTICS.md](../../docs/DIAGNOSTICS.md), "The report service".
 - [SECURITY.md](../../SECURITY.md), "The report service".
-- Issue [#83](https://github.com/Meitoncz/Delos/issues/83).
+- Issue [#83](https://github.com/DELOS-STREAM/DELOS-android/issues/83).
 
 ## Evidence (2026-11-16, live)
 

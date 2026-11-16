@@ -244,7 +244,7 @@ translation, the playback decisions, the presets and their storage. The feel its
 ## Related
 
 - [CONTROLLER_STATE.md](CONTROLLER_STATE.md), [SETTINGS.md](SETTINGS.md).
-- Issue [#66](https://github.com/Meitoncz/Delos/issues/66).
+- Issue [#66](https://github.com/DELOS-STREAM/DELOS-android/issues/66).
 
 ## Evidence (2026-11-06)
 

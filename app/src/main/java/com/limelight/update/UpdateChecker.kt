@@ -11,7 +11,7 @@ class UpdatePolicy(val debugBuild: Boolean, val debugServer: String? = null) {
     val allowCleartext: Boolean get() = debugBuild && debugServer != null
 
     companion object {
-        const val LATEST_RELEASE_URL = "https://api.github.com/repos/Meitoncz/Delos/releases/latest"
+        const val LATEST_RELEASE_URL = "https://api.github.com/repos/DELOS-STREAM/DELOS-android/releases/latest"
     }
 }
 

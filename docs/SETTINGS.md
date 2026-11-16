@@ -246,7 +246,7 @@ resolution and bitrate in effect. The emulator cannot run a stream; it is used f
 ## Related
 
 - [PER_APP_SETTINGS.md](PER_APP_SETTINGS.md), [GUI.md](GUI.md), [STREAM_QUALITY.md](STREAM_QUALITY.md), [RUMBLE.md](RUMBLE.md), [LOCALIZATION.md](LOCALIZATION.md).
-- Issues [#40](https://github.com/Meitoncz/Delos/issues/40) (impact chips), [#65](https://github.com/Meitoncz/Delos/issues/65) (hidden settings), [#77](https://github.com/Meitoncz/Delos/issues/77) (gyro smoothing).
+- Issues [#40](https://github.com/DELOS-STREAM/DELOS-android/issues/40) (impact chips), [#65](https://github.com/DELOS-STREAM/DELOS-android/issues/65) (hidden settings), [#77](https://github.com/DELOS-STREAM/DELOS-android/issues/77) (gyro smoothing).
 
 ## Evidence (2026-10-23)
 

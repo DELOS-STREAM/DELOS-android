@@ -6,7 +6,7 @@ The permanent rules of the project (tests, security, history, binaries, claims, 
 
 ## Reporting bugs and ideas
 
-Use the issue forms: pick "Bug report" or "Feature request" when opening a [new issue](https://github.com/Meitoncz/Delos/issues/new/choose). Search existing issues first. For bugs, the form asks for your device, host software and Delos build (shown on the About page), and explains how to collect logs.
+Use the issue forms: pick "Bug report" or "Feature request" when opening a [new issue](https://github.com/DELOS-STREAM/DELOS-android/issues/new/choose). Search existing issues first. For bugs, the form asks for your device, host software and Delos build (shown on the About page), and explains how to collect logs.
 
 Please remove personal data (IP addresses, PC and account names) from logs and screenshots before posting. The diagnostic log that Delos shares from Settings → About → Debug info, or saves for you after a crash ("Report this problem"), is cleaned automatically (addresses, PC and account names, ids and keys are removed); attach that file to the issue. How it works: [docs/DIAGNOSTICS.md](docs/DIAGNOSTICS.md).
 
@@ -21,7 +21,7 @@ Do not open a public issue for a vulnerability. Report it privately as described
 [docs/BUILDING.md](docs/BUILDING.md) has the requirements for macOS, Linux and Windows, the submodule, `local.properties` and every command. In short: JDK 21, the Android SDK, a checkout path without spaces, then
 
 ```sh
-git clone --recurse-submodules https://github.com/Meitoncz/Delos.git
+git clone --recurse-submodules https://github.com/DELOS-STREAM/DELOS-android.git
 cd Delos
 ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
 ```

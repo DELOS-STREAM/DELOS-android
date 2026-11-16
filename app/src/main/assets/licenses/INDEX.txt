@@ -1,5 +1,5 @@
 Delos and the third-party components shipped in the app, and where their licence text is in this folder.
-Provenance, versions and checksums: docs/THIRD_PARTY.md in the source repository (https://github.com/Meitoncz/Delos).
+Provenance, versions and checksums: docs/THIRD_PARTY.md in the source repository (https://github.com/DELOS-STREAM/DELOS-android).
 
 Component | Version | Licence | File
 

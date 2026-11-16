@@ -5,7 +5,7 @@
 Delos checks the latest GitHub release of its own repository, tells the user in the app that a newer version exists,
 and, when the user says yes, downloads the APK, verifies it and hands it to the Android installer. This document
 specifies what is requested, when, what is verified before anything is installed, what the user sees, and what is not
-verified on a device. Issue: [#84](https://github.com/Meitoncz/Delos/issues/84).
+verified on a device. Issue: [#84](https://github.com/DELOS-STREAM/DELOS-android/issues/84).
 
 ## Scope
 
@@ -20,7 +20,7 @@ verified on a device. Issue: [#84](https://github.com/Meitoncz/Delos/issues/84).
 
 ### Check
 
-1. The request is `GET https://api.github.com/repos/Meitoncz/Delos/releases/latest`. The endpoint never returns drafts or
+1. The request is `GET https://api.github.com/repos/DELOS-STREAM/DELOS-android/releases/latest`. The endpoint never returns drafts or
    pre-releases; the parser ignores them as well.
 2. The request carries `User-Agent: Delos/<versionName>` and `Accept: application/vnd.github+json`. It carries no token, no
    account, no device identifier. GitHub sees the IP address of the device. Nothing else is sent.

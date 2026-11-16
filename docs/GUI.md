@@ -17,7 +17,7 @@ design principles that hold on every screen and names the document that specifie
 | Layouts for other screen shapes | Icons: [ICONS.md](ICONS.md); texts and languages: [LOCALIZATION.md](LOCALIZATION.md) |
 
 This is a specification, not a task tracker: unfinished intentions and decisions live in
-[GitHub Issues](https://github.com/Meitoncz/Delos/issues). The [HTML prototype](prototype/delos-gui.html) is a
+[GitHub Issues](https://github.com/DELOS-STREAM/DELOS-android/issues). The [HTML prototype](prototype/delos-gui.html) is a
 historical reference of the first design (2026-10); where it differs from this document or from the app,
 the app is right.
 
@@ -100,4 +100,4 @@ cited section.
 - [SETTINGS.md](SETTINGS.md), [PER_APP_SETTINGS.md](PER_APP_SETTINGS.md), [STREAM_QUALITY.md](STREAM_QUALITY.md),
   [DUAL_SCREEN.md](DUAL_SCREEN.md), [EXTERNAL_DISPLAY.md](EXTERNAL_DISPLAY.md), [LAUNCH_TRANSITION.md](LAUNCH_TRANSITION.md),
   [ICONS.md](ICONS.md), [LOCALIZATION.md](LOCALIZATION.md), [HANDHELD_DEVICES.md](HANDHELD_DEVICES.md).
-- Issues [#9](https://github.com/Meitoncz/Delos/issues/9) (screen shapes), [#20](https://github.com/Meitoncz/Delos/issues/20) (UI, controller and touch validation), [#85](https://github.com/Meitoncz/Delos/issues/85) (streaming time).
+- Issues [#9](https://github.com/DELOS-STREAM/DELOS-android/issues/9) (screen shapes), [#20](https://github.com/DELOS-STREAM/DELOS-android/issues/20) (UI, controller and touch validation), [#85](https://github.com/DELOS-STREAM/DELOS-android/issues/85) (streaming time).

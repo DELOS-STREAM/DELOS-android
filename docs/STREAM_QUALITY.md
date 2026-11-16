@@ -553,7 +553,7 @@ checks this mapping is in
 
 ### Sharpen only mode
 
-Issue [#67](https://github.com/Meitoncz/Delos/issues/67). **Sharpen only** is a fifth Upscaler mode (setting value
+Issue [#67](https://github.com/DELOS-STREAM/DELOS-android/issues/67). **Sharpen only** is a fifth Upscaler mode (setting value
 `sharpen`, Mode row position 5) for sharpness without scaling: the internal size is the stream's resolution whatever
 the supersampling level, and the only picture change is one contrast-adaptive sharpen pass using the existing
 sharpness value (0 leaves the picture unchanged). The Sharpness slider keeps working in every other mode as before.
@@ -1036,8 +1036,8 @@ push p99 over 4 ms (and 0.1 % loss is tight for a phone's receive path), so no s
 ## Related
 
 - [SGSR2_VIDEO.md](SGSR2_VIDEO.md), [PER_APP_SETTINGS.md](PER_APP_SETTINGS.md), [SETTINGS.md](SETTINGS.md), [GUI.md](GUI.md), [SECURITY.md](../SECURITY.md).
-- Issues [#18](https://github.com/Meitoncz/Delos/issues/18) (link guidance), [#19](https://github.com/Meitoncz/Delos/issues/19) (PyroWave quality and performance), [#67](https://github.com/Meitoncz/Delos/issues/67) (Sharpen only),
-  [#74](https://github.com/Meitoncz/Delos/issues/74) (SGSR reference check), [#75](https://github.com/Meitoncz/Delos/issues/75) (latency), [#77](https://github.com/Meitoncz/Delos/issues/77) (gyro smoothing), [#24](https://github.com/Meitoncz/Delos/issues/24) (variable refresh rate).
+- Issues [#18](https://github.com/DELOS-STREAM/DELOS-android/issues/18) (link guidance), [#19](https://github.com/DELOS-STREAM/DELOS-android/issues/19) (PyroWave quality and performance), [#67](https://github.com/DELOS-STREAM/DELOS-android/issues/67) (Sharpen only),
+  [#74](https://github.com/DELOS-STREAM/DELOS-android/issues/74) (SGSR reference check), [#75](https://github.com/DELOS-STREAM/DELOS-android/issues/75) (latency), [#77](https://github.com/DELOS-STREAM/DELOS-android/issues/77) (gyro smoothing), [#24](https://github.com/DELOS-STREAM/DELOS-android/issues/24) (variable refresh rate).
 
 ## Evidence (2026-10-26): first device feedback
 
@@ -1115,7 +1115,7 @@ same scene on main and this change.
 
 Not measured: no recorded run. The table that was meant to hold the results (three runs per place and band, with
 a stream check at the recommended bitrate) was never filled, and issue
-[#18](https://github.com/Meitoncz/Delos/issues/18) was closed without it. What is recorded: the test was used on
+[#18](https://github.com/DELOS-STREAM/DELOS-android/issues/18) was closed without it. What is recorded: the test was used on
 the Odin on one Wi-Fi 7 network on 2026-11-07 and reported about 700 Mbps (closing note of the issue), after the
 pass rules had been changed as described under
 [Where Delos follows the reference client, not the host document](#where-delos-follows-the-reference-client-not-the-host-document).
@@ -1174,4 +1174,4 @@ the flow work from 70 % of the frame period.
 |---|---|
 | Stream thread scheduling and performance hints | Decided 2026-11-07: always on while a stream runs, with no setting |
 | Supersampling level label | The first level (stored value 1) was labeled 1x until 2026-11-07; its label is `1.33x` |
-| Latency results (#75) | Not measured: no recorded run. Issue [#75](https://github.com/Meitoncz/Delos/issues/75) was closed on 2026-11-07 with the optimizations and the in-app instrumentation done and with the decision not to do the camera measurement. No input-to-photon number and no before/after comparison of any change of the latency work exists |
+| Latency results (#75) | Not measured: no recorded run. Issue [#75](https://github.com/DELOS-STREAM/DELOS-android/issues/75) was closed on 2026-11-07 with the optimizations and the in-app instrumentation done and with the decision not to do the camera measurement. No input-to-photon number and no before/after comparison of any change of the latency work exists |

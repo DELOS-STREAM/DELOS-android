@@ -19,7 +19,7 @@ body:
 
         If the problem is on the PC side (capture, encoder, host settings), please report it to Vibepollo, Apollo or Sunshine instead.
 
-        Security problem? Do not file it here: use [Report a vulnerability](https://github.com/Meitoncz/Delos/security/advisories/new).
+        Security problem? Do not file it here: use [Report a vulnerability](https://github.com/DELOS-STREAM/DELOS-android/security/advisories/new).
 
         Came here from **Report this problem** in Delos? The form is filled in for you. Check it, add what you were doing, and attach the diagnostic file Delos saved to your Downloads folder (drag it into the "What happened?" box; the log box at the end cannot take files).
   - type: checkboxes

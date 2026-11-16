@@ -15,7 +15,7 @@ class ReleaseParserTest {
         assertEquals("## Added\n- Something new", release.notes)
         assertEquals(listOf("delos-1.2.0-arm64-v8a.apk", "delos-1.2.0-armeabi-v7a.apk", "SHA256SUMS.txt"), release.assets.map { it.name })
         assertEquals(52_428_800L, release.assets[0].size)
-        assertEquals("https://github.com/Meitoncz/Delos/releases/download/v1.2.0/SHA256SUMS.txt", release.assets[2].url)
+        assertEquals("https://github.com/DELOS-STREAM/DELOS-android/releases/download/v1.2.0/SHA256SUMS.txt", release.assets[2].url)
     }
 
     @Test fun draftsAndPreReleasesAreIgnored() {

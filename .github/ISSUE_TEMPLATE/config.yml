@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security problem
-    url: https://github.com/Meitoncz/Delos/security/advisories/new
+    url: https://github.com/DELOS-STREAM/DELOS-android/security/advisories/new
     about: Report a vulnerability privately, never as a public issue. The policy is in SECURITY.md.
   - name: Host problems (Vibepollo)
     url: https://github.com/Nonary/Vibepollo/issues
@@ -13,5 +13,5 @@ contact_links:
     url: https://github.com/LizardByte/Sunshine/issues
     about: Problems that happen on the PC side (capture, encoder, host UI) belong to the host project.
   - name: Read the README
-    url: https://github.com/Meitoncz/Delos#readme
+    url: https://github.com/DELOS-STREAM/DELOS-android#readme
     about: What Delos is, what it works with and where to follow updates.

@@ -25,7 +25,7 @@ body:
 
         The draft and the log were cleaned by Delos (addresses, PC and account names, ids and keys are removed). Check them anyway before you submit.
 
-        Security problem? Do not submit it here: use [Report a vulnerability](https://github.com/Meitoncz/Delos/security/advisories/new).
+        Security problem? Do not submit it here: use [Report a vulnerability](https://github.com/DELOS-STREAM/DELOS-android/security/advisories/new).
   - type: textarea
     id: what-happened
     attributes:
