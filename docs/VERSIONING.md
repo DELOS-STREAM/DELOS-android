@@ -27,21 +27,19 @@ depend on. An incompatible change of any row is a MAJOR change from `1.0.0` on.
 | # | Part | What is promised | Incompatible change (examples) |
 |---|---|---|---|
 | A1 | `art://` links | The link forms `art://host` and `art://launch` (`ShellLink`) keep their meaning and parameters. | Removing a link form or a parameter; changing what a parameter means. |
-| A2 | Launch intents and launcher shortcuts | A shortcut that a released version pinned, and the intent extras of the exported entry points (`ShortcutTrampoline`, `ShellActivity`), keep working. | A pinned shortcut that no longer starts its app. |
+| A2 | Launch intents, launcher shortcuts and exported components | A shortcut that a released version pinned, the intent extras of the exported entry points (`ShortcutTrampoline`, `ShellActivity`), and the names and intent filters of the exported activities, services and providers of `AndroidManifest.xml` keep working. | A pinned shortcut that no longer starts its app; removing or renaming an exported component. |
 | A3 | The `.art` file format | A file that a released version accepted is still accepted with the same meaning. | Removing or renaming a line of the format. |
-| A4 | Exported components | The exported activities, services and providers of `AndroidManifest.xml` keep their names and intent filters. | Removing or renaming an exported component. |
-| A5 | Stored data | A newer version reads, or migrates, the data of every version since `1.0.0`: settings and profiles (shared preferences, `profiles.json`), per-app settings, the PC database and the pairing identity. Caches (artwork, game metadata) may be rebuilt. | A format that an installed older version cannot be migrated from; an update that loses profiles, settings or pairings. |
-| A6 | Backup and transfer | What `SECURITY.md` lists as backed up is restored by a newer version. | A restored backup of a supported version that a newer version cannot read. |
-| A7 | Host compatibility | The host software and protocol versions that the README names as supported keep working. | Dropping a supported host or raising the minimum host version. |
-| A8 | Minimum Android version | `minSdk` in `app/build.gradle` (`29`, Android 10). | Raising `minSdk`. |
-| A9 | Issue form fields | The form `app_report.yml` and the field ids that a released APK fills in (`IssueUrl`) exist while that APK is supported. | Renaming the form or a field id that a released APK uses. |
+| A4 | Stored data and backup | A newer version reads, or migrates, the data of every version since `1.0.0`: settings and profiles (shared preferences, `profiles.json`), per-app settings, the PC database and the pairing identity; what `SECURITY.md` lists as backed up is restored by a newer version. Caches (artwork, game metadata) may be rebuilt. | A format that an installed older version cannot be migrated from; an update that loses profiles, settings or pairings. |
+| A5 | Host compatibility | The hosts that the README names as tested keep working: Vibepollo on Windows, reporting protocol `appversion` `7.1.431` (measured 2026-11-16 on the test host). Newer host versions that keep the protocol are expected to work. Apollo, Sunshine and Linux hosts are not part of the promise until a test is recorded. | Dropping the tested host, or a change that stops the protocol version above from working. |
+| A6 | Minimum Android version | `minSdk` in `app/build.gradle` (`29`, Android 10). | Raising `minSdk`. |
 
-Not part of the public API: the look and layout of the screens, texts and translations, default values of
+Not part of the public API: the field ids of the issue form `app_report.yml` (a contract between the app and GitHub, kept by `IssueFormContractTest`), the look and layout of the screens, texts and translations, default values of
 settings, the diagnostic log format, debug previews and their intent extras, everything in `tools/`, and the
 internal classes of the app.
 
-Not defined yet: the minimum supported versions of Vibepollo, Apollo and Sunshine (row A7). The README states what
-was tested; the minimum is written here before `1.0.0`.
+Minimum host version (decided by the lead on 2026-11-16 because the owner could not name one; the owner can veto): the promise is the tested host, not a version
+number. Vibepollo reports the Sunshine protocol version in `appversion` (`7.1.431` on the test host); Delos has no
+minimum above it. A minimum for Apollo and Sunshine is written here when a test with them is recorded.
 
 ## Which number increases
 
