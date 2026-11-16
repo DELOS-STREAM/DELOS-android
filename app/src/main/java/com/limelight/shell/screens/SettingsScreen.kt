@@ -215,7 +215,8 @@ fun SettingsScreen(
                 val choices = capabilities?.choices(res, spec, values) ?: spec.choices
                 RowValue.Choice(spec.choiceLabel(res, current, choices), { dir ->
                     nextSettingChoice(current, choices, dir)?.let { stream.write(spec, it.value) }
-                })
+                }, options = choices.map { it.label }, selected = choices.indexOfFirst { it.value == current },
+                    onPick = { i -> choices.getOrNull(i)?.let { stream.write(spec, it.value) } })
             }
             SettingKind.SLIDER -> RowValue.Slider((current as? Number)?.toInt() ?: spec.min, spec.min, spec.max, spec.step, spec.unit,
                 divisor = spec.divisor,

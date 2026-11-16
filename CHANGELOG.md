@@ -10,6 +10,11 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Fixed
+- Touch on settings rows ([#92](https://github.com/Meitoncz/DELOS/issues/92)): a first tap focuses a row and shows its help, a tap on the focused row changes it; the switch and a choice's arrows take their own taps (◀ goes back), and a focused choice row with several values lists them to pick from. Keys and the gamepad are unchanged. Tested by touch on a Galaxy Tab S9+ (Android 16).
+- The link test (and waking a PC) can be cancelled by touch: a tap shows a Cancel button, and taps no longer reach the screen underneath. The link test was tested on a Galaxy Tab S9+ (Android 16); waking a PC was not tested.
+- The update card no longer stays on Installing until the app restarts when Android's install prompt cannot be shown; the install ends as failed. Covered by a unit test; not reproduced on a device.
+
 ## [1.1.0] - 2026-11-16
 _Hold Back for Guide and updated libraries._
 

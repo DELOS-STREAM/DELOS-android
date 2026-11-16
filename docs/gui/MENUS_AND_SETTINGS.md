@@ -290,6 +290,23 @@ The order is implemented in `FocusedListNavigation.kt` / `FocusedListPolicy.kt`.
 | Gap before the exit fade (prevents blinking between rows) | 70 ms |
 | Exit fade | 280 ms |
 
+### 7.1 Touch
+
+A tap is not the A button on a settings row ([#92](https://github.com/Meitoncz/Delos/issues/92)). Keys and the gamepad are unchanged.
+
+| Tap on | Result |
+|---|---|
+| A row without the focus | Focuses it, so its help shows; nothing changes |
+| The focused toggle, or its switch on any row | Flips it |
+| A choice's ◀ or ▶ arrow on any row | One option back or forward |
+| The focused choice row with a list of options | The options as a context menu at the row, the current one checked; a pick sets it |
+| The focused choice row without a list | The next option, as A |
+| The focused slider row | Nothing; the track takes taps and drags |
+| An action or text row | Opens it on the first tap |
+
+1. A disabled row also focuses on the first tap, so its help can say why; the next tap plays the error cue.
+2. The list of options needs the shell's context menu (`LocalChoicePicker`); where none is provided, the row steps as A.
+
 ## 8. Impact chips
 
 Impact chips (issue #40) are implemented in `ui/ImpactChips.kt` and passed as `SettingRow(impact = …)`. The design is
@@ -568,7 +585,8 @@ The test uses the portal (`Portal`).
 
 | Element | Value |
 |---|---|
-| Cancel | Cancellable like a PC wake-up: B stops it, the hint bar says Cancel |
+| Cancel | Cancellable like a PC wake-up: B stops it, the hint bar says Cancel; on touch a tap shows a Cancel button that does the same |
+| Touch | The portal takes every touch while it is up, so nothing underneath reacts |
 | Orb | With the network-check icon |
 | Title | "Testing the link to <PC>" |
 | Line | `Testing 250 Mbps · stay on Wi-Fi · B cancels` |

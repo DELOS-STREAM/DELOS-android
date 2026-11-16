@@ -662,6 +662,8 @@ fun Shell(
         LocalShell provides shell, LocalFocusTracker provides tracker, LocalGameActions provides actions, LocalDeviceActions provides devices,
         LocalBackdropHaze provides backdropHaze, LocalLibrary provides library, LocalImeAvoidance provides imeAvoidance,
         com.limelight.shell.screens.LocalLinkTests provides linkTests, com.limelight.shell.ui.LocalStatusBarEdges provides statusEdges,
+        // Touch: a focused choice row's tap lists its options at the row (issue #92)
+        com.limelight.shell.ui.LocalChoicePicker provides { menu -> shell.openLayer(Layer.Context(menu, tracker.bounds()), tracker) },
     ) {
         Box(Modifier.fillMaxSize()) {
             // The blur source re-records the whole screen every frame, so it is only active while an overlay
@@ -803,7 +805,7 @@ fun Shell(
                     }
                 }
                 // The portal of a stream exit sits on the opaque cover: it must not blur the dashboard behind (that was the third scene)
-                PortalOverlay(shell.portal, shell.portalBurst, if (shell.portal?.arriving == true) null else haze, appearance.reducedMotion)
+                PortalOverlay(shell.portal, shell.portalBurst, if (shell.portal?.arriving == true) null else haze, appearance.reducedMotion, onCancel = devices::cancelPortal)
 
                 StreamResultLayer(shell.result, haze, appearance.reducedMotion, onRetry = ::retryStream, onBack = ::dismissResult)
 

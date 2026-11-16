@@ -309,7 +309,8 @@ fun GameSettingsScreen(screen: Screen.GameSettings, profiles: ProfileStore, appe
                                     SettingKind.TOGGLE -> RowValue.Toggle(current as? Boolean ?: false) { stream.write(spec, it) }
                                     SettingKind.CHOICE -> RowValue.Choice(spec.choiceLabel(res, current, choices), { dir ->
                                         nextSettingChoice(current, choices, dir)?.let { stream.write(spec, it.value) }
-                                    })
+                                    }, options = choices.map { it.label }, selected = choices.indexOfFirst { it.value == current },
+                                        onPick = { i -> choices.getOrNull(i)?.let { stream.write(spec, it.value) } })
                                     SettingKind.SLIDER -> RowValue.Slider((current as? Number)?.toInt() ?: spec.min,
                                         spec.min, spec.max, spec.step, spec.unit, spec.divisor) { stream.write(spec, it) }
                                     else -> RowValue.Info(current?.toString().orEmpty())

@@ -34,6 +34,8 @@ import com.limelight.shell.companion.CompanionDim
 import com.limelight.shell.companion.rememberDualScreenPlan
 import com.limelight.shell.data.Pc
 import com.limelight.shell.settings.Appearance
+import com.limelight.shell.settings.BackgroundKind
+import com.limelight.shell.settings.ClockFormat
 import com.limelight.shell.settings.Palette
 import com.limelight.shell.settings.SettingImpact
 import com.limelight.shell.settings.SettingSpec
@@ -119,13 +121,16 @@ internal fun nativeSettings(
     row("ui_material_you", Symbols.SYSTEM_COLORS, res.getString(R.string.settings_native_material_you_title), RowValue.Toggle(a.materialYou) { on -> update { it.copy(materialYou = on) } },
         if (systemHue != null) res.getString(R.string.settings_native_material_you_description)
         else res.getString(R.string.settings_native_material_you_fallback_description, Palette.MINT.label(res)))
-    row("ui_palette", Symbols.PALETTE, res.getString(R.string.settings_native_palette_title), RowValue.Choice(a.palette.label(res), { dir -> update { it.copy(palette = it.palette.step(dir)) } }, hsl(a.palette.accent, 90f, 60f)),
+    row("ui_palette", Symbols.PALETTE, res.getString(R.string.settings_native_palette_title), RowValue.Choice(a.palette.label(res), { dir -> update { it.copy(palette = it.palette.step(dir)) } }, hsl(a.palette.accent, 90f, 60f),
+        options = Palette.entries.map { it.label(res) }, selected = a.palette.ordinal, onPick = { i -> update { it.copy(palette = Palette.entries[i]) } }),
         if (a.materialYou) res.getString(R.string.settings_native_needs_material_you_off) else res.getString(R.string.settings_native_palette_description), !a.materialYou)
     row("ui_match_game_colors", Symbols.MATCH_COLORS, res.getString(R.string.settings_native_match_colors_title), RowValue.Toggle(a.matchGameColors) { on -> update { it.copy(matchGameColors = on) } },
         if (a.materialYou) res.getString(R.string.settings_native_needs_material_you_off) else res.getString(R.string.settings_native_match_colors_description), !a.materialYou)
-    row("ui_clock", Symbols.SCHEDULE, res.getString(R.string.settings_native_clock_title), RowValue.Choice(a.clock.label(res), { dir -> update { it.copy(clock = it.clock.step(dir)) } }),
+    row("ui_clock", Symbols.SCHEDULE, res.getString(R.string.settings_native_clock_title), RowValue.Choice(a.clock.label(res), { dir -> update { it.copy(clock = it.clock.step(dir)) } },
+        options = ClockFormat.entries.map { it.label(res) }, selected = a.clock.ordinal, onPick = { i -> update { it.copy(clock = ClockFormat.entries[i]) } }),
         res.getString(R.string.settings_native_clock_description), choiceHelp = NativeSettingsHelp.choice(res, "ui_clock", a.clock.name))
-    row("ui_background", Symbols.ANIMATION, res.getString(R.string.settings_native_background_title), RowValue.Choice(a.background.label(res), { dir -> update { it.copy(background = it.background.step(dir)) } }),
+    row("ui_background", Symbols.ANIMATION, res.getString(R.string.settings_native_background_title), RowValue.Choice(a.background.label(res), { dir -> update { it.copy(background = it.background.step(dir)) } },
+        options = BackgroundKind.entries.map { it.label(res) }, selected = a.background.ordinal, onPick = { i -> update { it.copy(background = BackgroundKind.entries[i]) } }),
         res.getString(R.string.settings_native_background_description), choiceHelp = NativeSettingsHelp.choice(res, "ui_background", a.background.name))
     row("ui_hero_background", Symbols.WALLPAPER, res.getString(R.string.settings_native_hero_background_title), RowValue.Toggle(a.heroBackground) { on -> update { it.copy(heroBackground = on) } },
         res.getString(R.string.settings_native_hero_background_description))

@@ -128,6 +128,14 @@ fun Modifier.focusEffects(
     focusMillis: Int = Motion.FOCUS,
     /** Share the surrounding list's moving plate instead of drawing a separate ring and glow. */
     glide: Boolean = false,
+    /** The element's focus requester when its caller needs it too (a part of the element that takes its own taps); otherwise its own. */
+    focusRequester: FocusRequester? = null,
+    /**
+     * Touch only (issue #92): what a tap does instead of the A button's activation. Called after the tap has requested the focus,
+     * with whether the element had the focus before the tap; returns whether the tap still activates like A. Keys and the
+     * gamepad never reach it.
+     */
+    onTouchTap: ((wasFocused: Boolean) -> Boolean)? = null,
 ): Modifier = composed {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
@@ -135,7 +143,8 @@ fun Modifier.focusEffects(
     val tracker = LocalFocusTracker.current
     val plate = if (glide) LocalRowGlide.current else null
     var focused by remember { mutableStateOf(false) }
-    val requester = remember { FocusRequester() }
+    val ownRequester = remember { FocusRequester() }
+    val requester = focusRequester ?: ownRequester
     // While its context menu is open the focus is in the menu, but the element keeps its focus look (ring, scale, glow, plate)
     val look = focused || tracker.holds(requester)
     val currentLookChange by rememberUpdatedState(onLookChange)
@@ -170,6 +179,7 @@ fun Modifier.focusEffects(
     }
     val currentActivate by rememberUpdatedState(activate)
     val currentAdjust by rememberUpdatedState(controllerAdjust)
+    val currentTouchTap by rememberUpdatedState(onTouchTap)
 
     // The animated values (scale, glow and ring alpha) are only read while drawing, never while composing:
     // a focus change would otherwise rebuild both affected elements on every frame of the animation
@@ -249,10 +259,12 @@ fun Modifier.focusEffects(
         // but a console UI always shows the focus (and the game background that goes with it)
         .focusRequester(requester)
         .focusable(interactionSource = interaction)
-        .pointerInput(Unit) {
+        .pointerInput(requester) {
             detectTapGestures(onTap = {
+                val wasFocused = focused
                 requester.requestFocus()
-                activate()
+                // The latest lambdas: this gesture handler outlives the composition it was created in
+                if (currentTouchTap?.invoke(wasFocused) != false) currentActivate()
             })
         }
         .semantics {

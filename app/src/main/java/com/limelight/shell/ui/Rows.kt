@@ -67,7 +67,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.em
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.focus.FocusRequester
 import com.limelight.shell.ContextMenu
+import com.limelight.shell.MenuItem
 import com.limelight.shell.settings.SettingImpact
 
 /** The value side of a settings row. */
@@ -75,8 +78,14 @@ import com.limelight.shell.settings.SettingImpact
 sealed interface RowValue {
     data class Toggle(val on: Boolean, val onChange: (Boolean) -> Unit) : RowValue
 
-    /** Left/right (or A) cycles through the options. */
-    data class Choice(val label: String, val onStep: (Int) -> Unit, val swatch: Color? = null) : RowValue
+    /**
+     * Left/right (or A) cycles through the options. With [options] (their labels, [selected] the current one) and [onPick],
+     * a tap on the focused row opens them as a list to pick from instead (touch, issue #92).
+     */
+    data class Choice(
+        val label: String, val onStep: (Int) -> Unit, val swatch: Color? = null,
+        val options: List<String>? = null, val selected: Int = -1, val onPick: ((Int) -> Unit)? = null,
+    ) : RowValue
 
     data class Slider(val value: Int, val min: Int, val max: Int, val step: Int, val unit: String, val divisor: Int = 1,
         /** What the value reads at [min] instead of the number and unit (a slider whose lowest value means off). */
@@ -107,6 +116,44 @@ internal fun sliderAcceleration(slider: RowValue.Slider, repeatCount: Int): Int 
     return wanted.coerceAtMost(maxOf(1, steps / 40))
 }
 
+/** What a touch tap on a [SettingRow] does (issue #92); keys and the gamepad keep the A button's activation. */
+internal enum class RowTouch {
+    /** Only focus the row, so its help shows before anything changes. */
+    FOCUS_ONLY,
+    /** The same as A: toggle, open, or step a choice without a list. */
+    ACTIVATE,
+    /** Open the choice's options as a list to pick from. */
+    PICK,
+    /** Nothing more (a slider's value is set on its track; an info row has no action). */
+    NONE,
+    /** The row is disabled: the error sound. */
+    ERROR,
+}
+
+/**
+ * Touch: the first tap on a row focuses it and shows its help; a tap on the focused row changes it. Rows that only open
+ * something (a screen, a dialog) open on the first tap. [canPick]: a list to pick from can be shown here.
+ */
+internal fun rowTouch(value: RowValue, wasFocused: Boolean, enabled: Boolean, canPick: Boolean): RowTouch = when {
+    value is RowValue.Info -> RowTouch.NONE
+    value is RowValue.Action || value is RowValue.Text -> if (enabled) RowTouch.ACTIVATE else RowTouch.ERROR
+    !wasFocused -> RowTouch.FOCUS_ONLY
+    !enabled -> RowTouch.ERROR
+    value is RowValue.Slider -> RowTouch.NONE
+    value is RowValue.Choice && canPick && value.onPick != null && !value.options.isNullOrEmpty() -> RowTouch.PICK
+    else -> RowTouch.ACTIVATE
+}
+
+/** The list of a [RowValue.Choice]'s options, the current one checked; picking one calls [RowValue.Choice.onPick]. */
+internal fun choicePickerMenu(title: String, choice: RowValue.Choice): ContextMenu? {
+    val options = choice.options?.takeIf { it.isNotEmpty() } ?: return null
+    val pick = choice.onPick ?: return null
+    return ContextMenu(title, options.mapIndexed { i, label -> MenuItem(if (i == choice.selected) Symbols.CHECK else "", label) { pick(i) } })
+}
+
+/** Opens a choice row's list of options (a context menu at the focused row); null where no shell can show one. */
+val LocalChoicePicker = staticCompositionLocalOf<((ContextMenu) -> Unit)?> { null }
+
 /**
  * A settings row (`.row`): icon, label with an optional description, and the value. Used by the side
  * menu and the settings screen. Choice and slider rows are adjusted with left/right instead of moving
@@ -136,6 +183,8 @@ fun SettingRow(
     val reduced = LocalReducedMotion.current
     val calm = glide != null && !reduced
     var focused by remember { mutableStateOf(false) }
+    val requester = remember { FocusRequester() }
+    val picker = LocalChoicePicker.current
     val choice = rememberChoiceMotion()
     val adjust: ((Int) -> Unit)? = when (value) {
         is RowValue.Choice -> { dir ->
@@ -158,6 +207,23 @@ fun SettingRow(
         is RowValue.Action -> value.onClick
         is RowValue.Text -> value.onClick
         is RowValue.Info -> ({})
+    }
+    // Touch (issue #92): a first tap focuses and shows the help; the focused row's tap changes it, or lists a choice's options
+    val touchTap: (Boolean) -> Boolean = { wasFocused ->
+        when (rowTouch(value, wasFocused, enabled, picker != null)) {
+            RowTouch.ACTIVATE -> true
+            RowTouch.PICK -> {
+                choicePickerMenu(label, value as RowValue.Choice)?.let { menu -> feedback.play(Cue.OPEN); picker?.invoke(menu) }
+                false
+            }
+            RowTouch.ERROR -> { feedback.play(Cue.ERROR); false }
+            RowTouch.FOCUS_ONLY, RowTouch.NONE -> false
+        }
+    }
+    // A tap on a part of the value that changes it directly (a choice's arrows, the switch): focus the row too, for its help
+    val partTap: (() -> Unit) -> Unit = { change ->
+        requester.requestFocus()
+        if (enabled) { feedback.play(Cue.MOVE); change() } else feedback.play(Cue.ERROR)
     }
     val controllerAdjust: ((Int, Int) -> Unit)? = if (adjust == null || !enabled) null else { direction, repeatCount ->
         feedback.play(Cue.MOVE)
@@ -198,6 +264,8 @@ fun SettingRow(
                 focusMillis = if (glide != null) Motion.ROW_FOCUS else Motion.FOCUS,
                 onFocusChange = { if (it) onFocused?.invoke() },
                 onLookChange = { focused = it },
+                focusRequester = requester,
+                onTouchTap = touchTap,
             )
             .clip(shape),
     ) {
@@ -259,7 +327,9 @@ fun SettingRow(
                 // Touch: a round button that is always there and always takes its room (52 px + the gap)
                 if (override != null && override.touch) RowResetButton(override, focused && enabled)
                 Box {
-                    RowValueView(value, focused, choice, calm)
+                    RowValueView(value, focused, choice, calm, onPart = { dir ->
+                        partTap { if (value is RowValue.Toggle) value.onChange(!value.on) else adjust?.invoke(dir) }
+                    })
                     // Controller: the pill takes no room at all. It is drawn over the free space left of the value, only while the row is focused,
                     // so the title column never changes its width (and never re-wraps) when focus arrives
                     if (override != null && !override.touch) {
@@ -374,7 +444,7 @@ private fun RowIcon(icon: String, focused: Boolean, calm: Boolean) {
 }
 
 @Composable
-private fun RowValueView(value: RowValue, focused: Boolean, choice: ChoiceMotion, calm: Boolean) {
+private fun RowValueView(value: RowValue, focused: Boolean, choice: ChoiceMotion, calm: Boolean, onPart: (direction: Int) -> Unit = {}) {
     val colors = LocalDelosColors.current
     val reduced = LocalReducedMotion.current
     val tight = LocalStage.current.shape == StageShape.COMPACT
@@ -382,19 +452,22 @@ private fun RowValueView(value: RowValue, focused: Boolean, choice: ChoiceMotion
     // The arrows cross-fade with the rest of the row's focus effects while it is calm; a choice's arrows always fade
     val arrowColor = animateColorAsState(if (focused) colors.accent2 else colors.text3, tween(if (calm) Motion.ROW_FOCUS else Motion.FADE, easing = Motion.Ease), label = "chevron")
     val staticArrows = if (focused) colors.accent2 else colors.text3
+    val part by rememberUpdatedState(onPart)
+    // Touch targets of their own (Compose widens a small one to the minimum touch size); their taps never reach the row
+    fun Modifier.partTap(direction: Int) = pointerInput(direction) { detectTapGestures(onTap = { part(direction) }) }
     when (value) {
-        is RowValue.Toggle -> Switch(value.on)
+        is RowValue.Toggle -> Box(Modifier.partTap(0)) { Switch(value.on) }
         // The arrows are always shown (muted when not focused), so all values end at the same edge
         is RowValue.Choice -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
             val arrows by arrowColor
-            Symbol(Symbols.CHEVRON_LEFT, 30.tpx, arrows, Modifier.chevronBump(choice, -1))
+            Symbol(Symbols.CHEVRON_LEFT, 30.tpx, arrows, Modifier.chevronBump(choice, -1).partTap(-1))
             // A new value slides in from the side the key came from
             Row(Modifier.valueSlide(choice), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
                 if (value.swatch != null) Box(Modifier.size(26.px).clip(CircleShape).background(value.swatch))
                 MarqueeText(value.label, style = text, active = focused, modifier = Modifier.widthIn(max = (if (tight) 260 else 360).px))
             }
             // The glyph has empty space on its right; shift it so its visible edge lines up with switches and values
-            Symbol(Symbols.CHEVRON_RIGHT, 30.tpx, arrows, Modifier.offset(x = 9.px).chevronBump(choice, 1))
+            Symbol(Symbols.CHEVRON_RIGHT, 30.tpx, arrows, Modifier.offset(x = 9.px).chevronBump(choice, 1).partTap(1))
         }
         is RowValue.Slider -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
             val onChange by rememberUpdatedState(value.onChange)
