@@ -4,11 +4,16 @@ All notable changes to Delos are documented in this file, newest first.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and Delos adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html); what counts as its public API is declared in [docs/VERSIONING.md](docs/VERSIONING.md).
 
-The 0.x versions are development versions, not published releases; 0.1.0 to 0.14.0 are reconstructed milestones of the history. 1.0.0 will be the first public release.
+The 0.x versions are development versions, not published releases; 0.1.0 to 0.15.0 are reconstructed or tagged milestones of the history. 1.0.0 is the first public release.
 
 Not verified on real hardware yet: the in-app updater (the install prompt, the unknown-sources page and a real download have not run; only the settings screen was seen on the AYN Odin 2 Portal Max), the report upload (the Delos report service is not deployed yet), variable refresh rate (no VRR display was available) and dual-screen handhelds such as the AYN Thor (tested only on emulators and the shape simulator). HDR colour was judged by eye on one OLED handheld (2026-10-27); colour and luminance were not measured. Delos is developed and tested with one handheld (AYN Odin 2 Portal Max, Android 13) and Vibepollo on Windows; there is no recorded test with Apollo, Sunshine or a Linux host.
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-11-16
+_The first public release: console-style streaming client for Android handhelds with in-app updates and report upload._
+
+Everything listed under 0.1.0 to 0.15.0 below is part of this release; this section lists what is new since 0.15.0.
 
 ### Added
 - In-app updates: Delos checks the latest GitHub release once a day (Settings → About → Check for updates, on by default; Check now asks at once), shows a card on the start and home screens with the release notes, and on Update downloads the APK, checks its SHA-256 against the release's `SHA256SUMS.txt` and hands it to Android's installer. Nothing is installed without your yes and Android's prompt; Later hides the offer for 3 days. Not verified on a device.
@@ -306,7 +311,8 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 ### Removed
 - SBS 3D, performance logging and other dead code.
 
-[Unreleased]: https://github.com/Meitoncz/Delos/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/Meitoncz/Delos/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Meitoncz/Delos/compare/v0.15.0...v1.0.0
 [0.15.0]: https://github.com/Meitoncz/Delos/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/Meitoncz/Delos/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/Meitoncz/Delos/compare/v0.12.0...v0.13.0

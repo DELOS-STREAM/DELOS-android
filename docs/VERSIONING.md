@@ -100,6 +100,7 @@ The 0.x versions were set retroactively on the milestones of the history (Delos'
 | 0.13.0 | 2026-11-12 | `7f5882e6e994d74a9c70baa39a3183e25f30a465` | Screen shapes, dual screen with companion pages |
 | 0.14.0 | 2026-11-14 | `912bc0d049e54e9a7fb8b09180921d3237bce9d9` | Variable refresh rate, new palettes and avatars, UI sounds, rumble fixes |
 | 0.15.0 | 2026-11-15 | tag `v0.15.0` | Streaming time, stream encryption readout, security hardening, updated delos-common-c (first version tagged when it was made) |
+| 1.0.0 | 2026-11-16 | tag `v1.0.0` | The first public release: in-app updates, report upload, security hardening (first version released as signed APKs) |
 
 Rows 0.1.0 to 0.14.0 were set when the history was organized; later versions are tagged when they are made. Anything newer than the last row is under "Unreleased" in the changelog.
 

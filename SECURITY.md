@@ -8,7 +8,7 @@
 | `main` before the first release | Yes |
 | Older releases | No: update to the latest release |
 
-Delos has no releases yet. Until the first one, reports against the current `main` are handled.
+Delos 1.0.0 is the first release. Reports against the latest release and the current `main` are handled.
 
 ## Reporting a vulnerability
 

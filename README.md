@@ -22,7 +22,7 @@
 
 An Android game streaming client built for gaming handhelds. It is built and tested with [Vibepollo](https://github.com/Nonary/Vibepollo). [Apollo](https://github.com/ClassicOldSong/Apollo) and [Sunshine](https://github.com/LizardByte/Sunshine) use the same protocol and are expected to work; they are not tested yet.
 
-> **Work in progress.** Delos is under active development and has no releases yet. Expect rough edges and changes.
+> **Early release.** Delos 1.0.0 is the first public release. It is developed and tested by one person on one handheld, so expect rough edges. Reports are welcome.
 
 ## ✨ What is Delos?
 
@@ -63,7 +63,7 @@ Delos streams games from your PC to an Android handheld. It is built for the han
 
 ## 📥 Get Delos
 
-There are no releases yet. Watch the [releases page](https://github.com/Meitoncz/Delos/releases) or add the repository to [Obtainium](obtainium://add/https://github.com/Meitoncz/Delos) to get updates when they arrive. Delos can also check for a new release itself once a day (it contacts only api.github.com, can be switched off in Settings → About) and, when you agree, download, verify and install it; [docs/UPDATES.md](docs/UPDATES.md). Not tested on a device yet.
+Download the APK for your device from the [releases page](https://github.com/Meitoncz/Delos/releases): `arm64-v8a` for almost every handheld and phone, `armeabi-v7a` only for old 32-bit devices. `SHA256SUMS.txt` on the same page lists the checksums. To get updates, add the repository to [Obtainium](obtainium://add/https://github.com/Meitoncz/Delos). Delos can also check for a new release itself once a day (it contacts only api.github.com, can be switched off in Settings → About) and, when you agree, download, verify and install it; [docs/UPDATES.md](docs/UPDATES.md). The updater has not been tested with a real release yet.
 
 ## 🤝 Community and contributing
 

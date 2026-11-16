@@ -1,6 +1,6 @@
 # Contributing to Delos
 
-Thanks for your interest. Delos is in active development, has no releases yet, and is maintained by one person ([@Meitoncz](https://github.com/Meitoncz)), so things move at a human pace.
+Thanks for your interest. Delos is in active development, has its first public release (1.0.0), and is maintained by one person ([@Meitoncz](https://github.com/Meitoncz)), so things move at a human pace.
 
 The permanent rules of the project (tests, security, history, binaries, claims, documentation, releases, code) are in [docs/ENGINEERING_RULES.md](docs/ENGINEERING_RULES.md). This page says how to take part; it does not repeat them.
 
