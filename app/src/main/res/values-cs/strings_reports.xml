@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Problem report with the log uploaded to the Delos report service (docs/DIAGNOSTICS.md, "The report service") -->
+    <string name="shell_problem_note_upload">Nahlásit odešle vyčištěný záznam do služby pro hlášení problémů Delos (uchová se 30 dní a přečte ho každý, kdo má odkaz) a otevře koncept na GitHubu ke kontrole. Nic se neodešle, dokud nevybereš.</string>
+    <string name="companion_flow_report_short_upload">Hlášení nahraje vyčištěný záznam (uchová se 30 dní) a otevře GitHub s konceptem ke kontrole.</string>
+    <string name="report_save_downloads">Místo toho uložit záznam do Stažených</string>
+    <string name="report_uploading">Nahrávám vyčištěný záznam…</string>
+    <string name="report_uploaded">Záznam je nahrán a jeho odkaz je v konceptu. Uchová se 30 dní.</string>
+    <string name="report_upload_failed_saved">Záznam se nenahrál (%1$s). Uložen do Stažených jako %2$s. Přilož ho k issue.</string>
+    <string name="report_upload_failed_not_saved">Záznam se nenahrál (%1$s) a nepodařilo se ho ani uložit. Sdílej ho v Nastavení → O aplikaci → Informace pro ladění.</string>
+    <string name="report_reason_offline">bez připojení</string>
+    <string name="report_reason_timeout">bez odpovědi v čase</string>
+    <string name="report_reason_busy">služba je přetížená, zkus to později</string>
+    <string name="report_reason_too_large">záznam je příliš velký</string>
+    <string name="report_reason_service">služba ho nepřijala</string>
+    <string name="debug_report_label">Nahlásit problém</string>
+    <string name="debug_report_save_description">Uloží stejný vyčištěný záznam do Stažených a otevře koncept na GitHubu, kam ho přiložíš. Nic se nenahrává.</string>
+</resources>

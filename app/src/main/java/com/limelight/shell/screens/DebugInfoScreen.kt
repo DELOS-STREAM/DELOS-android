@@ -72,6 +72,10 @@ import com.limelight.R
 import com.limelight.diag.DiagExport
 import com.limelight.diag.DiagLog
 import com.limelight.diag.DiagnosticReport
+import com.limelight.diag.ProblemReporter
+import com.limelight.diag.ReportMode
+import com.limelight.diag.ReportOutcomeText
+import com.limelight.diag.ReportUploader
 import com.limelight.shell.LocalFocusTracker
 import com.limelight.shell.LocalShell
 import com.limelight.shell.ShapeSimulatorMenu
@@ -217,6 +221,18 @@ fun DebugInfoScreen() {
             val uri = DiagExport.writeForSharing(context, ready)
             runCatching { context.startActivity(DiagExport.shareIntent(uri, res.getString(R.string.debug_share_label))) }
                 .onFailure { shell.showToast(res.getString(R.string.debug_share_no_app_toast), Symbols.ERROR) }
+        }
+    }
+
+    // Report a problem the user started here: upload the cleaned log and open the prefilled GitHub draft with its link, or save the
+    // log to Downloads for the user to attach (the same two ways as the problem card, docs/DIAGNOSTICS.md)
+    fun reportNow(mode: ReportMode) {
+        scope.launch {
+            if (mode == ReportMode.UPLOAD) shell.showToast(ReportOutcomeText.uploading(res), Symbols.REPORT_ISSUE)
+            val result = ProblemReporter.report(context, null, mode)
+            shell.showToast(ReportOutcomeText.text(res, result), if (ReportOutcomeText.succeeded(result)) Symbols.CHECK_CIRCLE else Symbols.WARNING, durationMs = 6_500)
+            delay(900)
+            if (!ProblemReporter.openIssue(context, result.issueUrl)) shell.showToast(res.getString(R.string.shell_report_no_browser), Symbols.ERROR)
         }
     }
 
@@ -386,6 +402,13 @@ fun DebugInfoScreen() {
         add(DebugRow("diag_log", DebugSection.DIAGNOSTICS, Symbols.DIAGNOSTIC_LOGS, res.getString(R.string.debug_log_label), RowValue.Info(logValue),
             res.getString(R.string.debug_log_description),
             report?.preview(res) ?: res.getString(R.string.debug_log_preview_reading)))
+        // Only in a build with the report service: without it the log leaves the device through Share alone
+        if (ReportUploader.shared.enabled) {
+            add(DebugRow("diag_report", DebugSection.DIAGNOSTICS, Symbols.REPORT_ISSUE, res.getString(R.string.debug_report_label), RowValue.Action { reportNow(ReportMode.UPLOAD) },
+                res.getString(R.string.shell_problem_note_upload)))
+            add(DebugRow("diag_report_save", DebugSection.DIAGNOSTICS, Symbols.DOWNLOAD, res.getString(R.string.report_save_downloads), RowValue.Action { reportNow(ReportMode.DOWNLOADS) },
+                res.getString(R.string.debug_report_save_description)))
+        }
         add(DebugRow("diag_share", DebugSection.DIAGNOSTICS, Symbols.SHARE_LOG, res.getString(R.string.debug_share_label), RowValue.Action { shareLog() },
             res.getString(R.string.debug_share_description)))
         add(DebugRow("diag_copy", DebugSection.DIAGNOSTICS, Symbols.COPY_SUMMARY, res.getString(R.string.debug_copy_label), RowValue.Action { copySummary() },

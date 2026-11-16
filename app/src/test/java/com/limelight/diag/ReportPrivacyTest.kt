@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.limelight.computers.ComputerDatabaseManager
 import com.limelight.nvstream.http.ComputerDetails
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -110,9 +111,42 @@ class ReportPrivacyTest {
         assertTrue(prepared.report.text.contains("== Problem =="))
         assertTrue(prepared.report.text.contains("Connecting to"))
         assertNoSecrets("the saved report", prepared.report.text)
-        assertNoSecrets("the issue address", prepared.url)
-        assertNoSecrets("the decoded issue address", URLDecoder.decode(prepared.url, "UTF-8"))
+        val file = prepared.issueUrl(ReportAttachment.File(prepared.fileName))
+        assertNoSecrets("the issue address", file)
+        assertNoSecrets("the decoded issue address", URLDecoder.decode(file, "UTF-8"))
+        val link = prepared.issueUrl(ReportAttachment.Link("https://reports.example.workers.dev/r/AbCdEfGhIjKlMnOpQrStUv", "2026-12-20T10:00:00Z"))
+        assertNoSecrets("the issue address with a log link", URLDecoder.decode(link, "UTF-8"))
+        assertTrue(URLDecoder.decode(link, "UTF-8").contains("Diagnostic log: https://reports.example.workers.dev/r/AbCdEfGhIjKlMnOpQrStUv"))
         assertNoSecrets("the file name", prepared.fileName)
+    }
+
+    @Test
+    fun whatTheReportServiceReceivesNeverContainsThem() = runBlocking {
+        val problem = Problem("stream-1", ProblemKind.STREAM_FAILED, 1, "Lost $pcName at $localIp", chatter)
+        lateinit var base: String
+        val server = ReportServer { ServerAnswer(201, """{"id":"AbCdEfGhIjKlMnOpQrStUv","url":"$base/r/AbCdEfGhIjKlMnOpQrStUv","expires":"2026-12-20T10:00:00Z"}""") }
+        base = server.url
+        try {
+            val prepared = ProblemReporter.prepare(context, problem)
+            val result = ReportSubmission.run(prepared, ReportMode.UPLOAD, ReportUploader(server.url)) { _, _ -> true }
+            assertTrue(result is ReportResult.Uploaded)
+            val sent = server.requests.single().text
+            assertTrue(sent.contains("== Problem =="))
+            assertTrue(sent.contains("Connecting to"))
+            assertNoSecrets("the uploaded text", sent)
+            assertEquals(prepared.report.text, sent)
+            assertNoSecrets("the issue address", URLDecoder.decode(result.issueUrl, "UTF-8"))
+        } finally {
+            server.close()
+        }
+    }
+
+    @Test
+    fun aReportStartedFromDebugInfoNeverContainsThemEither() = runBlocking {
+        val prepared = ProblemReporter.prepare(context, null)
+        assertFalse(prepared.report.text.contains("== Problem =="))
+        assertNoSecrets("the report", prepared.report.text)
+        assertNoSecrets("the issue address", URLDecoder.decode(prepared.issueUrl(ReportAttachment.File(prepared.fileName)), "UTF-8"))
     }
 
     @Test

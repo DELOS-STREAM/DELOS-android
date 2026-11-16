@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Problem report with the log uploaded to the Delos report service (docs/DIAGNOSTICS.md, "The report service") -->
+    <string name="shell_problem_note_upload">Informar envía un registro limpio al servicio de informes de Delos (se guarda 30 días y lo puede leer cualquiera que tenga el enlace) y abre en GitHub un borrador para que lo revises. No se envía nada hasta que lo elijas.</string>
+    <string name="companion_flow_report_short_upload">Informar sube un registro limpio (se guarda 30 días) y abre un borrador de GitHub para revisar.</string>
+    <string name="report_save_downloads">Guardar el registro en Descargas en su lugar</string>
+    <string name="report_uploading">Subiendo el registro limpio…</string>
+    <string name="report_uploaded">Registro subido; su enlace está en el borrador. Se guarda 30 días.</string>
+    <string name="report_upload_failed_saved">No se subió el registro (%1$s). Guardado en Descargas como %2$s. Adjúntalo a la incidencia.</string>
+    <string name="report_upload_failed_not_saved">No se subió el registro (%1$s) y tampoco se pudo guardar. Compártelo desde Ajustes → Acerca de → Información de depuración.</string>
+    <string name="report_reason_offline">sin conexión</string>
+    <string name="report_reason_timeout">sin respuesta a tiempo</string>
+    <string name="report_reason_busy">el servicio de informes está saturado, inténtalo más tarde</string>
+    <string name="report_reason_too_large">el registro es demasiado grande</string>
+    <string name="report_reason_service">el servicio de informes no lo aceptó</string>
+    <string name="debug_report_label">Informar de un problema</string>
+    <string name="debug_report_save_description">Guarda el mismo registro limpio en Descargas y abre el borrador de GitHub para que lo adjuntes. No se sube nada.</string>
+</resources>

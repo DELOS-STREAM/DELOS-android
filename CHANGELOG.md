@@ -10,6 +10,15 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Added
+- Problem reports with the log attached: in a build that has the Delos report service (`DELOS_REPORTS_URL`), "Report this problem" (the card, and a new "Report a problem" row in Debug info) uploads the cleaned log to a small Cloudflare Worker (`tools/report-worker/`) that keeps it for 30 days behind a link, and opens the GitHub draft with that link in it. "Save the log to Downloads instead" keeps the earlier behavior, and a failed upload falls back to it with a toast that names the reason. Nothing is sent before the user chooses. The Worker, the upload and the new texts (ten languages) were tested with unit tests and a local Worker run; not verified on Cloudflare or on a device.
+
+### Fixed
+- The name of the saved log file in the prefilled problem report (`delos-diagnostic-<date>-<time>.txt`, 32 characters) was replaced by `<token>` by the scrubber; the issue text now names the real file.
+
+### Security
+- A report log is cleaned twice before it is stored: on the device by the scrubber, and by the report service, which repeats the pattern rules (addresses, e-mail addresses, URL queries, ids, keys, tokens) and says how many matches it still changed. Anyone who has the link can read the log for 30 days; the service holds no credentials and keeps no address.
+
 ## [0.15.0] - 2026-11-15
 _Streaming time, stream encryption readout, security hardening, updated delos-common-c._
 

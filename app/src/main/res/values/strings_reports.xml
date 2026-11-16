@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Problem report with the log uploaded to the Delos report service (docs/DIAGNOSTICS.md, "The report service") -->
+    <string name="shell_problem_note_upload">Report sends a cleaned log to the Delos report service (kept 30 days, readable by anyone who has the link) and opens a GitHub draft for you to check. Nothing is sent before you choose.</string>
+    <string name="companion_flow_report_short_upload">Report uploads a cleaned log (kept 30 days) and opens a GitHub draft to check.</string>
+    <string name="report_save_downloads">Save the log to Downloads instead</string>
+    <string name="report_uploading">Uploading the cleaned log…</string>
+    <string name="report_uploaded">Log uploaded; its link is in the draft. It is kept for 30 days.</string>
+    <string name="report_upload_failed_saved">The log was not uploaded (%1$s). Saved to Downloads as %2$s. Attach it to the issue.</string>
+    <string name="report_upload_failed_not_saved">The log was not uploaded (%1$s) and could not be saved. Share it from Settings → About → Debug info.</string>
+    <string name="report_reason_offline">no connection</string>
+    <string name="report_reason_timeout">no answer in time</string>
+    <string name="report_reason_busy">the report service is busy, try again later</string>
+    <string name="report_reason_too_large">the log is too large</string>
+    <string name="report_reason_service">the report service did not accept it</string>
+    <string name="debug_report_label">Report a problem</string>
+    <string name="debug_report_save_description">Saves the same cleaned log to Downloads and opens the GitHub draft for you to attach it. Nothing is uploaded.</string>
+</resources>

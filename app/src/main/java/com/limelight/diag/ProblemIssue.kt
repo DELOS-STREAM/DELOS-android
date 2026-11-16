@@ -1,8 +1,17 @@
 package com.limelight.diag
 
+/** Where the cleaned log of a report is, for the text of the draft. */
+sealed interface ReportAttachment {
+    /** Saved to the Downloads folder as [name]; the user attaches it in the browser. */
+    data class File(val name: String) : ReportAttachment
+
+    /** Uploaded to the report service: [link] is its address and [expires] the expiry (ISO 8601). */
+    data class Link(val link: String, val expires: String) : ReportAttachment
+}
+
 /** Turns a [Problem] and the [DeviceInfo] into the prefilled report form: facts only, never a PC name or address. */
 object ProblemIssue {
-    fun draft(problem: Problem, info: DeviceInfo, fileName: String): IssueDraft {
+    fun draft(problem: Problem, info: DeviceInfo, attachment: ReportAttachment): IssueDraft {
         val title = when (problem.kind) {
             ProblemKind.JAVA_CRASH -> if (problem.viaExitRecord) titled("Crash", problem.subject) else "Crash: ${problem.subject}"
             ProblemKind.NATIVE_CRASH -> titled("Native crash", problem.subject)
@@ -13,20 +22,33 @@ object ProblemIssue {
         val what = buildString {
             appendLine(problem.kind.issueSentence)
             appendLine()
-            appendLine("(Created from the problem report in Delos. Please add what you were doing just before.)")
-            appendLine()
-            append("The diagnostic log was saved by Delos as `$fileName` in the Downloads folder. I attach it to this issue.")
+            append("(Created from the problem report in Delos. Please add what you were doing just before.)")
         }
-        val settings = info.settings.joinToString(", ") { (label, value) -> "$label $value" }
-        return IssueDraft(
-            title = title,
-            whatHappened = what,
-            device = "${info.manufacturer} ${info.model}, Android ${info.androidRelease} (API ${info.sdk})",
-            build = "Delos ${info.delosVersion} (${info.buildType})",
-            streamSettings = settings,
-            logs = logsText(problem),
-            area = if (problem.kind == ProblemKind.STREAM_FAILED) IssueUrl.AREA_CONNECTION else IssueUrl.AREA_OTHER,
-        )
+        return common(info, attachment, title, what, logsText(problem), if (problem.kind == ProblemKind.STREAM_FAILED) IssueUrl.AREA_CONNECTION else IssueUrl.AREA_OTHER)
+    }
+
+    /** The draft of a report the user started without a detected problem (Debug info): the form's own title and log summary stay empty. */
+    fun manualDraft(info: DeviceInfo, attachment: ReportAttachment): IssueDraft {
+        return common(info, attachment, "", "(Created from the problem report in Delos. Please describe what happened and what you were doing.)", "", null)
+    }
+
+    private fun common(info: DeviceInfo, attachment: ReportAttachment, title: String, what: String, logs: String, area: String?) = IssueDraft(
+        title = title,
+        whatHappened = what,
+        device = "${info.manufacturer} ${info.model}, Android ${info.androidRelease} (API ${info.sdk})",
+        build = "Delos ${info.delosVersion} (${info.buildType})",
+        streamSettings = info.settings.joinToString(", ") { (label, value) -> "$label $value" },
+        logs = logs,
+        area = area,
+        logLink = (attachment as? ReportAttachment.Link)?.link,
+        attachmentNote = attachmentSentence(attachment),
+    )
+
+    private fun attachmentSentence(attachment: ReportAttachment): String = when (attachment) {
+        is ReportAttachment.File -> "The diagnostic log was saved by Delos as `${attachment.name}` in the Downloads folder. I attach it to this issue."
+        is ReportAttachment.Link ->
+            "The cleaned diagnostic log was uploaded by Delos to its report service; the link above is readable by anyone who has it" +
+                " and works until ${attachment.expires.take(10)}."
     }
 
     private fun titled(what: String, subject: String) = if (subject.isBlank()) what else "$what: $subject"

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Problem report with the log uploaded to the Delos report service (docs/DIAGNOSTICS.md, "The report service") -->
+    <string name="shell_problem_note_upload">„Melden“ sendet ein bereinigtes Protokoll an den Delos-Meldedienst (30 Tage gespeichert, für jeden lesbar, der den Link hat) und öffnet einen GitHub-Entwurf zur Prüfung. Vor deiner Wahl wird nichts gesendet.</string>
+    <string name="companion_flow_report_short_upload">„Melden“ lädt ein bereinigtes Protokoll hoch (30 Tage gespeichert) und öffnet einen GitHub-Entwurf zur Prüfung.</string>
+    <string name="report_save_downloads">Stattdessen Protokoll in Downloads speichern</string>
+    <string name="report_uploading">Bereinigtes Protokoll wird hochgeladen…</string>
+    <string name="report_uploaded">Protokoll hochgeladen, der Link steht im Entwurf. Es wird 30 Tage gespeichert.</string>
+    <string name="report_upload_failed_saved">Das Protokoll wurde nicht hochgeladen (%1$s). Als %2$s in Downloads gespeichert. Hänge es an das Issue an.</string>
+    <string name="report_upload_failed_not_saved">Das Protokoll wurde nicht hochgeladen (%1$s) und ließ sich auch nicht speichern. Teile es über Einstellungen → Über → Debug-Info.</string>
+    <string name="report_reason_offline">keine Verbindung</string>
+    <string name="report_reason_timeout">keine Antwort in der Zeit</string>
+    <string name="report_reason_busy">der Meldedienst ist ausgelastet, versuche es später</string>
+    <string name="report_reason_too_large">das Protokoll ist zu groß</string>
+    <string name="report_reason_service">der Meldedienst hat es nicht angenommen</string>
+    <string name="debug_report_label">Problem melden</string>
+    <string name="debug_report_save_description">Speichert dasselbe bereinigte Protokoll in Downloads und öffnet den GitHub-Entwurf, an den du es anhängst. Es wird nichts hochgeladen.</string>
+</resources>

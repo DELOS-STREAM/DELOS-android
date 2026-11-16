@@ -12,25 +12,66 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/** What the user chose to do with the log of a report. */
+enum class ReportMode {
+    /** Upload the cleaned log to the report service and put its link into the draft; save it to Downloads when that fails. */
+    UPLOAD,
+    /** Save the cleaned log to Downloads for the user to attach; nothing is uploaded. */
+    DOWNLOADS,
+}
+
+/** What a report did, for the toast and for the browser: [issueUrl] is the prefilled GitHub draft in every case. */
+sealed interface ReportResult {
+    val issueUrl: String
+
+    /** The log is on the report service; its [link] is in the draft and expires at [expires] (ISO 8601). */
+    data class Uploaded(override val issueUrl: String, val link: String, val expires: String) : ReportResult
+
+    /** The log is in Downloads as [fileName]. [uploadFailure] is why the upload did not happen; null when Downloads was chosen. */
+    data class Saved(override val issueUrl: String, val fileName: String, val uploadFailure: UploadFailure?) : ReportResult
+
+    /** Neither the upload nor the save worked (or only the save was asked for and failed): the draft opens without a log. */
+    data class NotSaved(override val issueUrl: String, val uploadFailure: UploadFailure?) : ReportResult
+}
+
 /**
- * What "Report this problem" does, in the order the user sees it (docs/DIAGNOSTICS.md): the whole sanitized log is saved
- * to the Downloads folder, then the GitHub new-issue page opens in the browser with the form prefilled. The user attaches
- * the file and submits; nothing is sent by the app and no account or token is involved.
+ * What "Report this problem" does, in the order the user sees it (docs/DIAGNOSTICS.md): the cleaned report is uploaded to the
+ * Delos report service and the GitHub new-issue page opens in the browser with the form prefilled and the link in it. When
+ * the upload is off in this build, fails, or the user chose to save the file instead, the whole cleaned log is saved to the
+ * Downloads folder and the user attaches it. Nothing happens before the user starts it and the app holds no account or token.
  */
 object ProblemReporter {
-    class Prepared(val url: String, val report: DiagnosticReport, val fileName: String)
+    class Prepared(val report: DiagnosticReport, val fileName: String, private val addressOf: (ReportAttachment) -> String) {
+        /** The prefilled GitHub address for the log at [attachment]. */
+        fun issueUrl(attachment: ReportAttachment): String = addressOf(attachment)
+    }
 
-    /** Builds the scrubbed report (with the problem's section) and the prefilled address, off the main thread. */
-    suspend fun prepare(context: Context, problem: Problem): Prepared = withContext(Dispatchers.IO) {
+    /**
+     * Builds the scrubbed report (with the problem's section when there is a [problem]) and the way to the prefilled address,
+     * off the main thread. A [problem] of null is a report the user started from Debug info.
+     */
+    suspend fun prepare(context: Context, problem: Problem?): Prepared = withContext(Dispatchers.IO) {
         val app = context.applicationContext
         val info = DeviceInfoCollector.collect(app)
         val scrubber = LogScrubber(ScrubContextCollector.collect(app))
         val fileName = "delos-diagnostic-${ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss", Locale.ROOT))}.txt"
         val report = DiagnosticReports.build(
             info, DiagLog.readAll(), scrubber, DiagExport.generated(),
-            sections = listOf("Problem" to ProblemIssue.section(problem, DiagExport.generated())),
+            sections = if (problem == null) emptyList() else listOf("Problem" to ProblemIssue.section(problem, DiagExport.generated())),
         )
-        Prepared(IssueUrl.build(ProblemIssue.draft(problem, info, fileName), scrub = scrubber::scrub), report, fileName)
+        Prepared(report, fileName) { attachment ->
+            val draft = if (problem == null) ProblemIssue.manualDraft(info, attachment) else ProblemIssue.draft(problem, info, attachment)
+            IssueUrl.build(draft, scrub = scrubber::scrub)
+        }
+    }
+
+    /**
+     * The whole report: [prepare], then [ReportSubmission.run] with the build's uploader and the MediaStore save. Returns what to
+     * tell the user and which address to open.
+     */
+    suspend fun report(context: Context, problem: Problem?, mode: ReportMode): ReportResult {
+        val prepared = prepare(context, problem)
+        return ReportSubmission.run(prepared, mode, ReportUploader.shared) { report, name -> saveToDownloads(context, report, name) != null }
     }
 
     /**

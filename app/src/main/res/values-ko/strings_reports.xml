@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Problem report with the log uploaded to the Delos report service (docs/DIAGNOSTICS.md, "The report service") -->
+    <string name="shell_problem_note_upload">신고를 누르면 정리된 로그를 Delos 신고 서비스로 보내고(30일간 보관되며 링크가 있는 사람은 누구나 읽을 수 있어요) 확인할 수 있는 GitHub 초안을 열어요. 선택하기 전에는 아무것도 전송되지 않아요.</string>
+    <string name="companion_flow_report_short_upload">신고를 누르면 정리된 로그를 업로드하고(30일간 보관) 확인할 수 있는 GitHub 초안을 열어요.</string>
+    <string name="report_save_downloads">대신 로그를 다운로드 폴더에 저장</string>
+    <string name="report_uploading">정리된 로그를 업로드하는 중이에요…</string>
+    <string name="report_uploaded">로그를 업로드했어요. 링크는 초안에 들어 있어요. 30일간 보관돼요.</string>
+    <string name="report_upload_failed_saved">로그를 업로드하지 못했어요(%1$s). 다운로드 폴더에 %2$s(으)로 저장했어요. 이슈에 첨부해 주세요.</string>
+    <string name="report_upload_failed_not_saved">로그를 업로드하지 못했고(%1$s) 저장도 하지 못했어요. 설정 → 정보 → 디버그 정보에서 공유해 주세요.</string>
+    <string name="report_reason_offline">연결 없음</string>
+    <string name="report_reason_timeout">응답 시간 초과</string>
+    <string name="report_reason_busy">신고 서비스가 혼잡함, 나중에 다시 시도</string>
+    <string name="report_reason_too_large">로그가 너무 큼</string>
+    <string name="report_reason_service">신고 서비스가 받지 않음</string>
+    <string name="debug_report_label">문제 신고</string>
+    <string name="debug_report_save_description">같은 정리된 로그를 다운로드 폴더에 저장하고, 첨부할 수 있도록 GitHub 초안을 열어요. 아무것도 업로드되지 않아요.</string>
+</resources>

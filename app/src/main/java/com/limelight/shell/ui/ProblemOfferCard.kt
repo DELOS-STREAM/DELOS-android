@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.em
 import com.limelight.diag.Problem
 import com.limelight.diag.ProblemKind
+import com.limelight.diag.ReportUploader
 
 @Composable
 internal fun offerTitle(kind: ProblemKind): String = stringResource(if (kind == ProblemKind.STREAM_FAILED) R.string.shell_problem_title_stream else R.string.shell_problem_title_generic)
@@ -77,10 +78,13 @@ internal fun problemSummary(res: Resources, problem: Problem): String {
  * start screen and the home screen, in the toast's place but with two actions. It is not a dialog: nothing is dimmed, the
  * rest of the screen stays usable, and it asks nothing before leaving. Focus starts on Report this problem; A activates the
  * focused button, left/right moves between the two, B is Dismiss (the shell's back handler). It is offered once per problem.
+ * In a build with the report service ([ReportUploader.enabled]) the note says what Report uploads, and a second row offers
+ * [onSaveToDownloads]: the same pill as Dismiss, without a glyph, for people who want no upload.
  */
 @Composable
-fun ProblemOfferCard(problem: Problem?, reducedMotion: Boolean, onReport: () -> Unit, onDismiss: () -> Unit) {
+fun ProblemOfferCard(problem: Problem?, reducedMotion: Boolean, onReport: () -> Unit, onSaveToDownloads: () -> Unit, onDismiss: () -> Unit) {
     val colors = LocalDelosColors.current
+    val uploads = remember { ReportUploader.shared.enabled }
     var shown by remember { mutableStateOf(problem) }
     if (problem != null) shown = problem
     val origin = TransformOrigin(1f, 0f)
@@ -113,12 +117,13 @@ fun ProblemOfferCard(problem: Problem?, reducedMotion: Boolean, onReport: () -> 
                     style = TextStyle(color = colors.text3, fontFamily = Figtree, fontSize = 18.tpx, lineHeight = 1.35.em),
                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
-                BasicText(stringResource(R.string.shell_problem_note), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 20.tpx, lineHeight = 1.4.em))
+                BasicText(stringResource(if (uploads) R.string.shell_problem_note_upload else R.string.shell_problem_note), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 20.tpx, lineHeight = 1.4.em))
                 Row(Modifier.padding(top = 6.px), horizontalArrangement = Arrangement.spacedBy((if (compact) Compact.BUTTON_GAP else 18f).px)) {
                     PillButton(stringResource(R.string.shell_problem_report), Symbols.REPORT_ISSUE, onReport, Modifier.focusRequester(report), primary = true, compact = true,
                         trailing = { GlyphButton(Glyph.A, 34) })
                     PillButton(stringResource(R.string.shell_problem_dismiss), Symbols.CLOSE, onDismiss, compact = true, clickCue = Cue.BACK, trailing = { GlyphButton(Glyph.B, 34) })
                 }
+                if (uploads) PillButton(stringResource(R.string.report_save_downloads), Symbols.DOWNLOAD, onSaveToDownloads, compact = true)
             }
         }
     }

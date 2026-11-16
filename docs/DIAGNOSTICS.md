@@ -4,8 +4,10 @@
 
 Delos keeps a small log of what it did, on the device, so that a problem can be reported with facts instead of memories.
 **Nothing leaves the device unless the user starts it**: there is no analytics, no automatic upload, no account and no token
-anywhere in this feature. This document specifies what is logged, what is removed before anything is shared, how a crash
-is detected and offered for reporting, and the contract between the app and the GitHub issue forms.
+anywhere in this feature. What the user starts is either **Report** (the cleaned log goes to the Delos report service and a
+GitHub draft opens), **Save the log to Downloads instead**, or **Share**. This document specifies what is logged, what is removed
+before anything is shared or uploaded, what the report service stores, how a crash is detected and offered for reporting, and the
+contract between the app and the GitHub issue forms.
 
 ## Scope
 
@@ -13,7 +15,8 @@ is detected and offered for reporting, and the contract between the app and the 
 |---|---|
 | The rolling log, its sources and its switch | The look of the report card and of the Debug info screen: [GUI.md](GUI.md) |
 | The scrubber and the device block | The security model as a whole: [SECURITY.md](../SECURITY.md) |
-| Sharing, crash capture, the report offer, the issue forms | The `ControllerSend` and rumble diagnostic lines: [CONTROLLER_STATE.md](CONTROLLER_STATE.md), [RUMBLE.md](RUMBLE.md) |
+| Sharing, crash capture, the report offer, the report service as the app uses it, the issue forms | The service itself (API, limits, deploy): [tools/report-worker/README.md](../tools/report-worker/README.md) |
+| | The `ControllerSend` and rumble diagnostic lines: [CONTROLLER_STATE.md](CONTROLLER_STATE.md), [RUMBLE.md](RUMBLE.md) |
 
 ## What is logged
 
@@ -84,6 +87,9 @@ Settings → About → Debug info → **Diagnostics** (the first section after t
 
 - **Diagnostic log**: an info row showing the size and line count of exactly what Share sends (for example `212 KB, 1,904 log lines`); the panel on
   the right previews the header, the device block and the newest 40 lines of the **scrubbed** text, built when the screen opens and after Clear.
+- **Report a problem** and **Save the log to Downloads instead**: only in a build that has the report service (`DELOS_REPORTS_URL`). They start the same
+  report as the card, without a detected problem: the first uploads the cleaned log and opens the GitHub draft with its link, the second saves it to
+  Downloads and opens the draft for the user to attach it. The row help of **Report a problem** states what happens (the text of the card below).
 - **Share diagnostic log**: writes that text to `cache/diagnostics/delos-diagnostic-<time>.txt` (older shared files are removed first), and opens
   the Android share sheet through the app's `FileProvider` (`provider_file_paths.xml`, `cache-path diagnostics`), with read access for that one file.
 - **Copy diagnostic summary**: the device block and the last 100 lines, scrubbed, to the clipboard (a toast confirms it).
@@ -124,29 +130,70 @@ All of it is built on a worker thread from the PC list as it is at that moment.
 is stored at detection, so a problem is never offered again, whether it was reported, dismissed or ignored.
 
 **The card** (`ProblemOfferCard`, docs/GUI.md): top right of the start screen and the home screen, below the toast's place, only when no layer,
-portal, launch loader or stream result is up. It says what happened in one sentence, the one-line summary and: *Nothing is sent automatically.
-Report opens GitHub in your browser with a draft for you to check, and saves a cleaned log file to Downloads for you to attach.* Focus starts on
-**Report this problem** (A); left/right moves to **Dismiss**; **B dismisses** from anywhere while the card shows. Touch works too. There is no scrim
-and no confirmation: the rest of the screen stays usable. `Problem` carries typed facts (kind, subject, detail, whether only the exit record told of it);
-the card text is built in the user's language from `diag_problem_*` (`problemSentence`, `problemSummary` in `ProblemOfferCard.kt`), the subject (exception,
-signal, system description) shown as it is. `Problem.summary`, the issue draft and the report stay English for the developers.
+portal, launch loader or stream result is up. It says what happened in one sentence, the one-line summary and a note. In a build **with** the report
+service the note is: *Report sends a cleaned log to the Delos report service (kept 30 days, readable by anyone who has the link) and opens a GitHub
+draft for you to check. Nothing is sent before you choose.* In a build **without** it: *Nothing is sent automatically. Report opens GitHub in your
+browser with a draft for you to check, and saves a cleaned log file to Downloads for you to attach.* Focus starts on **Report this problem** (A);
+left/right moves to **Dismiss**; **B dismisses** from anywhere while the card shows. Touch works too. With the report service a second row has the
+quiet action **Save the log to Downloads instead** (a pill without a button glyph, reached with down). There is no scrim and no confirmation: the rest
+of the screen stays usable. The card on the second panel of a dual-screen device has Report and Dismiss only and the same note. `Problem` carries typed
+facts (kind, subject, detail, whether only the exit record told of it); the card text is built in the user's language from `diag_problem_*`
+(`problemSentence`, `problemSummary` in `ProblemOfferCard.kt`), the subject (exception, signal, system description) shown as it is. `Problem.summary`,
+the issue draft and the report stay English for the developers.
 
-**Report this problem:**
+**Report this problem** (`ProblemReporter.report`, mode `ReportMode.UPLOAD`):
 
-1. builds the scrubbed report (header, device block, a `Problem` section with the full stack trace, the whole log) and the prefilled address;
-2. saves the report to **Downloads** as `delos-diagnostic-<time>.txt` through `MediaStore.Downloads` (no permission needed); a toast says
-   `Log saved to Downloads as ... Attach it to the issue.` (or that it could not be saved and that Debug info can share it);
+1. builds the scrubbed report (header, device block, a `Problem` section with the full stack trace, the whole log);
+2. with the report service: shows the toast `Uploading the cleaned log…`, uploads the report (see "The report service") and builds the prefilled
+   address with the returned link; a toast says `Log uploaded; its link is in the draft. It is kept for 30 days.` Without the service, or when the upload
+   fails, or for **Save the log to Downloads instead** (`ReportMode.DOWNLOADS`, nothing is uploaded): saves the report to **Downloads** as
+   `delos-diagnostic-<time>.txt` through `MediaStore.Downloads` (no permission needed); a toast says `Log saved to Downloads as ... Attach it to the issue.`
+   after a choice or an old build, `The log was not uploaded (<reason>). Saved to Downloads as ... Attach it to the issue.` after a failed upload (the
+   reasons: no connection, no answer in time, the service is busy, the log is too large, the service did not accept it), or that it could not be saved
+   and that Debug info can share it;
 3. after 0.9 s opens the **GitHub new-issue page in the browser** with the `app_report.yml` form filled in through query parameters named after
-   the field ids: `title`, `what-happened` (what happened, the file name to attach, a request to add what the user was doing), `area` (`Other`, or
-   `Pairing/connection` for a failed stream), `device`, `build`, `stream-settings`, `logs` (the summary and the first 12 stack frames). The address carries
-   no `labels` parameter: the form sets the labels `bug`, `from-app` and `needs-triage` itself (they **must exist** in the repository);
+   the field ids: `title`, `what-happened` (after an upload `Diagnostic log: <link>` on the first line, then what happened and a request to add what the
+   user was doing, then a line saying that the log was uploaded, is readable by anyone who has the link and works until its expiry date; after a save
+   the file name to attach), `area` (`Other`, or `Pairing/connection` for a failed stream), `device`, `build`, `stream-settings`, `logs` (the summary and
+   the first 12 stack frames). The address carries no `labels` parameter: the form sets the labels `bug`, `from-app` and `needs-triage` itself (they
+   **must exist** in the repository);
 4. resolves the problem (the crash files are deleted).
 
 The address stays below 6000 characters: `logs` is cut first (a tenth at a time, with a note that the file has the rest), then `what-happened`; every
-free-text field passes the scrubber; a cut is never inside a percent escape (`IssueUrl`, `IssueUrlTest`, `ProblemIssueTest`). The file is attached by the
-user in the browser: drag it into the **What happened?** box (a textarea with `render:` cannot take files, so the log box at the end cannot).
+free-text field passes the scrubber; a cut is never inside a percent escape (`IssueUrl`, `IssueUrlTest`, `ProblemIssueTest`). The link and the note about
+where the log is (`IssueDraft.logLink`, `IssueDraft.attachmentNote`) are added after the scrubber and are never cut: the scrubber replaces the host of an
+address it does not know, and it takes a file name such as `delos-diagnostic-20261110-120000.txt` (32 letters, digits and hyphens) for a token. After a
+save the user attaches the file in the browser: drag it into the **What happened?** box (a textarea with `render:` cannot take files, so the log box at
+the end cannot).
 
 **Dismiss** resolves the problem and returns the focus to the screen.
+
+## The report service
+
+The service is the Cloudflare Worker `delos-reports` ([tools/report-worker/README.md](../tools/report-worker/README.md)), a small program that stores a text
+behind an unguessable link. The app uses it only when the build has its address (`DELOS_REPORTS_URL`, [BUILDING.md](BUILDING.md)); without it the
+report flow is the one that saves to Downloads, and the card, the rows and the texts say so.
+
+| Fact | Value |
+|---|---|
+| Who starts it | The user, per report, with **Report** on the card or in Debug info. There is no setting that uploads by itself and nothing is uploaded at a crash |
+| What is uploaded | The text that **Save the log to Downloads instead** saves: the report after the scrubber (header, device block, problem section, log), as `text/plain; charset=utf-8`, gzip-compressed. A report over 2 MiB loses its oldest log lines first (`ReportUploader.fit`) |
+| What the service does with it | Checks it, runs the pattern rules of the scrubber over it again (a JavaScript port, `scrub.js`), replaces a leftover with the same placeholder and stores the result in Workers KV under a random 128-bit id |
+| What it stores | The cleaned text for 30 days (`ReportUploader.KEPT_DAYS`) and a counter of the uploads of the day. The Worker keeps no address, no user agent, no device id and no account, and logs none of them; Cloudflare, which runs it, handles the connection and sees the sender's IP address like any web host |
+| Who can read it | Anyone who has the link, until it expires. The link goes into the GitHub draft, so it is **public** once the user submits the issue in a public repository. Nothing lists reports and nothing can delete one from the app |
+| What the app accepts back | Only `<service address>/r/<22 characters>` with the id that the answer names; any other link is a failed upload (`ReportUploader.parse`) |
+| Address | HTTPS only (loopback for tests); no redirect is followed |
+| If it fails | Offline, a timeout (20 s without an answer, 30 s in all), 429, the daily cap, 413, any 5xx or an answer that is not the service's: the report is saved to Downloads as before, with a toast naming the reason (`UploadFailure`) |
+
+**Scrubbed twice.** The app's scrubber knows the user's PC names, host names, profile names, client id and API key and removes them, together with what
+the patterns find. The service cannot know those; it only repeats the patterns. A leftover is replaced and counted (`rescrubbed` in the answer; the app
+logs the count, never the text). `ScrubContractTest` writes `tools/report-worker/test/fixtures/app-scrub-contract.json` from the app's scrubber and the
+Worker's tests read it, so the two cannot drift apart: the Worker must leave the app's output unchanged and must produce it from raw lines that need no
+knowledge of the install.
+
+**What the user is told**, in all ten languages: the note of the card and of the **Report a problem** row (sends a cleaned log to the Delos report service,
+kept 30 days, readable by anyone who has the link, opens a GitHub draft to check, nothing is sent before the user chooses), the toasts above, and the
+form's own introduction (`.github/ISSUE_TEMPLATE/app_report.yml`).
 
 ## Field-id contract of the issue forms
 
@@ -190,11 +237,19 @@ Rules, repeated in the comment at the top of both forms:
 | `diag/CrashReporter.kt`, `diag/CrashFile.kt`, `diag/CrashText.kt` | The uncaught-exception handler and the crash file |
 | `diag/ProblemDetector.kt`, `diag/ProblemMonitor.kt` | Detection at the next start, the ledger |
 | `diag/ProblemReporter.kt`, `diag/ProblemIssue.kt`, `diag/IssueUrl.kt` | The report, the issue draft and the prefilled address |
-| `shell/ui/ProblemOfferCard.kt` | The card |
+| `diag/ReportUploader.kt`, `diag/ReportSubmission.kt`, `diag/ReportOutcomeText.kt` | The upload to the report service, the choice between upload and Downloads, the toasts |
+| `shell/ui/ProblemOfferCard.kt`, `shell/companion/CompanionFlowPages.kt` | The card on the main display and on the second panel |
+| `shell/screens/DebugInfoScreen.kt` | The Debug info rows, including **Report a problem** |
+| `res/values*/strings_reports.xml` | The texts of the report service, in the ten languages |
+| `tools/report-worker/` | The report service ([README](../tools/report-worker/README.md)) |
 
 ## Verification
 
-Automated: `./gradlew :app:testDebugUnitTest --tests 'com.limelight.diag.*'` (scrubber, writer, report, detector, crash file, issue address, settings snapshot).
+Automated: `./gradlew :app:testDebugUnitTest --tests 'com.limelight.diag.*'` (scrubber, writer, report, detector, crash file, issue address, settings snapshot) and
+`(cd tools/report-worker && npm ci && npm test)` (the service). The upload is tested against a loopback HTTP server: success, 429, the daily cap, 413, 5xx,
+other statuses, a redirect that is not followed, a timeout, no connection, malformed and foreign answers, the feature off without an address; the fall back to
+Downloads and the draft with the link in `ReportSubmissionTest`; what the server receives and the address contain none of the stored names in
+`ReportPrivacyTest`; `ScrubContractTest` and `scrub.test.js` hold the two scrubbers together.
 
 On a device with a debug build (never while streaming):
 
@@ -202,7 +257,9 @@ On a device with a debug build (never while streaming):
    opens the share sheet; **Copy diagnostic summary** copies; **Clear diagnostic logs** empties (the row reads `Reading…` and then a small count).
 2. **Switch:** Settings → About → Keep diagnostic logs off, use the app, the size stays; on again.
 3. **Crash and offer:** Debug info → **Trigger test crash**. Delos closes; start it again: the card appears on the start or home screen, once. A reports
-   (a file in Downloads, the browser opens the prefilled form), B dismisses. Starting again shows nothing.
+   (a file in Downloads, the browser opens the prefilled form), B dismisses. Starting again shows nothing. In a build with `DELOS_REPORTS_URL`: A uploads, the toast
+   says so, the browser opens with `Diagnostic log: <link>` as the first line of **What happened?**, and the link opens the text; **Save the log to Downloads instead**
+   (down from Report) saves the file and uploads nothing; with the network off, Report saves the file and the toast names the reason.
 4. **Failed stream:** with the PC off or a wrong port, start a game: the result screen is as before; after Back to library the card follows (not again
    within 30 minutes).
 5. **Native crash:** with the app in the foreground, `adb shell run-as io.github.meitoncz.delos.debug kill -ABRT $(adb shell pidof io.github.meitoncz.delos.debug)`
@@ -214,9 +271,13 @@ On a device with a debug build (never while streaming):
 - This document records no dated device run of the steps above.
 - The scrubber does not remove app (game) titles, and names shorter than three characters are not recognized as names.
 - How the two issue forms render on GitHub, and that GitHub fills them in from the address, was not checked after the forms changed.
+- The report service was run only locally (`wrangler dev --local`) and in unit tests, never on Cloudflare: the real KV expiry, the rate-limit bindings, the Free plan's
+  CPU limit and the link on `workers.dev` are not verified ([README](../tools/report-worker/README.md), "Not verified").
+- The upload, the card's second row, the Debug info rows and the toasts were not run on a device or an emulator. Whether the card with its second row fits the shortest
+  compact stages was not checked.
 
 ## Related
 
-- Issue [#71](https://github.com/Meitoncz/Delos/issues/71).
-- [SECURITY.md](../SECURITY.md), "Diagnostics".
+- [SECURITY.md](../SECURITY.md), "Diagnostics" and "The report service".
+- Issues [#71](https://github.com/Meitoncz/Delos/issues/71) and [#83](https://github.com/Meitoncz/Delos/issues/83).
 - `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/app_report.yml`.

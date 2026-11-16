@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Problem report with the log uploaded to the Delos report service (docs/DIAGNOSTICS.md, "The report service") -->
+    <string name="shell_problem_note_upload">Relatar envia um log limpo ao serviço de relatórios Delos (guardado por 30 dias e legível por quem tiver o link) e abre um rascunho no GitHub para você conferir. Nada é enviado antes de você escolher.</string>
+    <string name="companion_flow_report_short_upload">Relatar envia um log limpo (guardado por 30 dias) e abre um rascunho do GitHub para conferir.</string>
+    <string name="report_save_downloads">Salvar o log em Downloads em vez disso</string>
+    <string name="report_uploading">Enviando o log limpo…</string>
+    <string name="report_uploaded">Log enviado; o link está no rascunho. Ele fica guardado por 30 dias.</string>
+    <string name="report_upload_failed_saved">O log não foi enviado (%1$s). Salvo em Downloads como %2$s. Anexe-o ao relato.</string>
+    <string name="report_upload_failed_not_saved">O log não foi enviado (%1$s) e também não pôde ser salvo. Compartilhe-o em Configurações → Sobre → Informações de depuração.</string>
+    <string name="report_reason_offline">sem conexão</string>
+    <string name="report_reason_timeout">sem resposta a tempo</string>
+    <string name="report_reason_busy">o serviço de relatórios está ocupado, tente de novo mais tarde</string>
+    <string name="report_reason_too_large">o log é grande demais</string>
+    <string name="report_reason_service">o serviço de relatórios não o aceitou</string>
+    <string name="debug_report_label">Relatar um problema</string>
+    <string name="debug_report_save_description">Salva o mesmo log limpo em Downloads e abre o rascunho do GitHub para você anexá-lo. Nada é enviado.</string>
+</resources>

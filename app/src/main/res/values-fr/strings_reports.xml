@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Problem report with the log uploaded to the Delos report service (docs/DIAGNOSTICS.md, "The report service") -->
+    <string name="shell_problem_note_upload">« Signaler » envoie un journal nettoyé au service de rapports Delos (conservé 30 jours, lisible par toute personne qui a le lien) et ouvre un brouillon GitHub à vérifier. Rien n’est envoyé avant ton choix.</string>
+    <string name="companion_flow_report_short_upload">« Signaler » envoie un journal nettoyé (conservé 30 jours) et ouvre un brouillon GitHub à vérifier.</string>
+    <string name="report_save_downloads">Enregistrer plutôt le journal dans Téléchargements</string>
+    <string name="report_uploading">Envoi du journal nettoyé…</string>
+    <string name="report_uploaded">Journal envoyé, son lien est dans le brouillon. Il est conservé 30 jours.</string>
+    <string name="report_upload_failed_saved">Le journal n’a pas été envoyé (%1$s). Enregistré dans Téléchargements sous %2$s. Joins-le au ticket.</string>
+    <string name="report_upload_failed_not_saved">Le journal n’a pas été envoyé (%1$s) et n’a pas pu être enregistré. Partage-le depuis Réglages → À propos → Infos de débogage.</string>
+    <string name="report_reason_offline">pas de connexion</string>
+    <string name="report_reason_timeout">pas de réponse à temps</string>
+    <string name="report_reason_busy">le service de rapports est surchargé, réessaie plus tard</string>
+    <string name="report_reason_too_large">le journal est trop volumineux</string>
+    <string name="report_reason_service">le service de rapports ne l’a pas accepté</string>
+    <string name="debug_report_label">Signaler un problème</string>
+    <string name="debug_report_save_description">Enregistre le même journal nettoyé dans Téléchargements et ouvre le brouillon GitHub pour que tu le joignes. Rien n’est envoyé.</string>
+</resources>

@@ -41,6 +41,9 @@ android {
 
         // Empty by default (CI builds): game metadata is then reported as unavailable.
         buildConfigField 'String', 'DELOS_METADATA_URL', metadataSetting('DELOS_METADATA_URL')
+        // The Delos report service's base URL (non-secret). Empty by default: "Report this problem" then only saves the log to
+        // Downloads, as before the service existed (docs/DIAGNOSTICS.md).
+        buildConfigField 'String', 'DELOS_REPORTS_URL', metadataSetting('DELOS_REPORTS_URL')
     }
 
     buildFeatures {
