@@ -350,6 +350,9 @@ fun Shell(
         shell.result = null
         scope.launch {
             delay(400)
+            // A failed stream is followed by the report card, which took the focus when it appeared: the library must not take it back,
+            // or the card cannot be reached with a controller (found on the 1.0.0 release candidate)
+            if (shell.offerShown) return@launch
             feedback.silenceNextFocus()
             runCatching { shell.restoreScreenFocus?.invoke() }
         }
@@ -508,9 +511,6 @@ fun Shell(
     val companionPc = pc?.name.takeIf { shell.screen.main }
     LaunchedEffect(companionPc) { shell.pcName = companionPc }
 
-    // The side menu belongs to the main screens and the start screen, not to the first launch
-    val sideMenu = shell.screen.main || shell.screen == Screen.Start
-
     fun toggleSide() {
         if (shell.layer != null && shell.layer != Layer.Side) return
         if (shell.layer == Layer.Side) {
@@ -570,7 +570,8 @@ fun Shell(
         keys.listener = listener@{ code ->
             if (shell.launch != null || shell.portal != null || shell.result != null) return@listener
             when (code) {
-                KeyEvent.KEYCODE_BUTTON_SELECT -> if (sideMenu) toggleSide()
+                // Read the screen now: this listener is set once, so a value captured at the first composition (the first launch) would stay false
+                KeyEvent.KEYCODE_BUTTON_SELECT -> if (shell.screen.sideMenu) toggleSide()
                 KeyEvent.KEYCODE_BUTTON_START -> toggleContext()
                 KeyEvent.KEYCODE_BUTTON_X -> if (shell.layer == Layer.Filters) {
                     if (metadata.filters.active) {

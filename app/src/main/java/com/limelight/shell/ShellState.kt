@@ -30,6 +30,9 @@ sealed interface Screen {
     val main: Boolean get() = false
     val back: Screen? get() = null
 
+    /** The left menu button opens the side menu on the main screens and the start screen, not during the first launch. */
+    val sideMenu: Boolean get() = main || this == Start
+
     data object Home : Screen {
         override val main get() = true
     }
