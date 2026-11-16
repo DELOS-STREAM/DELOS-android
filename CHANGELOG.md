@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 The 0.x versions are development versions, not published releases; 0.1.0 to 0.14.0 are reconstructed milestones of the history. 1.0.0 will be the first public release.
 
-Not verified on real hardware yet: variable refresh rate (no VRR display was available) and dual-screen handhelds such as the AYN Thor (tested only on emulators and the shape simulator). HDR colour was judged by eye on one OLED handheld (2026-10-27); colour and luminance were not measured. Delos is developed and tested with one handheld (AYN Odin 2 Portal Max, Android 13) and Vibepollo on Windows; there is no recorded test with Apollo, Sunshine or a Linux host.
+Not verified on real hardware yet: the in-app updater (the install prompt, the unknown-sources page and a real download have not run; only the settings screen was seen on the AYN Odin 2 Portal Max), the report upload (the Delos report service is not deployed yet), variable refresh rate (no VRR display was available) and dual-screen handhelds such as the AYN Thor (tested only on emulators and the shape simulator). HDR colour was judged by eye on one OLED handheld (2026-10-27); colour and luminance were not measured. Delos is developed and tested with one handheld (AYN Odin 2 Portal Max, Android 13) and Vibepollo on Windows; there is no recorded test with Apollo, Sunshine or a Linux host.
 
 ## [Unreleased]
 
