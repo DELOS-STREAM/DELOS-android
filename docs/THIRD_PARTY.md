@@ -174,10 +174,10 @@ hold precompiled SPIR-V of the PyroWave codec as C++ arrays. They run on the dev
 
 | Item | Value |
 |---|---|
-| Gradle version | 9.7.1 (`gradle/wrapper/gradle-wrapper.properties`) |
-| Distribution | `https://services.gradle.org/distributions/gradle-9.7.1-bin.zip` |
-| `distributionSha256Sum` | `acd53f1edaf02f1a8ff99879f8a34b302661a057d9b063ae9e35b552f804d20a` (equals `gradle-9.7.1-bin.zip.sha256` on services.gradle.org) |
-| `gradle/wrapper/gradle-wrapper.jar` SHA-256 | `7a9ce74cff467ca1bf60a4fcd9f05185acceda4d0f382434d393e17864262c5d` (equals `gradle-9.7.1-wrapper.jar.sha256` on services.gradle.org) |
+| Gradle version | 9.9.1 (`gradle/wrapper/gradle-wrapper.properties`) |
+| Distribution | `https://services.gradle.org/distributions/gradle-9.9.1-bin.zip` |
+| `distributionSha256Sum` | `d8a18a7a841dd5df825d35a685fad6f2d7f12ac0c280e57b67c27b4a520ba228` (equals `gradle-9.9.1-bin.zip.sha256` on services.gradle.org) |
+| `gradle/wrapper/gradle-wrapper.jar` SHA-256 | `621008afc4f5d59357fcf06ffa644dd5aade5e091bdc363742710445f73cdaf8` (equals `gradle-9.9.1-wrapper.jar.sha256` on services.gradle.org) |
 | Licence | Apache-2.0 (build tool, not shipped) |
 
 The wrapper downloads the distribution and refuses it when the checksum differs. To move to another
@@ -255,13 +255,13 @@ All versions are exact; there are no dynamic versions. Direct dependencies in `a
 
 | Library | Version | Repository | Licence | Licence file |
 |---|---|---|---|---|
-| `org.bouncycastle:bcprov-jdk18on` | 1.85.2 | Maven Central | MIT | `BouncyCastle-MIT.txt` |
-| `org.bouncycastle:bcpkix-jdk18on` (brings `bcutil-jdk18on` 1.85) | 1.85 | Maven Central | MIT | `BouncyCastle-MIT.txt` |
+| `org.bouncycastle:bcprov-jdk18on` | 1.87 | Maven Central | MIT | `BouncyCastle-MIT.txt` |
+| `org.bouncycastle:bcpkix-jdk18on` (brings `bcutil-jdk18on` 1.87) | 1.87 | Maven Central | MIT | `BouncyCastle-MIT.txt` |
 | `org.jcodec:jcodec` | 0.2.5 | Maven Central | BSD-2-Clause | `JCodec-BSD-2-Clause.txt` |
-| `com.squareup.okhttp3:okhttp` (brings Okio 3.18.1) | 5.5.0 | Maven Central | Apache-2.0 | `OkHttp-Apache-2.0.txt`, `Okio-Apache-2.0.txt` |
-| `org.jmdns:jmdns` (brings SLF4J API 2.0.7, MIT) | 3.6.3 | Maven Central | Apache-2.0 | `JmDNS-Apache-2.0.txt`, `SLF4J-MIT.txt` |
+| `com.squareup.okhttp3:okhttp` (brings Okio 3.18.1) | 5.5.1 | Maven Central | Apache-2.0 | `OkHttp-Apache-2.0.txt`, `Okio-Apache-2.0.txt` |
+| `org.jmdns:jmdns` (brings SLF4J API 2.0.7, MIT) | 3.6.5 | Maven Central | Apache-2.0 | `JmDNS-Apache-2.0.txt`, `SLF4J-MIT.txt` |
 | `com.github.cgutman:ShieldControllerExtensions` | 1.0.1 | JitPack | MIT | `ShieldControllerExtensions-MIT.txt` |
-| `com.google.code.gson:gson` (brings Error Prone annotations 2.48.0) | 2.14.0 | Maven Central | Apache-2.0 | `Gson-Apache-2.0.txt`, `ErrorProne-Annotations-Apache-2.0.txt` |
+| `com.google.code.gson:gson` (brings Error Prone annotations 2.50.0) | 2.15.0 | Maven Central | Apache-2.0 | `Gson-Apache-2.0.txt`, `ErrorProne-Annotations-Apache-2.0.txt` |
 | `androidx.annotation:annotation` | 1.11.0 | Google | Apache-2.0 | `AndroidX-Apache-2.0.txt` |
 | `androidx.appcompat:appcompat` | 1.8.0 | Google | Apache-2.0 | `AndroidX-Apache-2.0.txt` |
 | `androidx.preference:preference` | 1.2.1 | Google | Apache-2.0 | `AndroidX-Apache-2.0.txt` |
@@ -270,7 +270,7 @@ All versions are exact; there are no dynamic versions. Direct dependencies in `a
 | `androidx.activity:activity-compose` | 1.13.0 | Google | Apache-2.0 | `AndroidX-Apache-2.0.txt` |
 | `androidx.lifecycle:lifecycle-runtime-compose`, `lifecycle-viewmodel-compose` | 2.11.0 | Google | Apache-2.0 | `AndroidX-Apache-2.0.txt` |
 | `org.jetbrains.kotlinx:kotlinx-coroutines-android` | 1.11.0 | Maven Central | Apache-2.0 | `kotlinx-coroutines-Apache-2.0.txt` |
-| `dev.chrisbanes.haze:haze-blur` (brings JetBrains Compose Multiplatform 1.12.1) | 2.0.1 | Maven Central | Apache-2.0 | `Haze-Apache-2.0.txt`, `JetBrains-Compose-Apache-2.0.txt` |
+| `dev.chrisbanes.haze:haze-blur` (brings JetBrains Compose Multiplatform 1.12.2) | 2.1.0 | Maven Central | Apache-2.0 | `Haze-Apache-2.0.txt`, `JetBrains-Compose-Apache-2.0.txt` |
 | `com.android.tools:desugar_jdk_libs` (core library desugaring) | 2.1.5 | Google | GPL-2.0 with Classpath exception | `desugar_jdk_libs-GPL-2.0-with-Classpath-exception.txt` |
 
 Transitive runtime libraries with their own licence file: Kotlin standard library 2.4.21, kotlinx.serialization
