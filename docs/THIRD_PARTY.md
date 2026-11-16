@@ -317,7 +317,7 @@ Stated plainly, so nobody has to find them:
    `shaders_spv.h` with its sources.
 6. **Robolectric's runtime jars and the NDK** are downloaded outside Gradle's dependency verification.
 7. **Vulnerability databases were not queried** for opus, the Maven dependencies or the npm dependencies
-   of `tools/metadata-worker` (which is a separate service with its own `package-lock.json`, not part of
-   the app).
+   of `tools/metadata-worker` and `tools/report-worker` (which are separate services with their own
+   `package-lock.json`, not part of the app).
 8. **History:** the git history still contains about 350 MB of `.tflite` depth-model files that an
    upstream fork added in 2025 and Delos removed. They are not in the current tree and are not shipped.

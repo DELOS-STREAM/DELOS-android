@@ -86,3 +86,4 @@ Each records what was researched or measured on one day. It is not edited afterw
 | `tools/pyrowave/` | The vendor script and patches of the PyroWave source ([THIRD_PARTY.md](THIRD_PARTY.md)) |
 | `tools/versioning/` | `create-tags.sh`: the tags of the reconstructed 0.x versions ([VERSIONING.md](VERSIONING.md)) |
 | `tools/metadata-worker/` | The metadata service, with its own [README](../tools/metadata-worker/README.md) |
+| `tools/report-worker/` | The report service that keeps the cleaned log of a problem report, with its own [README](../tools/report-worker/README.md) ([DIAGNOSTICS.md](DIAGNOSTICS.md)) |

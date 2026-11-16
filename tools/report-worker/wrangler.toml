@@ -1,0 +1,32 @@
+name = "delos-reports"
+main = "src/index.js"
+compatibility_date = "2026-11-02"
+workers_dev = true
+preview_urls = false
+
+# No secrets: the Worker holds no credentials and calls no other service. The only state is the KV namespace below.
+
+# The reports themselves (key "r:<id>", expire after 30 days) and the daily upload counter (key "cap:<date>").
+# Create the namespace once and paste its id here (README.md, "Deploy"). The id is not a secret.
+[[kv_namespaces]]
+binding = "REPORTS"
+id = "REPLACE_WITH_THE_ID_OF_THE_KV_NAMESPACE"
+
+# Per-client rate limits (the key is the client IP). The binding can count 10 or 60 second windows only; the Worker adds a
+# 10 minute bucket of its own (src/handler.js). Approximate and per Cloudflare location. The namespace ids must be unique
+# in the Cloudflare account; change them when they collide with another Worker's.
+[[ratelimits]]
+name = "UPLOAD_LIMITER"
+namespace_id = "5911"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
+[[ratelimits]]
+name = "READ_LIMITER"
+namespace_id = "5912"
+
+  [ratelimits.simple]
+  limit = 60
+  period = 60
