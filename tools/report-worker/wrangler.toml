@@ -10,7 +10,7 @@ preview_urls = false
 # Create the namespace once and paste its id here (README.md, "Deploy"). The id is not a secret.
 [[kv_namespaces]]
 binding = "REPORTS"
-id = "REPLACE_WITH_THE_ID_OF_THE_KV_NAMESPACE"
+id = "8c4e6539ee1b4c84a36ead438d4447e2"
 
 # Per-client rate limits (the key is the client IP). The binding can count 10 or 60 second windows only; the Worker adds a
 # 10 minute bucket of its own (src/handler.js). Approximate and per Cloudflare location. The namespace ids must be unique

@@ -271,8 +271,8 @@ On a device with a debug build (never while streaming):
 - This document records no dated device run of the steps above.
 - The scrubber does not remove app (game) titles, and names shorter than three characters are not recognized as names.
 - How the two issue forms render on GitHub, and that GitHub fills them in from the address, was not checked after the forms changed.
-- The report service was run only locally (`wrangler dev --local`) and in unit tests, never on Cloudflare: the real KV expiry, the rate-limit bindings, the Free plan's
-  CPU limit and the link on `workers.dev` are not verified ([README](../tools/report-worker/README.md), "Not verified").
+- The report service was deployed and exercised with `curl` on 2026-11-16 (upload, read, re-scrub, rejects, rate limit; [README](../tools/report-worker/README.md), "Evidence"). Not
+  verified: the real KV expiry after 30 days and the Free plan's CPU limit for a 128 KiB report.
 - The upload, the card's second row, the Debug info rows and the toasts were not run on a device or an emulator. Whether the card with its second row fits the shortest
   compact stages was not checked.
 

@@ -159,7 +159,7 @@ The log is cleaned twice: by the app's scrubber on the device, and by the Worker
 read the log until it expires, and the link in a public issue is public. The Worker holds no credentials, calls no other
 service, keeps no address or account, logs no body, and limits uploads per client and per day. It has no endpoint that
 lists or deletes reports. Cloudflare, which runs it, sees the sender's IP address like any web host. The upload is
-started by the user for each report. Not verified on Cloudflare yet: [tools/report-worker/README.md](tools/report-worker/README.md).
+started by the user for each report. The service was exercised on Cloudflare with `curl` only (not from the app): [tools/report-worker/README.md](tools/report-worker/README.md).
 
 ### Known limits
 

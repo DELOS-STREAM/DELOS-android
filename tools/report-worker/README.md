@@ -166,9 +166,9 @@ the code, every scrub rule with the fixtures of the app's `LogScrubberTest`, and
 
 ### Not verified
 
-- The Worker was never deployed and never run on Cloudflare: not the KV namespace, the rate-limit bindings, the `expirationTtl`
-  of a real KV, nor the link on `workers.dev`.
-- CPU time on Cloudflare. The Workers Free plan allows 10 ms of CPU per request. The limit of 128 KiB was chosen from a local
+- The real KV expiry (30 days): only the `expirationTtl` that is passed to KV and the date in the answer were checked, not the
+  disappearance of a stored report.
+- CPU time on Cloudflare: no request was stopped in the live run below, but only small bodies were sent; a 128 KiB report was not. The Workers Free plan allows 10 ms of CPU per request. The limit of 128 KiB was chosen from a local
   measurement of the second scrub in Node.js 26 (V8, which `workerd` also uses), see "Evidence"; the rest of a request (gzip
   inflate, UTF-8 decoding, KV) was not measured, and whether Cloudflare stops a request that is a little over was not tested.
   A request that is stopped looks to the app like a failed upload and the report is saved to Downloads. If that happens for
@@ -181,7 +181,18 @@ the code, every scrub rule with the fixtures of the app's `LogScrubberTest`, and
 - [SECURITY.md](../../SECURITY.md), "The report service".
 - Issue [#83](https://github.com/Meitoncz/Delos/issues/83).
 
-## Evidence (2026-11-16)
+## Evidence (2026-11-16, live)
+
+The Worker was deployed to Cloudflare (Workers Free plan, `delos-reports`, a KV namespace `REPORTS`) and exercised with `curl`:
+
+| Check | Result |
+|---|---|
+| `POST /v1/reports` with a report containing an IPv4 address, a MAC address, an e-mail address and a URL query | `201`, `rescrubbed` 4 |
+| `GET /r/<id>` | `200`, the text with `<ip-1>`, `<mac-1>`, `<email>`, `?uniqueid=<redacted>`; `cache-control: no-store`, `x-robots-tag: noindex, nofollow` |
+| Unknown id, wrong content type, 200 KB body, `GET /v1/reports` | `404`, `415`, `413`, `405` |
+| 25 uploads in parallel | 9 × `201`, 16 × `429` (the upload binding limits) |
+
+## Evidence (2026-11-16, local)
 
 Run on macOS with `npx wrangler dev --local` (wrangler 4.162.0, the local `workerd` and a local KV; no Cloudflare account, no network):
 
