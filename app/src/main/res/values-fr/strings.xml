@@ -106,6 +106,8 @@
     <string name="summary_checkbox_remember_mouse_mode">Mémorise le mode souris choisi pendant le stream. Désactivé, le mode souris changé pendant le stream reste temporaire.</string>
     <string name="title_checkbox_flip_face_buttons">Inverser les boutons de façade</string>
     <string name="summary_checkbox_flip_face_buttons">Échange les boutons A/B et X/Y des manettes et des commandes à l’écran</string>
+    <string name="title_checkbox_back_hold_guide">Maintenir Retour pour Guide</string>
+    <string name="summary_checkbox_back_hold_guide">Maintenir Retour une demi-seconde envoie le bouton Guide au PC ; un appui court reste Retour</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Toujours contrôler la souris avec le pavé tactile</string>
     <string name="summary_checkbox_gamepad_touchpad_as_mouse">Force le pavé tactile de la manette à contrôler la souris du PC, même en émulant une manette avec pavé tactile.</string>
     <string name="title_checkbox_gamepad_motion_sensors">Gyroscope de manette externe</string>

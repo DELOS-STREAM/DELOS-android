@@ -296,6 +296,12 @@
             app:iconSpaceReserved="false" />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="checkbox_back_hold_guide"
+            android:summary="@string/summary_checkbox_back_hold_guide"
+            android:title="@string/title_checkbox_back_hold_guide"
+            app:iconSpaceReserved="false" />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="checkbox_gamepad_touchpad_as_mouse"
             android:summary="@string/summary_checkbox_gamepad_touchpad_as_mouse"
             android:title="@string/title_checkbox_gamepad_touchpad_as_mouse"

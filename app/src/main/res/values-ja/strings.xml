@@ -113,6 +113,8 @@
     <string name="summary_checkbox_remember_mouse_mode">ストリーム中に選んだマウスモードを記憶します。オフの場合、ストリーム中に変更したマウスモードは一時的なものになります。</string>
     <string name="title_checkbox_flip_face_buttons">フェイスボタンを入れ替え</string>
     <string name="summary_checkbox_flip_face_buttons">コントローラーと画面上のコントロールで、フェイスボタンのA/BとX/Yを入れ替えます</string>
+    <string name="title_checkbox_back_hold_guide">戻るを長押しでGuide</string>
+    <string name="summary_checkbox_back_hold_guide">戻るボタンを0.5秒押し続けるとPCにGuideボタンを送ります。短く押すと従来どおり戻るです</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">常にタッチパッドでマウスを操作</string>
     <string name="summary_checkbox_gamepad_touchpad_as_mouse">タッチパッド付きコントローラーをエミュレートしている場合でも、コントローラーのタッチパッド入力でホストのマウスを操作します。</string>
     <string name="title_checkbox_gamepad_motion_sensors">外部コントローラーのジャイロ</string>

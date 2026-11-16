@@ -104,6 +104,8 @@
     <string name="summary_checkbox_remember_mouse_mode">Пам’ятати режим миші, вибраний під час стріму. Якщо вимкнено, зміна режиму миші під час стріму буде тимчасовою.</string>
     <string name="title_checkbox_flip_face_buttons">Поміняти основні кнопки</string>
     <string name="summary_checkbox_flip_face_buttons">Міняє місцями основні кнопки A/B і X/Y для контролерів та екранних елементів керування</string>
+    <string name="title_checkbox_back_hold_guide">Утримати Назад для Guide</string>
+    <string name="summary_checkbox_back_hold_guide">Утримання Назад пів секунди надсилає на ПК кнопку Guide; коротке натискання лишається Назад</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Завжди керувати мишею тачпадом</string>
     <string name="summary_checkbox_gamepad_touchpad_as_mouse">Примусово спрямовує введення з тачпада контролера на мишу хоста, навіть коли емулюється контролер із тачпадом.</string>
     <string name="title_checkbox_gamepad_motion_sensors">Гіроскоп зовнішнього контролера</string>

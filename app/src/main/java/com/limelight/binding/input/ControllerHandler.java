@@ -2661,6 +2661,34 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             keyCode = handleFlipFaceButtons(keyCode);
         }
 
+        if (keyCode == KeyEvent.KEYCODE_BACK && prefConfig.backHoldForGuide) {
+            if (context.backGuideTimer != null) {
+                mainThreadHandler.removeCallbacks(context.backGuideTimer);
+                context.backGuideTimer = null;
+            }
+            switch (context.backGuide.onUp()) {
+            case GUIDE_UP:
+                context.inputMap &= ~ControllerPacket.SPECIAL_BUTTON_FLAG;
+                sendControllerInputPacket(context);
+                break;
+            case TAP_BACK:
+                context.hasSelect = true;
+                context.inputMap |= ControllerPacket.BACK_FLAG;
+                sendControllerInputPacket(context);
+                try {
+                    Thread.sleep(ControllerHandler.MINIMUM_BUTTON_DOWN_TIME_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                context.inputMap &= ~ControllerPacket.BACK_FLAG;
+                sendControllerInputPacket(context);
+                break;
+            default:
+                break;
+            }
+            return true;
+        }
+
         // If the button hasn't been down long enough, sleep for a bit before sending the up event
         // This allows "instant" button presses (like OUYA's virtual menu button) to work. This
         // path should not be triggered during normal usage.
@@ -2926,6 +2954,21 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             context.inputMap |= ControllerPacket.PLAY_FLAG;
             break;
         case KeyEvent.KEYCODE_BACK:
+            if (prefConfig.backHoldForGuide) {
+                // Delos: Back is decided on release (tap) or after the hold time (Guide), see BackGuideGesture
+                if (context.backGuide.onDown()) {
+                    final InputDeviceContext ctx = context;
+                    context.backGuideTimer = () -> {
+                        if (ctx.backGuide.onHoldTimeout() == BackGuideGesture.Action.GUIDE_DOWN) {
+                            ctx.inputMap |= ControllerPacket.SPECIAL_BUTTON_FLAG;
+                            sendControllerInputPacket(ctx);
+                        }
+                    };
+                    mainThreadHandler.postDelayed(context.backGuideTimer, BackGuideGesture.HOLD_MS);
+                }
+                return true;
+            }
+            // fall through
         case KeyEvent.KEYCODE_BUTTON_SELECT:
             context.hasSelect = true;
             context.inputMap |= ControllerPacket.BACK_FLAG;
@@ -3350,6 +3393,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         public int emulatingButtonFlags = 0;
         public boolean hasSelect;
+        // Delos: Hold Back for Guide (issue #90); the hold timer of the current press
+        public final BackGuideGesture backGuide = new BackGuideGesture();
+        public Runnable backGuideTimer;
         public boolean hasMode;
         public boolean hasPaddles;
         public boolean hasShare;
@@ -3421,6 +3467,12 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         @Override
         public void destroy() {
             super.destroy();
+            // Delos: a held Back must not leave a hold timer behind (issue #90)
+            if (backGuideTimer != null) {
+                mainThreadHandler.removeCallbacks(backGuideTimer);
+                backGuideTimer = null;
+            }
+            backGuide.reset();
             if (vibratorManager != null || vibrator != null) {
                 LimeLog.info("RumblePlayback teardown: controller context '" + name + "' is destroyed, its vibrator "
                         + (vibratorManager != null ? "manager#" + rumbleObject(vibratorManager) : "single#" + rumbleObject(vibrator))

@@ -110,6 +110,7 @@ fun settingIcon(key: String): String? = when (key) {
     "checkbox_mouse_emulation" -> Symbols.MOUSE
     "analog_scrolling" -> Symbols.ANALOG_SCROLL
     "checkbox_flip_face_buttons" -> Symbols.GAMEPAD_BUTTONS
+    "checkbox_back_hold_guide" -> Symbols.ARROW_BACK
     "checkbox_gamepad_touchpad_as_mouse" -> Symbols.TOUCHPAD
     "checkbox_gamepad_motion_sensors" -> Symbols.MOTION_SENSORS
     "checkbox_gamepad_motion_fallback" -> Symbols.MOTION_FALLBACK

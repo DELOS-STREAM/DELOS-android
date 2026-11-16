@@ -44,6 +44,7 @@
     <string name="help_checkbox_mouse_emulation">Halte im Stream Start gedrückt, um das Gamepad zwischen Spieleingabe und Mausemulation umzuschalten.</string>
     <string name="help_analog_scrolling">Stick, der im Gamepad-Mausmodus scrollt.</string>
     <string name="help_checkbox_flip_face_buttons">Vertauscht A/B und X/Y bei Gamepad-Eingabe und Bildschirmsteuerung (Nintendo-Layout). Nicht für die Navigation in Delos.</string>
+    <string name="help_checkbox_back_hold_guide">Zurück eine halbe Sekunde halten sendet Guide (die Xbox-Taste) an den PC, etwa für die Game Bar oder das Steam-Overlay. Kurz drücken bleibt Zurück, beim Loslassen.</string>
     <string name="help_checkbox_gamepad_touchpad_as_mouse">Nutzt das Touchpad eines Controllers immer als PC-Maus. Aus lässt unterstützte Hosts native Touchpad-Eingaben empfangen.</string>
     <string name="help_checkbox_gamepad_motion_sensors">Lässt den PC Gyroskop und Beschleunigungssensor eines externen Gamepads lesen. Erfordert Android 12 oder neuer. Ausschalten, wenn keine App Bewegung nutzt, um etwas Strom und Datenverkehr zu sparen.</string>
     <string name="help_checkbox_gamepad_motion_fallback">Nutzt Gyroskop und Beschleunigungssensor dieses Geräts, wenn das Gamepad keine hat oder Android sie nicht lesen kann. Der PC sieht dann evtl. einen PlayStation-Controller.</string>

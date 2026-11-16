@@ -38,6 +38,7 @@
     <string name="help_checkbox_mouse_emulation">串流时按住 Start，可在手柄游戏输入和鼠标模拟之间切换。</string>
     <string name="help_analog_scrolling">在手柄鼠标模式下用于滚动的摇杆。</string>
     <string name="help_checkbox_flip_face_buttons">对调手柄输入和屏幕按键中的 A/B 与 X/Y（Nintendo 布局）。不影响 Delos 的界面导航。</string>
+    <string name="help_checkbox_back_hold_guide">按住返回键半秒会向电脑发送 Guide（Xbox 键），例如打开 Game Bar 或 Steam 叠加层。短按仍为返回，松开时发送。</string>
     <string name="help_checkbox_gamepad_touchpad_as_mouse">始终将手柄的触控板用作 PC 鼠标。关闭后，支持的电脑端可接收原生触控板输入。</string>
     <string name="help_checkbox_gamepad_motion_sensors">让 PC 读取外接手柄的陀螺仪和加速度计。需要 Android 12 或更高版本。如果没有应用使用体感，可关闭以略微节省电量和流量。</string>
     <string name="help_checkbox_gamepad_motion_fallback">手柄没有体感传感器或 Android 无法读取时，使用本设备自带的陀螺仪和加速度计。此时 PC 可能会识别为 PlayStation 手柄。</string>

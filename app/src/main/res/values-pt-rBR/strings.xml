@@ -104,6 +104,8 @@
     <string name="summary_checkbox_remember_mouse_mode">Lembra o modo de mouse escolhido durante o stream. Se desativado, o modo de mouse alterado durante o stream será temporário.</string>
     <string name="title_checkbox_flip_face_buttons">Inverter botões de ação</string>
     <string name="summary_checkbox_flip_face_buttons">Troca os botões de ação A/B e X/Y nos controles e nos controles na tela</string>
+    <string name="title_checkbox_back_hold_guide">Segurar Voltar para Guide</string>
+    <string name="summary_checkbox_back_hold_guide">Segurar Voltar por meio segundo envia o botão Guide ao PC; um toque curto continua sendo Voltar</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Sempre controlar o mouse com o touchpad</string>
     <string name="summary_checkbox_gamepad_touchpad_as_mouse">Força o touchpad do controle a controlar o mouse do PC, mesmo ao emular um controle com touchpad.</string>
     <string name="title_checkbox_gamepad_motion_sensors">Giroscópio do controle externo</string>

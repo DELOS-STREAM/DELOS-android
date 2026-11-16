@@ -36,6 +36,7 @@
     <string name="help_checkbox_mouse_emulation">ストリーム中にStartを長押しすると、コントローラーをゲーム入力とマウスエミュレートで切り替えます。</string>
     <string name="help_analog_scrolling">コントローラーのマウスモードで、スクロールに使うスティックです。</string>
     <string name="help_checkbox_flip_face_buttons">コントローラー入力と画面上のコントロールで、A/BとX/Yを入れ替えます（Nintendo配置）。Delosのナビゲーションには影響しません。</string>
+    <string name="help_checkbox_back_hold_guide">戻るを0.5秒押し続けるとPCにGuide（Xboxボタン）を送ります。Game BarやSteamオーバーレイに便利です。短く押すと、離したときに戻るを送ります。</string>
     <string name="help_checkbox_gamepad_touchpad_as_mouse">コントローラーのタッチパッドを、常にPCのマウスとして使います。オフにすると、対応するホストはネイティブのタッチパッド入力を受け取れます。</string>
     <string name="help_checkbox_gamepad_motion_sensors">外部コントローラーのジャイロスコープと加速度センサーを、PCが読み取れるようにします。Android 12以降が必要です。モーション操作を使うアプリがない場合は、オフにすると消費電力と通信量を少し節約できます。</string>
     <string name="help_checkbox_gamepad_motion_fallback">コントローラーにセンサーがない場合や、Androidが読み取れない場合に、この端末自身のジャイロスコープと加速度センサーを使います。PCからはPlayStationコントローラーとして認識される場合があります。</string>

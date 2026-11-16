@@ -36,6 +36,7 @@
     <string name="help_checkbox_mouse_emulation">Mantén pulsado Start durante un stream para cambiar el mando entre entrada de juego y emulación de ratón.</string>
     <string name="help_analog_scrolling">Stick que desplaza en el modo de ratón con el mando.</string>
     <string name="help_checkbox_flip_face_buttons">Intercambia A/B y X/Y en la entrada del mando y en los controles en pantalla (distribución de Nintendo). No afecta a la navegación de Delos.</string>
+    <string name="help_checkbox_back_hold_guide">Mantén Atrás medio segundo para enviar Guide (el botón Xbox) al PC, por ejemplo para la Game Bar o la superposición de Steam. Una pulsación corta sigue siendo Atrás, al soltar.</string>
     <string name="help_checkbox_gamepad_touchpad_as_mouse">Usa siempre el panel táctil de un mando como ratón del PC. Desactivado permite a los hosts compatibles recibir la entrada nativa del panel táctil.</string>
     <string name="help_checkbox_gamepad_motion_sensors">Permite que el PC lea el giroscopio y el acelerómetro de un mando externo. Requiere Android 12 o posterior. Desactívalo si ninguna app usa el movimiento, para ahorrar algo de batería y tráfico.</string>
     <string name="help_checkbox_gamepad_motion_fallback">Usa el giroscopio y el acelerómetro del propio dispositivo cuando el mando no los tiene o Android no puede leerlos. El PC puede entonces ver un mando de PlayStation.</string>

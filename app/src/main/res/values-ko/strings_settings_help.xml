@@ -36,6 +36,7 @@
     <string name="help_checkbox_mouse_emulation">스트림 중 Start를 길게 눌러 게임패드를 게임 입력과 마우스 에뮬레이션 사이에서 전환해요.</string>
     <string name="help_analog_scrolling">게임패드 마우스 모드에서 스크롤에 사용하는 스틱이에요.</string>
     <string name="help_checkbox_flip_face_buttons">게임패드 입력과 화면 컨트롤에서 A/B와 X/Y를 서로 바꿔요 (닌텐도 배열). Delos 탐색에는 적용되지 않아요.</string>
+    <string name="help_checkbox_back_hold_guide">뒤로를 0.5초 누르고 있으면 PC에 Guide(Xbox 버튼)를 보내요. Game Bar나 Steam 오버레이에 쓸 수 있어요. 짧게 누르면 뗄 때 뒤로를 보내요.</string>
     <string name="help_checkbox_gamepad_touchpad_as_mouse">컨트롤러 터치패드를 항상 PC 마우스로 사용해요. 끄면 지원하는 호스트가 터치패드 입력을 그대로 받을 수 있어요.</string>
     <string name="help_checkbox_gamepad_motion_sensors">PC가 외장 게임패드의 자이로스코프와 가속도계를 읽을 수 있게 해요. Android 12 이상이 필요해요. 모션을 쓰는 앱이 없다면 꺼서 전력과 트래픽을 조금 아끼세요.</string>
     <string name="help_checkbox_gamepad_motion_fallback">게임패드에 센서가 없거나 Android가 읽지 못할 때 이 기기 자체의 자이로스코프와 가속도계를 사용해요. 이때 PC에는 PlayStation 컨트롤러로 보일 수 있어요.</string>

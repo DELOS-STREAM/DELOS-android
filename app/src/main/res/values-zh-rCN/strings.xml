@@ -106,6 +106,8 @@
     <string name="summary_checkbox_remember_mouse_mode">记住串流期间选择的鼠标模式。关闭后，串流期间更改的鼠标模式仅为临时生效。</string>
     <string name="title_checkbox_flip_face_buttons">交换面键</string>
     <string name="summary_checkbox_flip_face_buttons">为手柄和屏幕按键交换面键 A/B 和 X/Y</string>
+    <string name="title_checkbox_back_hold_guide">长按返回键作为 Guide</string>
+    <string name="summary_checkbox_back_hold_guide">按住返回键半秒会向电脑发送 Guide 键；短按仍为返回</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">始终用触控板控制鼠标</string>
     <string name="summary_checkbox_gamepad_touchpad_as_mouse">强制手柄触控板输入控制 PC 鼠标，即使在模拟带触控板的手柄时也是如此。</string>
     <string name="title_checkbox_gamepad_motion_sensors">外接手柄陀螺仪</string>
