@@ -12,6 +12,8 @@ KEYTOOL=${KEYTOOL:-${JAVA_HOME:+$JAVA_HOME/bin/keytool}}
 [ -x "$KEYTOOL" ] || { echo "test-sign-apk: keytool not found"; exit 2; }
 
 export ANDROID_HOME=${ANDROID_HOME:-$HOME/Library/Android/sdk}   # kept when HOME is replaced below
+# apksigner in the checks below needs Java even when the terminal has no JAVA_HOME (the script under test finds it itself)
+[ -x "${JAVA_HOME:-}/bin/java" ] || export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 export HOME="$T/home"; mkdir -p "$HOME"
 PASS='Correct-Horse-Battery-9'
