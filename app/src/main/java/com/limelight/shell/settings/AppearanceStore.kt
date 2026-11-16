@@ -1,8 +1,6 @@
 package com.limelight.shell.settings
 
-import android.content.Context
 import android.content.SharedPreferences
-import android.content.res.Configuration
 import android.content.res.Resources
 import androidx.annotation.StringRes
 import com.limelight.R
@@ -63,23 +61,26 @@ enum class ClockFormat(@StringRes val labelRes: Int) {
     fun label(res: Resources): String = res.getString(labelRes)
 }
 
-/** Settings → Appearance of the native UI (docs/GUI.md). Defaults follow the prototype. */
+/**
+ * Settings → Appearance of the native UI (docs/GUI.md). The defaults are the first-run look the owner chose on 2026-11-16: Delos palette,
+ * dark theme, Contour background, game colors and game backgrounds on (blur 5, opacity 80 %), interface scale 100 %.
+ */
 data class Appearance(
-    val dark: Boolean,
+    val dark: Boolean = true,
     /** The system's wallpaper colors; off, [palette] applies. */
     val materialYou: Boolean = false,
     val palette: Palette = Palette.DELOS,
     val clock: ClockFormat = ClockFormat.SYSTEM,
     /** The animated background takes on the main color of the focused game's background image (palettes only). */
     val matchGameColors: Boolean = true,
-    val background: BackgroundKind = BackgroundKind.AURORA,
+    val background: BackgroundKind = BackgroundKind.CONTOUR,
     val heroBackground: Boolean = true,
     /** Game background blur in stage pixels (0–40). */
-    val heroBlur: Int = 15,
+    val heroBlur: Int = 5,
     /** Game background opacity in percent. */
-    val heroOpacity: Int = 70,
+    val heroOpacity: Int = 80,
     /** Interface scale in percent (100–130). */
-    val uiScale: Int = 115,
+    val uiScale: Int = 100,
     val reducedMotion: Boolean = false,
     val sounds: Boolean = true,
     val haptics: Boolean = true,
@@ -89,9 +90,8 @@ data class Appearance(
  * Stores [Appearance] under `ui_*` keys in the current profile's [settings] (ProfileStore.settings), so
  * every profile has its own and the classic UI and the stream are not affected.
  */
-class AppearanceStore(context: Context, private val settings: () -> SharedPreferences) {
+class AppearanceStore(private val settings: () -> SharedPreferences) {
     private val prefs: SharedPreferences get() = settings()
-    private val systemDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
     private val state = MutableStateFlow(read())
 
     val appearance: StateFlow<Appearance> = state.asStateFlow()
@@ -110,7 +110,7 @@ class AppearanceStore(context: Context, private val settings: () -> SharedPrefer
     }
 
     private fun read(): Appearance {
-        val defaults = Appearance(dark = systemDark)
+        val defaults = Appearance()
         return Appearance(
             dark = prefs.getBoolean(KEY_DARK, defaults.dark),
             materialYou = prefs.getBoolean(KEY_MATERIAL_YOU, defaults.materialYou),

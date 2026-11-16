@@ -165,7 +165,7 @@ internal class PreviewWorld(base: Context, activity: Activity, route: ShellRoute
     val context = PreviewContext(base, root)
     val profiles = ProfileStore(context, later = { _, _ -> })
     val keys = GlobalKeys()
-    val appearanceStore = AppearanceStore(context, profiles::settings)
+    val appearanceStore = AppearanceStore(profiles::settings)
     val startupStore = StartupStore(profiles::settings)
     val repo = PcRepository(context, profiles::settings)
     val boxArt = BoxArtCache(context) { null }

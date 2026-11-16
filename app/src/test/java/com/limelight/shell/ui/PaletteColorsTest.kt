@@ -107,7 +107,7 @@ class PaletteColorsTest {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         for ((stored, expected) in listOf("LAGOON" to Palette.DELOS, "MINT" to Palette.MINT)) {
             prefs.edit().clear().putString("ui_palette", stored).commit()
-            assertEquals(stored, expected, AppearanceStore(context) { prefs }.appearance.value.palette)
+            assertEquals(stored, expected, AppearanceStore { prefs }.appearance.value.palette)
         }
     }
 

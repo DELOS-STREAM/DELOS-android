@@ -34,7 +34,7 @@ object ShortcutSplash {
         val pc = pcName?.takeIf { it.isNotEmpty() } ?: activity.getString(com.limelight.R.string.stream_result_default_pc)
         val title = appName?.takeIf { it.isNotEmpty() } ?: pc
         // The colors and scale of the profile that the stream will use
-        val appearance = AppearanceStore(activity) { ProfileStore.currentSettings(activity) }.appearance.value
+        val appearance = AppearanceStore { ProfileStore.currentSettings(activity) }.appearance.value
         val colors = delosColors(appearance, systemAccentHue(activity))
         val hue = ((title.hashCode() and 0x7fffffff) % 360).toFloat()
         val cover = if (pcUuid != null && appId >= 0) StreamLoader.loadCover(activity, pcUuid, appId) else null

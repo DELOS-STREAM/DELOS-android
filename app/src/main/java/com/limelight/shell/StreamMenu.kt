@@ -167,7 +167,7 @@ class StreamMenu(private val game: DelosStreamActivity) {
 
     fun show() {
         if (isOpen || game.isFinishing) return
-        val appearance = AppearanceStore(game) { ProfileStore.currentSettings(game) }.appearance.value
+        val appearance = AppearanceStore { ProfileStore.currentSettings(game) }.appearance.value
         val feedback = Feedback(game).also { it.hapticsEnabled = appearance.haptics }
         val d = ComponentDialog(game, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
         d.window?.apply {

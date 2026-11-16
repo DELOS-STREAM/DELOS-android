@@ -164,7 +164,7 @@ The owner's rules for a compact stage:
 | Element | Value |
 |---|---|
 | `StageMetrics.compactScale` | Stage height / 1080, 0.62 at the least; scales avatars, circles and the gaps of centered screens |
-| Interface scale | 1.15 by default; zooms both bars |
+| Interface scale | 1.0 by default (100 %); zooms both bars |
 | Status bar height counted by a compact layout | 104 × scale |
 | Hint bar height counted by a compact layout | 92 × scale |
 
