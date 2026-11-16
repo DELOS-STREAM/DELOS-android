@@ -10,6 +10,12 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Added
+- In-app updates: Delos checks the latest GitHub release once a day (Settings → About → Check for updates, on by default; Check now asks at once), shows a card on the start and home screens with the release notes, and on Update downloads the APK, checks its SHA-256 against the release's `SHA256SUMS.txt` and hands it to Android's installer. Nothing is installed without your yes and Android's prompt; Later hides the offer for 3 days. Not verified on a device.
+
+### Security
+- The updater contacts only `api.github.com` (and the GitHub download host after you press Update), over HTTPS with redirects checked and a 250 MB limit; the downloaded file is deleted unless its SHA-256 matches the published checksum. See [docs/UPDATES.md](docs/UPDATES.md).
+
 ## [0.15.0] - 2026-11-15
 _Streaming time, stream encryption readout, security hardening, updated delos-common-c._
 

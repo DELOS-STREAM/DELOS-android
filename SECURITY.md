@@ -93,6 +93,8 @@ Outbound connections:
 | `stun.moonlight-stream.org` (Moonlight project) | A PC on the local network is added or found, to learn the public address for streaming from elsewhere | A STUN request; the server sees the public IP address |
 | `android.conntest.moonlight-stream.org` (Moonlight project) | A stream fails to connect or is cut off, to tell the user which ports are blocked | A connection test; the server sees the public IP address |
 | GitHub, in the browser | The user opens a link or reports a problem | What the user submits |
+| `api.github.com` | Once a day when Delos starts, and on Settings → About → Check now, unless "Check for updates" is off | A request for the latest release of Meitoncz/Delos with `User-Agent: Delos/<version>`; GitHub sees the public IP address |
+| `github.com` and the download host it redirects to | Only when a newer release exists (the checksum list) and after the user presses Update (the APK) | A plain download request |
 
 Delos has no account, no analytics and no advertising code.
 
@@ -130,6 +132,20 @@ storage. After restoring a backup to a new device, each PC must be paired again.
   are replaced. Known gaps: app (game) titles are not removed, and names shorter than three characters are not
   recognized. Read a report before submitting it.
 - How it works: [docs/DIAGNOSTICS.md](docs/DIAGNOSTICS.md).
+
+### Updates
+
+- Delos checks the latest GitHub release at most once a day and offers a newer version in the app. "Check for updates" in
+  Settings → About is on by default; off means no request at all. Only `api.github.com` is asked; GitHub sees the IP
+  address, nothing else is sent.
+- Nothing is installed without the user pressing Update and without Android's own installer prompt. The download is HTTPS
+  only (also after redirects) and limited to 250 MB; its SHA-256 must match the `SHA256SUMS.txt` of the same release, else
+  the file is deleted and not installed. Android installs an update only when it is signed with the same key as the
+  installed Delos.
+- The checksum list and the APK come from the same GitHub release, so the checksum detects a damaged or substituted
+  download, not a release that was published with a wrong file by someone who holds the release account; the signature
+  check of Android covers that case only for the key. Not verified on a device.
+- How it works: [docs/UPDATES.md](docs/UPDATES.md).
 
 ### Known limits
 

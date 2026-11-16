@@ -49,6 +49,7 @@ Each describes how a part of Delos behaves now and must match the code. Dated re
 | [EXTERNAL_DISPLAY.md](EXTERNAL_DISPLAY.md) | Streaming to an external display |
 | [LAUNCH_TRANSITION.md](LAUNCH_TRANSITION.md) | The arrival of the stream picture after a launch |
 | [DIAGNOSTICS.md](DIAGNOSTICS.md) | The diagnostic log, the scrubber, crash capture, problem reports, the issue forms |
+| [UPDATES.md](UPDATES.md) | In-app updates: the check, the release asset contract, download, checksum, install |
 | [LOCALIZATION.md](LOCALIZATION.md) | Languages, string files, writing rules, glossaries |
 | [ICONS.md](ICONS.md) | The icon fonts and how they are generated |
 | [ICON_AUDIT.md](ICON_AUDIT.md) | The inventory of every icon |

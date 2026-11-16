@@ -63,7 +63,7 @@ Delos streams games from your PC to an Android handheld. It is built for the han
 
 ## 📥 Get Delos
 
-There are no releases yet. Watch the [releases page](https://github.com/Meitoncz/Delos/releases) or add the repository to [Obtainium](obtainium://add/https://github.com/Meitoncz/Delos) to get updates when they arrive.
+There are no releases yet. Watch the [releases page](https://github.com/Meitoncz/Delos/releases) or add the repository to [Obtainium](obtainium://add/https://github.com/Meitoncz/Delos) to get updates when they arrive. Delos can also check for a new release itself once a day (it contacts only api.github.com, can be switched off in Settings → About) and, when you agree, download, verify and install it; [docs/UPDATES.md](docs/UPDATES.md). Not tested on a device yet.
 
 ## 🤝 Community and contributing
 
