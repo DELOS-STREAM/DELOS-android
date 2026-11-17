@@ -10,6 +10,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-17
+_Touch everywhere, the last input decides the hints, new controller glyphs, Guide and Back for the stream menu, anchored on-screen controls; the project moves to the DELOS-STREAM organization._
+
 ### Added
 - Button hints use the approved complete Xbox, DualSense, DualShock 4 and Joy-Con font glyphs, including menu buttons, shoulders, triggers, sticks, D-pad and Guide. Nintendo physical confirm/back stays south/east (B/A); unknown pads keep their existing labels. The shared Regular/Fill fonts also include the approved Mac keyboard, mouse and trackpad library for future input hints. No extra disc is drawn around a complete cap. Physical controller verification is pending ([#100](https://github.com/Meitoncz/DELOS/issues/100)).
 - Touch (issue [#92](https://github.com/Meitoncz/DELOS/issues/92)): every choice row now has an option list, in the look and place of the iPad's picker: a card at the row with the current value checked and focused, a long list scrolls, a tap beside it closes it. It replaces the context menu of the first version. This covers all Settings tabs, the per-app settings, the side menu's Theme and Background, Debug info and the stream menu's Mode, Supersampling quality and Touchscreen mode; rows that were only toggles in disguise (Theme, Animations, Companion dimming, Default PC, Statistics position, the display rows) have one too.
@@ -349,7 +352,8 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 ### Removed
 - SBS 3D, performance logging and other dead code.
 
-[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.15.0...v1.0.0
 [0.15.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.14.0...v0.15.0
