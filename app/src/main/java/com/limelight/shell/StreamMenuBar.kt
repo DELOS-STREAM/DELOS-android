@@ -74,8 +74,11 @@ import com.limelight.shell.StreamMenuMotion as M
 import com.limelight.shell.ui.EaseOut
 import com.limelight.shell.ui.EaseSpring
 import com.limelight.shell.ui.Figtree
+import com.limelight.shell.ui.ControllerGlyphs
 import com.limelight.shell.ui.Glyph
 import com.limelight.shell.ui.GlyphButton
+import com.limelight.shell.ui.Hint
+import com.limelight.shell.ui.adaptedTo
 import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.LocalReducedMotion
 import com.limelight.shell.ui.Motion
@@ -273,13 +276,15 @@ private fun DockHead(title: String, enter: () -> Float, exit: () -> Float, modif
             ),
             modifier = Modifier.widthIn(max = maxTitleWidth.px),
         )
+        // Written for a controller, shown for the input in use (a finger: only Select with the tap symbol)
+        val select = stringResource(R.string.stream_menu_hint_select)
+        val back = stringResource(R.string.stream_menu_hint_back)
+        val hints = listOf(Hint(Glyph.A, select), Hint(Glyph.B, back)).adaptedTo(ControllerGlyphs.kind)
         // A low compact stage has no room for the two hints one above the other: side by side there
         if (LocalDockGeometry.current.hintsInRow) Row(horizontalArrangement = Arrangement.spacedBy(L.HINTS_ROW_GAP.px)) {
-            DockHint(Glyph.A, stringResource(R.string.stream_menu_hint_select), shadow)
-            DockHint(Glyph.B, stringResource(R.string.stream_menu_hint_back), shadow)
+            hints.forEach { DockHint(it.glyph, it.label, shadow) }
         } else Column(verticalArrangement = Arrangement.spacedBy(L.HINTS_GAP.px)) {
-            DockHint(Glyph.A, stringResource(R.string.stream_menu_hint_select), shadow)
-            DockHint(Glyph.B, stringResource(R.string.stream_menu_hint_back), shadow)
+            hints.forEach { DockHint(it.glyph, it.label, shadow) }
         }
     }
 }

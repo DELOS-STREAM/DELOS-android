@@ -136,17 +136,17 @@ fun UpdateOfferCard(
                 if (primary != UpdateCardPrimary.NONE || s is UpdateState.Failed) {
                     Row(Modifier.padding(top = 6.px), horizontalArrangement = Arrangement.spacedBy((if (compact) Compact.BUTTON_GAP else 18f).px)) {
                         when (primary) {
-                            UpdateCardPrimary.UPDATE -> PillButton(res.getString(R.string.update_card_update), Symbols.DOWNLOAD, onUpdate, Modifier.focusRequester(first), primary = true, compact = true, trailing = { GlyphButton(Glyph.A, 34) })
-                            UpdateCardPrimary.ALLOW -> PillButton(res.getString(R.string.update_card_allow), Symbols.SETTINGS, onAllow, Modifier.focusRequester(first), primary = true, compact = true, trailing = { GlyphButton(Glyph.A, 34) })
-                            UpdateCardPrimary.RETRY -> PillButton(res.getString(R.string.update_card_retry), Symbols.REFRESH, onUpdate, Modifier.focusRequester(first), primary = true, compact = true, trailing = { GlyphButton(Glyph.A, 34) })
-                            UpdateCardPrimary.CANCEL -> PillButton(res.getString(R.string.update_card_cancel), Symbols.CLOSE, onCancel, Modifier.focusRequester(first), compact = true, clickCue = Cue.BACK, trailing = { GlyphButton(Glyph.B, 34) })
+                            UpdateCardPrimary.UPDATE -> PillButton(res.getString(R.string.update_card_update), Symbols.DOWNLOAD, onUpdate, Modifier.focusRequester(first), primary = true, compact = true, glyph = Glyph.A, glyphSize = 34)
+                            UpdateCardPrimary.ALLOW -> PillButton(res.getString(R.string.update_card_allow), Symbols.SETTINGS, onAllow, Modifier.focusRequester(first), primary = true, compact = true, glyph = Glyph.A, glyphSize = 34)
+                            UpdateCardPrimary.RETRY -> PillButton(res.getString(R.string.update_card_retry), Symbols.REFRESH, onUpdate, Modifier.focusRequester(first), primary = true, compact = true, glyph = Glyph.A, glyphSize = 34)
+                            UpdateCardPrimary.CANCEL -> PillButton(res.getString(R.string.update_card_cancel), Symbols.CLOSE, onCancel, Modifier.focusRequester(first), compact = true, clickCue = Cue.BACK, glyph = Glyph.B, glyphSize = 34)
                             UpdateCardPrimary.NONE -> Unit
                         }
                         if (primary != UpdateCardPrimary.CANCEL) {
                             PillButton(
                                 res.getString(R.string.update_card_later), Symbols.CLOSE, onLater,
                                 if (primary == UpdateCardPrimary.NONE) Modifier.focusRequester(first) else Modifier,
-                                compact = true, clickCue = Cue.BACK, trailing = { GlyphButton(Glyph.B, 34) },
+                                compact = true, clickCue = Cue.BACK, glyph = Glyph.B, glyphSize = 34,
                             )
                         }
                     }

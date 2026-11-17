@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -418,14 +419,24 @@ private fun NavButtonView(button: NavButton, requester: FocusRequester, wrapLeft
     }
 }
 
+/** A key of a hardware keyboard, drawn as a key cap with its [legend] (the legends are printed on the keys, so they are not translated). */
+enum class KeyCap(val legend: String) {
+    RETURN("Enter"), // l10n-ignore
+    ESCAPE("Esc"), // l10n-ignore
+    ARROWS("\u2190 \u2192"),
+}
+
 /**
- * What a hint's button names: a place on the connected controller ([Pad], drawn with its glyph family by [ControllerGlyphs]) or the adjust
- * cue, which is no button. The names A, B, X, Y, L1, R1 are positions (A is the south button, B the east one...), as on an Xbox pad; a
- * PlayStation pad draws the cross for [A] and a Nintendo pad its own letters.
+ * What a hint's button names: a place on the connected controller ([Pad], drawn with its glyph family by [ControllerGlyphs]), the adjust
+ * cue, which is no button, or what the other kinds of input do instead ([InputKind]): a tap of the finger ([TAP]), a click of the pointer
+ * ([CLICK]), a key of the keyboard ([Key]). The names A, B, X, Y, L1, R1 are positions (A is the south button, B the east one...), as on
+ * an Xbox pad; a PlayStation pad draws the cross for [A] and a Nintendo pad its own letters.
  */
 @Immutable
 sealed interface Glyph {
     data class Pad(val role: GlyphRole) : Glyph
+
+    data class Key(val cap: KeyCap) : Glyph
 
     /**
      * [scale] multiplies the 24 px base font size to even out icons that look too big or too small next to
@@ -466,19 +477,27 @@ sealed interface Glyph {
 
         /** Material swap_horiz 0.827 x 0.661 em vs Phosphor arrows-left-right 0.6875 x 0.6875 em -> area-equivalent 1.075 (17.7 px). */
         val ADJUST = Icon(Symbols.SWAP_HORIZ, scale = 1.075f)
+
+        /** The primary action for a finger: the hand tapping. */
+        val TAP = Icon(Symbols.TOUCH_APP)
+
+        /** The primary action for a mouse or a trackpad. */
+        val CLICK = Icon(Symbols.MOUSE)
     }
 }
 
-/** The mark drawn on a hint's disc: [Glyph.Pad] by the connected controller's family, the adjust cue as it is. */
+/** The mark drawn on a hint's disc: [Glyph.Pad] by the connected controller's family, the adjust cue as it is, a key as its cap. */
 @Immutable
 sealed interface GlyphFace {
     data class Text(val text: String) : GlyphFace
     data class Shape(val mark: GlyphMark) : GlyphFace
     data class Symbol(val icon: Glyph.Icon) : GlyphFace
+    data class Key(val legend: String) : GlyphFace
 }
 
 fun Glyph.face(family: PadFamily): GlyphFace = when (this) {
     is Glyph.Icon -> GlyphFace.Symbol(this)
+    is Glyph.Key -> GlyphFace.Key(cap.legend)
     is Glyph.Pad -> when (val mark = family.mark(role)) {
         is GlyphMark.Letter -> GlyphFace.Text(mark.label)
         GlyphMark.View -> GlyphFace.Symbol(Glyph.VIEW_ICON)
@@ -606,17 +625,18 @@ fun GlyphButton(glyph: Glyph, size: Int = 38) {
     val colors = LocalDelosColors.current
     val k = size / 38f
     val face = glyph.face(ControllerGlyphs.family)
-    val round = face !is GlyphFace.Text
+    val round = face is GlyphFace.Symbol || face is GlyphFace.Shape
     Box(
-        // Icons and shapes always sit in a circle; letters (L1...) may widen it into a pill
+        // Icons and shapes always sit in a circle; letters (L1...) may widen it into a pill, a key's legend into a rounded cap
         (if (round) Modifier.size(size.px) else Modifier.defaultMinSize(minWidth = size.px).height(size.px))
-            .clip(CircleShape)
+            .clip(if (face is GlyphFace.Key) RoundedCornerShape(percent = 28) else CircleShape)
             .background(colors.text)
             .then(if (round) Modifier else Modifier.padding(horizontal = 8.px)),
         contentAlignment = Alignment.Center,
     ) {
         when (face) {
             is GlyphFace.Text -> BasicText(face.text, style = TextStyle(color = colors.bg, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = (21f * k).tpx))
+            is GlyphFace.Key -> BasicText(face.legend, style = TextStyle(color = colors.bg, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = (21f * .8f * k).tpx), maxLines = 1)
             is GlyphFace.Symbol -> Symbol(face.icon.symbol, (24f * face.icon.scale * k).tpx, colors.bg, filled = true)
             is GlyphFace.Shape -> PadShape(face.mark, colors.bg, Modifier.size(size.px))
         }

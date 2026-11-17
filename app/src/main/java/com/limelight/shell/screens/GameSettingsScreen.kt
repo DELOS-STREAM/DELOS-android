@@ -34,10 +34,8 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
+import com.limelight.shell.ui.ControllerGlyphs
+import com.limelight.shell.ui.InputKind
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
@@ -188,8 +186,9 @@ fun GameSettingsScreen(screen: Screen.GameSettings, profiles: ProfileStore, appe
         shell.onGameReset = handler
         onDispose { if (shell.onGameReset === handler) shell.onGameReset = null }
     }
-    // The input the last event came from: touch shows a round reset button on every custom row, the controller a pill on the focused one
-    var touch by remember { mutableStateOf(false) }
+    // The input in use (the last one): a finger or a mouse shows a round reset button on every custom row, a controller or a keyboard a pill
+    // on the focused one
+    val touch = ControllerGlyphs.kind.let { it == InputKind.TOUCH || it == InputKind.POINTER }
     // The hero as the dashboard picks it (hero, else cover, else the PC's artwork), then the placeholder art
     val artwork = LocalArtwork.current
     val heroImage by rememberArtwork(artwork, screen.pc, screen.app, ArtKind.HERO)
@@ -251,16 +250,7 @@ fun GameSettingsScreen(screen: Screen.GameSettings, profiles: ProfileStore, appe
         TabPill(Symbols.MONITOR, SettingsTab.DISPLAY.label(res), tab == 1, Modifier.padding(horizontal = 5.px), displayCustom, collapse = compact) { changeTab(1) }
         ShoulderLabel("R1")
     }
-    Box(Modifier.fillMaxSize()
-        .pointerInput(Unit) {
-            awaitPointerEventScope {
-                while (true) {
-                    val event = awaitPointerEvent(PointerEventPass.Initial)
-                    if (event.type == PointerEventType.Press) touch = true
-                }
-            }
-        }
-        .onPreviewKeyEvent { if (touch) touch = false; false }) {
+    Box(Modifier.fillMaxSize()) {
         FocusTransferTarget(transfer)
         GameBanner(art, heroImage ?: coverImage ?: boxImage, appearance.heroBlur)
         if (compact) {

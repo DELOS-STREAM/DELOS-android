@@ -465,6 +465,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
                 public boolean onCapturedPointer(View view, MotionEvent motionEvent) {
 //                    LimeLog.info("onCapturedPointer="+motionEvent.toString());
 //                    LimeLog.info("onCapturedPointer-Device="+motionEvent.getDevice().toString());
+                    ControllerGlyphs.INSTANCE.motion(motionEvent);
                     return handleMotionEvent(view, motionEvent);
                 }
             });
@@ -2094,7 +2095,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     // The shortcut (L3+R3 or the buttons chosen in Delos) and the swipe up are checked before the stream.
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        ControllerGlyphs.INSTANCE.used(event.getDevice());
+        ControllerGlyphs.INSTANCE.key(event);
         if (cancelLoaderOnKey(event)) {
             return true;
         }
@@ -2121,6 +2122,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
+        ControllerGlyphs.INSTANCE.touch(event);
         if (inputBlocked) {
             return true;
         }
@@ -2134,6 +2136,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        ControllerGlyphs.INSTANCE.motion(event);
         return inputBlocked || super.dispatchGenericMotionEvent(event);
     }
 

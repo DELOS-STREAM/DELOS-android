@@ -102,6 +102,8 @@ import com.limelight.shell.ui.Feedback
 import com.limelight.shell.ui.Glyph
 import com.limelight.shell.ui.Hint
 import com.limelight.shell.ui.HintBar
+import com.limelight.shell.ui.ControllerGlyphs
+import com.limelight.shell.ui.adaptedTo
 import com.limelight.shell.ui.HeroBitmaps
 import com.limelight.shell.ui.HeroMotion
 import com.limelight.shell.ui.HANDOFF_PROGRESS
@@ -933,7 +935,8 @@ fun Shell(
             }
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                 val filterHint = (library as? Library.Ready)?.takeIf { it.apps.isNotEmpty() }?.let { filterHintLabel(res, metadata.filters) }
-                val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint)
+                // Written for a controller, shown for the input in use (a finger, a mouse, a keyboard: ui/HintKinds.kt)
+                val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint).adaptedTo(ControllerGlyphs.kind)
                 com.limelight.shell.companion.PublishCompanionContext(hintEntries, library, pcs)
                 ZoomedBar(uiScale) { HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null) }
             }

@@ -49,8 +49,8 @@ slots, and keeps anything changed since):
 - **X** on a focused custom row resets it to the profile value ("Back to the profile value"); a pill
   "Reset to profile value" with the X glyph fades in on that row and the hint bar shows X. The right
   menu button still opens the row's context menu with the same **Reset to profile value** (custom rows
-  only). With touch, a round reset button is shown on every custom row (the input of the last event
-  decides: pointer press = touch, any key = controller).
+  only). With a finger or a mouse as the input, a round reset button is shown on every custom row (the
+  input kind decides, the last input: [CONTROLS_AND_TEXT.md](gui/CONTROLS_AND_TEXT.md#input-kind)).
 - **Reset all** is the pill on the banner. It clears all of this app's overrides ("All settings follow
   the profile again"), is dimmed and skipped by the D-pad while the app has no custom settings, and
   after it acts the focus returns to the row last focused.

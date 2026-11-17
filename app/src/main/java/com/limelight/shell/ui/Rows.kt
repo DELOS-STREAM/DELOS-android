@@ -374,7 +374,8 @@ private fun RowResetButton(override: RowOverride, focused: Boolean) {
                     .semantics { role = Role.Button; onClick(label) { reset(); true } }
                 else Modifier
             )
-            .then(if (override.touch) Modifier.size(52.px) else Modifier.height(46.px).padding(start = 16.px, end = 8.px)),
+            // A keyboard has no X key: the pill is then the icon and the word, its ends even
+            .then(if (override.touch) Modifier.size(52.px) else Modifier.height(46.px).padding(start = 16.px, end = (if (ControllerGlyphs.kind == InputKind.CONTROLLER) 8 else 16).px)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (override.touch) Arrangement.Center else Arrangement.spacedBy(10.px),
     ) {
@@ -382,7 +383,7 @@ private fun RowResetButton(override: RowOverride, focused: Boolean) {
         else {
             Symbol(Symbols.RESET, 24.tpx, tint)
             BasicText(stringResource(R.string.row_reset), style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 19.tpx))
-            GlyphButton(Glyph.X, 30)
+            if (ControllerGlyphs.kind == InputKind.CONTROLLER) GlyphButton(Glyph.X, 30)
         }
     }
 }

@@ -338,16 +338,18 @@ private fun ToastCard(
                     )
                 }
                 if (action != null) {
+                    // The Y button only for a controller; a finger or a mouse presses the chip
+                    val pad = ControllerGlyphs.kind == InputKind.CONTROLLER
                     Row(
                         Modifier
                             .rising(slot, clock, m, reduced, ToastTiming.ROW_AT + 2 * Motion.STAGGER_ROW, pressed = true)
                             .background(gold.copy(alpha = .16f), CircleShape)
                             .border(m.dp(1.5f), gold.copy(alpha = .6f), CircleShape)
-                            .padding(start = m.dp(8f), top = m.dp(7f), bottom = m.dp(7f), end = m.dp(22f)),
+                            .padding(start = m.dp(if (pad) 8f else 22f), top = m.dp(7f), bottom = m.dp(7f), end = m.dp(22f)),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(m.dp(10f)),
                     ) {
-                        Box(Modifier.size(m.dp(38f)).background(CardText, CircleShape), contentAlignment = Alignment.Center) {
+                        if (pad) Box(Modifier.size(m.dp(38f)).background(CardText, CircleShape), contentAlignment = Alignment.Center) {
                             BasicText("Y", style = TextStyle(color = CardBottom, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = m.sp(21f)))
                         }
                         BasicText(action.label, style = TextStyle(color = goldLabel, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = m.sp(24f), letterSpacing = .01.em))

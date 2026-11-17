@@ -1,10 +1,13 @@
 package com.limelight.shell.ui
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.hardware.input.InputManager
 import android.os.Handler
 import android.os.Looper
 import android.view.InputDevice
+import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -131,16 +134,27 @@ data class PadDescriptor(val vendorId: Int, val productId: Int, val name: String
 }
 
 /**
- * The glyph family in use: the controller used last, else the first one connected, else [PadFamily.GENERIC]. It is evaluated again when a
- * controller connects or disconnects and when a key or motion event comes from another one. Every hint reads [family] (Compose state),
- * so one change redraws them all.
+ * The glyph source of the interface: the kind of input used last ([kind], kept by [InputKindState]) and, for a controller, the glyph
+ * family ([family]) of the controller used last, else the first one connected, else [PadFamily.GENERIC]. The family is evaluated again
+ * when a controller connects or disconnects and when a key or motion event comes from another one; the kind changes only when a
+ * deliberate input arrives ([key], [touch], [motion]: a touch, a key, the mouse, a pad's button or stick), or when the last controller
+ * goes away. The shell's and the stream's windows feed it from their event dispatch. Every hint reads it (Compose state), so one change
+ * redraws them all.
  */
 object ControllerGlyphs {
     var family by mutableStateOf(PadFamily.GENERIC)
         private set
 
+    var kind by mutableStateOf(InputKind.TOUCH)
+        private set
+
     private var lastUsed: Int? = null
     private var input: InputManager? = null
+    private val state = InputKindState()
+    private val stick = StickPress()
+
+    /** What a device without any input yet is taken to use: touch with a touchscreen, else the controller (a TV and its remote). */
+    private var fallback = InputKind.TOUCH
 
     /** The family for the controller used last ([lastUsed]) and the ones connected, in the order the system lists them. */
     fun choose(lastUsed: PadDescriptor?, connected: List<PadDescriptor>): PadFamily {
@@ -151,7 +165,9 @@ object ControllerGlyphs {
     /** Starts following the controllers (connect and disconnect); calling it again does nothing. */
     fun start(context: Context) {
         if (input != null) return
-        val manager = context.applicationContext.getSystemService(Context.INPUT_SERVICE) as InputManager
+        val app = context.applicationContext
+        fallback = if (app.packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) InputKind.TOUCH else InputKind.CONTROLLER
+        val manager = app.getSystemService(Context.INPUT_SERVICE) as InputManager
         input = manager
         manager.registerInputDeviceListener(object : InputManager.InputDeviceListener {
             override fun onInputDeviceAdded(deviceId: Int) = refresh()
@@ -161,11 +177,49 @@ object ControllerGlyphs {
         refresh()
     }
 
-    /** A key or motion event came from [device]: it is the controller used last. */
-    fun used(device: InputDevice?) {
-        val id = device?.takeIf { PadDescriptor.isGamepad(it) }?.id ?: return
-        if (id == lastUsed) return
-        lastUsed = id
+    /** A key event reached a window: a press of a pad's button or of a keyboard's key is the input from now on. */
+    fun key(event: KeyEvent) {
+        if (event.action != KeyEvent.ACTION_DOWN) return
+        val source = event.source
+        val pad = InputKinds.fromPad(source)
+        val kind = InputKinds.key(event.action, event.keyCode, source, keyboard = !pad && InputKinds.isKeyboard(event.device)) ?: return
+        if (kind == InputKind.CONTROLLER) usedPad(event.deviceId)
+        note(kind)
+    }
+
+    /** A touch event reached a window: a finger (or a pen) going down is touch, a mouse button the pointer. */
+    fun touch(event: MotionEvent) {
+        val index = event.actionIndex
+        InputKinds.touch(event.actionMasked, event.getToolType(index), event.source)?.let(::note)
+    }
+
+    /** A generic motion event reached a window (or the stream's captured pointer): the mouse moving, a pad's stick or hat pushed. */
+    fun motion(event: MotionEvent) {
+        val source = event.source
+        if (InputKinds.fromPad(source)) {
+            if (event.actionMasked != MotionEvent.ACTION_MOVE) return
+            val push = InputKinds.stickMagnitude(
+                event.getAxisValue(MotionEvent.AXIS_X), event.getAxisValue(MotionEvent.AXIS_Y),
+                event.getAxisValue(MotionEvent.AXIS_HAT_X), event.getAxisValue(MotionEvent.AXIS_HAT_Y),
+            )
+            if (!stick.update(push)) return
+            usedPad(event.deviceId)
+            note(InputKind.CONTROLLER)
+            return
+        }
+        InputKinds.pointer(event.actionMasked, event.getToolType(0), source)?.let(::note)
+    }
+
+    /** The player used [input] on purpose: the hints show it from now on. */
+    fun note(input: InputKind) {
+        state.used(input)
+        evaluate()
+    }
+
+    /** A press came from the pad [deviceId]: it is the controller used last. */
+    private fun usedPad(deviceId: Int) {
+        if (deviceId == lastUsed) return
+        lastUsed = deviceId
         refresh()
     }
 
@@ -174,7 +228,15 @@ object ControllerGlyphs {
         val devices = manager.inputDeviceIds.asList().mapNotNull { InputDevice.getDevice(it) }
         val last = lastUsed?.let { id -> devices.firstOrNull { it.id == id } }
         if (last == null) lastUsed = null
-        family = choose(last?.let(PadDescriptor::of), devices.map(PadDescriptor::of))
+        val pads = devices.map(PadDescriptor::of)
+        family = choose(last?.let(PadDescriptor::of), pads)
+        state.controllersChanged(pads.any { it.gamepad })
+        evaluate()
+    }
+
+    private fun evaluate() {
+        val next = state.kind(fallback)
+        if (next != kind) kind = next
     }
 
     fun mark(role: GlyphRole): GlyphMark = family.mark(role)

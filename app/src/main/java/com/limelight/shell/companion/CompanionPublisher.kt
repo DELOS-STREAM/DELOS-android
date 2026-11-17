@@ -151,6 +151,7 @@ internal fun PublishCompanionContext(hints: List<com.limelight.shell.ui.Hint>, l
             hints = hints.map { hint ->
                 when (val face = hint.glyph.face(family)) {
                     is com.limelight.shell.ui.GlyphFace.Text -> CompanionHint(face.text, null, hint.label)
+                    is com.limelight.shell.ui.GlyphFace.Key -> CompanionHint(face.legend, null, hint.label)
                     is com.limelight.shell.ui.GlyphFace.Shape -> CompanionHint(face.mark.text, null, hint.label)
                     is com.limelight.shell.ui.GlyphFace.Symbol -> CompanionHint(null, face.icon.symbol, hint.label)
                 }

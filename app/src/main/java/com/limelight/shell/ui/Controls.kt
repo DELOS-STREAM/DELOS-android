@@ -186,16 +186,18 @@ fun Spinner(size: Float, modifier: Modifier = Modifier, color: Color = LocalDelo
 
 /**
  * `.btn` (and `.btn.primary`): a pill with an icon and a label. [compact] is the toolbar size (64 px, smaller text); [trailing]
- * adds what follows the label (a button glyph, a count badge).
+ * adds what follows the label (a count badge); [glyph] is the button that presses it, [glyphSize] stage pixels, shown last and only for
+ * the kinds of input that have that button ([PillGlyph]): a finger or a mouse presses the pill itself.
  */
 @Composable
 fun PillButton(
     label: String, icon: String?, onClick: () -> Unit, modifier: Modifier = Modifier, primary: Boolean = false, clickCue: Cue? = Cue.SELECT,
-    compact: Boolean = false, trailing: (@Composable RowScope.() -> Unit)? = null,
+    compact: Boolean = false, trailing: (@Composable RowScope.() -> Unit)? = null, glyph: Glyph? = null, glyphSize: Int = 32,
 ) {
     val colors = LocalDelosColors.current
     var focused by remember { mutableStateOf(false) }
     val content = if (primary) colors.onAccent else colors.text
+    val gap = (if (compact) 12 else 14).px
     Row(
         modifier
             .focusEffects(
@@ -207,11 +209,14 @@ fun PillButton(
             .height((if (compact) 64 else 76).px)
             .padding(horizontal = (if (compact) 28 else 40).px),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy((if (compact) 12 else 14).px),
     ) {
-        if (icon != null) Symbol(icon, (if (compact) 30 else 32).tpx, content, filled = focused)
-        BasicText(label, style = TextStyle(color = content, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = (if (compact) 24 else 26).tpx))
-        trailing?.invoke(this)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(gap)) {
+            if (icon != null) Symbol(icon, (if (compact) 30 else 32).tpx, content, filled = focused)
+            BasicText(label, style = TextStyle(color = content, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = (if (compact) 24 else 26).tpx))
+            trailing?.invoke(this)
+        }
+        // Its gap goes with it, so the pill narrows smoothly when the glyph gives way
+        if (glyph != null) PillGlyph(glyph, glyphSize, before = gap)
     }
 }
 
