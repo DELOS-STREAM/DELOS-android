@@ -70,6 +70,9 @@
     <string name="row_reset_to_profile">重置为个人资料值</string>
     <string name="row_reset">重置</string>
     <string name="row_not_set">未设置</string>
+    <string name="row_slider_decrease">减少</string>
+    <string name="row_slider_increase">增加</string>
+    <string name="row_slider_enter_value">输入数值</string>
     <string name="impact_axis_gpu">GPU</string>
     <string name="impact_axis_latency">延迟</string>
     <string name="impact_axis_network">网络</string>

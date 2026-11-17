@@ -101,6 +101,9 @@
     <string name="row_reset_to_profile">Auf Profilwert zurücksetzen</string>
     <string name="row_reset">Zurücksetzen</string>
     <string name="row_not_set">Nicht gesetzt</string>
+    <string name="row_slider_decrease">Verringern</string>
+    <string name="row_slider_increase">Erhöhen</string>
+    <string name="row_slider_enter_value">Wert eingeben</string>
 
     <!-- Impact chips of a setting: what the three glyphs mean -->
     <string name="impact_axis_gpu">GPU</string>

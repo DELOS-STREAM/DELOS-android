@@ -104,6 +104,9 @@ import com.limelight.shell.ui.LocalBackdropHaze
 import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.LocalFeedback
 import com.limelight.shell.ui.NavButton
+import com.limelight.shell.ui.LocalRowPicker
+import com.limelight.shell.ui.RowPickerLayer
+import com.limelight.shell.ui.RowPopup
 import com.limelight.shell.ui.RowValue
 import com.limelight.shell.ui.Scrim
 import com.limelight.shell.ui.screenTransition
@@ -389,6 +392,7 @@ fun Shell(
         val launch = shell.launch ?: return@LaunchedEffect
         launchExitInstant.value = false
         LaunchHandoff.background = launch.background
+        LaunchHandoff.cancelRequested = false
         LaunchHandoff.heroTurn = if (appearance.reducedMotion || activity?.let(HeroMotion::animatorsOff) == true) Float.NaN else HeroMotion.turnAt(System.nanoTime())
         LaunchHandoff.progress = 0f
         LaunchHandoff.travel = 0f
@@ -556,19 +560,19 @@ fun Shell(
         keys.onUndo = { shell.runToastAction() }
         // Y: settings search, or the artwork page's filter sheet
         keys.canSearch = {
-            shell.layer == null && shell.portal == null && shell.launch == null &&
+            shell.layer == null && shell.picker == null && shell.portal == null && shell.launch == null &&
                 (shell.screen == Screen.Settings || (shell.screen is Screen.Artwork && shell.onArtworkFilter != null))
         }
         keys.onSearch = { if (shell.screen is Screen.Artwork) shell.onArtworkFilter?.invoke() else shell.onSettingsSearch?.invoke() }
         // Y opens the filters over a library with games (and closes them again); nothing else may react to it
         keys.canFilter = {
-            shell.screen == Screen.Home && shell.portal == null && shell.launch == null && shell.result == null && (
+            shell.screen == Screen.Home && shell.picker == null && shell.portal == null && shell.launch == null && shell.result == null && (
                 shell.layer == Layer.Filters || (shell.layer == null && (library as? Library.Ready)?.apps?.isNotEmpty() == true)
             )
         }
         keys.onFilter = { toggleFilters() }
         keys.listener = listener@{ code ->
-            if (shell.launch != null || shell.portal != null || shell.result != null) return@listener
+            if (shell.launch != null || shell.portal != null || shell.result != null || shell.picker != null) return@listener
             when (code) {
                 // Read the screen now: this listener is set once, so a value captured at the first composition (the first launch) would stay false
                 KeyEvent.KEYCODE_BUTTON_SELECT -> if (shell.screen.sideMenu) toggleSide()
@@ -596,7 +600,7 @@ fun Shell(
         }
     }
 
-    BackHandler(enabled = shell.layer != null || shell.screen.back != null) {
+    BackHandler(enabled = shell.layer != null || shell.picker != null || shell.screen.back != null) {
         feedback.play(Cue.BACK)
         shell.back()
     }
@@ -604,9 +608,12 @@ fun Shell(
     BackHandler(enabled = shell.portal != null) { devices.cancelPortal() }
     // B during the loader cancels the start (registered last, so it wins while a game is starting); the companion's Cancel runs the same function
     fun cancelLaunch() {
-        if (shell.launch == null || shell.diving) return
+        if (shell.launch == null) return
         feedback.play(Cue.BACK)
+        // The stream window was already asked for: it ends its own attempt (now, or at the end of its onCreate) and the overlay goes away at once
+        if (shell.diving) StreamLoader.cancelFromShell()
         shell.launch = null
+        shell.diving = false
         tracker.requester?.let {
             feedback.silenceNextFocus()
             runCatching { it.requestFocus() }
@@ -644,6 +651,17 @@ fun Shell(
         tracker.release()
     }
 
+    // When a row's popup has closed, the focus returns to the row (silently)
+    LaunchedEffect(shell.picker) {
+        if (shell.picker != null) return@LaunchedEffect
+        val previous = shell.takePickerReturn() ?: return@LaunchedEffect
+        feedback.silenceNextFocus()
+        val restored = runCatching { previous.requestFocus() }.getOrDefault(false)
+        if (!restored) runCatching { shell.restoreScreenFocus?.invoke() }
+        delay(150)
+        tracker.release()
+    }
+
     val profile = profiles.current
     val configuration = LocalConfiguration.current
     val nav = remember(shell, shell.screen, configuration) {
@@ -662,8 +680,8 @@ fun Shell(
         LocalShell provides shell, LocalFocusTracker provides tracker, LocalGameActions provides actions, LocalDeviceActions provides devices,
         LocalBackdropHaze provides backdropHaze, LocalLibrary provides library, LocalImeAvoidance provides imeAvoidance,
         com.limelight.shell.screens.LocalLinkTests provides linkTests, com.limelight.shell.ui.LocalStatusBarEdges provides statusEdges,
-        // Touch: a focused choice row's tap lists its options at the row (issue #92)
-        com.limelight.shell.ui.LocalChoicePicker provides { menu -> shell.openLayer(Layer.Context(menu, tracker.bounds()), tracker) },
+        // Touch: a focused choice or slider row's tap opens its popup at the row (issue #92)
+        LocalRowPicker provides { popup -> shell.openPicker(popup, tracker) },
     ) {
         Box(Modifier.fillMaxSize()) {
             // The blur source re-records the whole screen every frame, so it is only active while an overlay
@@ -793,6 +811,9 @@ fun Shell(
                     shell.closeLayer()
                 }
 
+                // The popup of a settings row (touch, issue #92): over every layer, the side menu's rows open it too
+                RowPickerLayer(shell.picker) { shell.closePicker() }
+
                 // Fully there from the first frame: the stream window's portal already ended on this very background
                 val cover by animateFloatAsState(if (shell.exitCover) 1f else 0f, if (shell.exitCover) snap() else tween(350, easing = EaseOut), label = "exitCover")
                 val lights by animateFloatAsState(if (shell.exitLights) 1f else 0f, tween(if (shell.exitLights) 400 else 350, easing = EaseOut), label = "exitLights")
@@ -841,6 +862,7 @@ fun Shell(
                     appArt(it.pc, it.app, it.image), it.background, launchLogo, launchParameters) },
                 appearance.reducedMotion,
                 instantExit = launchExitInstant.value,
+                onCancel = ::cancelLaunch,
             )
             ProblemOfferCard(if (shell.offerShown) shell.problem else null, appearance.reducedMotion, onReport = { reportProblem(ReportMode.UPLOAD) }, onSaveToDownloads = { reportProblem(ReportMode.DOWNLOADS) }, onDismiss = ::dismissProblem)
             UpdateOfferCard(
@@ -866,9 +888,15 @@ private fun SideMenuRows(
     openSettings: () -> Unit,
 ) {
     val res = textResources()
-    SettingRow(Symbols.DARK_MODE, stringResource(R.string.shell_side_theme), RowValue.Choice(stringResource(if (appearance.dark) R.string.shell_side_theme_dark else R.string.shell_side_theme_light), { update { it.copy(dark = !it.dark) } }), firstModifier.focusedListRow(navigation, "theme"), compact = true)
+    val themeDark = stringResource(R.string.shell_side_theme_dark)
+    val themeLight = stringResource(R.string.shell_side_theme_light)
+    SettingRow(Symbols.DARK_MODE, stringResource(R.string.shell_side_theme), RowValue.Choice(if (appearance.dark) themeDark else themeLight, { update { it.copy(dark = !it.dark) } },
+        options = listOf(themeDark, themeLight), selected = if (appearance.dark) 0 else 1, onPick = { i -> update { it.copy(dark = i == 0) } }),
+        firstModifier.focusedListRow(navigation, "theme"), compact = true)
     SettingRow(Symbols.SYSTEM_COLORS, stringResource(R.string.shell_side_material_you), RowValue.Toggle(appearance.materialYou) { on -> update { it.copy(materialYou = on) } }, Modifier.focusedListRow(navigation, "material-you"), compact = true)
-    SettingRow(Symbols.ANIMATION, stringResource(R.string.shell_side_background), RowValue.Choice(appearance.background.label(res), { dir -> update { it.copy(background = it.background.step(dir)) } }), Modifier.focusedListRow(navigation, "background"), compact = true)
+    SettingRow(Symbols.ANIMATION, stringResource(R.string.shell_side_background), RowValue.Choice(appearance.background.label(res), { dir -> update { it.copy(background = it.background.step(dir)) } },
+        options = BackgroundKind.entries.map { it.label(res) }, selected = appearance.background.ordinal, onPick = { i -> update { it.copy(background = BackgroundKind.entries[i]) } }),
+        Modifier.focusedListRow(navigation, "background"), compact = true)
     SettingRow(Symbols.MUSIC_NOTE, stringResource(R.string.shell_side_sounds), RowValue.Toggle(appearance.sounds) { on -> update { it.copy(sounds = on) } }, Modifier.focusedListRow(navigation, "sounds"), compact = true)
     SettingRow(Symbols.HAPTICS, stringResource(R.string.shell_side_haptics), RowValue.Toggle(appearance.haptics) { on -> update { it.copy(haptics = on) } }, Modifier.focusedListRow(navigation, "haptics"), compact = true)
     SettingRow(Symbols.SETTINGS, stringResource(R.string.shell_side_all_settings), RowValue.Action(openSettings), Modifier.focusedListRow(navigation, "settings"), compact = true)
@@ -937,6 +965,12 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
     val adjust = if (adjustable) listOf(hint(Glyph.ADJUST, R.string.shell_hint_adjust)) else emptyList()
     shell.portal?.let { return if (it.cancellable) listOf(hint(Glyph.B, R.string.shell_hint_cancel)) else emptyList() }
     if (shell.result != null) return listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back_to_library, R.string.shell_hint_back))
+    shell.picker?.let { request ->
+        return when (request.popup) {
+            is RowPopup.Options -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_close))
+            is RowPopup.Value -> listOf(hint(Glyph.ADJUST, R.string.shell_hint_adjust), hint(Glyph.A, R.string.shell_hint_done), hint(Glyph.B, R.string.shell_hint_close))
+        }
+    }
     return when (shell.layer) {
         is Layer.Context -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, if (shell.menuPath.isEmpty()) R.string.shell_hint_close else R.string.shell_hint_back))
         Layer.Side -> adjust + listOf(hint(Glyph.A, R.string.shell_hint_change), hint(Glyph.B, R.string.shell_hint_close))

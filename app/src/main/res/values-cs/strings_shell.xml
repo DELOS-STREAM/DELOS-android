@@ -94,6 +94,9 @@
     <string name="row_reset_to_profile">Vrátit hodnotu z profilu</string>
     <string name="row_reset">Resetovat</string>
     <string name="row_not_set">Nenastaveno</string>
+    <string name="row_slider_decrease">Snížit</string>
+    <string name="row_slider_increase">Zvýšit</string>
+    <string name="row_slider_enter_value">Zadat hodnotu</string>
 
     <!-- Impact chips of a setting -->
     <string name="impact_axis_gpu">GPU</string>

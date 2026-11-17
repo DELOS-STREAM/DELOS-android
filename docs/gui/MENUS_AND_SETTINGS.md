@@ -299,13 +299,46 @@ A tap is not the A button on a settings row ([#92](https://github.com/Meitoncz/D
 | A row without the focus | Focuses it, so its help shows; nothing changes |
 | The focused toggle, or its switch on any row | Flips it |
 | A choice's ◀ or ▶ arrow on any row | One option back or forward |
-| The focused choice row with a list of options | The options as a context menu at the row, the current one checked; a pick sets it |
-| The focused choice row without a list | The next option, as A |
-| The focused slider row | Nothing; the track takes taps and drags |
+| The focused choice row | Its options as a list at the row ([7.2](#72-options-list)); a pick sets it |
+| The focused slider row | Its popup ([7.3](#73-slider-popup)); the track in the row itself still takes taps and drags |
 | An action or text row | Opens it on the first tap |
 
 1. A disabled row also focuses on the first tap, so its help can say why; the next tap plays the error cue.
-2. The list of options needs the shell's context menu (`LocalChoicePicker`); where none is provided, the row steps as A.
+2. Every choice row has a list: a row built without its options (`RowValue.Choice.options`) steps as A. The popups need the shell's `LocalRowPicker`; where none is provided, a choice steps and a slider keeps its track.
+3. Rows that have a list or a popup: every choice and slider of Settings (all tabs), the per-app settings, the side menu (Theme, Background), Debug info (the rumble laboratory's sliders) and the stream menu (Supersampling quality, Mode, Touchscreen mode, the sliders of Brightness, Bitrate, Upscaler and More). In the stream menu only choice and slider rows wait for the second tap; its toggles and actions act on the first.
+
+### 7.2 Options list
+
+The list is the iPad's `ChoicePicker` (DELOS-apple, `DelosUI/SettingsScreen.swift`) in stage pixels. It is not a context menu: it has no caret and no header.
+
+| Element | Value |
+|---|---|
+| Scrim | Black at 25 %; a tap beside the card closes it |
+| Card | 560 wide, its right edge on the row's right edge (at least 24 from the stage's sides); corner 34; padding 20 above and below, 12 beside; opaque (`bg2` under `surface3`), 1 px line, shadow 0 20 60 at 35 % |
+| Place | The current option lies over the row; the card stays 104 below the stage's top (the status bar, and the cutout) and 24 above its bottom edge; a compact stage uses the context menu's margins (status bar above, hint bar below) |
+| Title | The row's name, Figtree 20 semibold, third text color, 36 high |
+| Option | 64 high, 4 apart, Figtree 23 semibold, corner 28; the focused one has a 17 % tint of the main color and a 3 px ring; the current one has a check (30) |
+| Long list | The card is cut to the room and the list scrolls inside it; the current option is in view when it opens |
+| Motion | Fade, 420 ms in and 240 ms out (the same with reduced motion) |
+| Controller | The focus stays in the card, on the current option; up and down move, A picks, B closes |
+
+A pick sets the value and closes the card; the focus returns to the row.
+
+### 7.3 Slider popup
+
+The same card and place as [7.2](#72-options-list), centred on the row, 228 high: the row's name, the value, and below it a ◀ button, the slider and a ▶ button. Every change applies at once (a drag when the finger lifts), and the row behind shows it.
+
+| Element | Value |
+|---|---|
+| Value | A pill 64 high with the number and its unit ("40 Mbps"; the slider's off text at its lowest value), a pencil on its right. A tap turns it into a field |
+| Typing | The on-screen keyboard (decimal where the slider has a divisor). The number is in the readable unit (Mbit/s for the bitrate); a point or a comma. Only digits and one separator can be typed |
+| Applying | Done applies it. The number is rounded to the slider's grid and clamped to its range (typing 400 on a slider that ends at 150 applies 150); text that is no number turns the pill red with the error cue and stays open. A tap beside the card applies a valid number and closes; B leaves the field first and drops the text |
+| Buttons | Round, 72. A press steps once; a hold repeats after 380 ms every 55 ms with growing steps (1, 5, 10, then up to a fortieth of the range, as a held key on the row). A button is dimmed at its end |
+| Slider | 72 tall, knob 20; a tap or a drag sets the value on the slider's grid when the finger lifts |
+| Keyboard | The card moves up above the keyboard (`moveAboveIme`) |
+| Controller | Left and right step (a held key accelerates), A closes, B closes |
+
+The arithmetic (`SliderEdit`, `HoldRepeat`, `PickerLayout`) is pure and unit tested.
 
 ## 8. Impact chips
 
@@ -611,7 +644,10 @@ The test is only reachable from Settings, never over a stream, and never starts 
 | `ScrollRow` | One-row chip rows that scroll sideways |
 | `ui/Stage.kt` | `MarginBringIntoView` / `FocusScroller` |
 | `ui/Motion.kt` | `ListScrollMotion` and `ListScrollDriver` |
-| `ui/Rows.kt` | `SettingRowList` / `SettingRow`, `RowOverride`, `IMPACT_ROW_MIN_HEIGHT` |
+| `ui/Rows.kt` | `SettingRowList` / `SettingRow`, `RowOverride`, `IMPACT_ROW_MIN_HEIGHT`, `rowTouch` (what a tap does on a row) |
+| `ui/RowPicker.kt` | `RowPickerLayer`: the options list and the slider popup of a row ([7.2](#72-options-list), [7.3](#73-slider-popup)); `RowPopup`, `LocalRowPicker`, `rowPopupFor` |
+| `ui/RowPickerLogic.kt` | Pure: `SliderEdit` (step, snap, read, parse typed text), `HoldRepeat`, `PickerLayout` (placement of the card) |
+| `ShellState.picker` | The open popup of a row (over every layer; the side menu's rows open one too) |
 | `ui/ImpactChips.kt` | Impact chips |
 | `settings/SettingsImpact.kt` | Pure `impact(key, values)` |
 | `screens/SettingsScreen.kt` | `TabPill` |
@@ -628,6 +664,8 @@ The test is only reachable from Settings, never over a stream, and never starts 
 | Test | What it enforces |
 |---|---|
 | Unit test of `placeContextMenu` | Context menu placement: side, flip, below/above, margins and caret distance ([Anchor and placement](#33-anchor-and-placement)) |
+| `RowTouchTest` | What a tap does on every kind of row, and which rows have a popup ([7.1](#71-touch)) |
+| `RowPickerLogicTest` | Slider stepping, snapping, typed input (units, rounding, clamping, rejection), the hold's acceleration, and the placement of the card ([7.2](#72-options-list), [7.3](#73-slider-popup)) |
 
 Debug previews:
 
@@ -662,6 +700,8 @@ right, right. Then it rests.
 ### Not verified
 
 The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verified).
+
+Touch on settings rows ([7.1](#71-touch) to [7.3](#73-slider-popup)): the unit tests cover the rules and the arithmetic, not the look. Not verified on a device: the position and look of the card against the iPad's, the on-screen keyboard lifting the slider popup (also in the stream menu's window), a hold on the ◀ and ▶ buttons, and the popups in the stream menu.
 
 ## Related
 

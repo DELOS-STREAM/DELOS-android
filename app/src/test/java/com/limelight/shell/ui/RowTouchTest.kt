@@ -2,9 +2,10 @@ package com.limelight.shell.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Issue #92: what a touch tap does on each kind of settings row. */
+/** Issue #92: what a touch tap does on each kind of settings row, and which popup a row opens. */
 class RowTouchTest {
     private val toggle = RowValue.Toggle(false) {}
     private val slider = RowValue.Slider(60, 0, 120, 10, " fps") {}
@@ -17,47 +18,62 @@ class RowTouchTest {
 
     @Test fun firstTapOnlyFocusesSoTheHelpShowsFirst() {
         listOf(toggle, slider, stepOnly, listed).forEach {
-            assertEquals(it.toString(), RowTouch.FOCUS_ONLY, rowTouch(it, wasFocused = false, enabled = true, canPick = true))
+            assertEquals(it.toString(), RowTouch.FOCUS_ONLY, rowTouch(it, wasFocused = false, enabled = true, canPopup = true))
         }
     }
 
     @Test fun tapOnTheFocusedRowChangesIt() {
-        assertEquals(RowTouch.ACTIVATE, rowTouch(toggle, wasFocused = true, enabled = true, canPick = true))
-        assertEquals(RowTouch.ACTIVATE, rowTouch(stepOnly, wasFocused = true, enabled = true, canPick = true))
-        assertEquals(RowTouch.PICK, rowTouch(listed, wasFocused = true, enabled = true, canPick = true))
+        assertEquals(RowTouch.ACTIVATE, rowTouch(toggle, wasFocused = true, enabled = true, canPopup = true))
+        assertEquals(RowTouch.PICK, rowTouch(listed, wasFocused = true, enabled = true, canPopup = true))
     }
 
-    @Test fun aChoiceWithoutAPickerStillSteps() {
-        assertEquals(RowTouch.ACTIVATE, rowTouch(listed, wasFocused = true, enabled = true, canPick = false))
+    @Test fun aChoiceWithoutItsOptionsStillSteps() {
+        assertEquals(RowTouch.ACTIVATE, rowTouch(stepOnly, wasFocused = true, enabled = true, canPopup = false))
+        assertEquals(RowTouch.ACTIVATE, rowTouch(listed, wasFocused = true, enabled = true, canPopup = false))
     }
 
-    @Test fun aSliderIsSetOnItsTrackNotByTappingTheRow() {
-        assertEquals(RowTouch.NONE, rowTouch(slider, wasFocused = true, enabled = true, canPick = true))
+    @Test fun aFocusedSliderRowOpensItsPopup() {
+        assertEquals(RowTouch.ADJUST, rowTouch(slider, wasFocused = true, enabled = true, canPopup = true))
+    }
+
+    @Test fun aSliderWithoutAShellPopupKeepsItsTrackOnly() {
+        assertEquals(RowTouch.NONE, rowTouch(slider, wasFocused = true, enabled = true, canPopup = false))
     }
 
     @Test fun rowsThatOpenSomethingOpenOnTheFirstTap() {
-        assertEquals(RowTouch.ACTIVATE, rowTouch(action, wasFocused = false, enabled = true, canPick = true))
-        assertEquals(RowTouch.ACTIVATE, rowTouch(text, wasFocused = false, enabled = true, canPick = true))
-        assertEquals(RowTouch.NONE, rowTouch(info, wasFocused = true, enabled = true, canPick = true))
+        assertEquals(RowTouch.ACTIVATE, rowTouch(action, wasFocused = false, enabled = true, canPopup = true))
+        assertEquals(RowTouch.ACTIVATE, rowTouch(text, wasFocused = false, enabled = true, canPopup = true))
+        assertEquals(RowTouch.NONE, rowTouch(info, wasFocused = true, enabled = true, canPopup = true))
     }
 
     @Test fun aDisabledRowFocusesFirstSoItsHelpCanSayWhy() {
-        assertEquals(RowTouch.FOCUS_ONLY, rowTouch(toggle, wasFocused = false, enabled = false, canPick = true))
-        assertEquals(RowTouch.ERROR, rowTouch(toggle, wasFocused = true, enabled = false, canPick = true))
-        assertEquals(RowTouch.ERROR, rowTouch(action, wasFocused = false, enabled = false, canPick = true))
+        assertEquals(RowTouch.FOCUS_ONLY, rowTouch(toggle, wasFocused = false, enabled = false, canPopup = true))
+        assertEquals(RowTouch.ERROR, rowTouch(toggle, wasFocused = true, enabled = false, canPopup = true))
+        assertEquals(RowTouch.ERROR, rowTouch(slider, wasFocused = true, enabled = false, canPopup = true))
+        assertEquals(RowTouch.ERROR, rowTouch(listed, wasFocused = true, enabled = false, canPopup = true))
+        assertEquals(RowTouch.ERROR, rowTouch(action, wasFocused = false, enabled = false, canPopup = true))
     }
 
-    @Test fun thePickerListsEveryOptionWithTheCurrentOneChecked() {
-        val menu = choicePickerMenu("Frame rate", listed)!!
-        assertEquals("Frame rate", menu.title)
-        assertEquals(listOf("30 FPS", "60 FPS", "120 FPS"), menu.items.map { it.label })
-        assertEquals(listOf("", Symbols.CHECK, ""), menu.items.map { it.icon })
-        menu.items[2].action()
+    @Test fun aChoiceOpensItsOptionsWithTheCurrentOneSelected() {
+        val popup = rowPopupFor("Frame rate", listed) as RowPopup.Options
+        assertEquals("Frame rate", popup.title)
+        assertEquals(listOf("30 FPS", "60 FPS", "120 FPS"), popup.options)
+        assertEquals(1, popup.selected)
+        popup.onPick(2)
         assertEquals(2, picked)
     }
 
-    @Test fun noPickerWithoutOptions() {
-        assertNull(choicePickerMenu("Theme", stepOnly))
-        assertNull(choicePickerMenu("Empty", listed.copy(options = emptyList())))
+    @Test fun aSliderOpensItsPopup() {
+        val popup = rowPopupFor("Bitrate", slider) as RowPopup.Value
+        assertEquals("Bitrate", popup.title)
+        assertEquals(slider, popup.slider)
+    }
+
+    @Test fun otherRowsHaveNoPopup() {
+        assertNull(rowPopupFor("Theme", stepOnly))
+        assertNull(rowPopupFor("Empty", listed.copy(options = emptyList())))
+        assertNull(rowPopupFor("Picker", listed.copy(onPick = null)))
+        listOf(toggle, action, text, info).forEach { assertNull(it.toString(), rowPopupFor("Row", it)) }
+        assertTrue(rowPopupFor("Slider", slider) != null)
     }
 }

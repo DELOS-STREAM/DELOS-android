@@ -97,7 +97,9 @@ import com.limelight.shell.ui.staggerEntrance
 import com.limelight.shell.ui.valueSlide
 import com.limelight.shell.ui.LocalStage
 import com.limelight.shell.ui.rememberMarginBringIntoView
+import com.limelight.shell.ui.LocalRowPicker
 import com.limelight.shell.ui.RowValue
+import com.limelight.shell.ui.rowPopupFor
 import com.limelight.shell.ui.Symbol
 import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.Unbounded
@@ -486,12 +488,18 @@ internal fun MenuRow(
             value.onStep(dir)
         }
         // Steps left or right ([dir] may be several while a key is held), landing on the slider's grid
-        is RowValue.Slider -> { dir ->
-            val next = value.value + dir * value.step
-            val snapped = value.min + Math.round((next - value.min).toFloat() / value.step) * value.step
-            value.onChange(snapped.coerceIn(value.min, value.max))
-        }
+        is RowValue.Slider -> { dir -> value.onChange(com.limelight.shell.ui.SliderEdit.step(value, value.value, dir)) }
         else -> null
+    }
+    // Touch (issue #92): the focused choice or slider row's tap opens its options list / slider popup; a first tap only focuses it. Other rows act on the tap
+    val picker = LocalRowPicker.current
+    val popup = rowPopupFor(label, value)
+    val touchTap: ((Boolean) -> Boolean)? = if (picker == null || popup == null || !enabled) null else { wasFocused ->
+        if (wasFocused) {
+            feedback.play(Cue.OPEN)
+            picker(popup)
+        }
+        false
     }
     val activate: () -> Unit = when (value) {
         is RowValue.Toggle -> ({ value.onChange(!value.on) })
@@ -531,6 +539,7 @@ internal fun MenuRow(
                 clickCue = if (enabled && value !is RowValue.Info) (if (value is RowValue.Action) Cue.OPEN else Cue.SELECT) else null,
                 adjustable = adjust != null && enabled,
                 controllerAdjust = controllerAdjust,
+                onTouchTap = touchTap,
                 onFocusChange = {
                     focused = it
                     if (it) show(help)
@@ -585,9 +594,9 @@ private fun RowValueView(value: RowValue, focused: Boolean, confirmation: String
         }
         value is RowValue.Slider -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.px)) {
             val number = MenuSlider(value, focused)
-            val label = if (number % value.divisor == 0) (number / value.divisor).toString() else String.format(LocalConfiguration.current.locales[0], "%.1f", number.toDouble() / value.divisor)
+            val label = com.limelight.shell.ui.SliderEdit.label(value, number, LocalConfiguration.current.locales[0])
             BasicText(
-                if (number == value.min && value.minText != null) value.minText else "$label${value.unit}",
+                label,
                 style = text.copy(color = colors.text, textAlign = TextAlign.End),
                 maxLines = 1,
                 modifier = Modifier.width((L.NUMBER_MIN_WIDTH * ts).px),

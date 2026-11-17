@@ -70,7 +70,6 @@ import androidx.compose.ui.unit.em
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.focus.FocusRequester
 import com.limelight.shell.ContextMenu
-import com.limelight.shell.MenuItem
 import com.limelight.shell.settings.SettingImpact
 
 /** The value side of a settings row. */
@@ -124,7 +123,9 @@ internal enum class RowTouch {
     ACTIVATE,
     /** Open the choice's options as a list to pick from. */
     PICK,
-    /** Nothing more (a slider's value is set on its track; an info row has no action). */
+    /** Open the slider's popup: buttons to step it, the slider, and the value to type. */
+    ADJUST,
+    /** Nothing more (an info row has no action; where no popup can open, a slider's value is set on its track). */
     NONE,
     /** The row is disabled: the error sound. */
     ERROR,
@@ -132,27 +133,18 @@ internal enum class RowTouch {
 
 /**
  * Touch: the first tap on a row focuses it and shows its help; a tap on the focused row changes it. Rows that only open
- * something (a screen, a dialog) open on the first tap. [canPick]: a list to pick from can be shown here.
+ * something (a screen, a dialog) open on the first tap. [canPopup]: a popup can be shown here (the shell provides one, and the row has
+ * something to show in it: a choice with its options, a slider).
  */
-internal fun rowTouch(value: RowValue, wasFocused: Boolean, enabled: Boolean, canPick: Boolean): RowTouch = when {
+internal fun rowTouch(value: RowValue, wasFocused: Boolean, enabled: Boolean, canPopup: Boolean): RowTouch = when {
     value is RowValue.Info -> RowTouch.NONE
     value is RowValue.Action || value is RowValue.Text -> if (enabled) RowTouch.ACTIVATE else RowTouch.ERROR
     !wasFocused -> RowTouch.FOCUS_ONLY
     !enabled -> RowTouch.ERROR
-    value is RowValue.Slider -> RowTouch.NONE
-    value is RowValue.Choice && canPick && value.onPick != null && !value.options.isNullOrEmpty() -> RowTouch.PICK
+    value is RowValue.Slider -> if (canPopup) RowTouch.ADJUST else RowTouch.NONE
+    value is RowValue.Choice && canPopup -> RowTouch.PICK
     else -> RowTouch.ACTIVATE
 }
-
-/** The list of a [RowValue.Choice]'s options, the current one checked; picking one calls [RowValue.Choice.onPick]. */
-internal fun choicePickerMenu(title: String, choice: RowValue.Choice): ContextMenu? {
-    val options = choice.options?.takeIf { it.isNotEmpty() } ?: return null
-    val pick = choice.onPick ?: return null
-    return ContextMenu(title, options.mapIndexed { i, label -> MenuItem(if (i == choice.selected) Symbols.CHECK else "", label) { pick(i) } })
-}
-
-/** Opens a choice row's list of options (a context menu at the focused row); null where no shell can show one. */
-val LocalChoicePicker = staticCompositionLocalOf<((ContextMenu) -> Unit)?> { null }
 
 /**
  * A settings row (`.row`): icon, label with an optional description, and the value. Used by the side
@@ -184,7 +176,7 @@ fun SettingRow(
     val calm = glide != null && !reduced
     var focused by remember { mutableStateOf(false) }
     val requester = remember { FocusRequester() }
-    val picker = LocalChoicePicker.current
+    val picker = LocalRowPicker.current
     val choice = rememberChoiceMotion()
     val adjust: ((Int) -> Unit)? = when (value) {
         is RowValue.Choice -> { dir ->
@@ -193,11 +185,7 @@ fun SettingRow(
         }
         // Steps left or right ([dir] may be several while a key is held), landing on the slider's grid
         // (a stored value between steps snaps to it)
-        is RowValue.Slider -> { dir ->
-            val next = value.value + dir * value.step
-            val snapped = value.min + Math.round((next - value.min).toFloat() / value.step) * value.step
-            value.onChange(snapped.coerceIn(value.min, value.max))
-        }
+        is RowValue.Slider -> { dir -> value.onChange(SliderEdit.step(value, value.value, dir)) }
         else -> null
     }
     val activate: () -> Unit = when (value) {
@@ -208,12 +196,14 @@ fun SettingRow(
         is RowValue.Text -> value.onClick
         is RowValue.Info -> ({})
     }
-    // Touch (issue #92): a first tap focuses and shows the help; the focused row's tap changes it, or lists a choice's options
+    // Touch (issue #92): a first tap focuses and shows the help; the focused row's tap changes it, or opens its options list / its slider popup
     val touchTap: (Boolean) -> Boolean = { wasFocused ->
-        when (rowTouch(value, wasFocused, enabled, picker != null)) {
+        val popup = rowPopupFor(label, value)
+        when (rowTouch(value, wasFocused, enabled, picker != null && popup != null)) {
             RowTouch.ACTIVATE -> true
-            RowTouch.PICK -> {
-                choicePickerMenu(label, value as RowValue.Choice)?.let { menu -> feedback.play(Cue.OPEN); picker?.invoke(menu) }
+            RowTouch.PICK, RowTouch.ADJUST -> {
+                feedback.play(Cue.OPEN)
+                popup?.let { picker?.invoke(it) }
                 false
             }
             RowTouch.ERROR -> { feedback.play(Cue.ERROR); false }
@@ -507,8 +497,8 @@ private fun RowValueView(value: RowValue, focused: Boolean, choice: ChoiceMotion
                     Box(Modifier.fillMaxHeight().fillMaxWidth(fraction).clip(CircleShape).background(Brush.horizontalGradient(listOf(colors.accent, colors.accent2))))
                 }
             }
-            val label = if (number % value.divisor == 0) (number / value.divisor).toString() else String.format(LocalConfiguration.current.locales[0], "%.1f", number.toDouble() / value.divisor)
-            BasicText(if (number == value.min && value.minText != null) value.minText else "$label${value.unit}", style = text.copy(textAlign = TextAlign.End), maxLines = 1, modifier = Modifier.width((if (tight) 130 else 160).px))
+            val locale = LocalConfiguration.current.locales[0]
+            BasicText(SliderEdit.label(value, number, locale), style = text.copy(textAlign = TextAlign.End), maxLines = 1, modifier = Modifier.width((if (tight) 130 else 160).px))
         }
         is RowValue.Action -> Symbol(Symbols.CHEVRON_RIGHT, 30.tpx, if (calm) arrowColor.value else staticArrows)
         is RowValue.Text -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
