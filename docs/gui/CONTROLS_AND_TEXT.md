@@ -25,6 +25,7 @@ field being edited stays clear of Android's keyboard, and how a one-line label t
 |---|---|
 | **D-pad or left stick + A, B, X, Y** | Primary input. |
 | **Left menu button (View/Select)**, at the top left of the handheld | Slides the **side menu** in from the left. |
+| **Swipe in from the left edge** (touch) | Opens the side menu, which follows the finger; a swipe to the left closes it ([MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md#14-side-menu-by-touch)). |
 | **Right menu button (Start)**, at the top right of the handheld | Opens the **context menu** for the focused item. |
 
 The **two menu buttons at the top left and top right** of the handheld are used in the UI.

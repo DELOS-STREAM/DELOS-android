@@ -1,6 +1,14 @@
 package com.limelight.shell
 
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.systemGestureExclusion
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import com.limelight.shell.ui.Motion
+import com.limelight.shell.ui.sideMenuWidthPx
 import android.app.ActivityOptions
 import android.content.res.Resources
 import androidx.annotation.StringRes
@@ -515,14 +523,67 @@ fun Shell(
     val companionPc = pc?.name.takeIf { shell.screen.main }
     LaunchedEffect(companionPc) { shell.pcName = companionPc }
 
+    // Touch: a drag in from the left edge opens the side menu and the panel follows the finger; a drag to the left closes it
+    // (SideMenuSwipe). Reduced motion: the drag only toggles the menu once it is long enough.
+    val sideDrag = remember { SideMenuDrag() }
+    val sideWidth by rememberUpdatedState(sideMenuWidthPx())
+    val density = LocalDensity.current
+    val sideFling by rememberUpdatedState(with(density) { SideMenuSwipe.FLING_DP_PER_S.dp.toPx() })
+
     fun toggleSide() {
         if (shell.layer != null && shell.layer != Layer.Side) return
+        // A touch drag owns the menu until it has settled
+        if (sideDrag.engaged) return
         if (shell.layer == Layer.Side) {
             feedback.play(Cue.BACK)
             shell.closeLayer()
         } else {
             feedback.play(Cue.OPEN)
             shell.openLayer(Layer.Side, tracker)
+        }
+    }
+
+    fun sideSwipeOpens() = shell.screen.sideMenu && shell.layer == null && shell.picker == null && shell.launch == null &&
+        shell.portal == null && shell.result == null && shell.buttonCapture == null
+
+    fun sideSwipeCloses() = shell.layer == Layer.Side && shell.picker == null
+
+    fun startSideDrag(opening: Boolean) {
+        if (reducedMotion) return
+        sideDrag.settle?.cancel()
+        sideDrag.start = when {
+            opening -> 0f
+            sideDrag.engaged -> sideDrag.progress.coerceAtMost(1f)
+            else -> 1f
+        }
+        sideDrag.progress = sideDrag.start
+        sideDrag.engaged = true
+        if (opening) shell.openLayer(Layer.Side, tracker)
+    }
+
+    fun moveSideDrag(travel: Float) {
+        if (!reducedMotion && sideDrag.engaged) sideDrag.progress = SideMenuSwipe.progress(sideDrag.start, travel, sideWidth)
+    }
+
+    fun endSideDrag(opening: Boolean, travel: Float, velocity: Float) {
+        if (reducedMotion) {
+            if (SideMenuSwipe.reducedToggles(opening, travel, sideWidth)) toggleSide()
+            return
+        }
+        if (!sideDrag.engaged) return
+        val open = SideMenuSwipe.settlesOpen(opening, sideDrag.progress, velocity, sideFling)
+        if (open && opening) feedback.play(Cue.OPEN)
+        if (!open && !opening) feedback.play(Cue.BACK)
+        sideDrag.settle = scope.launch {
+            animate(sideDrag.progress, if (open) 1f else 0f, velocity / sideWidth, spring(Motion.GEO_DAMPING, Motion.GEO_STIFFNESS)) { value, _ ->
+                sideDrag.progress = value
+            }
+            if (!open) {
+                if (shell.layer == Layer.Side) shell.closeLayer()
+                // The panel and the scrim leave from where the drag left them (no exit transition) before they take their transitions back
+                delay(Motion.EXIT.toLong())
+            }
+            sideDrag.engaged = false
         }
     }
 
@@ -690,7 +751,22 @@ fun Shell(
             }
         },
     ) {
-        Box(Modifier.fillMaxSize()) {
+        // Gesture navigation reserves the left edge for Back: a band of it in the middle (Android grants at most 200 dp per edge) is
+        // kept for the side menu's swipe while it can start; with 3-button navigation the whole edge works
+        val sideEdge = with(density) { SideMenuSwipe.EDGE_DP.dp.toPx() }
+        val sideExclusionMax = with(density) { SideMenuSwipe.MAX_EXCLUSION_DP.dp.toPx() }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .then(if (sideSwipeOpens()) Modifier.systemGestureExclusion { coordinates ->
+                    val band = SideMenuSwipe.exclusion(coordinates.size.height.toFloat(), sideEdge, sideExclusionMax)
+                    Rect(band.left, band.top, band.right, band.bottom)
+                } else Modifier)
+                .sideMenuSwipe(
+                    canOpen = ::sideSwipeOpens, isOpen = ::sideSwipeCloses,
+                    onStart = ::startSideDrag, onMove = { _, travel -> moveSideDrag(travel) }, onEnd = ::endSideDrag,
+                ),
+        ) {
             // The blur source re-records the whole screen every frame, so it is only active while an overlay
             // is shown (and while it fades out)
             // On in the very frame an overlay appears (its blur would otherwise start empty and clipped)
@@ -768,7 +844,9 @@ fun Shell(
 
             // Overlays sit on their own glass: controls in them must not blur the background through it
             CompositionLocalProvider(LocalBackdropHaze provides null) {
-                Scrim(shell.layer != null, light = shell.layer is Layer.Context, haze) {
+                // While a touch drag moves the side menu, the scrim follows its progress (also as it leaves after a drag closed it)
+                val sideProgress: (() -> Float)? = if (sideDrag.engaged && (shell.layer == Layer.Side || shell.layer == null)) ({ sideDrag.progress }) else null
+                Scrim(shell.layer != null, light = shell.layer is Layer.Context, haze, progress = sideProgress) {
                     feedback.play(Cue.BACK)
                     shell.closeLayer()
                 }
@@ -777,6 +855,7 @@ fun Shell(
                 SideMenuLayer(
                     shell.layer == Layer.Side,
                     haze,
+                    drag = if (sideDrag.engaged) ({ sideDrag.progress }) else null,
                     header = {
                         SideMenuHeader(
                             avatar = { profile?.let { AvatarBadge(it.look, 72f, 40f) } },

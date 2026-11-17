@@ -19,6 +19,7 @@ per-app settings screen layout and the link guidance rows.
 | Custom-settings badge and hidden badge on covers | Setting keys, values and impact levels: [SETTINGS.md](../SETTINGS.md) |
 | Per-app settings screen layout | PyroWave in-stream hint and Link block: [STREAM_QUALITY.md](../STREAM_QUALITY.md#pyrowave-link-guidance-18) |
 | Link guidance rows in Settings | Debug previews of all screens and screen shapes: [SCREEN_SHAPES.md](SCREEN_SHAPES.md) |
+| Side menu by touch, on-screen controls opacity row | |
 
 ## 1. Layout
 
@@ -645,6 +646,29 @@ The test uses the portal (`Portal`).
 
 The test is only reachable from Settings, never over a stream, and never starts by itself.
 
+## 14. Side menu by touch
+
+The side menu (Select) also opens and closes by a drag. `SideMenuSwipe` (pure) decides; `sideMenuSwipe` in `SideMenuGesture.kt` watches the shell's touches before its children do.
+
+| Rule | Value |
+|---|---|
+| Where an opening drag starts | The left 40 dp of the window (`EDGE_DP`) |
+| When it opens | On screens with the side menu (`Screen.sideMenu`), with no layer, popup, launch, portal, result or button capture; never over a stream (a separate window) |
+| Claimed as the menu's | Past the touch slop, more sideways than vertical, to the right (opening) or to the left (closing); a vertical scroll and a tap stay with the screen |
+| Closing drag | A drag to the left anywhere while the side menu is open and no popup is over it |
+| Panel during the drag | Follows the finger: progress = travel / panel width (680 stage px); past fully open it is damped and stops at 6 % of the width (`RUBBER`); the panel reaches 6 % past the left edge, so no gap shows |
+| Scrim and blur during the drag | Their opacity is the progress, instead of their fade |
+| Release | Opens past 40 % of the width (`THRESHOLD`); from open, closes past 40 % to the left; a release at 600 dp/s or faster (`FLING_DP_PER_S`) goes the way it moves |
+| Settle | The geometry spring (`Motion.GEO_DAMPING`, `GEO_STIFFNESS`) from the release speed; the open and back cues play when the menu changes state |
+| Reduced motion | The panel does not follow; a drag of 40 % of the width toggles the menu with its normal fade |
+| Keys during a drag | Select does nothing until the menu has settled |
+
+Gesture navigation: Android reserves both side edges for Back. While the drag can start, the shell excludes a band of the left edge from the system gesture (`Modifier.systemGestureExclusion`, which sets `View.setSystemGestureExclusionRects`): 40 dp wide and at most 200 dp high (Android honours at most 200 dp per edge), centred vertically (`SideMenuSwipe.exclusion`). Above and below the band, an edge swipe is Back; a drag that starts just right of the system's gesture strip still opens the menu. With 3-button navigation the whole edge works.
+
+## 15. On-screen controls opacity
+
+The opacity of the on-screen controls (`seekbar_osc_opacity`, `PreferenceConfiguration.oscOpacity`, default 90 %) is a native slider row: Settings → Controls, section "On-screen Controls Settings", 0 to 100 % in steps of 5, only on a device with a touchscreen. It writes the current profile's value through `OscOpacity`; the other on-screen gamepad settings stay hidden (`PhoneOnlySettings`). A tap on the focused row opens the slider popup ([7.3](#73-slider-popup)). The stream menu's More page has the same slider, applied live ([STREAM_MENU.md](STREAM_MENU.md#27-popover)).
+
 ## Code map
 
 | Path or class | Role |
@@ -676,6 +700,9 @@ The test is only reachable from Settings, never over a stream, and never starts 
 | `GameSettingsScreen.kt` | Per-app settings screen: `GameBanner`, `GameSettingsLayout`, `SettingsPanelFrame` |
 | `shell/screens/LinkGuidanceRows.kt` | Link guidance rows |
 | `Portal` | Portal that shows the link test |
+| `SideMenuSwipe.kt` | Pure: the side menu drag's start band, gesture exclusion band, claim, progress with rubber band, release decision ([14](#14-side-menu-by-touch)) |
+| `SideMenuGesture.kt` | `SideMenuDrag` (the progress while a drag owns the menu), `Modifier.sideMenuSwipe` |
+| `settings/OscOpacity.kt` | The on-screen controls' opacity value of the profile ([15](#15-on-screen-controls-opacity)) |
 
 ## Verification
 
@@ -685,6 +712,8 @@ The test is only reachable from Settings, never over a stream, and never starts 
 | Unit test of `placeContextMenu` | Context menu placement: side, flip, below/above, margins and caret distance ([Anchor and placement](#33-anchor-and-placement)) |
 | `RowTouchTest` | What a tap does on every kind of row, and which rows have a popup ([7.1](#71-touch)) |
 | `RowPickerLogicTest` | Slider stepping, snapping, typed input (units, rounding, clamping, rejection), the hold's acceleration, and the placement of the card ([7.2](#72-options-list), [7.3](#73-slider-popup)) |
+| `SideMenuSwipeTest` | The side menu drag: start band, exclusion band, claim, progress and rubber band, release by distance and fling, reduced motion ([14](#14-side-menu-by-touch)) |
+| `OscOpacityTest` | The opacity row's value: default, range, the value the stream reads ([15](#15-on-screen-controls-opacity)) |
 
 Debug previews:
 
@@ -721,6 +750,8 @@ right, right. Then it rests.
 The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verified).
 
 Touch on settings rows ([7.1](#71-touch) to [7.3](#73-slider-popup)): the unit tests cover the rules and the arithmetic, not the look. Not verified on a device: the position and look of the contextual card (caret, motion) against the iPad's, the size of the slider popup's controls under a finger, the on-screen keyboard lifting the slider popup (also in the stream menu's window), a hold on the ◀ and ▶ buttons, and the popups in the stream menu.
+
+Side menu by touch ([14](#14-side-menu-by-touch)): `SideMenuSwipeTest` covers the decisions only. Not verified on a device: the panel following the finger, the rubber band, the settle spring, the scrim during a drag, and the exclusion band with gesture navigation.
 
 ## Related
 
