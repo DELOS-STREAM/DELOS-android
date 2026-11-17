@@ -682,6 +682,13 @@ fun Shell(
         com.limelight.shell.screens.LocalLinkTests provides linkTests, com.limelight.shell.ui.LocalStatusBarEdges provides statusEdges,
         // Touch: a focused choice or slider row's tap opens its popup at the row (issue #92)
         LocalRowPicker provides { popup -> shell.openPicker(popup, tracker) },
+        // Touch: a long press on a cover (or any element with a context menu) opens it, as Start does
+        LocalContextMenuOpener provides { menu, bounds ->
+            if (longPressOpensContext(menu, true, shell.layer != null, shell.launch != null || shell.portal != null || shell.result != null || shell.picker != null)) {
+                feedback.play(Cue.OPEN)
+                shell.openLayer(Layer.Context(menu, bounds ?: tracker.bounds()), tracker)
+            }
+        },
     ) {
         Box(Modifier.fillMaxSize()) {
             // The blur source re-records the whole screen every frame, so it is only active while an overlay

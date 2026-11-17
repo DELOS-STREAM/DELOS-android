@@ -44,6 +44,8 @@ The **two menu buttons at the top left and top right** of the handheld are used 
 | The profile chip | Does nothing: A already opens the same menu. |
 | PC circles on Devices | Does nothing: A already opens the same menu. |
 
+On touch a **long press** on an element that has a context menu focuses it and opens the same menu, anchored like Start does (game tiles, PC circles, unpaired PCs, customized rows). A short tap is unchanged. Nothing opens over another layer, the launch, the portal or a row popup (`longPressOpensContext`, `focusEffects` in `ui/Focus.kt`). The stream menu has none.
+
 ### Button hints
 
 The hints show the buttons as they look on the device.

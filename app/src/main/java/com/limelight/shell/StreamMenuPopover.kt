@@ -239,6 +239,50 @@ internal fun caretCardPath(w: Float, h: Float, cx: Float, k: Float): Path {
 }
 
 /**
+ * The same card with its caret on a SIDE edge, for the popover of a settings row (RowPicker.kt): the body spans [left] to [left] + [bw] and 0 to [h], the
+ * caret points right ([caretRight]) or left at [cy] from the top, the same size and shape as the bottom caret.
+ */
+internal fun sideCaretCardPath(left: Float, bw: Float, h: Float, cy: Float, caretRight: Boolean, k: Float): Path {
+    val r = minOf(L.POPOVER_RADIUS * k, h / 2f - 1f).coerceAtLeast(0f)
+    val a = L.CARET_WIDTH * k / 2f
+    val b = L.CARET_WIDTH * k / 6f
+    val d = L.CARET_HEIGHT * k
+    val right = left + bw
+    return Path().apply {
+        moveTo(left + r, 0f)
+        lineTo(right - r, 0f)
+        arcTo(Rect(right - 2 * r, 0f, right, 2 * r), -90f, 90f, false)
+        if (caretRight) {
+            lineTo(right, cy - a)
+            lineTo(right + d * .78f, cy - b)
+            quadraticTo(right + d * 1.15f, cy, right + d * .78f, cy + b)
+            lineTo(right, cy + a)
+        }
+        lineTo(right, h - r)
+        arcTo(Rect(right - 2 * r, h - 2 * r, right, h), 0f, 90f, false)
+        lineTo(left + r, h)
+        arcTo(Rect(left, h - 2 * r, left + 2 * r, h), 90f, 90f, false)
+        if (!caretRight) {
+            lineTo(left, cy + a)
+            lineTo(left - d * .78f, cy + b)
+            quadraticTo(left - d * 1.15f, cy, left - d * .78f, cy - b)
+            lineTo(left, cy - a)
+        }
+        lineTo(left, r)
+        arcTo(Rect(left, 0f, left + 2 * r, 2 * r), 180f, 90f, false)
+        close()
+    }
+}
+
+/** The popover's glass inside the current clip: the dark backing, the tint, the sheen at the top and the light at the bottom, [a] faded in. */
+internal fun DrawScope.paintPopoverGlass(a: Float, sheen: Color, k: Float) {
+    drawRect(CardBacking.copy(alpha = L.CARD_BACKING_ALPHA * a))
+    drawRect(CardTint.copy(alpha = .50f * a))
+    drawRect(Brush.verticalGradient(0f to sheen.copy(alpha = .20f * a), .52f to Color.Transparent, 1f to Color.Transparent))
+    drawRect(Brush.verticalGradient(0f to Color.Transparent, 1f to Color.White.copy(alpha = .20f * a), startY = size.height - 150f * k, endY = size.height))
+}
+
+/**
  * The popover's chrome (`#pop`): a frosted card with its caret, [geo] wide and high, bottom-anchored (the caller puts
  * its box [StreamMenuLayout.POPOVER_BOTTOM] above the stage's bottom edge). It grows from [scale] around the caret's
  * tip ([StreamMenuLayout.POPOVER_HIDDEN_SCALE] to 1) while [alpha] fades the glass and its content in. The card's size
@@ -274,10 +318,7 @@ internal fun StreamMenuPopover(
                 // The shadow is a sibling of the card with its rounded rectangle (without the caret): 0 40px 90px -20px
                 drawBoxShadow(Rect(0f, 0f, size.width, body), L.POPOVER_RADIUS * k, 40f * k, 90f * k, -20f * k, Color.Black.copy(alpha = .62f * a))
                 clipPath(caretCardPath(size.width, maxOf(body, 120f * k), geo.cx.value * k, k)) {
-                    drawRect(CardBacking.copy(alpha = L.CARD_BACKING_ALPHA * a))
-                    drawRect(CardTint.copy(alpha = .50f * a))
-                    drawRect(Brush.verticalGradient(0f to sheen.copy(alpha = .20f * a), .52f to Color.Transparent, 1f to Color.Transparent))
-                    drawRect(Brush.verticalGradient(0f to Color.Transparent, 1f to Color.White.copy(alpha = .20f * a), startY = size.height - 150f * k, endY = size.height))
+                    paintPopoverGlass(a, sheen, k)
                     this@drawWithContent.drawContent()
                 }
             }

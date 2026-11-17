@@ -42,6 +42,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.limelight.shell.ContextMenu
+import com.limelight.shell.LocalContextMenuOpener
 import com.limelight.shell.LocalFocusTracker
 
 /**
@@ -180,6 +182,8 @@ fun Modifier.focusEffects(
     val currentActivate by rememberUpdatedState(activate)
     val currentAdjust by rememberUpdatedState(controllerAdjust)
     val currentTouchTap by rememberUpdatedState(onTouchTap)
+    val currentOpener by rememberUpdatedState(LocalContextMenuOpener.current)
+    val currentMenu by rememberUpdatedState(contextMenu)
 
     // The animated values (scale, glow and ring alpha) are only read while drawing, never while composing:
     // a focus change would otherwise rebuild both affected elements on every frame of the animation
@@ -260,7 +264,15 @@ fun Modifier.focusEffects(
         .focusRequester(requester)
         .focusable(interactionSource = interaction)
         .pointerInput(requester) {
-            detectTapGestures(onTap = {
+            detectTapGestures(onLongPress = {
+                // Touch: a long press opens the element's context menu, as Start does (the tap's own handling is not reached after it)
+                val open = currentOpener
+                val menu = currentMenu
+                if (menu != null && open != null) {
+                    requester.requestFocus()
+                    open(menu, position[0]?.takeIf { it.isAttached }?.boundsInRoot())
+                }
+            }, onTap = {
                 val wasFocused = focused
                 requester.requestFocus()
                 // The latest lambdas: this gesture handler outlives the composition it was created in

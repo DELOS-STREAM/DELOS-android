@@ -479,5 +479,18 @@ class ShellState(initial: Screen) {
 val LocalShell = staticCompositionLocalOf<ShellState> { error("ShellState not provided") }
 val LocalFocusTracker = staticCompositionLocalOf<FocusTracker> { error("FocusTracker not provided") }
 
+/**
+ * Touch: opens a focusable's context menu at its bounds (root pixels) on a long press; null where no shell can show one (the stream's menu).
+ * Called after the press has focused the element.
+ */
+val LocalContextMenuOpener = staticCompositionLocalOf<((ContextMenu, Rect?) -> Unit)?> { null }
+
+/**
+ * Whether a long press may open a context menu: the element has one and a shell takes it, and nothing else is open (a layer, the launch, the
+ * portal, a result or a row popup), the same moments the Start button opens one in.
+ */
+internal fun longPressOpensContext(menu: ContextMenu?, shellTakesIt: Boolean, layerOpen: Boolean, busy: Boolean): Boolean =
+    menu != null && shellTakesIt && !layerOpen && !busy
+
 /** The current PC's games, e.g. for the settings that download artwork for all of them. */
 val LocalLibrary = androidx.compose.runtime.compositionLocalOf<com.limelight.shell.data.Library> { com.limelight.shell.data.Library.Loading }

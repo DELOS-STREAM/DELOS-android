@@ -149,13 +149,36 @@ class RowPickerLogicTest {
     private val w = 1920f
     private val h = 1080f
 
-    @Test fun theCardHangsOnTheRowsRightEdgeWithTheCurrentOptionOverTheRow() {
+    private val point = row.right - PickerLayout.VALUE_INSET
+    private val d = PickerLayout.CARET_HEIGHT
+
+    @Test fun theCardLiesLeftOfTheRowsValueCentredOnTheRowWithItsCaretInTheRow() {
         val p = PickerLayout.options(row, count = 3, selected = 1, stageW = w, stageH = h)
-        assertEquals(PickerLayout.WIDTH, p.width, 0f)
-        assertEquals(1860f - PickerLayout.WIDTH, p.x, 0f)
+        assertEquals(PickerLayout.OPTIONS_WIDTH, p.width, 0f)
+        assertTrue(p.caretRight)
+        assertEquals(point - d, p.x + p.width, .001f)
+        assertEquals(point, p.tipX, .001f)
+        assertTrue(p.tipX > row.left && p.tipX < row.right)
         assertEquals(PickerLayout.CHROME + PickerLayout.listHeight(3), p.height, 0f)
-        // The middle of the current option is the middle of the row
-        assertEquals(row.center.y, p.y + PickerLayout.optionCenter(1), .001f)
+        assertEquals(row.center.y, p.y + p.height / 2f, .001f)
+        // The caret points at the middle of the row
+        assertEquals(row.center.y, p.y + p.caretY, .001f)
+    }
+
+    @Test fun theCardFlipsToTheRightWhenTheLeftHasNoRoom() {
+        // A row near the left edge: only the right side has room for the card
+        val near = Rect(40f, 300f, 600f, 392f)
+        val p = PickerLayout.options(near, count = 3, selected = 0, stageW = w, stageH = h)
+        assertTrue(!p.caretRight)
+        assertEquals(near.right - PickerLayout.VALUE_INSET + d, p.x, .001f)
+        assertEquals(p.x - d, p.tipX, .001f)
+    }
+
+    @Test fun theCaretStaysClearOfTheCornersWhereTheRowIsNearTheCardsEdge() {
+        val high = PickerLayout.value(Rect(700f, 100f, 1860f, 192f), w, h)
+        assertEquals(PickerLayout.TOP_MARGIN, high.y, 0f)
+        assertTrue(high.caretY >= PickerLayout.CORNER + PickerLayout.CARET_WIDTH / 2f)
+        assertTrue(high.caretY <= high.height - PickerLayout.CORNER - PickerLayout.CARET_WIDTH / 2f)
     }
 
     @Test fun theCardStaysBelowTheStatusBarAndAboveTheBottomEdge() {
@@ -174,17 +197,19 @@ class RowPickerLogicTest {
         assertTrue(p.list < PickerLayout.listHeight(40))
     }
 
-    @Test fun theCardKeepsItsDistanceFromTheSides() {
-        assertEquals(PickerLayout.SIDE_MARGIN, PickerLayout.options(Rect(0f, 300f, 300f, 392f), 3, 0, w, h).x, 0f)
+    @Test fun theCardKeepsItsDistanceFromTheSidesAndIsNarrowedToTheRoom() {
+        val p = PickerLayout.value(row, w, h)
+        assertTrue(p.x >= PickerLayout.SIDE_MARGIN && p.x + p.width <= w - PickerLayout.SIDE_MARGIN)
         val narrow = PickerLayout.options(Rect(0f, 300f, 390f, 392f), 3, 0, stageW = 400f, stageH = h)
-        assertEquals(352f, narrow.width, 0f)
-        assertEquals(PickerLayout.SIDE_MARGIN, narrow.x, 0f)
+        assertTrue(narrow.x >= PickerLayout.SIDE_MARGIN && narrow.x + narrow.width <= 400f - PickerLayout.SIDE_MARGIN)
+        assertTrue(narrow.width < PickerLayout.OPTIONS_WIDTH)
     }
 
-    @Test fun withoutARowTheCardIsCentred() {
+    @Test fun withoutARowTheCardIsCentredWithoutACaret() {
         val p = PickerLayout.options(null, count = 3, selected = 0, stageW = w, stageH = h)
         assertEquals((w - p.width) / 2f, p.x, .001f)
         assertEquals((h - p.height) / 2f, p.y, .001f)
+        assertTrue(!p.hasCaret)
     }
 
     @Test fun aCompactStageKeepsItsOwnMargins() {
@@ -194,11 +219,14 @@ class RowPickerLogicTest {
         assertEquals(480f, low.y + low.height, .001f)
     }
 
-    @Test fun theSliderPopupIsCentredOnTheRow() {
+    @Test fun theSliderPopupIsWideAndItsControlsAreForAFinger() {
         val p = PickerLayout.value(row, w, h)
         assertEquals(PickerLayout.VALUE_HEIGHT, p.height, 0f)
+        assertEquals(PickerLayout.VALUE_WIDTH, p.width, 0f)
+        assertTrue(PickerLayout.VALUE_WIDTH >= 2f * 520f)
+        // 56 dp is 72 stage pixels
+        assertTrue(PickerLayout.VALUE_BUTTON >= 72f && PickerLayout.VALUE_FIELD >= 72f && PickerLayout.VALUE_CONTROLS >= 72f)
         assertEquals(row.center.y, p.y + p.height / 2f, .001f)
-        assertEquals(1860f - PickerLayout.WIDTH, p.x, 0f)
         // At the bottom it is pushed up, never off the screen
         val low = PickerLayout.value(Rect(700f, 980f, 1860f, 1072f), w, h)
         assertEquals(h - PickerLayout.BOTTOM_MARGIN, low.y + low.height, .001f)

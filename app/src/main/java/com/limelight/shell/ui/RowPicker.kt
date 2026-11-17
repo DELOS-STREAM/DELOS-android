@@ -3,10 +3,13 @@ package com.limelight.shell.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import com.limelight.shell.paintPopoverGlass
+import com.limelight.shell.sideCaretCardPath
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -122,30 +125,26 @@ internal fun rowPopupFor(title: String, value: RowValue): RowPopup? = when {
     else -> null
 }
 
-/** The popup is closed by the scrim; the slider popup commits a typed number first. */
+/** The popup is closed by a tap beside the card; the slider popup commits a typed number first. */
 private class CloseHook {
     var before: () -> Unit = {}
 }
 
 /**
- * The popup of a settings row over the screen: a scrim (25 % black, a tap beside the card closes it) and the card at the row ([PickerLayout]).
- * [request] null: it fades out. With a controller: up and down, A picks, B closes (the focus is trapped inside); the slider popup takes left and right.
+ * The popup of a settings row over the screen: the stream menu's popover card, grown out of the tapped row ([PickerLayout]: vertically centred on the
+ * row, its caret pointing into the row's value). Like the stream menu there is no dimming; a tap beside the card closes it.
+ * [request] null: it shrinks back into the row. With a controller: up and down, A picks, B closes (the focus is trapped inside); the slider popup takes left and right.
  */
 @Composable
 fun RowPickerLayer(request: RowPopupRequest?, onClose: () -> Unit) {
-    // The last request stays while the card fades out
+    // The last request stays while the card shrinks back
     var shown by remember { mutableStateOf(request) }
     if (request != null) shown = request
     // The anchor is the row's bounds in the window's root; the layer may start elsewhere (the shape simulator's box): relative to the layer
     var layerAt by remember { mutableStateOf(Offset.Zero) }
     Box(Modifier.fillMaxSize().onGloballyPositioned { layerAt = it.positionInRoot() }) {
-        AnimatedVisibility(
-            request != null, Modifier.fillMaxSize(),
-            enter = fadeIn(tween(Motion.SCRIM, easing = Motion.Ease)), exit = fadeOut(tween(Motion.EXIT, easing = Motion.Ease)),
-        ) {
-            val r = shown ?: return@AnimatedVisibility
-            key(r) { PickerSheet(r, layerAt, active = request != null, onClose) }
-        }
+        val r = shown ?: return@Box
+        key(r) { PickerSheet(r, layerAt, active = request != null, onClose) }
     }
 }
 
@@ -153,6 +152,8 @@ fun RowPickerLayer(request: RowPopupRequest?, onClose: () -> Unit) {
 private fun PickerSheet(request: RowPopupRequest, layerAt: Offset, active: Boolean, onClose: () -> Unit) {
     val k = stageUnit()
     val stage = LocalStage.current
+    val colors = LocalDelosColors.current
+    val reduced = LocalReducedMotion.current
     val popup = request.popup
     val anchor = request.anchor?.let { Rect((it.left - layerAt.x) / k, (it.top - layerAt.y) / k, (it.right - layerAt.x) / k, (it.bottom - layerAt.y) / k) }
     // Below the status bar and above the bottom edge; a compact stage's card ends above its hint bar
@@ -164,41 +165,59 @@ private fun PickerSheet(request: RowPopupRequest, layerAt: Offset, active: Boole
     }
     val hook = remember { CloseHook() }
     val feedback = LocalFeedback.current
+    val sheen = colors.accent2
+    // The card box holds the body and, on one side, the caret
+    val caretLeft = place.hasCaret && !place.caretRight
+    val caretRight = place.hasCaret && place.caretRight
+    val d = if (place.hasCaret) P.CARET_HEIGHT else 0f
+    val boxW = place.width + d
+    // It grows from the caret's tip
+    val origin = TransformOrigin(if (caretLeft) 0f else if (caretRight) 1f else .5f, if (place.hasCaret) place.caretY / place.height else .5f)
     Box(Modifier.fillMaxSize()) {
-        Box(
-            Modifier.fillMaxSize().background(Color.Black.copy(alpha = .25f))
-                .pointerInput(Unit) { detectTapGestures { hook.before(); feedback.play(Cue.BACK); onClose() } },
-        )
-        Box(
+        // A tap beside the card closes it (nothing is dimmed: the stream menu's popover has no scrim either)
+        if (active) Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { hook.before(); feedback.play(Cue.BACK); onClose() } })
+        AnimatedVisibility(
+            active,
             Modifier
-                .offset { IntOffset((place.x * k).roundToInt(), (place.y * k).roundToInt()) }
+                .offset { IntOffset(((place.x - if (caretLeft) d else 0f) * k).roundToInt(), (place.y * k).roundToInt()) }
                 // The keyboard of the number field lifts the whole card (nothing else of the screen moves)
-                .moveAboveIme()
-                .size(place.width.px, place.height.px)
-                .pickerCard()
-                // A tap on the card itself must not reach the scrim
-                .pointerInput(Unit) { detectTapGestures { } },
+                .moveAboveIme(),
+            enter = popEnter(origin, reduced), exit = popExit(origin, reduced),
         ) {
-            when (popup) {
-                is RowPopup.Options -> OptionsCard(popup, place.list, active, onClose)
-                is RowPopup.Value -> ValueCard(popup, active, hook, onClose)
+            Box(
+                Modifier
+                    .size(boxW.px, place.height.px)
+                    .pickerCard(place, d, sheen)
+                    // A tap on the card itself must not reach the layer behind
+                    .pointerInput(Unit) { detectTapGestures { } },
+            ) {
+                Box(Modifier.padding(start = (if (caretLeft) d else 0f).px, end = (if (caretRight) d else 0f).px).fillMaxSize()) {
+                    when (popup) {
+                        is RowPopup.Options -> OptionsCard(popup, place.list, active, onClose)
+                        is RowPopup.Value -> ValueCard(popup, active, hook, onClose)
+                    }
+                }
             }
         }
     }
 }
 
-/** The card: opaque (the rows behind must not show through the values) under a glass tint, a 1 px line, a soft shadow. */
+/**
+ * The popover's card, drawn like the stream menu's: its glass, outline and caret as one path ([sideCaretCardPath]) and its shadow.
+ */
 @Composable
-private fun Modifier.pickerCard(): Modifier {
-    val colors = LocalDelosColors.current
+private fun Modifier.pickerCard(place: PickerPlacement, caret: Float, sheen: Color): Modifier {
     val k = stageUnit()
-    val shape = RoundedCornerShape(P.CORNER.px)
-    return this
-        .drawBehind { drawBoxShadow(Rect(0f, 0f, size.width, size.height), P.CORNER * k, 20f * k, 60f * k, 0f, Color.Black.copy(alpha = .35f)) }
-        .clip(shape)
-        .background(colors.bg2)
-        .background(colors.surface3)
-        .border(1.px, colors.line, shape)
+    return this.drawWithContent {
+        val left = if (place.hasCaret && !place.caretRight) caret * k else 0f
+        val bodyW = size.width - caret * k
+        drawBoxShadow(Rect(left, 0f, left + bodyW, size.height), P.CORNER * k, 40f * k, 90f * k, -20f * k, Color.Black.copy(alpha = .62f))
+        val path = sideCaretCardPath(left, bodyW, size.height, if (place.hasCaret) place.caretY * k else size.height / 2f, place.caretRight, k)
+        clipPath(path) {
+            paintPopoverGlass(1f, sheen, k)
+            this@drawWithContent.drawContent()
+        }
+    }
 }
 
 @Composable
@@ -361,17 +380,18 @@ private fun ValueCard(popup: RowPopup.Value, active: Boolean, hook: CloseHook, o
                     else -> false
                 }
             }
-            .padding(horizontal = 12.px, vertical = P.PAD.px),
+            .padding(vertical = P.PAD.px),
         verticalArrangement = Arrangement.spacedBy(P.VALUE_GAP.px),
     ) {
         CardTitle(popup.title)
         // The number: a tap turns it into a field
         val shape = CircleShape
         val line by animateColorAsState(if (invalid) MenuDanger else if (editing) colors.accent else colors.line, tween(Motion.FADE, easing = Motion.Ease), label = "valueLine")
-        val numberStyle = TextStyle(color = if (invalid) MenuDanger else colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 36.tpx, fontFeatureSettings = "tnum")
+        val numberStyle = TextStyle(color = if (invalid) MenuDanger else colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 52.tpx, fontFeatureSettings = "tnum")
         val enterValue = stringResource(R.string.row_slider_enter_value)
         Box(
             Modifier
+                .padding(horizontal = P.VALUE_SIDE.px)
                 .fillMaxWidth()
                 .height(P.VALUE_FIELD.px)
                 .clip(shape)
@@ -385,7 +405,7 @@ private fun ValueCard(popup: RowPopup.Value, active: Boolean, hook: CloseHook, o
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.px)) {
                     BasicTextField(
                         state = text,
-                        modifier = Modifier.width(190.px).focusRequester(field).keepFieldAboveIme(true),
+                        modifier = Modifier.width(320.px).focusRequester(field).keepFieldAboveIme(true),
                         inputTransformation = NumberInput,
                         textStyle = numberStyle.copy(textAlign = TextAlign.End),
                         keyboardOptions = KeyboardOptions(
@@ -396,7 +416,7 @@ private fun ValueCard(popup: RowPopup.Value, active: Boolean, hook: CloseHook, o
                         lineLimits = TextFieldLineLimits.SingleLine,
                         cursorBrush = SolidColor(colors.accent),
                     )
-                    BasicText(slider.unit.trim(), maxLines = 1, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Medium, fontSize = 24.tpx))
+                    BasicText(slider.unit.trim(), maxLines = 1, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Medium, fontSize = 32.tpx))
                 }
             } else {
                 val shown = dragging ?: value
@@ -405,13 +425,13 @@ private fun ValueCard(popup: RowPopup.Value, active: Boolean, hook: CloseHook, o
                         BasicText(slider.minText, maxLines = 1, style = numberStyle)
                     } else {
                         BasicText(SliderEdit.numberText(slider, shown, locale), maxLines = 1, style = numberStyle)
-                        BasicText(slider.unit.trim(), maxLines = 1, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Medium, fontSize = 24.tpx))
+                        BasicText(slider.unit.trim(), maxLines = 1, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Medium, fontSize = 32.tpx))
                     }
                 }
-                Symbol(Symbols.EDIT, 26.tpx, colors.text3, Modifier.align(Alignment.CenterEnd).padding(end = 26.px))
+                Symbol(Symbols.EDIT, 36.tpx, colors.text3, Modifier.align(Alignment.CenterEnd).padding(end = 32.px))
             }
         }
-        Row(Modifier.fillMaxWidth().height(P.VALUE_CONTROLS.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
+        Row(Modifier.padding(horizontal = P.VALUE_SIDE.px).fillMaxWidth().height(P.VALUE_CONTROLS.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.px)) {
             StepButton(-1, Symbols.CHEVRON_LEFT, stringResource(R.string.row_slider_decrease), enabled = value > slider.min, slider, { value }, feedback, ::fromControls)
             PopupTrack(slider, dragging ?: value, Modifier.weight(1f), onDrag = { dragging = it }, onCommit = ::fromControls)
             StepButton(1, Symbols.CHEVRON_RIGHT, stringResource(R.string.row_slider_increase), enabled = value < slider.max, slider, { value }, feedback, ::fromControls)
@@ -429,7 +449,7 @@ private fun StepButton(
     val fill by animateColorAsState(Color.White.copy(alpha = if (pressed) .22f else .10f), tween(Motion.PRESS, easing = Motion.Ease), label = "stepFill")
     Box(
         Modifier
-            .size(P.VALUE_CONTROLS.px)
+            .size(P.VALUE_BUTTON.px)
             .alpha(if (enabled) 1f else .35f)
             .clip(CircleShape)
             .background(fill)
@@ -457,10 +477,10 @@ private fun StepButton(
                 })
             },
         contentAlignment = Alignment.Center,
-    ) { Symbol(icon, 40.tpx, colors.text) }
+    ) { Symbol(icon, 56.tpx, colors.text) }
 }
 
-/** The slider itself, 72 px tall to be hit with a finger: a tap or a drag sets the value on the slider's grid when the finger lifts. */
+/** The slider itself, [P.VALUE_CONTROLS] (96) px tall to be hit with a finger: a tap or a drag sets the value on the slider's grid when the finger lifts. */
 @Composable
 private fun PopupTrack(slider: RowValue.Slider, shown: Int, modifier: Modifier, onDrag: (Int?) -> Unit, onCommit: (Int) -> Unit) {
     val colors = LocalDelosColors.current
@@ -496,7 +516,7 @@ private fun PopupTrack(slider: RowValue.Slider, shown: Int, modifier: Modifier, 
             .drawBehind {
                 val inset = KNOB * k
                 val span = size.width - 2 * inset
-                val trackHeight = 10f * k
+                val trackHeight = 14f * k
                 val top = (size.height - trackHeight) / 2f
                 drawRoundRect(colors.surface3, Offset(inset, top), Size(span, trackHeight), androidx.compose.ui.geometry.CornerRadius(trackHeight / 2f))
                 if (fraction > 0f) drawRoundRect(
@@ -512,4 +532,4 @@ private fun PopupTrack(slider: RowValue.Slider, shown: Int, modifier: Modifier, 
 }
 
 /** The slider popup's knob radius, stage pixels (a finger needs more than the row's 14). */
-private const val KNOB = 20f
+private const val KNOB = 30f
