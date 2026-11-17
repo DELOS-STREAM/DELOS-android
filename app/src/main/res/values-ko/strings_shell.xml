@@ -19,6 +19,8 @@
     <string name="shell_side_not_connected">연결 안 됨</string>
     <string name="shell_side_connected">%1$s에 연결됨</string>
     <string name="shell_side_offline">%1$s 오프라인</string>
+    <string name="shell_side_pc_streaming">스트리밍 중</string>
+    <string name="shell_side_pc_connecting">연결 중</string>
     <string name="shell_side_show_hidden">숨긴 앱 표시</string>
     <string name="shell_side_hidden_on">%2$s에서 %1$d개 숨김</string>
     <string name="shell_side_hidden_on_this_pc">이 PC에서 %1$d개 숨김</string>

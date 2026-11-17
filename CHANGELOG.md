@@ -10,6 +10,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Changed
+- The side menu's header ([#98](https://github.com/DELOS-STREAM/DELOS-android/issues/98)) shows the connected PC with a live dot and state (online, streaming, connecting, asleep, offline) under the profile name, and a card with the profile's whole streaming time (every game on every PC) and its last stream, in the home screen's stat-block style. Covered by unit tests; not checked on a device yet.
+
 ## [1.2.0] - 2026-11-17
 _Touch everywhere, the last input decides the hints, new controller glyphs, Guide and Back for the stream menu, anchored on-screen controls; the project moves to the DELOS-STREAM organization._
 

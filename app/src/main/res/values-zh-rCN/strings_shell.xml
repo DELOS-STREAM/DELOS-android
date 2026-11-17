@@ -17,6 +17,8 @@
     <string name="shell_side_not_connected">未连接</string>
     <string name="shell_side_connected">已连接到 %1$s</string>
     <string name="shell_side_offline">%1$s 已离线</string>
+    <string name="shell_side_pc_streaming">串流中</string>
+    <string name="shell_side_pc_connecting">正在连接</string>
     <string name="shell_side_show_hidden">显示隐藏的应用</string>
     <string name="shell_side_hidden_on">%2$s 上隐藏了 %1$d 个</string>
     <string name="shell_side_hidden_on_this_pc">此 PC 上隐藏了 %1$d 个</string>

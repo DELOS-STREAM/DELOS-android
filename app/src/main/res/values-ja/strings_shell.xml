@@ -19,6 +19,8 @@
     <string name="shell_side_not_connected">未接続</string>
     <string name="shell_side_connected">%1$sに接続中</string>
     <string name="shell_side_offline">%1$sはオフラインです</string>
+    <string name="shell_side_pc_streaming">ストリーミング中</string>
+    <string name="shell_side_pc_connecting">接続中</string>
     <string name="shell_side_show_hidden">非表示のアプリを表示</string>
     <string name="shell_side_hidden_on">%2$sで%1$d本が非表示</string>
     <string name="shell_side_hidden_on_this_pc">このPCで%1$d本が非表示</string>
