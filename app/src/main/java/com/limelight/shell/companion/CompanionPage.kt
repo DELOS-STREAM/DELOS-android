@@ -47,7 +47,7 @@ internal interface CompanionPage {
 
 /** A button of the main screen's hint bar as the companion lists it: the pad button's letter, or the symbol of a menu button, and the word next to it. */
 @Immutable
-internal data class CompanionHint(val key: String?, val symbol: String?, val label: String)
+internal data class CompanionHint(val key: String?, val symbol: String?, val label: String, val completeButton: Boolean = false)
 
 /** The PC the shell is connected to, for the fallback: its name, its status as a word, and the game that runs on it. */
 @Immutable

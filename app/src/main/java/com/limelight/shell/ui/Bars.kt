@@ -1,6 +1,5 @@
 package com.limelight.shell.ui
 
-import android.os.Build
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -28,13 +27,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -414,10 +415,15 @@ private fun NavButtonView(button: NavButton, requester: FocusRequester, wrapLeft
     }
 }
 
-/** What a hint's button looks like: a letter (A, B, L1…) or an icon (menu buttons, adjust). */
+/**
+ * What a hint's button names: a place on the connected controller ([Pad], drawn with its glyph family by [ControllerGlyphs]) or the adjust
+ * cue, which is no button. The names A, B, X, Y, L1, R1 are positions (A is the south button, B the east one...), as on an Xbox pad; a
+ * PlayStation pad draws the cross for [A] and a Nintendo pad its own letters.
+ */
 @Immutable
 sealed interface Glyph {
-    data class Letter(val text: String) : Glyph
+    data class Pad(val role: GlyphRole) : Glyph
+
     /**
      * [scale] multiplies the 24 px base font size to even out icons that look too big or too small next to
      * the others. The scales are measured against the Material Symbols Rounded glyphs (FILL 1, wght 600,
@@ -428,35 +434,20 @@ sealed interface Glyph {
     data class Icon(val symbol: String, val scale: Float = 1f) : Glyph
 
     companion object {
-        val A = Letter("A")
-        val B = Letter("B")
-        val X = Letter("X")
-        val Y = Letter("Y")
-        val L1 = Letter("L1")
-        val R1 = Letter("R1")
-
-        /** AYN handhelds (Odin, Thor) have a square and a play icon on their two menu buttons. */
-        private val ayn = Build.MANUFACTURER.equals("AYN", ignoreCase = true)
-
-        /**
-         * The left top menu button (View / Select). AYN square: ink 0.790 em (Material, scale .72 = 13.65 px) vs
-         * 0.750 em (Phosphor) -> .72 * 0.790 / 0.750 = .758, the same 13.65 px. Other devices, copy: 0.9005 em vs
-         * 0.750 em -> 1.2, 21.6 px.
-         */
-        val MENU_LEFT = if (ayn) Icon(Symbols.SQUARE, scale = .758f) else Icon(Symbols.FILTER_NONE, scale = 1.2f)
-
-        /**
-         * The right top menu button (Start). AYN play: ink 0.4672 x 0.5640 em (Material, scale 1.3 = 14.6 x 17.6 px)
-         * vs 0.6875 x 0.8125 em (Phosphor) -> 1.3 * 0.5640 / 0.8125 = .9025, 14.9 x 17.6 px (the same height). Other
-         * devices, list: Material bars 0.790 x 0.558 em vs the Phosphor list-fill block 0.750 x 0.750 em; the shapes
-         * differ, so the area-equivalent factor sqrt(0.790/0.750 * 0.558/0.750) = .885 is used (15.9 px block).
-         */
-        val MENU_RIGHT = if (ayn) Icon(Symbols.PLAY_ARROW, scale = .9025f) else Icon(Symbols.MENU, scale = .885f)
+        val A = Pad(GlyphRole.SOUTH)
+        val B = Pad(GlyphRole.EAST)
+        val X = Pad(GlyphRole.WEST)
+        val Y = Pad(GlyphRole.NORTH)
+        val L1 = Pad(GlyphRole.LEFT_SHOULDER)
+        val R1 = Pad(GlyphRole.RIGHT_SHOULDER)
+        val MENU_LEFT = Pad(GlyphRole.MENU_LEFT)
+        val MENU_RIGHT = Pad(GlyphRole.MENU_RIGHT)
 
         /** Material swap_horiz 0.827 x 0.661 em vs Phosphor arrows-left-right 0.6875 x 0.6875 em -> area-equivalent 1.075 (17.7 px). */
         val ADJUST = Icon(Symbols.SWAP_HORIZ, scale = 1.075f)
     }
 }
+
 
 @Immutable
 /** [shortLabel] is the label a cramped (compact) bar uses before it drops the label altogether. */
@@ -571,22 +562,28 @@ private fun HintCell(hint: Hint, detail: HintDetail) {
     }
 }
 
-/** A button hint's glyph, [size] stage pixels (the stream menu's bar uses a bigger one than the hint bars). */
+/** Native input caps occupy .75 em; their visible circular button remains [size] stage pixels. */
+internal const val BUTTON_INK_FRACTION = .75f
+
+/** Complete pad caps come from the shared font; non-pad cues retain their existing disc. */
 @Composable
 fun GlyphButton(glyph: Glyph, size: Int = 38) {
     val colors = LocalDelosColors.current
-    val k = size / 38f
-    Box(
-        // Icons always sit in a circle; letters (L1…) may widen it into a pill
-        (if (glyph is Glyph.Icon) Modifier.size(size.px) else Modifier.defaultMinSize(minWidth = size.px).height(size.px))
-            .clip(CircleShape)
-            .background(colors.text)
-            .then(if (glyph is Glyph.Icon) Modifier else Modifier.padding(horizontal = 8.px)),
-        contentAlignment = Alignment.Center,
-    ) {
-        when (glyph) {
-            is Glyph.Letter -> BasicText(glyph.text, style = TextStyle(color = colors.bg, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = (21f * k).tpx))
-            is Glyph.Icon -> Symbol(glyph.symbol, (24f * glyph.scale * k).tpx, colors.bg, filled = true)
+    when (glyph) {
+        is Glyph.Pad -> {
+            val em = size / BUTTON_INK_FRACTION
+            Box(Modifier.width(em.px).height(size.px), contentAlignment = Alignment.Center) {
+                Symbol(
+                    ControllerGlyphs.family.fontSymbol(glyph.role), em.tpx, colors.text,
+                    modifier = Modifier.requiredSize(em.px), filled = true,
+                )
+            }
+        }
+        is Glyph.Icon -> Box(
+            Modifier.size(size.px).clip(CircleShape).background(colors.text),
+            contentAlignment = Alignment.Center,
+        ) {
+            Symbol(glyph.symbol, (24f * glyph.scale * size / 38f).tpx, colors.bg, filled = true)
         }
     }
 }

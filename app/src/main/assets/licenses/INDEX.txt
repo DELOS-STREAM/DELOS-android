@@ -43,6 +43,8 @@ Fonts and icons
 Unbounded | google/fonts e7db6ca6 | OFL-1.1 | Unbounded-OFL.txt
 Figtree | google/fonts e7db6ca6 | OFL-1.1 | Figtree-OFL.txt
 Phosphor Icons | 2.1.2 | MIT | Phosphor-LICENSE.txt
+Figtree Medium lettering in controller and Mac input glyphs | google/fonts e7db6ca6 | OFL-1.1 | Figtree-OFL.txt
+Simple Icons Xbox and PlayStation Guide marks (trademark rights retained) | 11.0.0 | CC0-1.0 | Simple-Icons-CC0.txt
 
 Adapted code
 HowLongToBeat client search flow (from howlongtobeatpy) | 1.0.24 | MIT | howlongtobeatpy.txt

@@ -382,7 +382,7 @@ private fun RowResetButton(override: RowOverride, focused: Boolean) {
         else {
             Symbol(Symbols.RESET, 24.tpx, tint)
             BasicText(stringResource(R.string.row_reset), style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 19.tpx))
-            GlyphButton(Glyph.Letter("X"), 30)
+            GlyphButton(Glyph.X, 30)
         }
     }
 }
