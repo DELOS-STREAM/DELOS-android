@@ -10,10 +10,17 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Added
+- Touch (issue [#92](https://github.com/Meitoncz/DELOS/issues/92)): every choice row now has an option list, in the look and place of the iPad's picker: a card at the row with the current value checked and focused, a long list scrolls, a tap beside it closes it. It replaces the context menu of the first version. This covers all Settings tabs, the per-app settings, the side menu's Theme and Background, Debug info and the stream menu's Mode, Supersampling quality and Touchscreen mode; rows that were only toggles in disguise (Theme, Animations, Companion dimming, Default PC, Statistics position, the display rows) have one too.
+- Touch: a tap on the focused slider row opens a popup with a ◀ and a ▶ button (hold to repeat, faster the longer it is held), the slider, and the value as a number to tap and type with the on-screen keyboard (the bitrate in Mbit/s); the value is validated, rounded to the slider's grid and clamped to its range. It works on every slider, also the stream menu's. The controller is unchanged. Covered by unit tests; the look and the keyboard were not checked on a device.
+- Touch: the launch scene and the stream's loader have a small Cancel pill at the bottom, and every touch on them is blocked, so nothing underneath reacts.
+
 ### Fixed
-- Touch on settings rows ([#92](https://github.com/Meitoncz/DELOS/issues/92)): a first tap focuses a row and shows its help, a tap on the focused row changes it; the switch and a choice's arrows take their own taps (◀ goes back), and a focused choice row with several values lists them to pick from. Keys and the gamepad are unchanged. Tested by touch on a Galaxy Tab S9+ (Android 16).
-- The link test (and waking a PC) can be cancelled by touch: a tap shows a Cancel button, and taps no longer reach the screen underneath. The link test was tested on a Galaxy Tab S9+ (Android 16); waking a PC was not tested.
-- The update card no longer stays on Installing until the app restarts when Android's install prompt cannot be shown; the install ends as failed. Covered by a unit test; not reproduced on a device.
+- Touch on settings rows ([#92](https://github.com/Meitoncz/DELOS/issues/92)): a first tap focuses a row and shows its help, a tap on the focused row changes it; the switch and a choice's arrows take their own taps (◀ goes back), and a focused choice row with several values lists them to pick from. Keys and the gamepad are unchanged. Tested by touch on a Galaxy Tab S9+ (Android 16). (by [@Mimir-apk](https://github.com/Mimir-apk), [#93](https://github.com/Meitoncz/DELOS/pull/93))
+- The link test (and waking a PC) can be cancelled by touch: a tap shows a Cancel button, and taps no longer reach the screen underneath. The link test was tested on a Galaxy Tab S9+ (Android 16); waking a PC was not tested. (by [@Mimir-apk](https://github.com/Mimir-apk), [#93](https://github.com/Meitoncz/DELOS/pull/93))
+- The update card no longer stays on Installing until the app restarts when Android's install prompt cannot be shown; the install ends as failed. Covered by a unit test; not reproduced on a device. (by [@Mimir-apk](https://github.com/Mimir-apk), [#93](https://github.com/Meitoncz/DELOS/pull/93))
+- Starting a game can be cancelled at any moment, by B and by touch, in every phase of the loader: before, B did nothing once the stream window had opened (and the first phase lasts under a second). Cancelling ends only the connection attempt and returns to the library; the game on the PC keeps running. Covered by unit tests; not checked on a device.
+- The stream menu's swipe up no longer starts at the very edge of the screen, where Android's gesture bar takes it: it starts in the bottom 18 % of the screen above the system's gesture strip. A tap outside the stream menu (above or beside the tiles) closes it; it never quits or disconnects and the tap does not reach the game.
 
 ## [1.1.0] - 2026-11-16
 _Hold Back for Guide and updated libraries._
