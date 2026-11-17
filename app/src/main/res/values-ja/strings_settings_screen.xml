@@ -89,7 +89,8 @@
     <string name="settings_native_sounds_description">メニューを移動するときに、やわらかいクリック音を鳴らします。</string>
 
     <string name="settings_native_menu_buttons_title">ストリームメニューのボタン</string>
-    <string name="settings_native_menu_buttons_description">ストリーム中にストリームメニューを開閉するために、同時に押すボタンです。背面ボタンなど、ほかのボタンを記録するには選択してください。</string>
+    <string name="settings_native_menu_buttons_description">Guideまたは戻るを短く押すとストリームメニューが開き、長押しするとPCにGuideを送ります。ここでは、背面ボタンなど同時に押す独自のボタンを追加できます。初期設定ではなしです。</string>
+    <string name="settings_native_menu_buttons_record">ボタンを記録</string>
     <string name="settings_native_menu_swipe_title">上スワイプでメニューを開く</string>
     <string name="settings_native_menu_swipe_description">下端から上にスワイプしても、ストリームメニューが開きます。そこから始まるタッチはアプリには届きません。</string>
     <string name="settings_native_osc_opacity_title">画面上のコントロールの不透明度</string>

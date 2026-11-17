@@ -91,7 +91,8 @@
     <string name="settings_native_sounds_description">М’які клацання під час руху по меню.</string>
 
     <string name="settings_native_menu_buttons_title">Кнопки меню стріму</string>
-    <string name="settings_native_menu_buttons_description">Кнопки, які натискаються разом під час стріму, щоб відкрити або закрити меню стріму. Вибери, щоб записати інші, наприклад задню кнопку.</string>
+    <string name="settings_native_menu_buttons_description">Коротке натискання Guide або Назад відкриває меню стріму; утримання надсилає на ПК Guide. Тут можна додати власні кнопки, натиснуті разом, наприклад задню кнопку. Типово немає.</string>
+    <string name="settings_native_menu_buttons_record">Записати кнопки</string>
     <string name="settings_native_menu_swipe_title">Свайп угору відкриває меню</string>
     <string name="settings_native_menu_swipe_description">Свайп угору від нижнього краю теж відкриває меню стріму. Дотики, що починаються там, не потрапляють у застосунок.</string>
     <string name="settings_native_osc_opacity_title">Непрозорість екранних елементів керування</string>

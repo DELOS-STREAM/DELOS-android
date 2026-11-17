@@ -42,7 +42,7 @@ class StreamMenuSettingsTest {
     }
 
     @Test fun aShortcutIsReadAsTheButtonsJoinedWithPlus() {
-        assertEquals("L3 + R3", StreamMenuSettings.label(res, StreamMenuSettings.DEFAULT_BUTTONS))
+        assertEquals("L3 + R3", StreamMenuSettings.label(res, setOf(KeyEvent.KEYCODE_BUTTON_THUMBR, KeyEvent.KEYCODE_BUTTON_THUMBL)))
         assertEquals("Start + Select", StreamMenuSettings.label(res, setOf(KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_START)))
     }
 }

@@ -152,10 +152,15 @@ internal fun nativeSettings(
         res.getString(R.string.settings_native_haptics_description), tab = SettingsTab.CONTROLS)
     row("ui_sounds", Symbols.MUSIC_NOTE, res.getString(R.string.settings_native_sounds_title), RowValue.Toggle(a.sounds) { on -> update { it.copy(sounds = on) } },
         res.getString(R.string.settings_native_sounds_description), tab = SettingsTab.AUDIO)
+    // None by default (a tap of Guide or Back opens the stream menu, issue #102); the list clears them or records new ones
     val menuButtons = StreamMenuSettings.buttons(settings)
-    row("ui_stream_menu_buttons", Symbols.STREAM_MENU_BUTTONS, res.getString(R.string.settings_native_menu_buttons_title), RowValue.Text(StreamMenuSettings.label(res, menuButtons)) {
-        shell.buttonCapture = { buttons -> StreamMenuSettings.setButtons(settings, buttons) }
-    }, res.getString(R.string.settings_native_menu_buttons_description),
+    val recordMenuButtons = { shell.buttonCapture = { buttons -> StreamMenuSettings.setButtons(settings, buttons) } }
+    row("ui_stream_menu_buttons", Symbols.STREAM_MENU_BUTTONS, res.getString(R.string.settings_native_menu_buttons_title),
+        RowValue.Choice(if (menuButtons.isEmpty()) res.getString(R.string.row_not_set) else StreamMenuSettings.label(res, menuButtons), { recordMenuButtons() },
+            options = listOf(res.getString(R.string.row_not_set), res.getString(R.string.settings_native_menu_buttons_record)),
+            selected = if (menuButtons.isEmpty()) 0 else -1,
+            onPick = { i -> if (i == 0) StreamMenuSettings.clearButtons(settings) else recordMenuButtons() }),
+        res.getString(R.string.settings_native_menu_buttons_description),
         tab = SettingsTab.CONTROLS, section = streamMenuSection)
     row("ui_stream_menu_swipe", Symbols.SWIPE_UP, res.getString(R.string.settings_native_menu_swipe_title), RowValue.Toggle(StreamMenuSettings.swipe(settings)) { on ->
         settings.edit().putBoolean(StreamMenuSettings.KEY_SWIPE, on).apply()

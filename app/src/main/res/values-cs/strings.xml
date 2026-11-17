@@ -113,8 +113,6 @@
     <string name="summary_checkbox_remember_mouse_mode">Zapamatuje si režim myši zvolený během streamu. Když je vypnuto, změna režimu myši během streamu bude jen dočasná.</string>
     <string name="title_checkbox_flip_face_buttons">Prohodit čelní tlačítka</string>
     <string name="summary_checkbox_flip_face_buttons">Prohodí tlačítka A/B a X/Y u gamepadů i u ovládání na obrazovce</string>
-    <string name="title_checkbox_back_hold_guide">Podržet Zpět pro Guide</string>
-    <string name="summary_checkbox_back_hold_guide">Podržení tlačítka Zpět na půl sekundy pošle do PC tlačítko Guide; krátký stisk je dál Zpět</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Myš vždy ovládat touchpadem</string>
     <string name="summary_checkbox_gamepad_touchpad_as_mouse">Vstup z touchpadu gamepadu vždy ovládá myš v PC, i když se emuluje gamepad s touchpadem.</string>
     <string name="title_checkbox_gamepad_motion_sensors">Gyroskop externího gamepadu</string>

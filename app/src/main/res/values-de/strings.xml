@@ -124,8 +124,6 @@
     <string name="summary_checkbox_remember_mouse_mode">Merkt sich den im Stream gewählten Mausmodus. Ist die Option aus, gilt ein im Stream geänderter Mausmodus nur vorübergehend.</string>
     <string name="title_checkbox_flip_face_buttons">Aktionstasten tauschen</string>
     <string name="summary_checkbox_flip_face_buttons">Vertauscht die Aktionstasten A/B und X/Y bei Gamepads und der Bildschirmsteuerung</string>
-    <string name="title_checkbox_back_hold_guide">Zurück halten für Guide</string>
-    <string name="summary_checkbox_back_hold_guide">Zurück eine halbe Sekunde halten sendet die Guide-Taste an den PC; kurz drücken bleibt Zurück</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Maus immer per Touchpad steuern</string>
     <string name="summary_checkbox_gamepad_touchpad_as_mouse">Erzwingt, dass die Touchpad-Eingabe des Gamepads die Host-Maus steuert, auch wenn ein Gamepad mit Touchpad emuliert wird.</string>
     <string name="title_checkbox_gamepad_motion_sensors">Gyroskop des externen Gamepads</string>

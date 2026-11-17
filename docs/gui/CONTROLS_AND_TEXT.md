@@ -30,6 +30,14 @@ field being edited stays clear of Android's keyboard, and how a one-line label t
 
 The **two menu buttons at the top left and top right** of the handheld are used in the UI.
 
+During a stream ([STREAM_MENU.md](STREAM_MENU.md#22-ownership-and-entry-points)):
+
+| Input | Action |
+|---|---|
+| **Tap of Guide/Home or Back** | Opens the **stream menu**; nothing is sent to the PC. |
+| **Hold of Guide/Home or Back** (500 ms) | Sends **Guide** to the PC while held (Steam overlay, Game Bar). |
+| **Own stream menu buttons** (Settings → Controls → Stream menu, none by default) | Pressed together, open or close the stream menu. L3 + R3 is no longer the default. |
+
 ### Context menu button
 
 1. Only elements with something to offer have a context menu. There is no generic fallback menu.
@@ -278,6 +286,10 @@ On a device, `adb logcat -s DelosIme` shows the keyboard-avoidance values of a d
 ### Not verified
 
 The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verified).
+
+- Guide/Home and Back during a stream (tap = stream menu, hold of 500 ms = Guide on the PC): unit tested
+  (`GuideTapHoldTest`), not yet checked in a stream on the Odin (the built-in Back, a controller's Guide, the Steam
+  overlay or Game Bar opening on the PC).
 
 ## Related
 

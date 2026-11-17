@@ -36,7 +36,6 @@
     <string name="help_checkbox_mouse_emulation">Утримуй Start під час стріму, щоб перемикати контролер між ігровим введенням і емуляцією миші.</string>
     <string name="help_analog_scrolling">Стік, що прокручує в режимі миші на контролері.</string>
     <string name="help_checkbox_flip_face_buttons">Міняє місцями A/B і X/Y для введення з контролера й екранних елементів керування (розкладка Nintendo). Навігації Delos не стосується.</string>
-    <string name="help_checkbox_back_hold_guide">Утримайте Назад пів секунди, щоб надіслати на ПК Guide (кнопку Xbox), наприклад для Game Bar чи оверлею Steam. Коротке натискання лишається Назад, після відпускання.</string>
     <string name="help_checkbox_gamepad_touchpad_as_mouse">Завжди використовує тачпад контролера як мишу ПК. Якщо вимкнено, хости з підтримкою отримують нативне введення тачпада.</string>
     <string name="help_checkbox_gamepad_motion_sensors">Дозволяє ПК читати гіроскоп і акселерометр зовнішнього контролера. Потрібен Android 12 або новіший. Вимкни, якщо жоден застосунок не використовує рух, щоб трохи заощадити енергію й трафік.</string>
     <string name="help_checkbox_gamepad_motion_fallback">Використовує власні гіроскоп і акселерометр пристрою, коли в контролера їх немає або Android не може їх прочитати. Тоді ПК може бачити контролер PlayStation.</string>
