@@ -101,6 +101,10 @@
     <string name="row_reset_to_profile">Reset to profile value</string>
     <string name="row_reset">Reset</string>
     <string name="row_not_set">Not set</string>
+    <!-- Slider popup (touch): the ◀ and ▶ buttons and the number to tap and type -->
+    <string name="row_slider_decrease">Decrease</string>
+    <string name="row_slider_increase">Increase</string>
+    <string name="row_slider_enter_value">Enter a value</string>
 
     <!-- Impact chips of a setting: what the three glyphs mean -->
     <string name="impact_axis_gpu">GPU</string>

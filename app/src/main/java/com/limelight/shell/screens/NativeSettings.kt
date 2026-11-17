@@ -34,12 +34,15 @@ import com.limelight.shell.companion.CompanionDim
 import com.limelight.shell.companion.rememberDualScreenPlan
 import com.limelight.shell.data.Pc
 import com.limelight.shell.settings.Appearance
+import com.limelight.shell.settings.BackgroundKind
+import com.limelight.shell.settings.ClockFormat
 import com.limelight.shell.settings.Palette
 import com.limelight.shell.settings.SettingImpact
 import com.limelight.shell.settings.SettingSpec
 import com.limelight.shell.settings.SettingsTab
 import com.limelight.shell.settings.SettingsHelp
 import com.limelight.shell.settings.Startup
+import com.limelight.shell.settings.OscOpacity
 import com.limelight.shell.settings.StreamMenuSettings
 import com.limelight.shell.ui.RowValue
 import com.limelight.shell.ui.Symbols
@@ -114,18 +117,23 @@ internal fun nativeSettings(
             NativeSettingsHelp.details(help, value, choiceHelp))
     }
     row("ui_dark", Symbols.DARK_MODE, res.getString(R.string.settings_native_theme_title),
-        RowValue.Choice(res.getString(if (a.dark) R.string.settings_native_theme_dark else R.string.settings_native_theme_light), { update { it.copy(dark = !it.dark) } }),
+        RowValue.Choice(res.getString(if (a.dark) R.string.settings_native_theme_dark else R.string.settings_native_theme_light), { update { it.copy(dark = !it.dark) } },
+            options = listOf(res.getString(R.string.settings_native_theme_dark), res.getString(R.string.settings_native_theme_light)),
+            selected = if (a.dark) 0 else 1, onPick = { i -> update { it.copy(dark = i == 0) } }),
         res.getString(R.string.settings_native_theme_description), choiceHelp = NativeSettingsHelp.choice(res, "ui_dark", if (a.dark) "dark" else "light"))
     row("ui_material_you", Symbols.SYSTEM_COLORS, res.getString(R.string.settings_native_material_you_title), RowValue.Toggle(a.materialYou) { on -> update { it.copy(materialYou = on) } },
         if (systemHue != null) res.getString(R.string.settings_native_material_you_description)
         else res.getString(R.string.settings_native_material_you_fallback_description, Palette.MINT.label(res)))
-    row("ui_palette", Symbols.PALETTE, res.getString(R.string.settings_native_palette_title), RowValue.Choice(a.palette.label(res), { dir -> update { it.copy(palette = it.palette.step(dir)) } }, hsl(a.palette.accent, 90f, 60f)),
+    row("ui_palette", Symbols.PALETTE, res.getString(R.string.settings_native_palette_title), RowValue.Choice(a.palette.label(res), { dir -> update { it.copy(palette = it.palette.step(dir)) } }, hsl(a.palette.accent, 90f, 60f),
+        options = Palette.entries.map { it.label(res) }, selected = a.palette.ordinal, onPick = { i -> update { it.copy(palette = Palette.entries[i]) } }),
         if (a.materialYou) res.getString(R.string.settings_native_needs_material_you_off) else res.getString(R.string.settings_native_palette_description), !a.materialYou)
     row("ui_match_game_colors", Symbols.MATCH_COLORS, res.getString(R.string.settings_native_match_colors_title), RowValue.Toggle(a.matchGameColors) { on -> update { it.copy(matchGameColors = on) } },
         if (a.materialYou) res.getString(R.string.settings_native_needs_material_you_off) else res.getString(R.string.settings_native_match_colors_description), !a.materialYou)
-    row("ui_clock", Symbols.SCHEDULE, res.getString(R.string.settings_native_clock_title), RowValue.Choice(a.clock.label(res), { dir -> update { it.copy(clock = it.clock.step(dir)) } }),
+    row("ui_clock", Symbols.SCHEDULE, res.getString(R.string.settings_native_clock_title), RowValue.Choice(a.clock.label(res), { dir -> update { it.copy(clock = it.clock.step(dir)) } },
+        options = ClockFormat.entries.map { it.label(res) }, selected = a.clock.ordinal, onPick = { i -> update { it.copy(clock = ClockFormat.entries[i]) } }),
         res.getString(R.string.settings_native_clock_description), choiceHelp = NativeSettingsHelp.choice(res, "ui_clock", a.clock.name))
-    row("ui_background", Symbols.ANIMATION, res.getString(R.string.settings_native_background_title), RowValue.Choice(a.background.label(res), { dir -> update { it.copy(background = it.background.step(dir)) } }),
+    row("ui_background", Symbols.ANIMATION, res.getString(R.string.settings_native_background_title), RowValue.Choice(a.background.label(res), { dir -> update { it.copy(background = it.background.step(dir)) } },
+        options = BackgroundKind.entries.map { it.label(res) }, selected = a.background.ordinal, onPick = { i -> update { it.copy(background = BackgroundKind.entries[i]) } }),
         res.getString(R.string.settings_native_background_description), choiceHelp = NativeSettingsHelp.choice(res, "ui_background", a.background.name))
     row("ui_hero_background", Symbols.WALLPAPER, res.getString(R.string.settings_native_hero_background_title), RowValue.Toggle(a.heroBackground) { on -> update { it.copy(heroBackground = on) } },
         res.getString(R.string.settings_native_hero_background_description))
@@ -136,7 +144,9 @@ internal fun nativeSettings(
     row("ui_scale", Symbols.FORMAT_SIZE, res.getString(R.string.settings_native_scale_title), RowValue.Slider(a.uiScale, 100, 130, 5, " %") { v -> update { it.copy(uiScale = v) } },
         res.getString(R.string.settings_native_scale_description))
     row("ui_reduced_motion", Symbols.REDUCED_MOTION, res.getString(R.string.settings_native_animations_title),
-        RowValue.Choice(res.getString(if (a.reducedMotion) R.string.settings_native_animations_reduced else R.string.settings_native_animations_full), { update { it.copy(reducedMotion = !it.reducedMotion) } }),
+        RowValue.Choice(res.getString(if (a.reducedMotion) R.string.settings_native_animations_reduced else R.string.settings_native_animations_full), { update { it.copy(reducedMotion = !it.reducedMotion) } },
+            options = listOf(res.getString(R.string.settings_native_animations_full), res.getString(R.string.settings_native_animations_reduced)),
+            selected = if (a.reducedMotion) 1 else 0, onPick = { i -> update { it.copy(reducedMotion = i == 1) } }),
         res.getString(R.string.settings_native_animations_description), choiceHelp = NativeSettingsHelp.choice(res, "ui_reduced_motion", if (a.reducedMotion) "reduced" else "full"))
     row("ui_haptics", Symbols.HAPTICS, res.getString(R.string.settings_native_haptics_title), RowValue.Toggle(a.haptics) { on -> update { it.copy(haptics = on) } },
         res.getString(R.string.settings_native_haptics_description), tab = SettingsTab.CONTROLS)
@@ -151,10 +161,19 @@ internal fun nativeSettings(
         settings.edit().putBoolean(StreamMenuSettings.KEY_SWIPE, on).apply()
     }, res.getString(R.string.settings_native_menu_swipe_description),
         tab = SettingsTab.CONTROLS, section = streamMenuSection)
+    // The on-screen controls' opacity, the same profile value as the stream menu's More slider; only where there is a touchscreen to use them
+    // (the other on-screen controls settings are phone-only, see PhoneOnlySettings)
+    if (context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)) {
+        row(OscOpacity.KEY, Symbols.OPACITY, res.getString(R.string.settings_native_osc_opacity_title),
+            RowValue.Slider(OscOpacity.read(settings), OscOpacity.MIN, OscOpacity.MAX, OscOpacity.STEP, " %") { v -> OscOpacity.write(settings, v) },
+            res.getString(R.string.summary_osc_opacity), tab = SettingsTab.CONTROLS, section = res.getString(R.string.category_on_screen_controls_settings))
+    }
     val statsPosition = StatsPosition.read(settings)
     row("ui_stats_position", Symbols.STATS_POSITION, res.getString(R.string.settings_native_stats_position_title),
         RowValue.Choice(res.getString(statsPosition.labelRes), { dir ->
             settings.edit().putString(StatsPosition.KEY, statsPosition.step(dir).name).apply()
+        }, options = StatsPosition.entries.map { res.getString(it.labelRes) }, selected = statsPosition.ordinal, onPick = { i ->
+            settings.edit().putString(StatsPosition.KEY, StatsPosition.entries[i].name).apply()
         }), res.getString(R.string.settings_native_stats_position_description), tab = SettingsTab.DISPLAY,
         section = res.getString(R.string.settings_native_section_statistics), choiceHelp = NativeSettingsHelp.choice(res, "ui_stats_position", statsPosition.name))
     // Device-wide, not per profile: which role a second screen of THIS device has (docs/DUAL_SCREEN.md)
@@ -165,13 +184,18 @@ internal fun nativeSettings(
         RowValue.Choice(res.getString(secondDisplay.labelRes), { dir ->
             secondDisplay = secondDisplay.step(dir)
             SecondDisplayOverride.write(devicePrefs, secondDisplay)
+        }, options = SecondDisplayOverride.entries.map { res.getString(it.labelRes) }, selected = secondDisplay.ordinal, onPick = { i ->
+            secondDisplay = SecondDisplayOverride.entries[i]
+            SecondDisplayOverride.write(devicePrefs, secondDisplay)
         }), res.getString(R.string.settings_native_second_display_description), tab = SettingsTab.DISPLAY,
         section = res.getString(R.string.settings_native_section_displays), choiceHelp = NativeSettingsHelp.choice(res, SecondDisplayOverride.KEY, secondDisplay.name))
     // Only a device with a built-in second panel has a main screen to choose; the row appears and goes with that display
     if (dualScreen != null) {
         val mainScreen = MainScreenChoice.read(devicePrefs)
         row(MainScreenChoice.KEY, Symbols.MONITOR, res.getString(R.string.settings_native_main_screen_title),
-            RowValue.Choice(res.getString(mainScreen.labelRes), { dir -> MainScreenChoice.write(devicePrefs, mainScreen.step(dir)) }),
+            RowValue.Choice(res.getString(mainScreen.labelRes), { dir -> MainScreenChoice.write(devicePrefs, mainScreen.step(dir)) },
+                options = MainScreenChoice.entries.map { res.getString(it.labelRes) }, selected = mainScreen.ordinal,
+                onPick = { i -> MainScreenChoice.write(devicePrefs, MainScreenChoice.entries[i]) }),
             res.getString(R.string.settings_native_main_screen_description), tab = SettingsTab.DISPLAY,
             section = res.getString(R.string.settings_native_section_displays), choiceHelp = NativeSettingsHelp.choice(res, MainScreenChoice.KEY, mainScreen.name))
         // The idle dimming of the companion screen (OLED burn-in); the delay only matters while dimming is on
@@ -181,6 +205,9 @@ internal fun nativeSettings(
             RowValue.Choice(res.getString(if (dim.enabled) R.string.common_on else R.string.common_off), { _ ->
                 dim = dim.copy(enabled = !dim.enabled)
                 CompanionDim.writeEnabled(devicePrefs, dim.enabled)
+            }, options = listOf(res.getString(R.string.common_on), res.getString(R.string.common_off)), selected = if (dim.enabled) 0 else 1, onPick = { i ->
+                dim = dim.copy(enabled = i == 0)
+                CompanionDim.writeEnabled(devicePrefs, dim.enabled)
             }), res.getString(R.string.settings_native_companion_dim_description), tab = SettingsTab.DISPLAY, section = section,
             choiceHelp = NativeSettingsHelp.choice(res, CompanionDim.KEY_ENABLED, if (dim.enabled) "on" else "off"))
         if (companionDimDelayShown(true, dim)) {
@@ -188,13 +215,21 @@ internal fun nativeSettings(
                 RowValue.Choice(res.getQuantityString(R.plurals.settings_native_companion_dim_minutes_value, dim.minutes, dim.minutes), { dir ->
                     dim = dim.copy(minutes = CompanionDim.step(dim.minutes, dir))
                     CompanionDim.writeMinutes(devicePrefs, dim.minutes)
-                }), res.getString(R.string.settings_native_companion_dim_minutes_description), tab = SettingsTab.DISPLAY, section = section)
+                }, options = CompanionDim.MINUTES.map { res.getQuantityString(R.plurals.settings_native_companion_dim_minutes_value, it, it) },
+                    selected = CompanionDim.MINUTES.indexOf(dim.minutes), onPick = { i ->
+                        dim = dim.copy(minutes = CompanionDim.MINUTES[i])
+                        CompanionDim.writeMinutes(devicePrefs, dim.minutes)
+                    }), res.getString(R.string.settings_native_companion_dim_minutes_description), tab = SettingsTab.DISPLAY, section = section)
         }
     }
     val choices = listOf<Pc?>(null) + pcs.filter { it.paired }.sortedBy { it.name.lowercase() }
     val index = choices.indexOfFirst { it?.uuid == startup.defaultPc }.coerceAtLeast(0)
-    row("ui_default_pc", Symbols.STAR, res.getString(R.string.settings_native_default_pc_title), RowValue.Choice(choices[index]?.name ?: res.getString(R.string.settings_native_default_pc_none), { dir ->
+    val noDefaultPc = res.getString(R.string.settings_native_default_pc_none)
+    row("ui_default_pc", Symbols.STAR, res.getString(R.string.settings_native_default_pc_title), RowValue.Choice(choices[index]?.name ?: noDefaultPc, { dir ->
         val next = choices[Math.floorMod(index + dir, choices.size)]
+        updateStartup { it.copy(defaultPc = next?.uuid, skipStart = next != null && it.skipStart) }
+    }, options = choices.map { it?.name ?: noDefaultPc }, selected = index, onPick = { i ->
+        val next = choices[i]
         updateStartup { it.copy(defaultPc = next?.uuid, skipStart = next != null && it.skipStart) }
     }), res.getString(R.string.settings_native_default_pc_description), choices.size > 1, SettingsTab.DEVICES, startupSection,
         NativeSettingsHelp.choice(res, "ui_default_pc", if (choices[index] == null) "none" else "pc"))

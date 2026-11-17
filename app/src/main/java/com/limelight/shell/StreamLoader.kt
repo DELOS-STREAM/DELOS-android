@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.State
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ComposeView
@@ -40,6 +41,7 @@ import com.limelight.shell.ui.LaunchScene
 import com.limelight.shell.ui.LaunchStageQueue
 import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.Stage
+import com.limelight.shell.ui.consumeAllTouches
 import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.delosColors
 import com.limelight.shell.ui.formatLaunchStreamParameters
@@ -71,6 +73,19 @@ class StreamLoader private constructor(
     private val parameters = mutableStateOf(initialParameters)
     private val origin = LaunchHandoff.startedAt
     private var removed = false
+    private val cancel = LoaderCancel()
+
+    /** The loader view is still on screen (until the opening animation ends or the stream ends). */
+    val showing: Boolean get() = !removed
+
+    /** The player can still cancel: the view is on screen and nobody has cancelled yet. */
+    val cancellable: Boolean get() = !removed && cancel.cancellable
+
+    /** Marks the loader cancelled, once; the caller (the activity) then carries out [LoaderCancel.planFor]. */
+    fun requestCancel(): Boolean = cancel.request()
+
+    /** What cancelling does now, given the activity's connection flags. */
+    fun cancelPlan(connecting: Boolean, connected: Boolean): CancelPlan = LoaderCancel.planFor(cancel.phase, connecting, connected)
 
     override fun setMessage(message: String) {
         activity.runOnUiThread {
@@ -86,6 +101,7 @@ class StreamLoader private constructor(
     override fun dismiss() {
         activity.runOnUiThread {
             if (!removed) {
+                cancel.streaming()
                 streaming.value = true
                 changes.trySend(Unit)
             }
@@ -95,6 +111,7 @@ class StreamLoader private constructor(
     private fun dispose() {
         if (removed) return
         removed = true
+        cancel.gone()
         // The companion screen leaves its loader page for the stream tiles
         activity.onStreamLoaderGone()
         changes.close()
@@ -109,6 +126,19 @@ class StreamLoader private constructor(
     }
 
     companion object {
+        /**
+         * Cancel from the shell once its launch has handed over to the stream window (`shell.diving`): the stream
+         * activity cancels its own loader now, or, when it has not created the loader yet, at the end of its onCreate.
+         */
+        @JvmStatic fun cancelFromShell() {
+            LaunchHandoff.cancelRequested = true
+            val game = DelosStreamActivity.instance ?: return
+            if (game.isLoaderCancellable) {
+                LaunchHandoff.takeCancelRequest()
+                game.cancelLoader()
+            }
+        }
+
         /** The longest the reveal waits for the first presented frame after the stream runs. */
         private const val FRAME_WAIT_MS = 3000L
 
@@ -286,7 +316,8 @@ class StreamLoader private constructor(
                 loader.remove()
             }
             LaunchScene(card.copy(logo = logo, streamParameters = loader.parameters.value), line,
-                progress = { progress.value }, opening = { opening.value }, clock = clock)
+                progress = { progress.value }, opening = { opening.value }, clock = clock,
+                modifier = Modifier.consumeAllTouches(), onCancel = { loader.activity.cancelLoader() })
         }
 
         /** Decode existing artwork off the UI/decoder initialization path; the title remains usable. */

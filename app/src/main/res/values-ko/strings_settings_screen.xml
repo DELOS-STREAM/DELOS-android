@@ -92,6 +92,7 @@
     <string name="settings_native_menu_buttons_description">스트림 중 함께 눌러 스트림 메뉴를 열거나 닫는 버튼이에요. 선택해서 뒷면 버튼 등 다른 버튼을 기록할 수 있어요.</string>
     <string name="settings_native_menu_swipe_title">위로 스와이프해서 메뉴 열기</string>
     <string name="settings_native_menu_swipe_description">아래쪽 가장자리에서 위로 스와이프해도 스트림 메뉴가 열려요. 그곳에서 시작한 터치는 앱에 전달되지 않아요.</string>
+    <string name="settings_native_osc_opacity_title">화면 컨트롤 투명도</string>
     <string name="settings_native_stats_position_title">통계 위치</string>
     <string name="settings_native_stats_position_description">스트리밍 중 전체 통계 패널이 표시되는 모서리예요. 간단 모드는 항상 상단 가운데예요.</string>
     <string name="settings_native_stats_top_left">왼쪽 위</string>

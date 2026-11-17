@@ -479,7 +479,10 @@ Issue #9. `OscGeometry`, `OscDefaultLayout`, `VideoFit`, `KeyBoardGeometry` and
 
 ### 9.1 On-screen controls
 
-`VirtualController`, default layout on the 128 × 72 grid. One unit is height / 72.
+`VirtualController`, default layout on the 128 × 72 grid. One unit is height / 72. The panel is the frame the controls
+are drawn in (their positions are margins in it), laid out again when its size changes. It is not the display metrics:
+on Android 13 they leave out a navigation bar at the side and a display cutout, which the full-screen stream and the
+edge-to-edge shell draw under.
 
 | Panel | Layout |
 |---|---|
@@ -497,22 +500,39 @@ Issue #9. `OscGeometry`, `OscDefaultLayout`, `VideoFit`, `KeyBoardGeometry` and
 
 ### 9.2 Saved layouts
 
-1. A saved layout holds absolute pixels of the panel it was saved on (not relative values). Unscaled, a layout from
-   the Odin is off-screen on a 960 px panel.
-2. Each saved element also stores the panel size (`REF_W`, `REF_H`).
-3. Loading on another size scales by `min(width / REF_W, height / REF_H)`; a button stays as round as it was.
-4. Loading keeps the distance to the nearest edge: left, right or middle by thirds of the old width; top, bottom or
-   middle by thirds of the old height. A layout made on 16:9 keeps its right-hand controls on the right edge of a 21:9
-   panel.
-5. Layouts saved without a panel size keep their pixels but are pulled onto the screen.
-6. The result is always on the panel.
-7. `--es preview_saved_from <W>x<H>` shows this on the emulator.
+`OscPlacement`, `OscLayoutStore`. A layout is the same on every resolution and shape (#101).
+
+1. The default layout is never stored. `OscDefaultLayout` computes it for the panel every time.
+2. Leaving the editor stores only the controls the user changed (moved, resized or turned off). A control that is on
+   and where the default puts it is not stored and follows the default.
+3. A stored control keeps to its anchor, the side the default layout keeps it to (`OscDefaultLayout.anchorX`,
+   `anchorY`, read from the 16:9 grid): the left cluster to the left edge, the right cluster to the right edge,
+   Back / Guide / Start and the trackpad to the horizontal centre; the upper half to the top edge, the lower half to
+   the bottom edge.
+4. Its offset from the anchor and its size are in layout units (`Panel.unit()`, height / 72, times the shrink below
+   3:2), so a layout made on the Odin looks the same on a phone, a tablet or 21:9, and the middle stays centred.
+5. The result is always on the panel.
+6. Storage: the profile's `OSC` preferences, one JSON document per layout under `layout.<id>`: `version` (2), `id`
+   (`global` for every game; a game's own layout gets its own id) and `elements`, by element id: `enabled`,
+   `anchorX` (`LEFT`, `CENTER`, `RIGHT`), `anchorY` (`TOP`, `BOTTOM`), `x`, `y`, `width`, `height` in units.
+7. Version 1 stored every element in absolute pixels under its element id (`LEFT`, `TOP`, `WIDTH`, `HEIGHT`,
+   `ENABLED`; `REF_W` and `REF_H`, the panel's size, since phase D). It is converted once when a layout is loaded:
+   - With its panel size: dropped when it is that panel's default, else converted against that panel.
+   - Without it: elements that are an old default of one panel (Delos' or Artemis' before it, found by
+     `OscDefaultLayout.oldDefaults`; at least two elements must agree) are dropped, the rest are converted against the
+     display metrics, which those versions laid out on.
+   - The Odin had Artemis' default of 1920 × 1025 (the metrics without the 55 px gesture bar) stored for Back, Guide,
+     Start and the trackpad: Guide's centre at 880, the trackpad's at 853, so they sat left of the centre in the stream
+     and the preview, whatever the panel.
+8. `--es preview_saved_from <W>x<H>` shows on the emulator how a layout changed on another panel comes out.
 
 ### 9.3 Key grid
 
 `KeyBoardController`, the editable key overlay. It is hidden in the Delos UI; the code is kept.
 
-1. The saved-layout handling is the same as in [Saved layouts](#92-saved-layouts).
+1. Its saved layouts are still absolute pixels with the panel's size (`REF_W`, `REF_H`), carried to another panel by
+   `OscGeometry.mapSaved`: scaled by `min(width / REF_W, height / REF_H)`, keeping the distance to the nearest edge by
+   thirds of the old width and height.
 2. The keys are limited to an eighteenth of the width.
 3. The D-pad is anchored to the right edge. Both it and the stick are clamped onto the panel.
 4. At 1:1 a key is 4 units, 40 px on 720 (about 4 mm): too small to use by touch.

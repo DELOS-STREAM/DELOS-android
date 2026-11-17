@@ -128,14 +128,14 @@ class SettingsHelpFitTest {
             val help = NativeSettingsHelp.choice(res, key, id)
             assertFits("$key/$id", (if (help.isBlank()) label else "$label\n$help") + "\n\n${SettingsHelp.description(res, key, "")}")
         } }
-        listOf("ui_match_game_colors", "pref_debug_info", "import_special_button_file", "about_diag_logs").forEach {
+        listOf("ui_match_game_colors", "pref_debug_info", "import_special_button_file", "about_diag_logs", OscOpacity.KEY).forEach {
             assertFits(it, SettingsHelp.description(res, it, ""))
         }
         listOf(
             "Resume", "Keyboard", "Overlay", "Brightness", "Screen brightness", "Bitrate", "Apply bitrate", "Upscaler",
             "Upscaling", "Supersampling", "Supersampling quality", "Mode", "Sharpness", "More", "Disconnect", "Quit game",
             "Send keys", "Send clipboard", "Get clipboard", "Commands", "Task manager", "Zoom", "Mouse mode",
-            "Local mouse cursor", "On-screen controls", "Open Android keyboard", "Touch sensitivity",
+            "Local mouse cursor", "On-screen controls", "On-screen controls opacity", "Open Android keyboard", "Touch sensitivity",
             "Keys: Ctrl + Alt + Delete", "Command: Restart the game",
         ).forEach { assertFits("stream menu $it", StreamMenuHelp.description(res, it)) }
         // Mode help adds the selected method and the upscaler pages add their status line

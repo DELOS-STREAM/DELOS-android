@@ -17,6 +17,22 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
+import com.limelight.R
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -94,6 +110,12 @@ object LaunchHandoff {
     @Volatile var logo: ImageBitmap? = null
     @Volatile var streamParameters: String = ""
 
+    /** The player cancelled while the stream window was requested but had not created its loader yet; the stream takes it at the end of onCreate. */
+    @Volatile var cancelRequested: Boolean = false
+
+    /** Reads and clears [cancelRequested]: one cancel ends one attempt. */
+    @Synchronized fun takeCancelRequest(): Boolean = cancelRequested.also { cancelRequested = false }
+
     /** Forgets everything handed over (single use): the next launch must not inherit speed, phase, clock, line or art. */
     fun reset() {
         background = null
@@ -106,6 +128,7 @@ object LaunchHandoff {
         lineAt = 0L
         logo = null
         streamParameters = ""
+        cancelRequested = false
     }
 }
 
@@ -131,7 +154,10 @@ data class LaunchCard(
 
 /** One information layout above either the native tunnel, reduced-motion scene, or legacy renderer. */
 @Composable
-fun LaunchScene(card: LaunchCard, stage: String?, progress: () -> Float, opening: () -> Float, clock: (() -> Float)?, modifier: Modifier = Modifier) {
+fun LaunchScene(
+    card: LaunchCard, stage: String?, progress: () -> Float, opening: () -> Float, clock: (() -> Float)?, modifier: Modifier = Modifier,
+    onCancel: (() -> Unit)? = null,
+) {
     val colors = LocalDelosColors.current
     val calm = remember(colors) {
         Brush.radialGradient(listOf(colors.accent3.copy(alpha = .16f), colors.bg))
@@ -147,6 +173,51 @@ fun LaunchScene(card: LaunchCard, stage: String?, progress: () -> Float, opening
             else -> LegacyLaunchScene(card, stage, progress, opening, clock)
         }
         LaunchInformation(card, stage, progress, opening, Modifier.align(Alignment.BottomCenter))
+        if (onCancel != null) {
+            // A persistent pill, not a tap-to-reveal one like the portal's: the loader lasts seconds on a LAN, so revealing
+            // Cancel with a first tap would need two taps and the loader would be gone. Same label, icon and look as the portal's.
+            LaunchCancelButton(onCancel, Modifier.align(Alignment.BottomCenter).padding(bottom = 24.px)
+                .graphicsLayer { alpha = HyperspaceTimeline.infoAlpha(opening()) })
+        }
+    }
+}
+
+/**
+ * Touch-only Cancel pill of the launch scene (the look of the portal's PillButton). It has no focus effects on
+ * purpose: the stream's loader composition provides neither LocalFeedback nor LocalFocusTracker, and B cancels by key.
+ */
+@Composable
+fun LaunchCancelButton(onCancel: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = LocalDelosColors.current
+    val label = stringResource(R.string.common_cancel)
+    Row(
+        modifier
+            .clip(CircleShape)
+            .background(colors.surface)
+            .border(1.px, colors.line, CircleShape)
+            .height(64.px)
+            .semantics(mergeDescendants = true) { role = Role.Button; onClick { onCancel(); true } }
+            .pointerInput(onCancel) { detectTapGestures { onCancel() } }
+            .padding(horizontal = 28.px),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.px),
+    ) {
+        Symbol(Symbols.CLOSE, 30.tpx, colors.text)
+        BasicText(label, style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 24.tpx))
+    }
+}
+
+/**
+ * Every touch stops here while a launch can be cancelled: nothing underneath may react. It is applied to the parent,
+ * so children (the Cancel pill) see events first and their tap still works.
+ */
+fun Modifier.consumeAllTouches(): Modifier = pointerInput(Unit) {
+    awaitEachGesture {
+        awaitFirstDown(requireUnconsumed = false).consume()
+        do {
+            val event = awaitPointerEvent()
+            event.changes.forEach { it.consume() }
+        } while (event.changes.any { it.pressed })
     }
 }
 
@@ -368,7 +439,7 @@ private fun DrawScope.drawCover(card: LaunchCard, center: Offset, radius: Float,
  * The shell half of launch: the stream window inherits its last drawn progress, logo and scene clock.
  */
 @Composable
-fun LaunchOverlay(card: LaunchCard?, reducedMotion: Boolean, instantExit: Boolean = false) {
+fun LaunchOverlay(card: LaunchCard?, reducedMotion: Boolean, instantExit: Boolean = false, onCancel: (() -> Unit)? = null) {
     val last = remember { arrayOfNulls<LaunchCard>(1) }
     if (card != null) last[0] = card
     // [instantExit]: cleared while the window is stopped behind the stream; a fade-out would only run when the window comes back
@@ -396,7 +467,9 @@ fun LaunchOverlay(card: LaunchCard?, reducedMotion: Boolean, instantExit: Boolea
             modifier = Modifier
                 .focusRequester(trap)
                 .focusable()
-                .onPreviewKeyEvent { it.key != Key.Back && it.key != Key.ButtonB },
+                .onPreviewKeyEvent { it.key != Key.Back && it.key != Key.ButtonB }
+                .then(if (onCancel != null) Modifier.consumeAllTouches() else Modifier),
+            onCancel = onCancel,
         )
     }
 }

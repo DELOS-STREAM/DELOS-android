@@ -82,6 +82,9 @@
     <string name="row_reset_to_profile">Redefinir para o valor do perfil</string>
     <string name="row_reset">Redefinir</string>
     <string name="row_not_set">Não definido</string>
+    <string name="row_slider_decrease">Diminuir</string>
+    <string name="row_slider_increase">Aumentar</string>
+    <string name="row_slider_enter_value">Digitar um valor</string>
 
     <string name="impact_axis_gpu">GPU</string>
     <string name="impact_axis_latency">Latência</string>

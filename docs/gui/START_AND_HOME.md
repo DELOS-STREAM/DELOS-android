@@ -304,6 +304,23 @@ Launch-parameter inspection is strictly read-only:
    [#13](https://github.com/Meitoncz/Delos/issues/13) and [#14](https://github.com/Meitoncz/Delos/issues/14).
 2. A visible game window is not a guarantee that gameplay loading has finished.
 
+### 6.7 Cancelling a launch
+
+The launch can be cancelled at any moment while its scene is shown, by **B** (Back, Escape; a gamepad's B arrives as Back or Button B) and by touch. Only the player's attempt ends: the game on the PC is never quit, whether it was running before or the host started it for this attempt.
+
+| Phase | Window | Cancel |
+|---|---|---|
+| Starting | The shell's launch overlay (`LaunchOverlay`) | The overlay is removed and the focus returns to the game's tile |
+| Hand-over | The stream window is requested, its loader does not exist yet | The shell clears its overlay at once and records the request (`LaunchHandoff.cancelRequested`); the stream window ends at the end of its `onCreate` |
+| Connecting | The stream window's loader (`StreamLoader`) | `DelosStreamActivity.cancelLoader()`: the connection is stopped (`stopConnection()`), no result overlay is shown, the shell comes to the front and the stream window finishes |
+| Streaming | The loader while the first frame and the opening play | The same as Connecting; the stream is disconnected, not quit |
+
+1. The touch affordance is a small **Cancel pill** at the bottom centre of the scene (`LaunchCancelButton`: the portal's Cancel label and icon, glass surface, 64 high), present from the first frame and fading with the information block. It is persistent, not shown by a first tap like the portal's, because the loader lasts seconds on a fast network and a hidden button would need two taps.
+2. While the scene is shown, every touch is consumed: nothing underneath (the library, the stream, the stream menu's swipe) reacts.
+3. B is taken before the stream sees it (`dispatchKeyEvent`, `onBackPressed`, the external display's key route), on release. Once the loader is gone, B opens the stream menu as before.
+4. The pure parts are `LoaderCancel` (phases and the cancel plan, `quitGame` is always false) and `LoaderKeys` (the key policy), unit tested in `LoaderCancelTest`.
+5. The second panel's Cancel is unchanged (during the stream window's loader it is the stream menu's Disconnect).
+
 ## 7. Streaming time
 
 Every app keeps a total of the time its stream was actually connected, summed over all sessions (like playtime in

@@ -12,8 +12,8 @@ package com.limelight.binding.input.virtual_controller;
  * keep their proportions) until the clusters, and the Back / Guide / Start row between them, fit; the controls on
  * the upper half keep to the top edge, those on the lower half to the bottom edge.
  *
- * <p>The layouts a user saved are absolute pixels of the screen they were saved on; {@link #mapSaved} carries
- * them to the screen they are loaded on.
+ * <p>Controls the user changed are stored against their anchor in layout units ({@link OscPlacement}). The key grid's saved
+ * layouts are absolute pixels of the screen they were saved on; {@link #mapSaved} carries them to the screen they are loaded on.
  */
 public final class OscGeometry {
     public static final int GRID_WIDTH = 128;
@@ -44,6 +44,11 @@ public final class OscGeometry {
             this.scale = 2L * width >= 3L * height ? 1f : 2f * width / (3f * height);
             this.unit = ((float) height / (float) GRID_HEIGHT) * scale;
             this.rightDisplacement = width - height * 16 / 9;
+        }
+
+        /** One layout unit in pixels: a 72nd of the height, times {@link #scale}. */
+        public float unit() {
+            return unit;
         }
 
         /** {@code units} grid units in pixels. */

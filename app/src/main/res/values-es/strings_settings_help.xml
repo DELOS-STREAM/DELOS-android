@@ -208,6 +208,7 @@
     <string name="stream_help_touch_sensitivity">Activa o desactiva el escalado extra de sensibilidad táctil, configurado en los ajustes.</string>
     <string name="stream_help_gyro_smoothing">Estabiliza al instante la puntería con giroscopio y se conserva para esta app. 0 es desactivado. Más suavizado añade un poco de retardo al moverse despacio.</string>
     <string name="stream_help_gyro_smoothing_disabled">Requiere activar Giroscopio del mando externo o Giroscopio integrado del dispositivo en Ajustes; se aplica desde el próximo stream.</string>
+    <string name="stream_help_on_screen_controls_opacity">Opacidad de los controles en pantalla. Se aplica al instante y se guarda en el perfil, el mismo valor que en Ajustes.</string>
     <string name="stream_help_rumble_feel">Elige cómo se siente la vibración del host, al instante y guardado. Se queda abierto: elige de nuevo para comparar. %1$s vuelve atrás.</string>
     <string name="stream_help_format_keys">Envía %1$s al PC una vez y vuelve al stream.</string>
     <string name="stream_help_format_command">Ejecuta al instante en el PC el comando %1$s definido por el host. Se configura en Vibepollo o Apollo.</string>

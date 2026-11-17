@@ -15,9 +15,6 @@ import android.widget.FrameLayout;
 
 import com.limelight.DelosStreamActivity;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 public abstract class VirtualControllerElement extends View {
     protected static boolean _PRINT_DEBUG_INFORMATION = false;
 
@@ -40,7 +37,7 @@ public abstract class VirtualControllerElement extends View {
     public static final int EID_TOUCHPAD = 65;
 
     protected VirtualController virtualController;
-    protected final int elementId;
+    public final int elementId;
 
     private final Paint paint = new Paint();
 
@@ -304,37 +301,28 @@ public abstract class VirtualControllerElement extends View {
         return getWidth() > getHeight() ? getHeight() : getWidth();
     }
 
-
-    public JSONObject getConfiguration() throws JSONException {
-        JSONObject configuration = new JSONObject();
-
-        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) getLayoutParams();
-
-        configuration.put("LEFT", layoutParams.leftMargin);
-        configuration.put("TOP", layoutParams.topMargin);
-        configuration.put("WIDTH", layoutParams.width);
-        configuration.put("HEIGHT", layoutParams.height);
-        configuration.put("ENABLED", enabled);
-        // The screen the numbers above are pixels of, so that another screen shape can carry them over (see OscGeometry.mapSaved)
-        configuration.put("REF_W", virtualController.getPanelWidth());
-        configuration.put("REF_H", virtualController.getPanelHeight());
-        return configuration;
+    /** Whether the element is on and where the default layout puts it on the panel it is laid out on (nothing of it to save). */
+    public boolean isDefaultPlacement() {
+        int[] r = rect();
+        return enabled && OscDefaultLayout.isDefault(elementId, r[0], r[1], r[2], r[3],
+                virtualController.getPanelWidth(), virtualController.getPanelHeight());
     }
 
-    public void loadConfiguration(JSONObject configuration) throws JSONException {
+    /** Where the element is in its frame: {left, top, width, height} in pixels. */
+    public int[] rect() {
         FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) getLayoutParams();
+        return new int[] { layoutParams.leftMargin, layoutParams.topMargin, layoutParams.width, layoutParams.height };
+    }
 
-        // Saved as pixels of the screen it was made on (layouts from before that was stored: of this one); kept on this screen's shape
-        int[] rect = OscGeometry.mapSaved(configuration.getInt("LEFT"), configuration.getInt("TOP"),
-                configuration.getInt("WIDTH"), configuration.getInt("HEIGHT"),
-                configuration.optInt("REF_W", 0), configuration.optInt("REF_H", 0),
-                virtualController.getPanelWidth(), virtualController.getPanelHeight());
+    /** Puts the element at {@code rect} ({left, top, width, height} in pixels), on or off. */
+    public void place(int[] rect, boolean enabled) {
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) getLayoutParams();
         layoutParams.leftMargin = rect[0];
         layoutParams.topMargin = rect[1];
         layoutParams.width = rect[2];
         layoutParams.height = rect[3];
-        enabled = configuration.getBoolean("ENABLED");
-        setVisibility(enabled ? VISIBLE: GONE);
+        this.enabled = enabled;
+        setVisibility(enabled ? VISIBLE : GONE);
         requestLayout();
     }
 }

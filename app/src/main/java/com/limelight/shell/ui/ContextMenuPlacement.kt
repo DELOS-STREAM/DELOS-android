@@ -15,7 +15,7 @@ internal object ContextMenuLayout {
     const val MAX_WIDTH = 640f
 
     /** The caret: [CARET_WIDTH] along the card's edge, [CARET_DEPTH] out of it (its tip). Same shape as the stream popover's. */
-    const val CARET_WIDTH = 72f
+    const val CARET_WIDTH = CardCaret.WIDTH
     const val CARET_DEPTH = 30f
 
     /** The caret keeps this far from the card's corners. */

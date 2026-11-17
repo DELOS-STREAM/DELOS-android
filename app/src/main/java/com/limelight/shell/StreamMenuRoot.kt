@@ -41,6 +41,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import com.limelight.binding.video.UpscalerStatus
 import com.limelight.preferences.UpscalerMode
+import com.limelight.shell.settings.OscOpacity
 import com.limelight.shell.settings.StreamMenuHelp
 import com.limelight.shell.ui.label
 import com.limelight.utils.RumblePresets
@@ -56,7 +57,13 @@ import com.limelight.shell.ui.LocalStage
 import com.limelight.shell.ui.EntranceStagger
 import com.limelight.shell.ui.LocalEntranceStagger
 import com.limelight.shell.ui.Motion
+import com.limelight.shell.ui.LocalImeAvoidance
+import com.limelight.shell.ui.LocalRowPicker
+import com.limelight.shell.ui.RowPickerLayer
+import com.limelight.shell.ui.RowPopup
+import com.limelight.shell.ui.RowPopupRequest
 import com.limelight.shell.ui.RowValue
+import com.limelight.shell.ui.rememberImeAvoidance
 import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.icon
 import com.limelight.shell.ui.px
@@ -194,6 +201,14 @@ internal fun StreamMenuRoot(
         val exit = pageAfterBack(page)
         if (exit == null) close() else go(exit)
     }
+    // A tap outside the tiles and the card: closes the popover, or the menu on the dock; never the stream
+    fun outsideTap() {
+        when (outsideTapAction(page, closing)) {
+            OutsideTap.NONE -> Unit
+            OutsideTap.CLOSE_POPOVER -> pageAfterDismiss(page)?.let { go(it) }
+            OutsideTap.CLOSE_MENU -> close()
+        }
+    }
     // A tile that opens a page; its own tile again closes the popover; another tile's page morphs the card
     fun openPage(next: MenuPage) {
         if (page == next) pageAfterDismiss(page)?.let { go(it) }
@@ -216,15 +231,32 @@ internal fun StreamMenuRoot(
             page = next
         }
     }
-    BackHandler(enabled = !closing) { back() }
     val focusManager = LocalFocusManager.current
     val focusTracker = LocalFocusTracker.current
+    // The popup of a choice or slider row (touch, issue #92): B closes it before it goes back a page
+    var picker by remember { mutableStateOf<RowPopupRequest?>(null) }
+    var pickerReturn by remember { mutableStateOf<FocusRequester?>(null) }
+    val openPicker: (RowPopup) -> Unit = { popup ->
+        pickerReturn = focusTracker.requester
+        picker = RowPopupRequest(popup, focusTracker.bounds())
+    }
+    // The keyboard of the slider popup's number field lifts the card (nothing else of the menu moves)
+    val imeAvoidance = rememberImeAvoidance()
+    LaunchedEffect(picker) {
+        if (picker != null) return@LaunchedEffect
+        pickerReturn?.let { runCatching { it.requestFocus() } }
+        pickerReturn = null
+    }
+    fun backOrClosePicker() {
+        if (picker != null) picker = null else back()
+    }
+    BackHandler(enabled = !closing) { backOrClosePicker() }
     LaunchedEffect(Unit) { closeRequests.collect { close() } }
     LaunchedEffect(Unit) {
         actions.collect { action ->
             when (action) {
                 ExternalMenuAction.Activate -> focusTracker.activate()
-                ExternalMenuAction.Back -> back()
+                ExternalMenuAction.Back -> backOrClosePicker()
                 is ExternalMenuAction.Move -> {
                     val adjustment = when (action.direction) {
                         MenuDirection.LEFT -> -1
@@ -346,10 +378,12 @@ internal fun StreamMenuRoot(
         titleIn = false
     }
 
-    CompositionLocalProvider(LocalStreamHelp provides { helpKey = it }, LocalDockGeometry provides dock) {
+    CompositionLocalProvider(
+        LocalStreamHelp provides { helpKey = it }, LocalDockGeometry provides dock, LocalRowPicker provides openPicker, LocalImeAvoidance provides imeAvoidance,
+    ) {
         Box(Modifier.fillMaxSize()) {
-            // A tap anywhere else closes the popover; it never resumes the stream (only Resume and B do)
-            Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { pageAfterDismiss(page)?.let { go(it) } } })
+            // A tap anywhere else closes the popover, or the menu on the dock (never quits or disconnects)
+            Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { outsideTap() } })
             StreamMenuBackdrop(gradientAlpha = { gradient.value }, scrimAlpha = { scrim.value })
 
             // Everything else sits on a 1920-wide box centered on the stage and as high as the real stage, bottom-aligned: the
@@ -376,7 +410,7 @@ internal fun StreamMenuRoot(
                     scroll = dockScroll,
                     headHidden = headHidden,
                     onHeadWidth = { headWidth = it },
-                    onOutsideTap = { pageAfterDismiss(page)?.let { go(it) } },
+                    onOutsideTap = ::outsideTap,
                     modifier = Modifier.offset(0.px, (stageHeight - dock.dockHeight).px),
                 )
 
@@ -426,6 +460,8 @@ internal fun StreamMenuRoot(
                     }
                 }
             }
+            // The popup of a choice or slider row (touch, issue #92), over the dock and the card
+            RowPickerLayer(picker, haze = null) { picker = null }
         }
     }
 }
@@ -457,6 +493,7 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
             add(MenuKey.ZOOM)
             if (host.allowChangeMouseMode) add(MoreRow.MOUSE)
             add(MenuKey.ONSCREEN_CONTROLS)
+            add(MoreRow.OSC_OPACITY)
             add(MoreRow.ANDROID_KEYBOARD)
             add(MenuKey.TOUCH_SENSITIVITY)
             add(MoreRow.RUMBLE)
@@ -518,6 +555,12 @@ private fun PageRows(
             KeyedRow(Symbols.ZOOM_IN, R.string.stream_menu_row_zoom, MenuKey.ZOOM, RowValue.Toggle(host.zoomOn) { toggle { host.toggleZoom() } })
             if (host.allowChangeMouseMode) KeyedRow(Symbols.MOUSE, R.string.stream_menu_row_mouse_mode, MoreRow.MOUSE, RowValue.Action { openPage(MenuPage.MOUSE) }, entry(MoreRow.MOUSE))
             KeyedRow(Symbols.JOYSTICK, R.string.stream_menu_row_onscreen_controls, MenuKey.ONSCREEN_CONTROLS, RowValue.Toggle(host.onscreenControlsOn) { toggle { host.toggleOnscreenControls() } })
+            // Applies to the running controls at once and is the profile's value, the same as the Settings row; changesTick recomposes the value
+            KeyedRow(Symbols.OPACITY, R.string.settings_native_osc_opacity_title, MoreRow.OSC_OPACITY,
+                RowValue.Slider(host.oscOpacity, OscOpacity.MIN, OscOpacity.MAX, OscOpacity.STEP, " %") {
+                    host.setOscOpacity(it)
+                    changesTick()
+                })
             KeyedRow(Symbols.ANDROID_KEYBOARD, R.string.stream_menu_row_android_keyboard, MoreRow.ANDROID_KEYBOARD, RowValue.Action { close { host.toggleSystemKeyboard() } })
             KeyedRow(Symbols.TOUCH_SENSITIVITY, R.string.stream_menu_row_touch_sensitivity, MenuKey.TOUCH_SENSITIVITY, RowValue.Toggle(host.touchSensitivityOn) { toggle { host.toggleTouchSensitivity() } })
             KeyedRow(Symbols.VIBRATION, R.string.stream_menu_row_rumble_feel, MoreRow.RUMBLE, RowValue.Text(host.rumblePreset?.label(res) ?: stringResource(R.string.stream_menu_rumble_custom)) { openPage(MenuPage.RUMBLE) }, entry(MoreRow.RUMBLE))
@@ -568,11 +611,17 @@ private fun PageRows(
                     RowValue.Choice(if (level == 1) "1.33× (1440p)" else "2× (2160p)", { direction -> // l10n-ignore
                         host.setSupersamplingLevel(if (direction < 0) 1 else 2)
                         onLevel(host.supersamplingLevel)
+                    }, options = listOf("1.33× (1440p)", "2× (2160p)"), selected = level - 1, onPick = { i -> // l10n-ignore
+                        host.setSupersamplingLevel(i + 1)
+                        onLevel(host.supersamplingLevel)
                     }), enabled = available)
             }
             val upscalerMode = host.upscalerMode
             KeyedRow(Symbols.UPSCALER_MODE, R.string.stream_menu_row_mode, MenuKey.MODE, RowValue.Choice(res.getString(UpscalerMode.fromIndex(upscalerMode).labelRes()), { direction ->
                 host.setUpscalingMode(nextUpscalerMode(upscalerMode, direction))
+                changesTick()
+            }, options = UpscalerMode.values().indices.map { res.getString(UpscalerMode.fromIndex(it).labelRes()) }, selected = upscalerMode, onPick = { i ->
+                host.setUpscalingMode(i)
                 changesTick()
             }), enabled = available)
             KeyedRow(Symbols.SHARPNESS, R.string.stream_menu_row_sharpness, MenuKey.SHARPNESS, RowValue.Slider(host.upscalerSharpness, 0, 100, 5, " %") {
@@ -585,7 +634,7 @@ private fun PageRows(
             val selected = modes.indexOfFirst { it.value == host.mouseMode.toString() }.coerceAtLeast(0)
             KeyedRow(Symbols.TOUCH_APP, R.string.stream_menu_row_touchscreen_mode, MenuKey.TOUCHSCREEN_MODE, RowValue.Choice(modes[selected].label, { dir ->
                 toggle { host.setMouseMode(modes[Math.floorMod(selected + dir, modes.size)].value.toInt()) }
-            }), Modifier.focusRequester(first))
+            }, options = modes.map { it.label }, selected = selected, onPick = { i -> toggle { host.setMouseMode(modes[i].value.toInt()) } }), Modifier.focusRequester(first))
             KeyedRow(Symbols.CURSOR, R.string.stream_menu_row_local_cursor, MenuKey.LOCAL_MOUSE_CURSOR, RowValue.Toggle(host.localMouseCursorVisible) {
                 toggle { host.toggleLocalMouseCursor() }
             })

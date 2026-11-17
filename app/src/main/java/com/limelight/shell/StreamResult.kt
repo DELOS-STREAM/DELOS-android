@@ -227,23 +227,36 @@ object StreamOutcome {
         )
     }
 
+    /** The player cancelled the loader: back to the shell (the library) without a result; the stream activity ends. */
+    @JvmStatic
+    fun cancelled(activity: DelosStreamActivity) {
+        DiagLog.i("Stream", "Stream start cancelled by the player") // l10n-ignore
+        activity.startActivity(homeIntent(activity), homeOptions(activity).toBundle())
+        activity.finish()
+    }
+
+    private fun homeIntent(activity: Activity): Intent = Intent().setClassName(activity, "com.limelight.shell.ShellActivity")
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+
     /**
-     * Brings the shell to the front with [result] and ends [activity]. From the whole screen a scale-up only
-     * fades the shell in over the stream (like the portal exit); a stream on an external display ends there
-     * and the shell opens on the device's own screen.
+     * From the whole screen a scale-up only fades the shell in over the stream (like the portal exit); a stream on
+     * an external display ends there and the shell opens on the device's own screen.
      */
-    private fun show(activity: Activity, result: StreamResult) {
-        val summary = "Stream ended: ${result.kind} \"${result.title}\"${result.details?.let { " ($it)" }.orEmpty()}" // l10n-ignore
-        if (result.kind == StreamResultKind.HOST_CLOSED) DiagLog.i("Stream", summary) else DiagLog.e("Stream", summary)
-        val home = Intent().setClassName(activity, "com.limelight.shell.ShellActivity")
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        result.putInto(home)
-        val options = if (activity is DelosStreamActivity && activity.isOnExternalDisplay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    private fun homeOptions(activity: Activity): ActivityOptions =
+        if (activity is DelosStreamActivity && activity.isOnExternalDisplay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ActivityOptions.makeBasic().setLaunchDisplayId(DualScreen.mainDisplayId(activity))
         } else {
             val root = activity.window.decorView
             DualScreen.placeOnMain(activity, ActivityOptions.makeScaleUpAnimation(root, 0, 0, root.width, root.height))
         }
+
+    /** Brings the shell to the front with [result] and ends [activity]. */
+    private fun show(activity: Activity, result: StreamResult) {
+        val summary = "Stream ended: ${result.kind} \"${result.title}\"${result.details?.let { " ($it)" }.orEmpty()}" // l10n-ignore
+        if (result.kind == StreamResultKind.HOST_CLOSED) DiagLog.i("Stream", summary) else DiagLog.e("Stream", summary)
+        val home = homeIntent(activity)
+        result.putInto(home)
+        val options = homeOptions(activity)
         activity.startActivity(home, options.toBundle())
         activity.finish()
     }

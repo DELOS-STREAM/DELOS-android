@@ -84,6 +84,9 @@
     <string name="row_reset_to_profile">Значення профілю</string>
     <string name="row_reset">Скинути</string>
     <string name="row_not_set">Не задано</string>
+    <string name="row_slider_decrease">Зменшити</string>
+    <string name="row_slider_increase">Збільшити</string>
+    <string name="row_slider_enter_value">Ввести значення</string>
 
     <string name="impact_axis_gpu">GPU</string>
     <string name="impact_axis_latency">Затримка</string>

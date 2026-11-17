@@ -93,6 +93,7 @@
     <string name="settings_native_menu_buttons_description">Botones que se pulsan a la vez durante un stream para abrir o cerrar el menú. Selecciona para grabar otros, p. ej. un botón trasero.</string>
     <string name="settings_native_menu_swipe_title">Deslizar hacia arriba para abrir el menú</string>
     <string name="settings_native_menu_swipe_description">Un deslizamiento hacia arriba desde el borde inferior también abre el menú del stream. Los toques que empiezan ahí no llegan a la app.</string>
+    <string name="settings_native_osc_opacity_title">Opacidad de los controles en pantalla</string>
     <string name="settings_native_stats_position_title">Posición de las estadísticas</string>
     <string name="settings_native_stats_position_description">Esquina del panel de estadísticas completo durante el stream. El modo compacto siempre va arriba en el centro.</string>
     <string name="settings_native_stats_top_left">Arriba a la izquierda</string>

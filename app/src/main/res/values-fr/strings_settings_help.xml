@@ -204,6 +204,7 @@
     <string name="stream_help_touch_sensitivity">Active ou désactive la mise à l’échelle de sensibilité tactile supplémentaire, configurée dans les réglages.</string>
     <string name="stream_help_gyro_smoothing">Stabilise aussitôt la visée au gyroscope, conservé pour cette appli. 0 = désactivé. Plus de lissage ajoute un léger retard aux mouvements lents.</string>
     <string name="stream_help_gyro_smoothing_disabled">Nécessite d’activer Gyroscope de manette externe ou Gyroscope intégré de l’appareil dans les Réglages ; s’applique dès le prochain stream.</string>
+    <string name="stream_help_on_screen_controls_opacity">Opacité des commandes à l’écran. S’applique aussitôt et est enregistrée dans le profil, la même valeur que dans les Réglages.</string>
     <string name="stream_help_rumble_feel">Choisit le ressenti des vibrations du PC, aussitôt et enregistré. Reste ouvert : choisis à nouveau pour comparer. %1$s revient en arrière.</string>
     <string name="stream_help_format_keys">Envoie %1$s une fois au PC, puis revient au stream.</string>
     <string name="stream_help_format_command">Exécute aussitôt sur le PC la commande %1$s définie par le PC. À configurer dans Vibepollo ou Apollo.</string>

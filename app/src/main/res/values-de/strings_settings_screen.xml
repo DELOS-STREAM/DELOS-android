@@ -105,6 +105,7 @@
     <string name="settings_native_menu_buttons_description">Tasten, die im Stream gemeinsam gedrückt werden, um das Stream-Menü zu öffnen oder zu schließen. Auswählen, um andere aufzuzeichnen, z. B. eine Rückseitentaste.</string>
     <string name="settings_native_menu_swipe_title">Nach oben wischen öffnet das Menü</string>
     <string name="settings_native_menu_swipe_description">Ein Wischen vom unteren Rand nach oben öffnet ebenfalls das Stream-Menü. Berührungen, die dort beginnen, erreichen die App nicht.</string>
+    <string name="settings_native_osc_opacity_title">Deckkraft der Bildschirmsteuerung</string>
     <string name="settings_native_stats_position_title">Position der Statistik</string>
     <string name="settings_native_stats_position_description">Ecke des vollständigen Statistik-Panels beim Streamen. Der Kompaktmodus ist immer oben mittig.</string>
     <string name="settings_native_stats_top_left">Oben links</string>

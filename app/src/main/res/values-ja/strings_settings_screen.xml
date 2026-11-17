@@ -92,6 +92,7 @@
     <string name="settings_native_menu_buttons_description">ストリーム中にストリームメニューを開閉するために、同時に押すボタンです。背面ボタンなど、ほかのボタンを記録するには選択してください。</string>
     <string name="settings_native_menu_swipe_title">上スワイプでメニューを開く</string>
     <string name="settings_native_menu_swipe_description">下端から上にスワイプしても、ストリームメニューが開きます。そこから始まるタッチはアプリには届きません。</string>
+    <string name="settings_native_osc_opacity_title">画面上のコントロールの不透明度</string>
     <string name="settings_native_stats_position_title">統計の表示位置</string>
     <string name="settings_native_stats_position_description">ストリーミング中のフル統計パネルを表示する隅です。コンパクトモードは常に上部中央です。</string>
     <string name="settings_native_stats_top_left">左上</string>
