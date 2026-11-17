@@ -92,11 +92,26 @@ The menu is an anchored glass card with the prototype's caret. The card is the p
 | Lit top edge | 1.5 px at 26 % white |
 | Shadow | `0 40 90 -20` black 66 % |
 | Card width | 470..640, as wide as its longest row |
-| Caret | 72 wide, 30 out of the card, rounded tip, plain glass like the stream popover's |
+| Caret | The shared caret ([3.1.1](#311-the-caret)): 60 wide, 24 high; the tip's nominal distance for placement is 30 (`CARET_DEPTH`, the room around the card) |
 | Scrim under the menu | Light, 26 %, no blur |
 | Covers beside the card | Dimmed: saturate .6, brightness .5 |
 | Info block above the covers | Dimmed to 40 % |
 | Focused cover | Keeps its colors |
+
+#### 3.1.1 The caret
+
+ONE caret for every glass card that points at something: the dashboard's context menu (covers, PC circles), the settings' option list and slider popup, and the stream menu's popover, on every side they use (bottom, top, left, right). It is one function, `cardCaretPath` in `ui/CardCaret.kt`, and the card's outline and the caret are ONE path. The numbers are the average, in whole stage pixels, of the two carets the app had before (the stream popover's: a straight flank, a tip 20 wide at 18.7 out, 23 high; the context menu's: a rounded base, a tip 12 wide at 13 out, 24 high). Apple copies them 1:1:
+
+| Number | Value |
+|---|---|
+| Base width (on the card's edge) | 60: from -30 to +30 along the edge from the caret's centre |
+| Height (the tip's apex out of the edge) | 24 |
+| Flank | A cubic Bézier from the base end (u 30, v 0) with controls (21, 3) and (14, 8) to the tip's join (8, 16): rounded at the base (the flank leaves the edge at a slant, not at a corner), nearly straight after it |
+| Tip | A quadratic Bézier between the joins (-8, 16) and (8, 16) with the control (0, 32): its apex is 24 out and the rounding is modest |
+| Mirror | The same flank on the other side, mirrored (u to -u) |
+| Corners of the card | Unchanged: 34 on the context menu, 44 on the stream popover and the settings popover (the caret keeps at least 72 from the card's corners) |
+
+(u, v): u along the edge from the caret's centre, v out of the edge. The path runs clockwise round the card: the caret is inserted into the edge it is on, the top and right edges in the direction of u, the bottom and left edges against it (the start is the base end that comes first). Scale every number with the stage. `CardCaretTest` pins the points on each of the four sides.
 
 ### 3.2 Focus look of the owning element
 
@@ -309,15 +324,15 @@ A tap is not the A button on a settings row ([#92](https://github.com/Meitoncz/D
 
 ### 7.2 Options list
 
-The list is the **contextual popover**: the stream menu's popover card (glass, one outline with its caret; `sideCaretCardPath`, `paintPopoverGlass` in `StreamMenuPopover.kt`) grown out of the tapped row, on both platforms (the iPad has the same). It is not a context menu: it has no header.
+The list is the **contextual popover**: the stream menu's popover card (glass, one outline with its caret; `cardCaretPath` in `ui/CardCaret.kt`, `paintPopoverGlass` in `StreamMenuPopover.kt`) grown out of the tapped row, on both platforms (the iPad has the same). It is not a context menu: it has no header.
 
 | Element | Value |
 |---|---|
 | Scrim | None, like the stream menu's popover: nothing is dimmed; a tap beside the card closes it |
 | Card | 560 wide (the slider's is 1040), corner 44 (the stream popover's), padding 20 above and below; at least 24 from the stage's sides |
-| Glass | In the shell the screen behind is really blurred: the context menu's glass (`menuGlass`: blur 46 under the navy tint at 80 %, with its white sheen), the card clipped to its outline with the caret (`sideCaretCardPath`); the shell's blur source (`hazeSource`) is on while a popup is open. The stream menu has no blur source (the stream is a surface), so there the card is the stream popover's translucent glass (`paintPopoverGlass`). Both: the popover's shadow, no outline |
+| Glass | In the shell the screen behind is really blurred: the context menu's glass (`menuGlass`: blur 46 under the navy tint at 80 %, with its white sheen), the card clipped to its outline with the caret (`cardCaretPath`); the shell's blur source (`hazeSource`) is on while a popup is open. The stream menu has no blur source (the stream is a surface), so there the card is the stream popover's translucent glass (`paintPopoverGlass`). Both: the popover's shadow, no outline |
 | Place | Vertically centred on the tapped row and kept 104 below the stage's top (the status bar, and the cutout) and 24 above its bottom edge (a compact stage uses the context menu's margins). The card grows out of its caret TO THE RIGHT: the caret is on its left edge pointing left into the row, its tip 360 from the row's right edge (left of the value's text), moved left as far as the card needs the room to end 24 before the stage's right edge (at most to 120 inside the row's left edge). Only when the right side has no room it flips: the caret on the right edge, its tip 120 inside the row's right edge, the card to the left. When neither side has the room the card is narrowed, last |
-| Caret | The stream popover's caret (60 wide, 24 tall) at the row's middle (never on a rounded corner), its tip in the row |
+| Caret | The shared caret ([3.1.1](#311-the-caret)) at the row's middle (never on a rounded corner), its tip in the row |
 | Title | The row's name, Figtree 20 semibold, third text color, 36 high |
 | Option | 64 high, 4 apart, Figtree 23 semibold, corner 28; the focused one has a 17 % tint of the main color and a 3 px ring; the current one has a check (30) |
 | Long list | The card is cut to the room and the list scrolls inside it; the current option is in view when it opens |
@@ -648,6 +663,7 @@ The test is only reachable from Settings, never over a stream, and never starts 
 | `ui/Motion.kt` | `ListScrollMotion` and `ListScrollDriver` |
 | `ui/Rows.kt` | `SettingRowList` / `SettingRow`, `RowOverride`, `IMPACT_ROW_MIN_HEIGHT`, `rowTouch` (what a tap does on a row) |
 | `ui/RowPicker.kt` | `RowPickerLayer`: the options list and the slider popup of a row ([7.2](#72-options-list), [7.3](#73-slider-popup)); `RowPopup`, `LocalRowPicker`, `rowPopupFor` |
+| `ui/CardCaret.kt` | `CardCaret` (the one caret's numbers and points), `cardCaretPath`, `caretCurvePath` ([3.1.1](#311-the-caret)) |
 | `ui/RowPickerLogic.kt` | Pure: `SliderEdit` (step, snap, read, parse typed text), `HoldRepeat`, `PickerLayout` (placement of the card and of its caret) |
 | `ShellState.picker` | The open popup of a row (over every layer; the side menu's rows open one too) |
 | `ui/ImpactChips.kt` | Impact chips |
@@ -665,6 +681,7 @@ The test is only reachable from Settings, never over a stream, and never starts 
 
 | Test | What it enforces |
 |---|---|
+| `CardCaretTest` | The caret's numbers and its points on every side ([3.1.1](#311-the-caret)) |
 | Unit test of `placeContextMenu` | Context menu placement: side, flip, below/above, margins and caret distance ([Anchor and placement](#33-anchor-and-placement)) |
 | `RowTouchTest` | What a tap does on every kind of row, and which rows have a popup ([7.1](#71-touch)) |
 | `RowPickerLogicTest` | Slider stepping, snapping, typed input (units, rounding, clamping, rejection), the hold's acceleration, and the placement of the card ([7.2](#72-options-list), [7.3](#73-slider-popup)) |

@@ -256,7 +256,7 @@ The popover is a glass card **above its own tile**, centered on the tile.
 | Card shadow | 0 40 90 −20 |
 | Distance from the stage's left and right edges | 120 |
 | Box end | 322 above the stage's bottom edge |
-| **Caret** | 60 × 24, rounded, ONE path with the card so the glass is continuous; at the tile's center, at least 72 from the card's corners |
+| **Caret** | The shared caret (60 × 24, [MENUS_AND_SETTINGS.md 3.1.1](MENUS_AND_SETTINGS.md#311-the-caret)), ONE path with the card so the glass is continuous; at the tile's center, at least 72 from the card's corners |
 | Padding | 40 × 30 (24 below) |
 | Header | 64: the back circle (focusable, B does the same) and the title in Unbounded 30 |
 | Rows | 72 tall with 8 between them, corner 28 |

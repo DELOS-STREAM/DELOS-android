@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import com.limelight.shell.paintPopoverGlass
-import com.limelight.shell.sideCaretCardPath
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Density
@@ -208,7 +207,7 @@ private fun PickerSheet(request: RowPopupRequest, layerAt: Offset, haze: HazeSta
 }
 
 /**
- * The popover's card behind the content, like the stream menu's popover (glass, outline and caret as one path, [sideCaretCardPath]) and its shadow. With a
+ * The popover's card behind the content, like the stream menu's popover (glass, outline and caret as one path, [cardCaretPath]) and its shadow. With a
  * [haze] (the shell: the screen behind is its source) the glass is the context menu's: the screen under it blurred under the card's navy tint, plus the
  * sheen; without one (the stream, which has no source) it is the stream popover's translucent glass.
  */
@@ -219,7 +218,12 @@ private fun BoxScope.PickerGlass(place: PickerPlacement, caret: Float, haze: Haz
     val shape = remember(place, caret, k) {
         object : Shape {
             override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
-                Outline.Generic(sideCaretCardPath(left * k, size.width - caret * k, size.height, if (place.hasCaret) place.caretY * k else size.height / 2f, place.caretRight, k))
+                Outline.Generic(
+                    cardCaretPath(
+                        if (!place.hasCaret) CaretSide.None else if (place.caretRight) CaretSide.Right else CaretSide.Left,
+                        left * k, 0f, size.width - caret * k, size.height, P.CORNER * k, if (place.hasCaret) place.caretY * k else 0f, k,
+                    ),
+                )
         }
     }
     Box(

@@ -80,6 +80,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.em
 import com.limelight.shell.StreamMenuLayout as L
 import com.limelight.shell.StreamMenuMotion as M
+import com.limelight.shell.ui.CaretSide
+import com.limelight.shell.ui.cardCaretPath
+import com.limelight.shell.ui.CardCaret
 import com.limelight.shell.ui.Cue
 import com.limelight.shell.ui.EaseOut
 import com.limelight.shell.ui.EaseSpring
@@ -211,67 +214,12 @@ internal class PopoverGeometry(initial: PopoverPlacement) {
 }
 
 /**
- * The outline of the card and its caret as ONE path (the prototype's `cardPath`): a rounded rectangle [w] x [h] with a
- * rounded caret on its bottom edge, centered at [cx], [StreamMenuLayout.CARET_WIDTH] wide at its base and
- * [StreamMenuLayout.CARET_HEIGHT] tall, so the glass is continuous. All values are pixels; [k] is pixels per stage pixel.
+ * The outline of the card and its caret as ONE path: a rounded rectangle [w] x [h] with the shared caret ([CardCaret]) on its bottom edge, centered
+ * at [cx], so the glass is continuous. All values are pixels; [k] is pixels per stage pixel.
  */
 internal fun caretCardPath(w: Float, h: Float, cx: Float, k: Float): Path {
     val r = minOf(L.POPOVER_RADIUS * k, h / 2f - 1f).coerceAtLeast(0f)
-    val a = L.CARET_WIDTH * k / 2f
-    val b = L.CARET_WIDTH * k / 6f
-    val d = L.CARET_HEIGHT * k
-    return Path().apply {
-        moveTo(r, 0f)
-        lineTo(w - r, 0f)
-        arcTo(Rect(w - 2 * r, 0f, w, 2 * r), -90f, 90f, false)
-        lineTo(w, h - r)
-        arcTo(Rect(w - 2 * r, h - 2 * r, w, h), 0f, 90f, false)
-        lineTo(cx + a, h)
-        lineTo(cx + b, h + d * .78f)
-        quadraticTo(cx, h + d * 1.15f, cx - b, h + d * .78f)
-        lineTo(cx - a, h)
-        lineTo(r, h)
-        arcTo(Rect(0f, h - 2 * r, 2 * r, h), 90f, 90f, false)
-        lineTo(0f, r)
-        arcTo(Rect(0f, 0f, 2 * r, 2 * r), 180f, 90f, false)
-        close()
-    }
-}
-
-/**
- * The same card with its caret on a SIDE edge, for the popover of a settings row (RowPicker.kt): the body spans [left] to [left] + [bw] and 0 to [h], the
- * caret points right ([caretRight]) or left at [cy] from the top, the same size and shape as the bottom caret.
- */
-internal fun sideCaretCardPath(left: Float, bw: Float, h: Float, cy: Float, caretRight: Boolean, k: Float): Path {
-    val r = minOf(L.POPOVER_RADIUS * k, h / 2f - 1f).coerceAtLeast(0f)
-    val a = L.CARET_WIDTH * k / 2f
-    val b = L.CARET_WIDTH * k / 6f
-    val d = L.CARET_HEIGHT * k
-    val right = left + bw
-    return Path().apply {
-        moveTo(left + r, 0f)
-        lineTo(right - r, 0f)
-        arcTo(Rect(right - 2 * r, 0f, right, 2 * r), -90f, 90f, false)
-        if (caretRight) {
-            lineTo(right, cy - a)
-            lineTo(right + d * .78f, cy - b)
-            quadraticTo(right + d * 1.15f, cy, right + d * .78f, cy + b)
-            lineTo(right, cy + a)
-        }
-        lineTo(right, h - r)
-        arcTo(Rect(right - 2 * r, h - 2 * r, right, h), 0f, 90f, false)
-        lineTo(left + r, h)
-        arcTo(Rect(left, h - 2 * r, left + 2 * r, h), 90f, 90f, false)
-        if (!caretRight) {
-            lineTo(left, cy + a)
-            lineTo(left - d * .78f, cy + b)
-            quadraticTo(left - d * 1.15f, cy, left - d * .78f, cy - b)
-            lineTo(left, cy - a)
-        }
-        lineTo(left, r)
-        arcTo(Rect(left, 0f, left + 2 * r, 2 * r), 180f, 90f, false)
-        close()
-    }
+    return cardCaretPath(CaretSide.Bottom, 0f, 0f, w, h, r, cx, k)
 }
 
 /** The popover's glass inside the current clip: the dark backing, the tint, the sheen at the top and the light at the bottom, [a] faded in. */

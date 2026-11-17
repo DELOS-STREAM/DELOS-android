@@ -1,5 +1,6 @@
 package com.limelight.shell
 
+import com.limelight.shell.ui.CardCaret
 import android.content.res.Resources
 import com.limelight.R
 import com.limelight.binding.video.UpscalerStatus
@@ -210,8 +211,8 @@ internal object StreamMenuLayout {
     const val POPOVER_GAP_AFTER_HEAD = 12f
     const val POPOVER_HELP_GAP = 18f
     const val POPOVER_TITLE_SIZE = 30f
-    const val CARET_WIDTH = 60f
-    const val CARET_HEIGHT = 24f
+    const val CARET_WIDTH = CardCaret.WIDTH
+    const val CARET_HEIGHT = CardCaret.DEPTH
 
     /** The popover's box ends here above the bottom of the stage: card bottom 734, caret tip about 13 above the sunk tile's ring. */
     const val POPOVER_BOTTOM = 322f
