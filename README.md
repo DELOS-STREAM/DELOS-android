@@ -15,7 +15,7 @@
 [![Last commit](https://img.shields.io/github/last-commit/DELOS-STREAM/DELOS-android?color=4fd2ee&labelColor=151b2b)](https://github.com/DELOS-STREAM/DELOS-android/commits/main)
 [![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-support-e8639a?logo=kofi&logoColor=white&labelColor=151b2b)](https://ko-fi.com/delos_stream)
 
-[Website](https://delos-stream.com) · [Releases](https://github.com/DELOS-STREAM/DELOS-android/releases) · [Issues](https://github.com/DELOS-STREAM/DELOS-android/issues) · [Add to Obtainium](obtainium://add/https://github.com/DELOS-STREAM/DELOS-android)
+[Website](https://delos-stream.com) · [Releases](https://github.com/DELOS-STREAM/DELOS-android/releases) · [Issues](https://github.com/DELOS-STREAM/DELOS-android/issues) · [Add to Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/DELOS-STREAM/DELOS-android)
 
 <img src="docs/readme/dashboard.webp" alt="The Delos library on a handheld" width="820">
 
@@ -64,7 +64,7 @@ Delos streams games from your PC to an Android handheld. It is built for the han
 
 ## 📥 Get Delos
 
-Download the APK for your device from the [releases page](https://github.com/DELOS-STREAM/DELOS-android/releases): `arm64-v8a` for almost every handheld and phone, `armeabi-v7a` only for old 32-bit devices. `SHA256SUMS.txt` on the same page lists the checksums. To get updates, add the repository to [Obtainium](obtainium://add/https://github.com/DELOS-STREAM/DELOS-android). Delos can also check for a new release itself once a day (it contacts only api.github.com, can be switched off in Settings → About) and, when you agree, download, verify and install it; [docs/UPDATES.md](docs/UPDATES.md). The updater has not been tested with a real release yet.
+Download the APK for your device from the [releases page](https://github.com/DELOS-STREAM/DELOS-android/releases): `arm64-v8a` for almost every handheld and phone, `armeabi-v7a` only for old 32-bit devices. `SHA256SUMS.txt` on the same page lists the checksums. To get updates, add the repository to [Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/DELOS-STREAM/DELOS-android). Delos can also check for a new release itself once a day (it contacts only api.github.com, can be switched off in Settings → About) and, when you agree, download, verify and install it; [docs/UPDATES.md](docs/UPDATES.md). The updater has not been tested with a real release yet.
 
 ## 🤝 Community and contributing
 
