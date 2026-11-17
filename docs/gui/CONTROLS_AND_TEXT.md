@@ -52,6 +52,29 @@ The hints show the buttons as they look on the device.
 |---|---|---|
 | AYN handhelds (Odin, Thor) | A square | A play arrow |
 
+Every hint (hint bars, the stream menu's dock, dialogs, settings, the artwork screen, the companion window) draws the
+glyphs of the connected controller's family (`ControllerGlyphs`, `shell/ui/ControllerGlyphs.kt`). The family comes
+from the controller used last (the source device of the last key event), else the first gamepad connected, and is
+evaluated again on connect, disconnect and change (`InputManager.InputDeviceListener`). It is detected from
+`InputDevice`: vendor `0x054c` is PlayStation (DualShock 4 by product id or name, else DualSense), `0x057e` Nintendo,
+`0x045e` Xbox; for other vendors the device name decides (dualsense, dualshock, ds4, playstation, nintendo, joy-con,
+pro controller, xbox); anything else is generic and draws the Xbox letters (LB/RB only on an Xbox pad).
+
+| Place | Xbox, generic | PlayStation | Nintendo |
+|---|---|---|---|
+| South (confirm) | A | cross | B |
+| East (back) | B | circle | A |
+| West | X | square | Y |
+| North | Y | triangle | X |
+| Shoulders, triggers | LB RB LT RT (generic: L1 R1 L2 R2) | L1 R1 L2 R2 | L R ZL ZR |
+| Left, right menu button | View, Menu icons | View, Menu icons | − and + |
+| Touchpad | | rounded rectangle | |
+
+Only the drawing changes, never the mapping: confirm stays the south button (`KEYCODE_BUTTON_A`, which Android puts
+on the south button of a Nintendo pad too) and back the east one. `Glyph.A`, `Glyph.B`, ... name positions. The
+PlayStation shapes and the touchpad are vector drawings (`Canvas`), there are no image assets. The Apple app uses the
+same table.
+
 ### Navigation
 
 Navigation must be **intuitive and direct**. Pressing a direction takes the focus where the user wants to go, ideally

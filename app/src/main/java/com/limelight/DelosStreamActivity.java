@@ -53,6 +53,7 @@ import com.limelight.utils.PanZoomHandler;
 import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
 import com.limelight.shell.StreamLoader;
+import com.limelight.shell.ui.ControllerGlyphs;
 import com.limelight.shell.data.PlaytimeKey;
 import com.limelight.shell.data.PlaytimeStore;
 import com.limelight.shell.data.PlaytimeTracker;
@@ -257,6 +258,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ControllerGlyphs.INSTANCE.start(this);
         com.limelight.shell.DelosToastOverlay.attach(this);
 
         // External-display DelosStreamActivity runs as a separate task. Android otherwise applies its default
@@ -2050,6 +2052,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     // The shortcut (L3+R3 or the buttons chosen in Delos) and the swipe up are checked before the stream.
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        ControllerGlyphs.INSTANCE.used(event.getDevice());
         if (inputBlocked) {
             return true;
         }

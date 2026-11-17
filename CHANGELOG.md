@@ -10,6 +10,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Added
+- Button hints show the connected controller's glyphs: PlayStation cross, circle, square and triangle with L1/R1/L2/R2, Nintendo letters in the Nintendo layout with + and −, Xbox and unknown pads as before. The family follows the controller used last and connect or disconnect; confirm and back stay on the south and east buttons ([#100](https://github.com/Meitoncz/DELOS/issues/100)). Not verified on real PlayStation or Nintendo controllers.
+
 ## [1.1.0] - 2026-11-16
 _Hold Back for Guide and updated libraries._
 

@@ -21,6 +21,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.limelight.shell.ui.ControllerGlyphs
 import com.limelight.shell.companion.CompanionHost
 import com.limelight.shell.companion.CompanionState
 import com.limelight.shell.data.ArtworkStore
@@ -90,6 +91,7 @@ class ShellActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        ControllerGlyphs.start(this)
         placement = ShellPlacement(this)
         if (savedInstanceState == null && placement?.moveOnCreate() == true) {
             movedToMain = true
@@ -163,7 +165,10 @@ class ShellActivity : ComponentActivity() {
 
     // Activity's public key dispatcher must still run after the shell's global controller keys.
     @SuppressLint("RestrictedApi")
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean = keys.dispatch(event) || super.dispatchKeyEvent(event)
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        ControllerGlyphs.used(event.device)
+        return keys.dispatch(event) || super.dispatchKeyEvent(event)
+    }
 
     /** Follows the current profile's settings for the Language row: it shows the app language, and choosing there sets it. */
     private fun bindLanguage() {
