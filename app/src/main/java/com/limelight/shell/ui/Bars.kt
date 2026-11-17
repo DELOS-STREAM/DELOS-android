@@ -515,7 +515,7 @@ sealed interface Glyph {
  * `onTap`; a controller has the button itself, and the hint stays a hint (`Hint.tappable` of DELOS for Apple).
  */
 @Immutable
-data class Hint(val glyph: Glyph, val label: String, val shortLabel: String? = null, val tappable: Boolean = false)
+data class Hint(val glyph: Glyph, val label: String, val shortLabel: String? = null, val tappable: Boolean = false, val icon: String? = null)
 
 /** The bottom bar: an optional note on the left, the button hints on the right; [onTap] runs a [Hint.tappable] hint's pill. */
 @Composable
@@ -625,19 +625,23 @@ private fun HintCell(hint: Hint, detail: HintDetail, onTap: ((Hint) -> Unit)?) {
     ) { asPill ->
         if (asPill) {
             val tap by rememberUpdatedState(onTap)
-            BasicText(
-                label, maxLines = 1,
-                style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 21.tpx),
-                modifier = Modifier
+            // A button, and it looks like one: the glass pill with its symbol (the filter's funnel) and label
+            Row(
+                Modifier
                     .clip(CircleShape)
                     .glass(colors.surface)
                     .border(1.px, colors.line, CircleShape)
-                    .semantics { role = Role.Button; onClick { tap?.invoke(hint); true } }
+                    .semantics(mergeDescendants = true) { role = Role.Button; onClick { tap?.invoke(hint); true } }
                     .pointerInput(hint) { detectTapGestures { tap?.invoke(hint) } }
-                    .height(44.px)
-                    .wrapContentHeight(Alignment.CenterVertically)
-                    .padding(horizontal = 24.px),
-            )
+                    .height(52.px)
+                    .padding(start = (if (hint.icon != null) 18 else 24).px, end = 24.px),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.px),
+            ) {
+                hint.icon?.let { Symbol(it, 26.tpx, colors.text) }
+                BasicText(label, maxLines = 1,
+                    style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 21.tpx))
+            }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
                 GlyphButton(hint.glyph)
