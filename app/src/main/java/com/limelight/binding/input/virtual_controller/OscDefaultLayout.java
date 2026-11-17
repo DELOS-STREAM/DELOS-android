@@ -129,6 +129,20 @@ public final class OscDefaultLayout {
         return slots;
     }
 
+    /**
+     * Whether a rectangle is where the default layout puts element {@code elementId} on a panel of {@code panelWidth} x
+     * {@code panelHeight} pixels: a saved element that was never moved or resized there (the editor stores every element when it is
+     * left, the untouched ones too).
+     */
+    public static boolean isDefault(int elementId, int left, int top, int width, int height, int panelWidth, int panelHeight) {
+        if (panelWidth <= 0 || panelHeight <= 0) {
+            return false;
+        }
+        // Every element has its slot here; where it goes does not depend on which others the settings turn on
+        Slot slot = compute(new OscGeometry.Panel(panelWidth, panelHeight), false, true).get(elementId);
+        return slot != null && slot.left == left && slot.top == top && slot.width == width && slot.height == height;
+    }
+
     /** A face button, the right cluster against the right edge, the top row against the top. */
     private static Slot face(OscGeometry.Panel p, int x, int y) {
         return new Slot(p.right(x, BUTTON_SIZE), p.top(y), p.size(BUTTON_SIZE), p.size(BUTTON_SIZE));

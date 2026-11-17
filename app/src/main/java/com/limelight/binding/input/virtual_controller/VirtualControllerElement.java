@@ -304,6 +304,12 @@ public abstract class VirtualControllerElement extends View {
         return getWidth() > getHeight() ? getHeight() : getWidth();
     }
 
+    /** Whether the element is on and where the default layout puts it on the panel it is laid out on (nothing of it to save). */
+    public boolean isDefaultPlacement() {
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) getLayoutParams();
+        return enabled && OscDefaultLayout.isDefault(elementId, layoutParams.leftMargin, layoutParams.topMargin,
+                layoutParams.width, layoutParams.height, virtualController.getPanelWidth(), virtualController.getPanelHeight());
+    }
 
     public JSONObject getConfiguration() throws JSONException {
         JSONObject configuration = new JSONObject();

@@ -10,6 +10,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Fixed
+- On-screen controls: Back, Guide, Start and the trackpad are centred on the area the controls are drawn in, not on the display size Android 13 reports without a navigation bar at the side or a cutout, which put them left of the centre. Leaving the layout editor saves only what was changed, and an untouched layout saved earlier gives way to the default ([#101](https://github.com/Meitoncz/DELOS/issues/101)).
+
 ## [1.1.0] - 2026-11-16
 _Hold Back for Guide and updated libraries._
 
