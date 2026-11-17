@@ -308,7 +308,7 @@ The order is implemented in `FocusedListNavigation.kt` / `FocusedListPolicy.kt`.
 
 ### 7.1 Touch
 
-A tap is not the A button on a settings row ([#92](https://github.com/Meitoncz/Delos/issues/92)). Keys and the gamepad are unchanged.
+A tap is not the A button on a settings row ([#92](https://github.com/DELOS-STREAM/DELOS-android/issues/92)). Keys and the gamepad are unchanged.
 
 | Tap on | Result |
 |---|---|

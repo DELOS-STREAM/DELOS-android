@@ -140,7 +140,7 @@ The design is "Console tiles" (prototype B, approved):
 ### 2.2 Ownership and entry points
 
 - `StreamMenu` owns every stream-menu entry point, including controller, touch and Back.
-- Guide/Home and Back (issue [#102](https://github.com/Meitoncz/DELOS/issues/102)): a **tap** of the controller's
+- Guide/Home and Back (issue [#102](https://github.com/DELOS-STREAM/DELOS-android/issues/102)): a **tap** of the controller's
   Guide/Home button or of the device's built-in Back button opens the stream menu and sends nothing to the PC; a
   **hold** of 500 ms sends Guide to the PC (Steam overlay, Game Bar). The hold is decided while the button is held:
   Guide goes down on the PC when the 500 ms pass and comes up with the button. `GuideTapHold` (pure state, the

@@ -88,7 +88,7 @@ same table.
 
 ### Input kind
 
-The last input is the current input (issue [#103](https://github.com/Meitoncz/DELOS/issues/103)), the rules of DELOS for
+The last input is the current input (issue [#103](https://github.com/DELOS-STREAM/DELOS-android/issues/103)), the rules of DELOS for
 Apple (its docs/ARCHITECTURE.md, "Input kind and the hints"). `ControllerGlyphs.kind` (`InputKind`: controller, keyboard,
 pointer, touch) is what the hints and the input-dependent controls are drawn for.
 
