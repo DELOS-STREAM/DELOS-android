@@ -354,8 +354,8 @@ rotation re-lays out the overlays.
 | B | Dock | Resumes the stream. |
 
 - The focus cannot leave the popover with the D-pad.
-- The open and close buttons (L3 + R3 by default, the swipe up) and the external display's input routing are
-  unchanged by the menu.
+- The open and close buttons (L3 + R3 by default, the swipe up from the band above the edge) and the external display's input
+  routing are unchanged by the menu.
 
 **Touch**:
 
@@ -365,7 +365,10 @@ rotation re-lays out the overlays.
 | On another tile with a page while a popover is open | Morphs the popover to that page. |
 | On the same tile while its popover is open | Closes it. |
 | On a tile without a page while a popover is open | Nothing. |
-| Outside the popover | Closes the popover only and never resumes the stream (Resume and B do). |
+| Outside the card and the tiles while a popover is open | Closes the popover; the menu stays open. |
+| Anywhere that is not a tile or the card, with no popover open (above the dock, beside it, on its text) | Closes the menu, like Resume. Never quits or disconnects, and the tap never reaches the game. |
+
+**Swipe up** (turned off in Settings → Controls → Stream menu): the gesture does not start at the screen's edge, where Android's gesture bar takes it. It starts in a band above the edge: the bottom 18 % of the window's height, without the strip the system keeps for its gestures (the larger of the system gesture inset and 24 dp). It opens the menu once the finger has gone up by 12 % of the height and farther up than sideways. A touch that starts in the band is kept from the game until this is decided (on-screen controls in that band do not get it); a touch outside the band goes to the game as usual. While the loader is shown the swipe does nothing. The arithmetic is `StreamMenuSwipe` (unit tested).
 
 ### 2.10 Motion
 

@@ -125,6 +125,16 @@ internal fun pageAfterBack(page: MenuPage): PageExit? {
 internal fun pageAfterDismiss(page: MenuPage): PageExit? =
     if (page == MenuPage.MAIN) null else PageExit(MenuPage.MAIN, page.barItem(), null)
 
+/** What a tap outside the menu's own controls does. */
+internal enum class OutsideTap { NONE, CLOSE_POPOVER, CLOSE_MENU }
+
+/** The popover closes if one is open, else the menu closes like Resume; nothing while the menu is already closing. */
+internal fun outsideTapAction(page: MenuPage, closing: Boolean): OutsideTap = when {
+    closing -> OutsideTap.NONE
+    page == MenuPage.MAIN -> OutsideTap.CLOSE_MENU
+    else -> OutsideTap.CLOSE_POPOVER
+}
+
 internal object StreamMenuLayout {
     /**
      * The reference stage every number below is measured on. The dock is a 1920-pixel-wide box centered on the real stage
