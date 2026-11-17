@@ -605,8 +605,10 @@ fun GlyphButton(glyph: Glyph, size: Int = 38) {
 /** One complete cap of the shared font, [size] stage pixels high. */
 @Composable
 private fun FontCap(symbol: String, size: Int, color: Color) {
+    // The glyph is text (em.tpx grows with the text scale): its box grows the same way, so the cap is never cut at a text scale above 100 %
     val em = size / BUTTON_INK_FRACTION
-    Box(Modifier.width(em.px).height(size.px), contentAlignment = Alignment.Center) {
-        Symbol(symbol, em.tpx, color, modifier = Modifier.requiredSize(em.px), filled = true)
+    val scale = LocalStage.current.textScale
+    Box(Modifier.width((em * scale).px).height((size * scale).px), contentAlignment = Alignment.Center) {
+        Symbol(symbol, em.tpx, color, modifier = Modifier.requiredSize((em * scale).px), filled = true)
     }
 }
