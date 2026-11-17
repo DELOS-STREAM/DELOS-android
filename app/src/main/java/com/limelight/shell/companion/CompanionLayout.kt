@@ -337,7 +337,11 @@ internal fun HintList(hints: List<CompanionHint>, rest: Int, modifier: Modifier 
             Row(horizontalArrangement = Arrangement.spacedBy(16.px), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.width(56.px), contentAlignment = Alignment.CenterStart) {
                     if (hint.key != null) BodyText(hint.key, color = colors.accent, weight = FontWeight.Bold, maxLines = 1)
-                    else if (hint.symbol != null) Symbol(hint.symbol, 32.tpx, colors.accent, filled = true)
+                    else if (hint.symbol != null) Symbol(
+                        hint.symbol,
+                        (if (hint.completeButton) 32f / com.limelight.shell.ui.BUTTON_INK_FRACTION else 32f).tpx,
+                        colors.accent, filled = true,
+                    )
                 }
                 BodyText(hint.label, color = colors.text, maxLines = 1)
             }

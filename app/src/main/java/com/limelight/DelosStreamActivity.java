@@ -52,6 +52,9 @@ import com.limelight.utils.ExternalDisplayControlActivity;
 import com.limelight.utils.PanZoomHandler;
 import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
+import com.limelight.shell.ui.LaunchHandoff;
+import com.limelight.shell.LoaderKey;
+import com.limelight.shell.LoaderKeys;
 import com.limelight.shell.StreamLoader;
 import com.limelight.shell.ui.ControllerGlyphs;
 import com.limelight.shell.data.PlaytimeKey;
@@ -143,6 +146,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     public NvConnection conn;
     private StreamLoader spinner;
+    // The loader for its whole life: spinner is dropped once connected, but the loader shows through the opening animation
+    private StreamLoader loader;
+    private boolean loaderCancelled = false;
     private boolean endedWithResult = false;
     // True from the start of the connection until it is established or stopped. Written on the UI thread,
     // read by the connection callbacks.
@@ -326,7 +332,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         // The loader of the new UI (the stream's half of the launch scene), with the system bars hidden from
         // the first frame, as in the new UI
         windowController.hideSystemUiNow();
-        spinner = StreamLoader.show(this, prefConfig);
+        spinner = loader = StreamLoader.show(this, prefConfig);
         // The second panel of a dual-screen device (docs/DUAL_SCREEN.md); shows nothing when there is none or this stream is on an external display
         companionHost = CompanionHost.forStream(this, getIntent().getStringExtra(EXTRA_PC_NAME), getIntent().getStringExtra(EXTRA_APP_NAME),
                 getIntent().getStringExtra(EXTRA_PC_UUID), StreamLoader.parameters(getResources(), prefConfig, 0, prefConfig.width, prefConfig.height));
@@ -727,6 +733,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         if (companionHost != null) companionHost.bindStream(streamMenu);
 
         surfaceController.configureStreamSurface(findViewById(android.R.id.content));
+
+        // The player cancelled in the gap between the shell requesting this window and its loader existing
+        if (LaunchHandoff.INSTANCE.takeCancelRequest()) cancelLoader();
     }
 
     private DisplayManager.DisplayListener externalDisplayListener;
@@ -824,6 +833,14 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             return;
         }
         prefConfig.onscreenController= virtualController.switchShowHide() != 0;
+    }
+
+    /** The stream menu's opacity slider: the running on-screen controls take {@code percent} at once, and so does every later layout of them. */
+    public void setVirtualControllerOpacity(int percent) {
+        prefConfig.oscOpacity = percent;
+        if (virtualController != null) {
+            virtualController.setOpacity(percent);
+        }
     }
 
     @Override
@@ -981,6 +998,8 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
         @Override
         public void startConnection() {
+            // A surface that appears after a cancel must not start a connection
+            if (loaderCancelled || isFinishing()) return;
             connecting = true;
             conn.start(new AndroidAudioRenderer(DelosStreamActivity.this, prefConfig.playHostAudio),
                     decoderRenderer, DelosStreamActivity.this);
@@ -1562,6 +1581,25 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         if (companionHost != null) companionHost.onLoaderDone();
     }
 
+    /** The loader is on screen and can be cancelled (by B, Back or its Cancel pill). */
+    public boolean isLoaderCancellable() {
+        return loader != null && loader.getCancellable() && !loaderCancelled;
+    }
+
+    /**
+     * Ends only this client's attempt, in any phase of the loader: the connection is stopped (never the game on the PC:
+     * quitOnStop stays false, so the stop thread only calls conn.stop()) and the shell opens without a result.
+     */
+    public void cancelLoader() {
+        if (!isLoaderCancellable() || !loader.requestCancel()) return;
+        loaderCancelled = true;
+        // The failure callback of the interrupted attempt must not show a result overlay
+        endedWithResult = true;
+        blockInput();
+        if (loader.cancelPlan(connecting, connected).getStopConnection()) stopConnection();
+        StreamOutcome.cancelled(this);
+    }
+
     private void stopConnection() {
         if (connecting || connected) {
             DiagLog.i("Stream", "Stream stopped");
@@ -1969,7 +2007,11 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     @Override
     @SuppressLint("MissingSuperCall") // Delos: consume Back; the superclass would finish the stream.
     public void onBackPressed() {
-        // Delos: Back always opens the stream menu
+        // Delos: Back cancels the loader while it shows, else it opens the stream menu
+        if (isLoaderCancellable()) {
+            cancelLoader();
+            return;
+        }
         showGameMenu();
     }
 
@@ -2053,6 +2095,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         ControllerGlyphs.INSTANCE.used(event.getDevice());
+        if (cancelLoaderOnKey(event)) {
+            return true;
+        }
         if (inputBlocked) {
             return true;
         }
@@ -2062,12 +2107,26 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         return super.dispatchKeyEvent(event);
     }
 
+    /** B, Back and Escape cancel a cancellable loader on release; both edges are consumed so the game never sees them. */
+    private boolean cancelLoaderOnKey(KeyEvent event) {
+        if (!isLoaderCancellable()) {
+            return false;
+        }
+        LoaderKey key = LoaderKeys.decide(event);
+        if (key == LoaderKey.CANCEL) {
+            cancelLoader();
+        }
+        return key != LoaderKey.NONE;
+    }
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
         if (inputBlocked) {
             return true;
         }
-        if (streamMenu != null && !isOnExternalDisplay() && streamMenu.onTouch(event)) {
+        // No swipe-up menu gesture while the loader shows: its view consumes the touches
+        boolean loaderShowing = loader != null && loader.getShowing();
+        if (!loaderShowing && streamMenu != null && !isOnExternalDisplay() && streamMenu.onTouch(event)) {
             return true;
         }
         return super.dispatchTouchEvent(event);
@@ -2109,6 +2168,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     /** One input route for the controller Activity, including keys delivered before the IME. */
     public boolean handleExternalDisplayKeyEvent(KeyEvent event) {
+        if (cancelLoaderOnKey(event)) return true;
         if (streamMenu != null && streamMenu.onExternalKey(event)) return true;
         return keyHandler.handleKeyEvent(event);
     }

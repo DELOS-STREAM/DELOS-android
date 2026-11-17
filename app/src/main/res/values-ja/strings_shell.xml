@@ -78,6 +78,9 @@
     <string name="row_reset_to_profile">プロフィールの値に戻す</string>
     <string name="row_reset">リセット</string>
     <string name="row_not_set">未設定</string>
+    <string name="row_slider_decrease">減らす</string>
+    <string name="row_slider_increase">増やす</string>
+    <string name="row_slider_enter_value">値を入力</string>
 
     <string name="impact_axis_gpu">GPU</string>
     <string name="impact_axis_latency">遅延</string>

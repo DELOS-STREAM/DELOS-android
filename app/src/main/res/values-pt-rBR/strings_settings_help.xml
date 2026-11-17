@@ -208,6 +208,7 @@
     <string name="stream_help_touch_sensitivity">Alterna a escala extra de sensibilidade da tela touch, configurada em Configurações.</string>
     <string name="stream_help_gyro_smoothing">Estabiliza na hora a mira com giroscópio, mantido neste app. 0 é desativado. Mais suavização adiciona um pouco de atraso em movimentos lentos.</string>
     <string name="stream_help_gyro_smoothing_disabled">Requer Giroscópio do controle externo ou Giroscópio integrado do dispositivo ativado em Configurações; vale a partir do próximo stream.</string>
+    <string name="stream_help_on_screen_controls_opacity">Opacidade dos controles na tela. Vale na hora e fica salva no perfil, o mesmo valor que em Configurações.</string>
     <string name="stream_help_rumble_feel">Escolhe como a vibração do PC é sentida, na hora e salvo. Continua aberto: escolha de novo para comparar. %1$s volta.</string>
     <string name="stream_help_format_keys">Envia %1$s ao PC uma vez e volta ao stream.</string>
     <string name="stream_help_format_command">Executa na hora no PC o comando %1$s definido pelo PC. Configurado no Vibepollo ou Apollo.</string>

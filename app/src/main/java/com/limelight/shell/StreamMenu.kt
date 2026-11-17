@@ -19,10 +19,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.platform.ComposeView
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
+import kotlin.math.roundToInt
 import com.limelight.DelosStreamActivity
 import com.limelight.binding.input.KeyboardTranslator
 import com.limelight.nvstream.http.HostHttpResponseException
@@ -40,6 +42,7 @@ import com.limelight.shell.settings.GameSettingsStore
 import com.limelight.shell.settings.StreamMenuSettings
 import com.limelight.shell.settings.MenuAutoSave
 import com.limelight.shell.settings.MenuSavedSetting
+import com.limelight.shell.settings.OscOpacity
 import com.limelight.shell.settings.gyroSmoothingSaveValues
 import com.limelight.shell.settings.upscalerSaveValues
 import com.limelight.shell.ui.Feedback
@@ -64,7 +67,7 @@ import java.io.FileNotFoundException
  * The Delos stream menu (the prototype's `#quickmenu`, "Console tiles"): over the lower part of the stream the game's
  * name and one row of nine glass tiles (Resume, Keyboard, Overlay, Brightness, Bitrate, Upscaler, More, Disconnect,
  * Quit game) with the complete help of the focused tile under them; the pages behind the tiles open in a popover above the tile that opened them. It opens with
- * the buttons set in Delos (L3 + R3 by default), a swipe up from the bottom edge (unless turned off) and every
+ * the buttons set in Delos (L3 + R3 by default), a swipe up from the band above the bottom edge (unless turned off) and every
  * way the classic menu opened. It is its own window, so the controller does not reach the game while it is
  * open. This class is that window and the bridge to the stream ([GameHost]); what is drawn is [StreamMenuRoot].
  * Created by DelosStreamActivity (a small "Delos:" hook).
@@ -81,6 +84,7 @@ class StreamMenu(private val game: DelosStreamActivity) {
         else if (menuReady) requestClose()
     }
     private var edgeGesture = false
+    private var edgeStartX = 0f
     private var edgeStartY = 0f
     private var dialog: ComponentDialog? = null
     private var menuReady = false
@@ -139,21 +143,25 @@ class StreamMenu(private val game: DelosStreamActivity) {
     }
 
     /**
-     * A swipe up from the bottom edge opens the menu. Touches that start at that edge are kept from the
-     * game while it is decided.
+     * A swipe up from the band above the bottom edge opens the menu ([StreamMenuSwipe]); the strip the system keeps
+     * for its own gesture bar does not start it. Touches that start in the band are kept from the game while it is decided.
      */
     fun onTouch(event: MotionEvent): Boolean {
         if (!swipe) return false
         val height = game.window.decorView.height.takeIf { it > 0 } ?: return false
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                edgeGesture = event.y >= height * (1f - EDGE)
+                val view = game.window.decorView
+                val inset = ViewCompat.getRootWindowInsets(view)?.getInsets(WindowInsetsCompat.Type.systemGestures())?.bottom ?: 0
+                val minDeadEdge = (StreamMenuSwipe.MIN_DEAD_EDGE_DP * game.resources.displayMetrics.density).roundToInt()
+                edgeGesture = StreamMenuSwipe.starts(StreamMenuSwipe.zone(height, inset, minDeadEdge), event.y)
+                edgeStartX = event.x
                 edgeStartY = event.y
                 return edgeGesture
             }
             MotionEvent.ACTION_MOVE -> {
                 if (!edgeGesture) return false
-                if (edgeStartY - event.y >= height * DISTANCE && !isOpen) show()
+                if (StreamMenuSwipe.opens(edgeStartX, edgeStartY, event.x, event.y, height) && !isOpen) show()
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -449,6 +457,11 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override fun toggleZoom() { game.pointerHandler.toggleZoomMode() }
         override val onscreenControlsOn get() = game.isVirtualControllerShown
         override fun toggleOnscreenControls() { game.toggleVirtualController() }
+        override val oscOpacity get() = prefs.oscOpacity
+        // The profile value, like the Settings row: the next layout of the controls (a rotation, the next stream) reads it from there
+        override fun setOscOpacity(percent: Int) {
+            game.setVirtualControllerOpacity(OscOpacity.write(ProfileStore.currentSettings(game), percent))
+        }
         override val fullKeyboardOn get() = game.isFullKeyboardShown
         override fun toggleFullKeyboard() { game.toggleFullKeyboard() }
         override val touchSensitivityOn get() = prefs.enableTouchSensitivity
@@ -505,9 +518,6 @@ class StreamMenu(private val game: DelosStreamActivity) {
     }
 
     private companion object {
-        /** The bottom strip a swipe has to start in, and how far up it has to go (share of the height). */
-        const val EDGE = .06f
-        const val DISTANCE = .12f
         const val ANALOG_THRESHOLD = .55f
     }
 }

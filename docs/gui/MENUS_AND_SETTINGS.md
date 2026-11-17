@@ -19,6 +19,7 @@ per-app settings screen layout and the link guidance rows.
 | Custom-settings badge and hidden badge on covers | Setting keys, values and impact levels: [SETTINGS.md](../SETTINGS.md) |
 | Per-app settings screen layout | PyroWave in-stream hint and Link block: [STREAM_QUALITY.md](../STREAM_QUALITY.md#pyrowave-link-guidance-18) |
 | Link guidance rows in Settings | Debug previews of all screens and screen shapes: [SCREEN_SHAPES.md](SCREEN_SHAPES.md) |
+| Side menu by touch, on-screen controls opacity row | |
 
 ## 1. Layout
 
@@ -92,11 +93,26 @@ The menu is an anchored glass card with the prototype's caret. The card is the p
 | Lit top edge | 1.5 px at 26 % white |
 | Shadow | `0 40 90 -20` black 66 % |
 | Card width | 470..640, as wide as its longest row |
-| Caret | 72 wide, 30 out of the card, rounded tip, plain glass like the stream popover's |
+| Caret | The shared caret ([3.1.1](#311-the-caret)): 60 wide, 24 high; the tip's nominal distance for placement is 30 (`CARET_DEPTH`, the room around the card) |
 | Scrim under the menu | Light, 26 %, no blur |
 | Covers beside the card | Dimmed: saturate .6, brightness .5 |
 | Info block above the covers | Dimmed to 40 % |
 | Focused cover | Keeps its colors |
+
+#### 3.1.1 The caret
+
+ONE caret for every glass card that points at something: the dashboard's context menu (covers, PC circles), the settings' option list and slider popup, and the stream menu's popover, on every side they use (bottom, top, left, right). It is one function, `cardCaretPath` in `ui/CardCaret.kt`, and the card's outline and the caret are ONE path. The numbers are the average, in whole stage pixels, of the two carets the app had before (the stream popover's: a straight flank, a tip 20 wide at 18.7 out, 23 high; the context menu's: a rounded base, a tip 12 wide at 13 out, 24 high). Apple copies them 1:1:
+
+| Number | Value |
+|---|---|
+| Base width (on the card's edge) | 60: from -30 to +30 along the edge from the caret's centre |
+| Height (the tip's apex out of the edge) | 24 |
+| Flank | A cubic Bézier from the base end (u 30, v 0) with controls (21, 3) and (14, 8) to the tip's join (8, 16): rounded at the base (the flank leaves the edge at a slant, not at a corner), nearly straight after it |
+| Tip | A quadratic Bézier between the joins (-8, 16) and (8, 16) with the control (0, 32): its apex is 24 out and the rounding is modest |
+| Mirror | The same flank on the other side, mirrored (u to -u) |
+| Corners of the card | Unchanged: 34 on the context menu, 44 on the stream popover and the settings popover (the caret keeps at least 72 from the card's corners) |
+
+(u, v): u along the edge from the caret's centre, v out of the edge. The path runs clockwise round the card: the caret is inserted into the edge it is on, the top and right edges in the direction of u, the bottom and left edges against it (the start is the base end that comes first). Scale every number with the stage. `CardCaretTest` pins the points on each of the four sides.
 
 ### 3.2 Focus look of the owning element
 
@@ -289,6 +305,58 @@ The order is implemented in `FocusedListNavigation.kt` / `FocusedListPolicy.kt`.
 | Entry fade | 120 ms |
 | Gap before the exit fade (prevents blinking between rows) | 70 ms |
 | Exit fade | 280 ms |
+
+### 7.1 Touch
+
+A tap is not the A button on a settings row ([#92](https://github.com/Meitoncz/Delos/issues/92)). Keys and the gamepad are unchanged.
+
+| Tap on | Result |
+|---|---|
+| A row without the focus | Focuses it, so its help shows; nothing changes |
+| The focused toggle, or its switch on any row | Flips it |
+| A choice's ◀ or ▶ arrow on any row | One option back or forward |
+| The focused choice row | Its options as a list at the row ([7.2](#72-options-list)); a pick sets it |
+| The focused slider row | Its popup ([7.3](#73-slider-popup)); the track in the row itself still takes taps and drags |
+| An action or text row | Opens it on the first tap |
+
+1. A disabled row also focuses on the first tap, so its help can say why; the next tap plays the error cue.
+2. Every choice row has a list: a row built without its options (`RowValue.Choice.options`) steps as A. The popups need the shell's `LocalRowPicker`; where none is provided, a choice steps and a slider keeps its track.
+3. Rows that have a list or a popup: every choice and slider of Settings (all tabs), the per-app settings, the side menu (Theme, Background), Debug info (the rumble laboratory's sliders) and the stream menu (Supersampling quality, Mode, Touchscreen mode, the sliders of Brightness, Bitrate, Upscaler and More). In the stream menu only choice and slider rows wait for the second tap; its toggles and actions act on the first.
+
+### 7.2 Options list
+
+The list is the **contextual popover**: the stream menu's popover card (glass, one outline with its caret; `cardCaretPath` in `ui/CardCaret.kt`, `paintPopoverGlass` in `StreamMenuPopover.kt`) grown out of the tapped row, on both platforms (the iPad has the same). It is not a context menu: it has no header.
+
+| Element | Value |
+|---|---|
+| Scrim | None, like the stream menu's popover: nothing is dimmed; a tap beside the card closes it |
+| Card | 560 wide (the slider's is 1040), corner 44 (the stream popover's), padding 20 above and below; at least 24 from the stage's sides |
+| Glass | In the shell the screen behind is really blurred: the context menu's glass (`menuGlass`: blur 46 under the navy tint at 80 %, with its white sheen), the card clipped to its outline with the caret (`cardCaretPath`); the shell's blur source (`hazeSource`) is on while a popup is open. The stream menu has no blur source (the stream is a surface), so there the card is the stream popover's translucent glass (`paintPopoverGlass`). Both: the popover's shadow, no outline |
+| Place | Vertically centred on the tapped row and kept 104 below the stage's top (the status bar, and the cutout) and 24 above its bottom edge (a compact stage uses the context menu's margins). The card grows out of its caret TO THE RIGHT: the caret is on its left edge pointing left into the row, its tip 360 from the row's right edge (left of the value's text), moved left as far as the card needs the room to end 24 before the stage's right edge (at most to 120 inside the row's left edge). Only when the right side has no room it flips: the caret on the right edge, its tip 120 inside the row's right edge, the card to the left. When neither side has the room the card is narrowed, last |
+| Caret | The shared caret ([3.1.1](#311-the-caret)) at the row's middle (never on a rounded corner), its tip in the row |
+| Title | The row's name, Figtree 20 semibold, third text color, 36 high |
+| Option | 64 high, 4 apart, Figtree 23 semibold, corner 28; the focused one has a 17 % tint of the main color and a 3 px ring; the current one has a check (30) |
+| Long list | The card is cut to the room and the list scrolls inside it; the current option is in view when it opens |
+| Motion | The stream menu popover's: it grows from the caret's tip (`popEnter`, 560 ms with the overshooting spring, a fade in 336) and shrinks back into the row in 240 ms; reduced motion: a fade |
+| Controller | The focus stays in the card, on the current option; up and down move, A picks, B closes |
+
+A pick sets the value and closes the card; the focus returns to the row.
+
+### 7.3 Slider popup
+
+The same card and place as [7.2](#72-options-list) (contextual, caret into the row), 1040 wide and 300 high, made for a finger: the row's name, the value, and below it a ◀ button, the slider and a ▶ button. Every change applies at once (a drag when the finger lifts), and the row behind shows it.
+
+| Element | Value |
+|---|---|
+| Value | A pill 88 high with the number (Figtree 52) and its unit (32; "40 Mbps"; the slider's off text at its lowest value), a pencil on its right. A tap turns it into a field |
+| Typing | The on-screen keyboard (decimal where the slider has a divisor). The number is in the readable unit (Mbit/s for the bitrate); a point or a comma. Only digits and one separator can be typed |
+| Applying | Done applies it. The number is rounded to the slider's grid and clamped to its range (typing 400 on a slider that ends at 150 applies 150); text that is no number turns the pill red with the error cue and stays open. A tap beside the card applies a valid number and closes; B leaves the field first and drops the text |
+| Buttons | Round, 96 (at least 72, 56 dp), 24 from the track. A press steps once; a hold repeats after 380 ms every 55 ms with growing steps (1, 5, 10, then up to a fortieth of the range, as a held key on the row). A button is dimmed at its end |
+| Slider | 96 tall (touch height), track 14, knob 30; a tap or a drag sets the value on the slider's grid when the finger lifts |
+| Keyboard | The card moves up above the keyboard (`moveAboveIme`) |
+| Controller | Left and right step (a held key accelerates), A closes, B closes |
+
+The arithmetic (`SliderEdit`, `HoldRepeat`, `PickerLayout`) is pure and unit tested.
 
 ## 8. Impact chips
 
@@ -568,7 +636,8 @@ The test uses the portal (`Portal`).
 
 | Element | Value |
 |---|---|
-| Cancel | Cancellable like a PC wake-up: B stops it, the hint bar says Cancel |
+| Cancel | Cancellable like a PC wake-up: B stops it, the hint bar says Cancel; on touch a tap shows a Cancel button that does the same |
+| Touch | The portal takes every touch while it is up, so nothing underneath reacts |
 | Orb | With the network-check icon |
 | Title | "Testing the link to <PC>" |
 | Line | `Testing 250 Mbps · stay on Wi-Fi · B cancels` |
@@ -576,6 +645,29 @@ The test uses the portal (`Portal`).
 | Focus after the test | Returns to the row that started it |
 
 The test is only reachable from Settings, never over a stream, and never starts by itself.
+
+## 14. Side menu by touch
+
+The side menu (Select) also opens and closes by a drag. `SideMenuSwipe` (pure) decides; `sideMenuSwipe` in `SideMenuGesture.kt` watches the shell's touches before its children do.
+
+| Rule | Value |
+|---|---|
+| Where an opening drag starts | The left 40 dp of the window (`EDGE_DP`) |
+| When it opens | On screens with the side menu (`Screen.sideMenu`), with no layer, popup, launch, portal, result or button capture; never over a stream (a separate window) |
+| Claimed as the menu's | Past the touch slop, more sideways than vertical, to the right (opening) or to the left (closing); a vertical scroll and a tap stay with the screen |
+| Closing drag | A drag to the left anywhere while the side menu is open and no popup is over it |
+| Panel during the drag | Follows the finger: progress = travel / panel width (680 stage px); past fully open it is damped and stops at 6 % of the width (`RUBBER`); the panel reaches 6 % past the left edge, so no gap shows |
+| Scrim and blur during the drag | Their opacity is the progress, instead of their fade |
+| Release | Opens past 40 % of the width (`THRESHOLD`); from open, closes past 40 % to the left; a release at 600 dp/s or faster (`FLING_DP_PER_S`) goes the way it moves |
+| Settle | The geometry spring (`Motion.GEO_DAMPING`, `GEO_STIFFNESS`) from the release speed; the open and back cues play when the menu changes state |
+| Reduced motion | The panel does not follow; a drag of 40 % of the width toggles the menu with its normal fade |
+| Keys during a drag | Select does nothing until the menu has settled |
+
+Gesture navigation: Android reserves both side edges for Back. While the drag can start, the shell excludes a band of the left edge from the system gesture (`Modifier.systemGestureExclusion`, which sets `View.setSystemGestureExclusionRects`): 40 dp wide and at most 200 dp high (Android honours at most 200 dp per edge), centred vertically (`SideMenuSwipe.exclusion`). Above and below the band, an edge swipe is Back; a drag that starts just right of the system's gesture strip still opens the menu. With 3-button navigation the whole edge works.
+
+## 15. On-screen controls opacity
+
+The opacity of the on-screen controls (`seekbar_osc_opacity`, `PreferenceConfiguration.oscOpacity`, default 90 %) is a native slider row: Settings → Controls, section "On-screen Controls Settings", 0 to 100 % in steps of 5, only on a device with a touchscreen. It writes the current profile's value through `OscOpacity`; the other on-screen gamepad settings stay hidden (`PhoneOnlySettings`). A tap on the focused row opens the slider popup ([7.3](#73-slider-popup)). The stream menu's More page has the same slider, applied live ([STREAM_MENU.md](STREAM_MENU.md#27-popover)).
 
 ## Code map
 
@@ -593,7 +685,11 @@ The test is only reachable from Settings, never over a stream, and never starts 
 | `ScrollRow` | One-row chip rows that scroll sideways |
 | `ui/Stage.kt` | `MarginBringIntoView` / `FocusScroller` |
 | `ui/Motion.kt` | `ListScrollMotion` and `ListScrollDriver` |
-| `ui/Rows.kt` | `SettingRowList` / `SettingRow`, `RowOverride`, `IMPACT_ROW_MIN_HEIGHT` |
+| `ui/Rows.kt` | `SettingRowList` / `SettingRow`, `RowOverride`, `IMPACT_ROW_MIN_HEIGHT`, `rowTouch` (what a tap does on a row) |
+| `ui/RowPicker.kt` | `RowPickerLayer`: the options list and the slider popup of a row ([7.2](#72-options-list), [7.3](#73-slider-popup)); `RowPopup`, `LocalRowPicker`, `rowPopupFor` |
+| `ui/CardCaret.kt` | `CardCaret` (the one caret's numbers and points), `cardCaretPath`, `caretCurvePath` ([3.1.1](#311-the-caret)) |
+| `ui/RowPickerLogic.kt` | Pure: `SliderEdit` (step, snap, read, parse typed text), `HoldRepeat`, `PickerLayout` (placement of the card and of its caret) |
+| `ShellState.picker` | The open popup of a row (over every layer; the side menu's rows open one too) |
 | `ui/ImpactChips.kt` | Impact chips |
 | `settings/SettingsImpact.kt` | Pure `impact(key, values)` |
 | `screens/SettingsScreen.kt` | `TabPill` |
@@ -604,12 +700,20 @@ The test is only reachable from Settings, never over a stream, and never starts 
 | `GameSettingsScreen.kt` | Per-app settings screen: `GameBanner`, `GameSettingsLayout`, `SettingsPanelFrame` |
 | `shell/screens/LinkGuidanceRows.kt` | Link guidance rows |
 | `Portal` | Portal that shows the link test |
+| `SideMenuSwipe.kt` | Pure: the side menu drag's start band, gesture exclusion band, claim, progress with rubber band, release decision ([14](#14-side-menu-by-touch)) |
+| `SideMenuGesture.kt` | `SideMenuDrag` (the progress while a drag owns the menu), `Modifier.sideMenuSwipe` |
+| `settings/OscOpacity.kt` | The on-screen controls' opacity value of the profile ([15](#15-on-screen-controls-opacity)) |
 
 ## Verification
 
 | Test | What it enforces |
 |---|---|
+| `CardCaretTest` | The caret's numbers and its points on every side ([3.1.1](#311-the-caret)) |
 | Unit test of `placeContextMenu` | Context menu placement: side, flip, below/above, margins and caret distance ([Anchor and placement](#33-anchor-and-placement)) |
+| `RowTouchTest` | What a tap does on every kind of row, and which rows have a popup ([7.1](#71-touch)) |
+| `RowPickerLogicTest` | Slider stepping, snapping, typed input (units, rounding, clamping, rejection), the hold's acceleration, and the placement of the card ([7.2](#72-options-list), [7.3](#73-slider-popup)) |
+| `SideMenuSwipeTest` | The side menu drag: start band, exclusion band, claim, progress and rubber band, release by distance and fling, reduced motion ([14](#14-side-menu-by-touch)) |
+| `OscOpacityTest` | The opacity row's value: default, range, the value the stream reads ([15](#15-on-screen-controls-opacity)) |
 
 Debug previews:
 
@@ -644,6 +748,10 @@ right, right. Then it rests.
 ### Not verified
 
 The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verified).
+
+Touch on settings rows ([7.1](#71-touch) to [7.3](#73-slider-popup)): the unit tests cover the rules and the arithmetic, not the look. Not verified on a device: the position and look of the contextual card (caret, motion) against the iPad's, the size of the slider popup's controls under a finger, the on-screen keyboard lifting the slider popup (also in the stream menu's window), a hold on the ◀ and ▶ buttons, and the popups in the stream menu.
+
+Side menu by touch ([14](#14-side-menu-by-touch)): `SideMenuSwipeTest` covers the decisions only. Not verified on a device: the panel following the finger, the rubber band, the settle spring, the scrim during a drag, and the exclusion band with gesture navigation.
 
 ## Related
 

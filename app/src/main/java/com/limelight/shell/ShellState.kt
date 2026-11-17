@@ -20,6 +20,8 @@ import com.limelight.shell.data.App
 import com.limelight.shell.data.Pc
 import com.limelight.shell.settings.SettingsTab
 import com.limelight.shell.ui.MenuPath
+import com.limelight.shell.ui.RowPopup
+import com.limelight.shell.ui.RowPopupRequest
 import com.limelight.shell.ui.ToastTiming
 import com.limelight.shell.ui.GameArt
 import com.limelight.shell.ui.toastKindFor
@@ -371,15 +373,43 @@ class ShellState(initial: Screen) {
     /** Focus to return to when the current layer closes. */
     private var returnFocus: FocusRequester? = null
 
+    /**
+     * The popup of a settings row (an options list or a slider's popup, issue #92), open over the screen and over whatever layer is open: a
+     * row of the side menu opens one too. It is its own state, not a [Layer], so the layer under it stays open.
+     */
+    var picker by mutableStateOf<RowPopupRequest?>(null)
+        private set
+    private var pickerReturn: FocusRequester? = null
+
+    /** Opens [popup] at the focused row (the [tracker]'s element, which keeps its focus look meanwhile). */
+    fun openPicker(popup: RowPopup, tracker: FocusTracker) {
+        if (picker == null) pickerReturn = tracker.requester
+        tracker.hold()
+        picker = RowPopupRequest(popup, tracker.bounds())
+    }
+
+    fun closePicker() {
+        picker = null
+    }
+
+    /** The row to focus again once the popup has closed. */
+    fun takePickerReturn(): FocusRequester? = pickerReturn.also { pickerReturn = null }
+
     fun navigate(to: Screen) {
         layer = null
+        picker = null
+        pickerReturn = null
         menuPath = emptyList()
         returnFocus = null
         screen = to
     }
 
-    /** B / Back: closes the layer, then goes to the screen's [Screen.back]. Returns false at the root (the system handles it). */
+    /** B / Back: closes the row popup, else the layer, then goes to the screen's [Screen.back]. Returns false at the root (the system handles it). */
     fun back(): Boolean {
+        if (picker != null) {
+            closePicker()
+            return true
+        }
         if (layer != null) {
             // A submenu of the context menu goes back to its parent first
             if (layer is Layer.Context && menuPath.isNotEmpty()) menuPath = MenuPath.back(menuPath)
@@ -448,6 +478,19 @@ class ShellState(initial: Screen) {
 
 val LocalShell = staticCompositionLocalOf<ShellState> { error("ShellState not provided") }
 val LocalFocusTracker = staticCompositionLocalOf<FocusTracker> { error("FocusTracker not provided") }
+
+/**
+ * Touch: opens a focusable's context menu at its bounds (root pixels) on a long press; null where no shell can show one (the stream's menu).
+ * Called after the press has focused the element.
+ */
+val LocalContextMenuOpener = staticCompositionLocalOf<((ContextMenu, Rect?) -> Unit)?> { null }
+
+/**
+ * Whether a long press may open a context menu: the element has one and a shell takes it, and nothing else is open (a layer, the launch, the
+ * portal, a result or a row popup), the same moments the Start button opens one in.
+ */
+internal fun longPressOpensContext(menu: ContextMenu?, shellTakesIt: Boolean, layerOpen: Boolean, busy: Boolean): Boolean =
+    menu != null && shellTakesIt && !layerOpen && !busy
 
 /** The current PC's games, e.g. for the settings that download artwork for all of them. */
 val LocalLibrary = androidx.compose.runtime.compositionLocalOf<com.limelight.shell.data.Library> { com.limelight.shell.data.Library.Loading }

@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.viewinterop.AndroidView
+import com.limelight.binding.input.virtual_controller.OscGeometry
+import com.limelight.binding.input.virtual_controller.OscPlacement
 import com.limelight.binding.input.virtual_controller.VirtualController
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.ui.VideoFit
@@ -24,8 +26,9 @@ import com.limelight.ui.VideoFit
  * Debug builds only: the stream's own geometry on the drawn game scene, for the layout sheets (docs/GUI.md, "Screen shapes"). Started with
  * `adb shell am start -n io.github.meitoncz.delos.debug/com.limelight.shell.ShellActivity --es preview_screen <name>`:
  * - `stream_osc`: the real on-screen controls (`VirtualController`, the default layout, never the user's saved one) over the video rectangle.
- *   `--es preview_saved_from <W>x<H>` first lays the default layout out on a screen of that size and carries it over to this one the way a saved
- *   layout is loaded (`OscGeometry.mapSaved`). The settings are fixed (Guide shown, 90 % opacity), not read: that would load the native library,
+ *   `--es preview_saved_from <W>x<H>` first lays the default layout out on a screen of that size and carries it over to this one the way a
+ *   stored layout is loaded, as if the user had changed every control there (`OscPlacement`: anchored, in layout units). The settings are
+ *   fixed (Guide shown, 90 % opacity), not read: that would load the native library,
  *   which the emulator cannot.
  * - `stream_video`: only the video rectangle. `--es preview_state <fit|fill|stretch>` (default fit) and `--es preview_video <W>x<H>`
  *   (the stream size, default 1920x1080); `VideoFit` does the maths, the outline is what the container measures to, bars are dark.
@@ -124,12 +127,14 @@ internal object StreamShapePreview {
         if (savedFrom == null) {
             controller.layOutDefault(width, height, config)
         } else {
-            // What a layout saved on [savedFrom] stores, then loaded here
+            // What a layout changed on [savedFrom] stores, then loaded here
             val saved = VirtualController(null, FrameLayout(context), context)
             saved.layOutDefault(savedFrom.first, savedFrom.second, config)
-            val configs = saved.elements.map { it.configuration }
+            val from = OscGeometry.Panel(savedFrom.first, savedFrom.second)
+            val stored = saved.elements.map { OscPlacement.fromRect(it.elementId, it.rect(), true, from) }
             controller.layOutDefault(width, height, config)
-            controller.elements.zip(configs).forEach { (element, stored) -> element.loadConfiguration(stored) }
+            val here = OscGeometry.Panel(width, height)
+            controller.elements.zip(stored).forEach { (element, placement) -> element.place(placement.toRect(here), placement.enabled) }
         }
         controller.show()
     }

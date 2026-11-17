@@ -80,6 +80,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.em
 import com.limelight.shell.StreamMenuLayout as L
 import com.limelight.shell.StreamMenuMotion as M
+import com.limelight.shell.ui.CaretSide
+import com.limelight.shell.ui.cardCaretPath
+import com.limelight.shell.ui.CardCaret
 import com.limelight.shell.ui.Cue
 import com.limelight.shell.ui.EaseOut
 import com.limelight.shell.ui.EaseSpring
@@ -97,7 +100,9 @@ import com.limelight.shell.ui.staggerEntrance
 import com.limelight.shell.ui.valueSlide
 import com.limelight.shell.ui.LocalStage
 import com.limelight.shell.ui.rememberMarginBringIntoView
+import com.limelight.shell.ui.LocalRowPicker
 import com.limelight.shell.ui.RowValue
+import com.limelight.shell.ui.rowPopupFor
 import com.limelight.shell.ui.Symbol
 import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.Unbounded
@@ -209,31 +214,20 @@ internal class PopoverGeometry(initial: PopoverPlacement) {
 }
 
 /**
- * The outline of the card and its caret as ONE path (the prototype's `cardPath`): a rounded rectangle [w] x [h] with a
- * rounded caret on its bottom edge, centered at [cx], [StreamMenuLayout.CARET_WIDTH] wide at its base and
- * [StreamMenuLayout.CARET_HEIGHT] tall, so the glass is continuous. All values are pixels; [k] is pixels per stage pixel.
+ * The outline of the card and its caret as ONE path: a rounded rectangle [w] x [h] with the shared caret ([CardCaret]) on its bottom edge, centered
+ * at [cx], so the glass is continuous. All values are pixels; [k] is pixels per stage pixel.
  */
 internal fun caretCardPath(w: Float, h: Float, cx: Float, k: Float): Path {
     val r = minOf(L.POPOVER_RADIUS * k, h / 2f - 1f).coerceAtLeast(0f)
-    val a = L.CARET_WIDTH * k / 2f
-    val b = L.CARET_WIDTH * k / 6f
-    val d = L.CARET_HEIGHT * k
-    return Path().apply {
-        moveTo(r, 0f)
-        lineTo(w - r, 0f)
-        arcTo(Rect(w - 2 * r, 0f, w, 2 * r), -90f, 90f, false)
-        lineTo(w, h - r)
-        arcTo(Rect(w - 2 * r, h - 2 * r, w, h), 0f, 90f, false)
-        lineTo(cx + a, h)
-        lineTo(cx + b, h + d * .78f)
-        quadraticTo(cx, h + d * 1.15f, cx - b, h + d * .78f)
-        lineTo(cx - a, h)
-        lineTo(r, h)
-        arcTo(Rect(0f, h - 2 * r, 2 * r, h), 90f, 90f, false)
-        lineTo(0f, r)
-        arcTo(Rect(0f, 0f, 2 * r, 2 * r), 180f, 90f, false)
-        close()
-    }
+    return cardCaretPath(CaretSide.Bottom, 0f, 0f, w, h, r, cx, k)
+}
+
+/** The popover's glass inside the current clip: the dark backing, the tint, the sheen at the top and the light at the bottom, [a] faded in. */
+internal fun DrawScope.paintPopoverGlass(a: Float, sheen: Color, k: Float) {
+    drawRect(CardBacking.copy(alpha = L.CARD_BACKING_ALPHA * a))
+    drawRect(CardTint.copy(alpha = .50f * a))
+    drawRect(Brush.verticalGradient(0f to sheen.copy(alpha = .20f * a), .52f to Color.Transparent, 1f to Color.Transparent))
+    drawRect(Brush.verticalGradient(0f to Color.Transparent, 1f to Color.White.copy(alpha = .20f * a), startY = size.height - 150f * k, endY = size.height))
 }
 
 /**
@@ -272,10 +266,7 @@ internal fun StreamMenuPopover(
                 // The shadow is a sibling of the card with its rounded rectangle (without the caret): 0 40px 90px -20px
                 drawBoxShadow(Rect(0f, 0f, size.width, body), L.POPOVER_RADIUS * k, 40f * k, 90f * k, -20f * k, Color.Black.copy(alpha = .62f * a))
                 clipPath(caretCardPath(size.width, maxOf(body, 120f * k), geo.cx.value * k, k)) {
-                    drawRect(CardBacking.copy(alpha = L.CARD_BACKING_ALPHA * a))
-                    drawRect(CardTint.copy(alpha = .50f * a))
-                    drawRect(Brush.verticalGradient(0f to sheen.copy(alpha = .20f * a), .52f to Color.Transparent, 1f to Color.Transparent))
-                    drawRect(Brush.verticalGradient(0f to Color.Transparent, 1f to Color.White.copy(alpha = .20f * a), startY = size.height - 150f * k, endY = size.height))
+                    paintPopoverGlass(a, sheen, k)
                     this@drawWithContent.drawContent()
                 }
             }
@@ -486,12 +477,18 @@ internal fun MenuRow(
             value.onStep(dir)
         }
         // Steps left or right ([dir] may be several while a key is held), landing on the slider's grid
-        is RowValue.Slider -> { dir ->
-            val next = value.value + dir * value.step
-            val snapped = value.min + Math.round((next - value.min).toFloat() / value.step) * value.step
-            value.onChange(snapped.coerceIn(value.min, value.max))
-        }
+        is RowValue.Slider -> { dir -> value.onChange(com.limelight.shell.ui.SliderEdit.step(value, value.value, dir)) }
         else -> null
+    }
+    // Touch (issue #92): the focused choice or slider row's tap opens its options list / slider popup; a first tap only focuses it. Other rows act on the tap
+    val picker = LocalRowPicker.current
+    val popup = rowPopupFor(label, value)
+    val touchTap: ((Boolean) -> Boolean)? = if (picker == null || popup == null || !enabled) null else { wasFocused ->
+        if (wasFocused) {
+            feedback.play(Cue.OPEN)
+            picker(popup)
+        }
+        false
     }
     val activate: () -> Unit = when (value) {
         is RowValue.Toggle -> ({ value.onChange(!value.on) })
@@ -531,6 +528,7 @@ internal fun MenuRow(
                 clickCue = if (enabled && value !is RowValue.Info) (if (value is RowValue.Action) Cue.OPEN else Cue.SELECT) else null,
                 adjustable = adjust != null && enabled,
                 controllerAdjust = controllerAdjust,
+                onTouchTap = touchTap,
                 onFocusChange = {
                     focused = it
                     if (it) show(help)
@@ -585,9 +583,9 @@ private fun RowValueView(value: RowValue, focused: Boolean, confirmation: String
         }
         value is RowValue.Slider -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.px)) {
             val number = MenuSlider(value, focused)
-            val label = if (number % value.divisor == 0) (number / value.divisor).toString() else String.format(LocalConfiguration.current.locales[0], "%.1f", number.toDouble() / value.divisor)
+            val label = com.limelight.shell.ui.SliderEdit.label(value, number, LocalConfiguration.current.locales[0])
             BasicText(
-                if (number == value.min && value.minText != null) value.minText else "$label${value.unit}",
+                label,
                 style = text.copy(color = colors.text, textAlign = TextAlign.End),
                 maxLines = 1,
                 modifier = Modifier.width((L.NUMBER_MIN_WIDTH * ts).px),

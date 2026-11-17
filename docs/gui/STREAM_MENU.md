@@ -256,7 +256,7 @@ The popover is a glass card **above its own tile**, centered on the tile.
 | Card shadow | 0 40 90 −20 |
 | Distance from the stage's left and right edges | 120 |
 | Box end | 322 above the stage's bottom edge |
-| **Caret** | 60 × 24, rounded, ONE path with the card so the glass is continuous; at the tile's center, at least 72 from the card's corners |
+| **Caret** | The shared caret (60 × 24, [MENUS_AND_SETTINGS.md 3.1.1](MENUS_AND_SETTINGS.md#311-the-caret)), ONE path with the card so the glass is continuous; at the tile's center, at least 72 from the card's corners |
 | Padding | 40 × 30 (24 below) |
 | Header | 64: the back circle (focusable, B does the same) and the title in Unbounded 30 |
 | Rows | 72 tall with 8 between them, corner 28 |
@@ -304,6 +304,7 @@ Rows of the More page:
 | Zoom | |
 | Mouse mode | When allowed. Opens a page. |
 | On-screen controls | |
+| **On-screen controls opacity** | See below. |
 | **Open Android keyboard** | An action: closes the menu, then opens or closes Android's system keyboard. |
 | Touch sensitivity | |
 | Rumble feel | |
@@ -319,6 +320,14 @@ Rows of the More page:
   menu closes or the stream ends. It is saved as this game's `seekbar_gyro_smoothing` override, never the profile,
   which is changed in Settings.
 - See [STREAM_QUALITY.md](../STREAM_QUALITY.md#gyro-smoothing-77).
+
+**On-screen controls opacity**:
+
+- A 0 to 100 % slider in steps of 5, the same profile value (`seekbar_osc_opacity`) as the row in Settings → Controls
+  ([MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md#15-on-screen-controls-opacity)).
+- It applies at once to the running on-screen controls (`DelosStreamActivity.setVirtualControllerOpacity`, which also
+  keeps it for every later layout of them in this stream) and is saved in the profile at every change, not per game.
+- It shows whether the on-screen controls are on or off.
 
 **Key layout** and **Rotate** are not offered: the key-layout overlay is hidden (its code and preferences stay) and a
 rotation re-lays out the overlays.
@@ -354,8 +363,8 @@ rotation re-lays out the overlays.
 | B | Dock | Resumes the stream. |
 
 - The focus cannot leave the popover with the D-pad.
-- The open and close buttons (L3 + R3 by default, the swipe up) and the external display's input routing are
-  unchanged by the menu.
+- The open and close buttons (L3 + R3 by default, the swipe up from the band above the edge) and the external display's input
+  routing are unchanged by the menu.
 
 **Touch**:
 
@@ -365,7 +374,10 @@ rotation re-lays out the overlays.
 | On another tile with a page while a popover is open | Morphs the popover to that page. |
 | On the same tile while its popover is open | Closes it. |
 | On a tile without a page while a popover is open | Nothing. |
-| Outside the popover | Closes the popover only and never resumes the stream (Resume and B do). |
+| Outside the card and the tiles while a popover is open | Closes the popover; the menu stays open. |
+| Anywhere that is not a tile or the card, with no popover open (above the dock, beside it, on its text) | Closes the menu, like Resume. Never quits or disconnects, and the tap never reaches the game. |
+
+**Swipe up** (turned off in Settings → Controls → Stream menu): the gesture does not start at the screen's edge, where Android's gesture bar takes it. It starts in a band above the edge: the bottom 18 % of the window's height, without the strip the system keeps for its gestures (the larger of the system gesture inset and 24 dp). It opens the menu once the finger has gone up by 12 % of the height and farther up than sideways. A touch that starts in the band is kept from the game until this is decided (on-screen controls in that band do not get it); a touch outside the band goes to the game as usual. While the loader is shown the swipe does nothing. The arithmetic is `StreamMenuSwipe` (unit tested).
 
 ### 2.10 Motion
 

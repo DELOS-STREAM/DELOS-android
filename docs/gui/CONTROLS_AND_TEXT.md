@@ -25,6 +25,7 @@ field being edited stays clear of Android's keyboard, and how a one-line label t
 |---|---|
 | **D-pad or left stick + A, B, X, Y** | Primary input. |
 | **Left menu button (View/Select)**, at the top left of the handheld | Slides the **side menu** in from the left. |
+| **Swipe in from the left edge** (touch) | Opens the side menu, which follows the finger; a swipe to the left closes it ([MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md#14-side-menu-by-touch)). |
 | **Right menu button (Start)**, at the top right of the handheld | Opens the **context menu** for the focused item. |
 
 The **two menu buttons at the top left and top right** of the handheld are used in the UI.
@@ -43,6 +44,8 @@ The **two menu buttons at the top left and top right** of the handheld are used 
 | Customized rows in the app settings | Opens the context menu. |
 | The profile chip | Does nothing: A already opens the same menu. |
 | PC circles on Devices | Does nothing: A already opens the same menu. |
+
+On touch a **long press** on an element that has a context menu focuses it and opens the same menu, anchored like Start does (game tiles, PC circles, unpaired PCs, customized rows). A short tap is unchanged. Nothing opens over another layer, the launch, the portal or a row popup (`longPressOpensContext`, `focusEffects` in `ui/Focus.kt`). The stream menu has none.
 
 ### Button hints
 

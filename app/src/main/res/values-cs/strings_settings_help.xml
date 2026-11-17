@@ -213,6 +213,7 @@
     <string name="stream_help_touch_sensitivity">Přepíná další škálování citlivosti dotykové obrazovky, nastavené v nastavení.</string>
     <string name="stream_help_gyro_smoothing">Hned stabilizuje míření gyrem a uloží se pro tuto aplikaci. 0 je vypnuto. Víc vyhlazení lehce zpozdí pomalý pohyb.</string>
     <string name="stream_help_gyro_smoothing_disabled">Vyžaduje zapnutou volbu „Gyroskop externího gamepadu“ nebo „Vestavěný gyroskop zařízení“ v Nastavení; platí od příštího streamu.</string>
+    <string name="stream_help_on_screen_controls_opacity">Neprůhlednost ovládání na obrazovce. Platí hned a uloží se do profilu, stejná hodnota jako v Nastavení.</string>
     <string name="stream_help_rumble_feel">Vybere, jak se cítí vibrace z PC, hned a s uložením. Zůstane otevřené: vyber znovu a porovnej. %1$s vrací zpět.</string>
     <string name="stream_help_format_keys">Jednou pošle do PC %1$s a vrátí se do streamu.</string>
     <string name="stream_help_format_command">Hned spustí v PC příkaz %1$s definovaný v PC. Nastavuje se ve Vibepollo nebo Apollo.</string>

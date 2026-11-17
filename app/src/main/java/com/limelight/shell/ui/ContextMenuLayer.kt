@@ -99,7 +99,7 @@ private val CardTint = Color(34, 44, 84)
  * prototype's (61, 61, 89)), so the tint is denser (.80) and the backdrop is hardly saturated (1.15): the same navy on any background.
  */
 @Composable
-private fun Modifier.menuGlass(haze: HazeState): Modifier {
+internal fun Modifier.menuGlass(haze: HazeState): Modifier {
     val radius = 46f.px
     val saturate = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.15f) })
     val tint = CardTint.copy(alpha = .80f)
@@ -189,50 +189,13 @@ internal class MenuOutline(val card: Path, val caretEdge: Path?)
 /**
  * The card's outline as ONE path: a rounded rectangle [w] x [h] (stage pixels) with the caret on [side] centered at [caret]
  * along that edge. The path lies in a box [ContextMenuLayout.CARET_DEPTH] larger than the card on every side (the room of
- * the caret); [k] is pixels per stage pixel. The caret is the prototype's (`a.css`, `.cm-caret.left`: 60 wide, 24 out of the
- * card, a rounded tip), turned to its [side].
+ * the caret); [k] is pixels per stage pixel. The caret is the shared [CardCaret], turned to its [side].
  */
 internal fun menuCardPath(side: CaretSide, caret: Float, w: Float, h: Float, k: Float): MenuOutline {
     val d = L.CARET_DEPTH * k
-    val card = Path().apply {
-        addRoundRect(androidx.compose.ui.geometry.RoundRect(d, d, d + w * k, d + h * k, CornerRadius(min(L.CORNER * k, min(w, h) * k / 2f))))
-    }
-    if (side == CaretSide.None) return MenuOutline(card, null)
-    val c = caret * k
-    // (u, v) in stage pixels: u along the edge from the caret's center, v out of the card
-    fun x(u: Float, v: Float) = k * when (side) {
-        CaretSide.Left -> -v
-        CaretSide.Right -> v
-        else -> u
-    } + when (side) {
-        CaretSide.Left -> d
-        CaretSide.Right -> d + w * k
-        else -> d + c
-    }
-    fun y(u: Float, v: Float) = k * when (side) {
-        CaretSide.Top -> -v
-        CaretSide.Bottom -> v
-        else -> u
-    } + when (side) {
-        CaretSide.Top -> d
-        CaretSide.Bottom -> d + h * k
-        else -> d + c
-    }
-    fun Path.curve() {
-        moveTo(x(-30f, 0f), y(-30f, 0f))
-        cubicTo(x(-18f, 0f), y(-18f, 0f), x(-11f, 4f), y(-11f, 4f), x(-6f, 13f), y(-6f, 13f))
-        quadraticTo(x(0f, 35f), y(0f, 35f), x(6f, 13f), y(6f, 13f))
-        cubicTo(x(11f, 4f), y(11f, 4f), x(18f, 0f), y(18f, 0f), x(30f, 0f), y(30f, 0f))
-    }
-    val edge = Path().apply { curve() }
-    val tip = Path().apply {
-        curve()
-        // Back into the card under its edge, so the union has no seam
-        lineTo(x(30f, -2f), y(30f, -2f))
-        lineTo(x(-30f, -2f), y(-30f, -2f))
-        close()
-    }
-    return MenuOutline(Path.combine(PathOperation.Union, card, tip), edge)
+    val radius = min(L.CORNER * k, min(w, h) * k / 2f)
+    val card = cardCaretPath(side, d, d, w * k, h * k, radius, caret * k, k)
+    return MenuOutline(card, if (side == CaretSide.None) null else caretCurvePath(side, d, d, w * k, h * k, caret * k, k))
 }
 
 /**

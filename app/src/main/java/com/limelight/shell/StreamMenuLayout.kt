@@ -1,5 +1,6 @@
 package com.limelight.shell
 
+import com.limelight.shell.ui.CardCaret
 import android.content.res.Resources
 import com.limelight.R
 import com.limelight.binding.video.UpscalerStatus
@@ -57,6 +58,9 @@ internal object MoreRow {
 
     /** The help key of [GYRO] while no gyroscope source is on: it says why the row does nothing. */
     const val GYRO_DISABLED = "Gyro smoothing (disabled)"
+
+    /** The More slider row for the on-screen controls' opacity (live; the same profile value as the Settings row). */
+    const val OSC_OPACITY = "On-screen controls opacity"
 }
 
 /**
@@ -124,6 +128,16 @@ internal fun pageAfterBack(page: MenuPage): PageExit? {
 /** A tap outside the popover: the whole popover closes and its tile gets the focus. Null when none is open. */
 internal fun pageAfterDismiss(page: MenuPage): PageExit? =
     if (page == MenuPage.MAIN) null else PageExit(MenuPage.MAIN, page.barItem(), null)
+
+/** What a tap outside the menu's own controls does. */
+internal enum class OutsideTap { NONE, CLOSE_POPOVER, CLOSE_MENU }
+
+/** The popover closes if one is open, else the menu closes like Resume; nothing while the menu is already closing. */
+internal fun outsideTapAction(page: MenuPage, closing: Boolean): OutsideTap = when {
+    closing -> OutsideTap.NONE
+    page == MenuPage.MAIN -> OutsideTap.CLOSE_MENU
+    else -> OutsideTap.CLOSE_POPOVER
+}
 
 internal object StreamMenuLayout {
     /**
@@ -200,8 +214,8 @@ internal object StreamMenuLayout {
     const val POPOVER_GAP_AFTER_HEAD = 12f
     const val POPOVER_HELP_GAP = 18f
     const val POPOVER_TITLE_SIZE = 30f
-    const val CARET_WIDTH = 60f
-    const val CARET_HEIGHT = 24f
+    const val CARET_WIDTH = CardCaret.WIDTH
+    const val CARET_HEIGHT = CardCaret.DEPTH
 
     /** The popover's box ends here above the bottom of the stage: card bottom 734, caret tip about 13 above the sunk tile's ring. */
     const val POPOVER_BOTTOM = 322f

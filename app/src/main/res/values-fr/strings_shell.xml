@@ -74,6 +74,9 @@
     <string name="row_reset_to_profile">Valeur du profil</string>
     <string name="row_reset">Réinitialiser</string>
     <string name="row_not_set">Non défini</string>
+    <string name="row_slider_decrease">Diminuer</string>
+    <string name="row_slider_increase">Augmenter</string>
+    <string name="row_slider_enter_value">Saisir une valeur</string>
     <string name="impact_axis_gpu">GPU</string>
     <string name="impact_axis_latency">Latence</string>
     <string name="impact_axis_network">Réseau</string>

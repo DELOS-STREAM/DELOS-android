@@ -208,6 +208,7 @@
     <string name="stream_help_touch_sensitivity">설정에서 구성한 터치스크린 추가 감도 배율을 켜고 꺼요.</string>
     <string name="stream_help_gyro_smoothing">자이로 조준을 바로 안정시키고 이 앱에 저장해요. 0은 꺼짐이에요. 스무딩이 강할수록 느린 움직임에 약간의 지연이 생겨요.</string>
     <string name="stream_help_gyro_smoothing_disabled">설정에서 외장 게임패드 자이로스코프 또는 기기 내장 자이로스코프를 켜야 해요. 다음 스트림부터 적용돼요.</string>
+    <string name="stream_help_on_screen_controls_opacity">화면 컨트롤의 투명도예요. 바로 적용되고 프로필에 저장돼요. 설정과 같은 값이에요.</string>
     <string name="stream_help_rumble_feel">호스트 럼블의 느낌을 바로 고르고 저장해요. 열린 상태로 유지되니 다시 골라 비교해 보세요. %1$s로 뒤로 가요.</string>
     <string name="stream_help_format_keys">%1$s을(를) PC로 한 번 보낸 뒤 스트림으로 돌아가요.</string>
     <string name="stream_help_format_command">호스트에 정의된 명령 %1$s을(를) PC에서 바로 실행해요. Vibepollo 또는 Apollo에서 설정해요.</string>

@@ -87,6 +87,7 @@
     <string name="settings_native_menu_buttons_description">Boutons pressés ensemble pendant un stream pour ouvrir ou fermer le menu du stream. Sélectionne pour en enregistrer d’autres, par ex. une palette arrière.</string>
     <string name="settings_native_menu_swipe_title">Glisser vers le haut pour ouvrir le menu</string>
     <string name="settings_native_menu_swipe_description">Un glissement vers le haut depuis le bord inférieur ouvre aussi le menu du stream. Les touchers qui y commencent n’atteignent pas l’appli.</string>
+    <string name="settings_native_osc_opacity_title">Opacité des commandes à l’écran</string>
     <string name="settings_native_stats_position_title">Position des statistiques</string>
     <string name="settings_native_stats_position_description">Coin du panneau complet de statistiques pendant le stream. Le mode compact est toujours en haut au centre.</string>
     <string name="settings_native_stats_top_left">En haut à gauche</string>

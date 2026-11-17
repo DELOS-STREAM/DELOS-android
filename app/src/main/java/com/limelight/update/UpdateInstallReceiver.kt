@@ -16,18 +16,31 @@ class UpdateInstallReceiver : BroadcastReceiver() {
             // Android's own prompt: the system hands over the activity that asks the user
             val confirm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
             else @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_INTENT)
-            if (confirm == null) {
-                DiagLog.w("Update", "the installer asked for the user but gave no prompt")
-                return
-            }
-            try {
-                context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            } catch (e: RuntimeException) {
-                DiagLog.w("Update", "cannot show the install prompt: ${e.javaClass.simpleName}")
-            }
+            // A prompt that cannot be shown ends the install as failed: the card must not wait on "Installing" for a result that never comes
+            promptOrFailure(confirm) { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                ?.let { Updates.peek()?.onInstallResult(it) }
             return
         }
         DiagLog.i("Update", "install status $status ${message?.take(200).orEmpty()}")
         Updates.peek()?.onInstallResult(InstallOutcome.of(status, message))
+    }
+}
+
+/**
+ * Shows the system's install prompt ([confirm], the `EXTRA_INTENT` of a pending user action) with [start]. Null when it is shown
+ * (the session's final status follows); [InstallOutcome.FAILED] when there is no prompt or it cannot be started, since no
+ * other result will reach the updater then.
+ */
+internal fun <T : Any> promptOrFailure(confirm: T?, start: (T) -> Unit): InstallOutcome? {
+    if (confirm == null) {
+        DiagLog.w("Update", "the installer asked for the user but gave no prompt")
+        return InstallOutcome.FAILED
+    }
+    return try {
+        start(confirm)
+        null
+    } catch (e: RuntimeException) {
+        DiagLog.w("Update", "cannot show the install prompt: ${e.javaClass.simpleName}")
+        InstallOutcome.FAILED
     }
 }

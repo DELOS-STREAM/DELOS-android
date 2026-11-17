@@ -36,7 +36,8 @@ internal object ShapeSimulatorMenu {
                     val presets = SimCutout.PRESETS
                     val at = presets.indexOf(cutout).takeIf { it >= 0 } ?: 0
                     ShapeSimulation.setCutout(context, presets[(at + dir).mod(presets.size)])
-                }),
+                }, options = SimCutout.PRESETS.map { it.label }, selected = SimCutout.PRESETS.indexOf(cutout),
+                    onPick = { i -> ShapeSimulation.setCutout(context, SimCutout.PRESETS[i]) }),
                 "A camera cutout on the left, top or right edge, or a small notch at the top: drawn in the panel and given to the app as the safe area.",
             ),
             DebugToolRow(

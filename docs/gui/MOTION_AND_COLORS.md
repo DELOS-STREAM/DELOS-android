@@ -81,7 +81,7 @@ The gliding ring of `GlideRingHost` follows these rules:
 | Home | The first covers rise in turn; covers a scroll brings in later do not animate. The empty and offline messages rise. Every cover squeezes when activated. |
 | Settings, app settings, side menu | `SettingRow` rises in turn. One ring glides between the rows and their glass fades with the focus; the side menu's rows fade their own. A choice slides its new value in with the chevron nudge. A slider's knob grows on focus. The switch is the stream menu's. |
 | Context menus | They grow out of their caret's tip (`popEnter` / `popExit`). The header and rows rise in turn. The plate glides from row to row. |
-| Side menu | It slides in over 560 ms. The header and rows rise in turn. It leaves in 240 ms. |
+| Side menu | It slides in over 560 ms. The header and rows rise in turn. It leaves in 240 ms. Dragged by touch, the panel and the scrim follow the finger and settle with the geometry spring ([MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md#14-side-menu-by-touch)). |
 | Dialogs and the filter modal | They settle in from 0.96. Title, note, fields and buttons rise in turn. They leave in 240 ms. |
 | Toasts (the console notification) | See [Toasts](#2-toasts). |
 

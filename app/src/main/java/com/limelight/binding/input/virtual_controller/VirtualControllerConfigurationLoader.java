@@ -13,9 +13,6 @@ import com.limelight.R;
 import com.limelight.nvstream.input.ControllerPacket;
 import com.limelight.preferences.PreferenceConfiguration;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.Map;
 
 public class VirtualControllerConfigurationLoader {
@@ -152,12 +149,6 @@ public class VirtualControllerConfigurationLoader {
     }
 
 
-    /** The default layout on the screen the controls are drawn on (the window's size, from the resources). */
-    public static void createDefaultLayout(final VirtualController controller, final Context context) {
-        DisplayMetrics screen = context.getResources().getDisplayMetrics();
-        createDefaultLayout(controller, context, screen.widthPixels, screen.heightPixels);
-    }
-
     /**
      * The default layout on a screen of {@code width} x {@code height} pixels. The positions come from {@link OscDefaultLayout}
      * (docs/GUI.md, "Screen shapes"): the 16:9 layout of the prototype from 3:2 up, shrunk to fit on squarer screens.
@@ -259,40 +250,42 @@ public class VirtualControllerConfigurationLoader {
         controller.addElement(element, slot.left, slot.top, slot.width, slot.height);
     }
 
+    /**
+     * Leaving the layout editor: the controls the user changed are stored against their anchor in layout units
+     * ({@link OscLayoutStore}, {@link OscPlacement}); one that is on and where the default layout puts it is not stored, it follows the
+     * default. Controls that are not on screen now (settings that hide them) keep what was stored for them.
+     */
     public static void saveProfile(final VirtualController controller,
                                    final Context context) {
         // Delos: editable layouts belong to the active user profile.
-        SharedPreferences.Editor prefEditor = com.limelight.shell.settings.ProfileLayouts.preferences(context, OSC_PREFERENCE).edit();
-
+        SharedPreferences pref = com.limelight.shell.settings.ProfileLayouts.preferences(context, OSC_PREFERENCE);
+        OscGeometry.Panel panel = new OscGeometry.Panel(controller.getPanelWidth(), controller.getPanelHeight());
+        Map<Integer, OscPlacement> placements = OscLayoutStore.read(pref, OscLayoutStore.GLOBAL);
         for (VirtualControllerElement element : controller.getElements()) {
-            String prefKey = ""+element.elementId;
-            try {
-                prefEditor.putString(prefKey, element.getConfiguration().toString());
-            } catch (JSONException e) {
-                e.printStackTrace();
+            if (element.isDefaultPlacement()) {
+                placements.remove(element.elementId);
+            } else {
+                placements.put(element.elementId, OscPlacement.fromRect(element.elementId, element.rect(), element.enabled, panel));
             }
         }
-
-        prefEditor.apply();
+        SharedPreferences.Editor editor = pref.edit();
+        OscLayoutStore.write(editor, OscLayoutStore.GLOBAL, placements);
+        editor.apply();
     }
 
+    /** The stored changes over the default layout, on the panel the controls are laid out on (an old layout is converted first). */
     public static void loadFromPreferences(final VirtualController controller, final Context context) {
         // Delos: editable layouts belong to the active user profile.
         SharedPreferences pref = com.limelight.shell.settings.ProfileLayouts.preferences(context, OSC_PREFERENCE);
+        DisplayMetrics screen = context.getResources().getDisplayMetrics();
+        OscLayoutStore.migrate(pref, screen.widthPixels, screen.heightPixels);
 
+        OscGeometry.Panel panel = new OscGeometry.Panel(controller.getPanelWidth(), controller.getPanelHeight());
+        Map<Integer, OscPlacement> placements = OscLayoutStore.read(pref, OscLayoutStore.GLOBAL);
         for (VirtualControllerElement element : controller.getElements()) {
-            String prefKey = ""+element.elementId;
-
-            String jsonConfig = pref.getString(prefKey, null);
-            if (jsonConfig != null) {
-                try {
-                    element.loadConfiguration(new JSONObject(jsonConfig));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-
-                    // Remove the corrupt element from the preferences
-                    pref.edit().remove(prefKey).apply();
-                }
+            OscPlacement placement = placements.get(element.elementId);
+            if (placement != null) {
+                element.place(placement.toRect(panel), placement.enabled);
             }
         }
     }

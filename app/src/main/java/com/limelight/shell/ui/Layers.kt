@@ -1,8 +1,15 @@
 package com.limelight.shell.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.IntOffset
+import com.limelight.shell.SideMenuSwipe
+import kotlin.math.roundToInt
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -83,18 +90,24 @@ fun Modifier.glass(tint: Color): Modifier =
 
 /**
  * Dims and slightly blurs the screen under a menu (`#scrim`); a tap outside closes the menu. The [light] scrim of the
- * context menu only dims (26 %, no blur): the tiles beside its card stay readable.
+ * context menu only dims (26 %, no blur): the tiles beside its card stay readable. While a touch drag moves the side menu,
+ * [progress] is its opening progress: the scrim follows it instead of fading in and out.
  */
 @Composable
-fun Scrim(visible: Boolean, light: Boolean, haze: HazeState, onDismiss: () -> Unit) {
+fun Scrim(visible: Boolean, light: Boolean, haze: HazeState, progress: (() -> Float)? = null, onDismiss: () -> Unit) {
     val colors = LocalDelosColors.current
     // The scrim that fades out is the one that faded in
     var shownLight by remember { mutableStateOf(light) }
     if (visible) shownLight = light
-    AnimatedVisibility(visible, enter = fadeIn(tween(Motion.SCRIM, easing = Motion.Ease)), exit = fadeOut(tween(Motion.EXIT, easing = Motion.Ease))) {
+    AnimatedVisibility(
+        visible,
+        enter = if (progress != null) EnterTransition.None else fadeIn(tween(Motion.SCRIM, easing = Motion.Ease)),
+        exit = if (progress != null) ExitTransition.None else fadeOut(tween(Motion.EXIT, easing = Motion.Ease)),
+    ) {
         Box(
             Modifier
                 .fillMaxSize()
+                .then(if (progress != null) Modifier.graphicsLayer { alpha = progress().coerceIn(0f, 1f) } else Modifier)
                 .then(if (shownLight) Modifier.background(LightScrim) else Modifier.backdropBlur(haze, 6f, colors.scrim))
                 .pointerInput(Unit) { detectTapGestures { onDismiss() } },
         )
@@ -120,15 +133,21 @@ internal fun Modifier.focusTrap(active: Boolean): Modifier {
  */
 private const val SIDE_MENU_WIDTH = 680f
 
+/** The side menu's width in pixels of the window (what a touch drag of the menu measures its travel against). */
+@Composable
+fun sideMenuWidthPx(): Float = with(LocalDensity.current) { SIDE_MENU_WIDTH.px.toPx() }
+
 /**
  * The side menu (left menu button), sliding in from the left: profile header and quick settings.
  * [header] and [content] are supplied by the shell; the first focusable of [content] should use
- * [firstFocus].
+ * [firstFocus]. While a touch drag moves the menu, [drag] is its opening progress (0 closed, 1 open, a little more when
+ * pulled further): the panel follows it instead of its enter and exit transitions.
  */
 @Composable
 fun SideMenuLayer(
     visible: Boolean,
     haze: HazeState,
+    drag: (() -> Float)? = null,
     header: @Composable () -> Unit,
     content: @Composable ColumnScope.(firstFocus: FocusRequester) -> Unit,
 ) {
@@ -136,32 +155,42 @@ fun SideMenuLayer(
     val reduced = LocalReducedMotion.current
     AnimatedVisibility(
         visible,
-        enter = sideEnter(reduced),
-        exit = sideExit(reduced),
+        enter = if (drag != null) EnterTransition.None else sideEnter(reduced),
+        exit = if (drag != null) ExitTransition.None else sideExit(reduced),
     ) {
         val first = remember { FocusRequester() }
         InitialFocus(first)
         // A compact stage's hints start left of the panel's right edge: the panel ends above the hint bar there, so nothing lies under the hints
         val stage = LocalStage.current
         val bottom = if (stage.compact) (Compact.HINT_BAR * stage.textScale + stage.safe.bottom).px else 0.px
-        Column(
+        val width = SIDE_MENU_WIDTH.px
+        // The panel reaches this far past the left edge, so a panel pulled beyond fully open shows more of itself, never a gap
+        val overhang = (SIDE_MENU_WIDTH * SideMenuSwipe.RUBBER).px
+        Box(
             Modifier
+                .offset {
+                    val p = drag?.invoke() ?: 1f
+                    IntOffset(((p - 1f).coerceAtMost(SideMenuSwipe.RUBBER) * width.toPx() - overhang.toPx()).roundToInt(), 0)
+                }
                 .padding(bottom = bottom)
                 .fillMaxHeight()
-                .width(SIDE_MENU_WIDTH.px)
-                .focusTrap(visible)
-                .backdropBlur(haze, 28f, colors.surface3)
-                .padding(start = 40.px, end = 40.px, top = 48.px, bottom = (if (stage.compact) 24 else 48).px),
-            verticalArrangement = Arrangement.spacedBy(10.px),
+                .width(width + overhang),
         ) {
-            EntranceScope {
-                header()
-                content(first)
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .focusTrap(visible)
+                    .backdropBlur(haze, 28f, colors.surface3)
+                    .padding(start = overhang + 40.px, end = 40.px, top = 48.px, bottom = (if (stage.compact) 24 else 48).px),
+                verticalArrangement = Arrangement.spacedBy(10.px),
+            ) {
+                EntranceScope {
+                    header()
+                    content(first)
+                }
             }
-        }
-        // border-right: 1px line
-        Box(Modifier.padding(bottom = bottom).fillMaxHeight().width(SIDE_MENU_WIDTH.px), contentAlignment = Alignment.CenterEnd) {
-            Box(Modifier.fillMaxHeight().width(1.px).background(colors.line))
+            // border-right: 1px line
+            Box(Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(1.px).background(colors.line))
         }
     }
 }

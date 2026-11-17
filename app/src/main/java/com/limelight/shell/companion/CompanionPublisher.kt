@@ -19,7 +19,7 @@ import com.limelight.shell.data.ProfileStore
 import com.limelight.shell.screens.appArt
 import com.limelight.shell.screens.hdrBadgeKind
 import com.limelight.shell.settings.GameSettingsStore
-import com.limelight.shell.ui.face
+import com.limelight.shell.ui.fontSymbol
 import com.limelight.shell.ui.genreName
 import com.limelight.shell.ui.textResources
 import com.limelight.shell.ui.themeName
@@ -149,10 +149,9 @@ internal fun PublishCompanionContext(hints: List<com.limelight.shell.ui.Hint>, l
             title = res.getString(screenTitle(screen)),
             purpose = res.getString(screenPurpose(screen)),
             hints = hints.map { hint ->
-                when (val face = hint.glyph.face(family)) {
-                    is com.limelight.shell.ui.GlyphFace.Text -> CompanionHint(face.text, null, hint.label)
-                    is com.limelight.shell.ui.GlyphFace.Shape -> CompanionHint(face.mark.text, null, hint.label)
-                    is com.limelight.shell.ui.GlyphFace.Symbol -> CompanionHint(null, face.icon.symbol, hint.label)
+                when (val glyph = hint.glyph) {
+                    is com.limelight.shell.ui.Glyph.Pad -> CompanionHint(null, family.fontSymbol(glyph.role), hint.label, completeButton = true)
+                    is com.limelight.shell.ui.Glyph.Icon -> CompanionHint(null, glyph.symbol, hint.label)
                 }
             },
             host = pc?.let { CompanionHostLine(it.name, pcStatusText(res, it), running) },

@@ -10,6 +10,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,9 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,9 +40,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import com.limelight.R
 import com.limelight.shell.Portal
 import com.limelight.shell.StreamExit
 import dev.chrisbanes.haze.HazeState
@@ -49,11 +57,12 @@ private const val RIPPLE_GAP = .35f
 /**
  * The portal into a PC (`#portal`): the screen behind blurs ([haze]; over the stream the system blurs it
  * instead, or it is only dimmed where that is not available: [dim]), rings ripple out from an orb with the PC's icon, its name and state below. When [burst]
- * it flashes open and the orb flies at the viewer. It holds the focus while shown, so nothing underneath
- * reacts; only B (cancel) passes through.
+ * it flashes open and the orb flies at the viewer. It holds the focus and takes every touch while shown, so nothing underneath
+ * reacts; only B (cancel) passes through. Touch: a tap on a [Portal.cancellable] portal offers a Cancel button that runs [onCancel],
+ * the same as B (issue: a link test could not be cancelled without a controller).
  */
 @Composable
-fun PortalOverlay(portal: Portal?, burst: Boolean, haze: HazeState?, reducedMotion: Boolean, dim: Boolean = false) {
+fun PortalOverlay(portal: Portal?, burst: Boolean, haze: HazeState?, reducedMotion: Boolean, dim: Boolean = false, onCancel: (() -> Unit)? = null) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
     val last = remember { arrayOfNulls<Portal>(1) }
@@ -73,6 +82,10 @@ fun PortalOverlay(portal: Portal?, burst: Boolean, haze: HazeState?, reducedMoti
         val coreAlpha by animateFloatAsState(if (burst) 0f else 1f, tween(600), label = "portalCoreAlpha")
         val trap = remember { FocusRequester() }
         LaunchedEffect(p.id) { runCatching { trap.requestFocus() } }
+        val cancel by rememberUpdatedState(onCancel)
+        // Shown after the first tap, for touch only (B cancels with a controller)
+        var offerCancel by remember(p.id) { mutableStateOf(false) }
+        val canCancel = p.cancellable && onCancel != null
         Box(
             Modifier
                 .fillMaxSize()
@@ -89,7 +102,18 @@ fun PortalOverlay(portal: Portal?, burst: Boolean, haze: HazeState?, reducedMoti
                 }
                 .focusRequester(trap)
                 .focusable()
-                .onPreviewKeyEvent { it.key != Key.Back && it.key != Key.ButtonB },
+                .onPreviewKeyEvent { it.key != Key.Back && it.key != Key.ButtonB }
+                // Every touch stops here: nothing underneath may react while the portal waits. A tap offers Cancel where it can
+                .pointerInput(p.id, canCancel) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false).consume()
+                        do {
+                            val event = awaitPointerEvent()
+                            event.changes.forEach { it.consume() }
+                        } while (event.changes.any { it.pressed })
+                        if (canCancel) offerCancel = true
+                    }
+                },
             contentAlignment = Alignment.Center,
         ) {
             if (!reducedMotion) {
@@ -158,6 +182,9 @@ fun PortalOverlay(portal: Portal?, burst: Boolean, haze: HazeState?, reducedMoti
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.px)) {
                     BasicText(p.label, style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 36.tpx, textAlign = TextAlign.Center))
                     BasicText(p.sub, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 24.tpx, textAlign = TextAlign.Center))
+                }
+                AnimatedVisibility(offerCancel && canCancel && !burst, enter = fadeIn(tween(200)), exit = fadeOut(tween(150))) {
+                    PillButton(stringResource(R.string.common_cancel), Symbols.CLOSE, onClick = { cancel?.invoke() }, clickCue = null)
                 }
             }
         }

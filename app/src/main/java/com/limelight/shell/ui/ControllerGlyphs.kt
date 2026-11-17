@@ -32,63 +32,97 @@ enum class GlyphRole {
     /** The right menu button: Menu, Options, +. */
     MENU_RIGHT,
     TOUCHPAD,
+    DPAD, GUIDE,
 }
 
-/** What a glyph shows. */
-sealed interface GlyphMark {
-    data class Letter(val label: String) : GlyphMark
-    data object Cross : GlyphMark
-    data object Circle : GlyphMark
-    data object Square : GlyphMark
-    data object Triangle : GlyphMark
-    /** Two overlapping windows: View, Create, Share (the AYN square on AYN handhelds). */
-    data object View : GlyphMark
-    /** Three lines: Menu, Options (the AYN play icon on AYN handhelds). */
-    data object Menu : GlyphMark
-    data object Touchpad : GlyphMark
-
-    /** The mark as text, for a sentence or the companion window; null for the icons. */
-    val text: String?
-        get() = when (this) {
-            is Letter -> label
-            Cross -> "\u2715"
-            Circle -> "\u25CB"
-            Square -> "\u25A1"
-            Triangle -> "\u25B3"
-            View, Menu, Touchpad -> null
-        }
+/** Complete, owner-approved button glyph; physical positions never change with the printed label. */
+fun PadFamily.fontSymbol(role: GlyphRole): String = when (role) {
+    GlyphRole.SOUTH -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_A
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_CROSS
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_CROSS
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_B
+    }
+    GlyphRole.EAST -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_B
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_CIRCLE
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_CIRCLE
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_A
+    }
+    GlyphRole.WEST -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_X
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_SQUARE
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_SQUARE
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_Y
+    }
+    GlyphRole.NORTH -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_Y
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_TRIANGLE
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_TRIANGLE
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_X
+    }
+    GlyphRole.LEFT_SHOULDER -> when (this) {
+        PadFamily.GENERIC, PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_L1
+        PadFamily.XBOX -> Symbols.PAD_XBOX_LB
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_L1
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_L
+    }
+    GlyphRole.RIGHT_SHOULDER -> when (this) {
+        PadFamily.GENERIC, PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_R1
+        PadFamily.XBOX -> Symbols.PAD_XBOX_RB
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_R1
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_R
+    }
+    GlyphRole.LEFT_TRIGGER -> when (this) {
+        PadFamily.GENERIC, PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_L2
+        PadFamily.XBOX -> Symbols.PAD_XBOX_LT
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_L2
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_ZL
+    }
+    GlyphRole.RIGHT_TRIGGER -> when (this) {
+        PadFamily.GENERIC, PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_R2
+        PadFamily.XBOX -> Symbols.PAD_XBOX_RT
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_R2
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_ZR
+    }
+    GlyphRole.LEFT_STICK -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_STICK_L_CLICK
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_STICK_L_CLICK
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_STICK_L_CLICK
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_STICK_L_CLICK
+    }
+    GlyphRole.RIGHT_STICK -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_STICK_R_CLICK
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_STICK_R_CLICK
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_STICK_R_CLICK
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_STICK_R_CLICK
+    }
+    GlyphRole.MENU_LEFT -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_VIEW
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_CREATE
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_SHARE
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_MINUS
+    }
+    GlyphRole.MENU_RIGHT -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_MENU
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_OPTIONS
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_OPTIONS
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_PLUS
+    }
+    GlyphRole.TOUCHPAD -> if (this == PadFamily.DUALSHOCK) Symbols.PAD_DUALSHOCK4_TOUCHPAD else Symbols.PAD_DUALSENSE_TOUCHPAD
+    GlyphRole.DPAD -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_DPAD_NEUTRAL
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_DPAD_NEUTRAL
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_DPAD_NEUTRAL
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_DPAD_NEUTRAL
+    }
+    GlyphRole.GUIDE -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_GUIDE
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_PS
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_PS
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_HOME
+    }
 }
-
-/** The mark of the button at [role] on this family's pads. */
-fun PadFamily.mark(role: GlyphRole): GlyphMark = when (role) {
-    GlyphRole.SOUTH -> face("A", GlyphMark.Cross, "B")
-    GlyphRole.EAST -> face("B", GlyphMark.Circle, "A")
-    GlyphRole.WEST -> face("X", GlyphMark.Square, "Y")
-    GlyphRole.NORTH -> face("Y", GlyphMark.Triangle, "X")
-    GlyphRole.LEFT_SHOULDER -> shoulder("LB", "L", "L1")
-    GlyphRole.RIGHT_SHOULDER -> shoulder("RB", "R", "R1")
-    GlyphRole.LEFT_TRIGGER -> shoulder("LT", "ZL", "L2")
-    GlyphRole.RIGHT_TRIGGER -> shoulder("RT", "ZR", "R2")
-    GlyphRole.LEFT_STICK -> GlyphMark.Letter("L3")
-    GlyphRole.RIGHT_STICK -> GlyphMark.Letter("R3")
-    GlyphRole.MENU_LEFT -> if (this == PadFamily.NINTENDO) GlyphMark.Letter("\u2212") else GlyphMark.View
-    GlyphRole.MENU_RIGHT -> if (this == PadFamily.NINTENDO) GlyphMark.Letter("+") else GlyphMark.Menu
-    GlyphRole.TOUCHPAD -> GlyphMark.Touchpad
-}
-
-private fun PadFamily.face(xbox: String, playStation: GlyphMark, nintendo: String): GlyphMark = when (this) {
-    PadFamily.GENERIC, PadFamily.XBOX -> GlyphMark.Letter(xbox)
-    PadFamily.DUALSENSE, PadFamily.DUALSHOCK -> playStation
-    PadFamily.NINTENDO -> GlyphMark.Letter(nintendo)
-}
-
-private fun PadFamily.shoulder(xbox: String, nintendo: String, other: String): GlyphMark = GlyphMark.Letter(
-    when (this) {
-        PadFamily.XBOX -> xbox
-        PadFamily.NINTENDO -> nintendo
-        PadFamily.GENERIC, PadFamily.DUALSENSE, PadFamily.DUALSHOCK -> other
-    },
-)
 
 /** What Android says about an input device, as far as the glyphs need it (a value, so tests can fake controllers). */
 data class PadDescriptor(val vendorId: Int, val productId: Int, val name: String, val gamepad: Boolean = true) {
@@ -177,5 +211,4 @@ object ControllerGlyphs {
         family = choose(last?.let(PadDescriptor::of), devices.map(PadDescriptor::of))
     }
 
-    fun mark(role: GlyphRole): GlyphMark = family.mark(role)
 }

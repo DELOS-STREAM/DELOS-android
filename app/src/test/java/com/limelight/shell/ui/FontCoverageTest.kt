@@ -104,7 +104,7 @@ class FontCoverageTest {
 
     // ---- reading a font's cmap (TrueType 'cmap' formats 4 and 12) ----
 
-    private fun cmap(name: String): Set<Int> {
+    internal fun cmap(name: String): Set<Int> {
         val file = File(res(), "font/$name.ttf")
         val font = ByteBuffer.wrap(file.readBytes())
         val tables = font.getShort(4).toInt() and 0xFFFF

@@ -94,6 +94,7 @@
     <string name="settings_native_menu_buttons_description">Кнопки, які натискаються разом під час стріму, щоб відкрити або закрити меню стріму. Вибери, щоб записати інші, наприклад задню кнопку.</string>
     <string name="settings_native_menu_swipe_title">Свайп угору відкриває меню</string>
     <string name="settings_native_menu_swipe_description">Свайп угору від нижнього краю теж відкриває меню стріму. Дотики, що починаються там, не потрапляють у застосунок.</string>
+    <string name="settings_native_osc_opacity_title">Непрозорість екранних елементів керування</string>
     <string name="settings_native_stats_position_title">Розташування статистики</string>
     <string name="settings_native_stats_position_description">Кут повної панелі статистики під час стріму. Компактний режим завжди вгорі посередині.</string>
     <string name="settings_native_stats_top_left">Угорі ліворуч</string>
