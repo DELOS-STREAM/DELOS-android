@@ -49,6 +49,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -414,10 +418,15 @@ private fun NavButtonView(button: NavButton, requester: FocusRequester, wrapLeft
     }
 }
 
-/** What a hint's button looks like: a letter (A, B, L1…) or an icon (menu buttons, adjust). */
+/**
+ * What a hint's button names: a place on the connected controller ([Pad], drawn with its glyph family by [ControllerGlyphs]) or the adjust
+ * cue, which is no button. The names A, B, X, Y, L1, R1 are positions (A is the south button, B the east one...), as on an Xbox pad; a
+ * PlayStation pad draws the cross for [A] and a Nintendo pad its own letters.
+ */
 @Immutable
 sealed interface Glyph {
-    data class Letter(val text: String) : Glyph
+    data class Pad(val role: GlyphRole) : Glyph
+
     /**
      * [scale] multiplies the 24 px base font size to even out icons that look too big or too small next to
      * the others. The scales are measured against the Material Symbols Rounded glyphs (FILL 1, wght 600,
@@ -428,33 +437,53 @@ sealed interface Glyph {
     data class Icon(val symbol: String, val scale: Float = 1f) : Glyph
 
     companion object {
-        val A = Letter("A")
-        val B = Letter("B")
-        val X = Letter("X")
-        val Y = Letter("Y")
-        val L1 = Letter("L1")
-        val R1 = Letter("R1")
+        val A = Pad(GlyphRole.SOUTH)
+        val B = Pad(GlyphRole.EAST)
+        val X = Pad(GlyphRole.WEST)
+        val Y = Pad(GlyphRole.NORTH)
+        val L1 = Pad(GlyphRole.LEFT_SHOULDER)
+        val R1 = Pad(GlyphRole.RIGHT_SHOULDER)
+        val MENU_LEFT = Pad(GlyphRole.MENU_LEFT)
+        val MENU_RIGHT = Pad(GlyphRole.MENU_RIGHT)
 
         /** AYN handhelds (Odin, Thor) have a square and a play icon on their two menu buttons. */
         private val ayn = Build.MANUFACTURER.equals("AYN", ignoreCase = true)
 
         /**
-         * The left top menu button (View / Select). AYN square: ink 0.790 em (Material, scale .72 = 13.65 px) vs
+         * The icon of the left top menu button (View / Select). AYN square: ink 0.790 em (Material, scale .72 = 13.65 px) vs
          * 0.750 em (Phosphor) -> .72 * 0.790 / 0.750 = .758, the same 13.65 px. Other devices, copy: 0.9005 em vs
          * 0.750 em -> 1.2, 21.6 px.
          */
-        val MENU_LEFT = if (ayn) Icon(Symbols.SQUARE, scale = .758f) else Icon(Symbols.FILTER_NONE, scale = 1.2f)
+        internal val VIEW_ICON = if (ayn) Icon(Symbols.SQUARE, scale = .758f) else Icon(Symbols.FILTER_NONE, scale = 1.2f)
 
         /**
-         * The right top menu button (Start). AYN play: ink 0.4672 x 0.5640 em (Material, scale 1.3 = 14.6 x 17.6 px)
+         * The icon of the right top menu button (Start). AYN play: ink 0.4672 x 0.5640 em (Material, scale 1.3 = 14.6 x 17.6 px)
          * vs 0.6875 x 0.8125 em (Phosphor) -> 1.3 * 0.5640 / 0.8125 = .9025, 14.9 x 17.6 px (the same height). Other
          * devices, list: Material bars 0.790 x 0.558 em vs the Phosphor list-fill block 0.750 x 0.750 em; the shapes
          * differ, so the area-equivalent factor sqrt(0.790/0.750 * 0.558/0.750) = .885 is used (15.9 px block).
          */
-        val MENU_RIGHT = if (ayn) Icon(Symbols.PLAY_ARROW, scale = .9025f) else Icon(Symbols.MENU, scale = .885f)
+        internal val MENU_ICON = if (ayn) Icon(Symbols.PLAY_ARROW, scale = .9025f) else Icon(Symbols.MENU, scale = .885f)
 
         /** Material swap_horiz 0.827 x 0.661 em vs Phosphor arrows-left-right 0.6875 x 0.6875 em -> area-equivalent 1.075 (17.7 px). */
         val ADJUST = Icon(Symbols.SWAP_HORIZ, scale = 1.075f)
+    }
+}
+
+/** The mark drawn on a hint's disc: [Glyph.Pad] by the connected controller's family, the adjust cue as it is. */
+@Immutable
+sealed interface GlyphFace {
+    data class Text(val text: String) : GlyphFace
+    data class Shape(val mark: GlyphMark) : GlyphFace
+    data class Symbol(val icon: Glyph.Icon) : GlyphFace
+}
+
+fun Glyph.face(family: PadFamily): GlyphFace = when (this) {
+    is Glyph.Icon -> GlyphFace.Symbol(this)
+    is Glyph.Pad -> when (val mark = family.mark(role)) {
+        is GlyphMark.Letter -> GlyphFace.Text(mark.label)
+        GlyphMark.View -> GlyphFace.Symbol(Glyph.VIEW_ICON)
+        GlyphMark.Menu -> GlyphFace.Symbol(Glyph.MENU_ICON)
+        else -> GlyphFace.Shape(mark)
     }
 }
 
@@ -576,17 +605,63 @@ private fun HintCell(hint: Hint, detail: HintDetail) {
 fun GlyphButton(glyph: Glyph, size: Int = 38) {
     val colors = LocalDelosColors.current
     val k = size / 38f
+    val face = glyph.face(ControllerGlyphs.family)
+    val round = face !is GlyphFace.Text
     Box(
-        // Icons always sit in a circle; letters (L1…) may widen it into a pill
-        (if (glyph is Glyph.Icon) Modifier.size(size.px) else Modifier.defaultMinSize(minWidth = size.px).height(size.px))
+        // Icons and shapes always sit in a circle; letters (L1...) may widen it into a pill
+        (if (round) Modifier.size(size.px) else Modifier.defaultMinSize(minWidth = size.px).height(size.px))
             .clip(CircleShape)
             .background(colors.text)
-            .then(if (glyph is Glyph.Icon) Modifier else Modifier.padding(horizontal = 8.px)),
+            .then(if (round) Modifier else Modifier.padding(horizontal = 8.px)),
         contentAlignment = Alignment.Center,
     ) {
-        when (glyph) {
-            is Glyph.Letter -> BasicText(glyph.text, style = TextStyle(color = colors.bg, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = (21f * k).tpx))
-            is Glyph.Icon -> Symbol(glyph.symbol, (24f * glyph.scale * k).tpx, colors.bg, filled = true)
+        when (face) {
+            is GlyphFace.Text -> BasicText(face.text, style = TextStyle(color = colors.bg, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = (21f * k).tpx))
+            is GlyphFace.Symbol -> Symbol(face.icon.symbol, (24f * face.icon.scale * k).tpx, colors.bg, filled = true)
+            is GlyphFace.Shape -> PadShape(face.mark, colors.bg, Modifier.size(size.px))
+        }
+    }
+}
+
+/** The PlayStation face shapes and the touchpad, drawn as vectors in [color] on the disc of [Modifier] size: they cover 46 % of it, with a line of 8.5 %. */
+@Composable
+private fun PadShape(mark: GlyphMark, color: Color, modifier: Modifier) {
+    Canvas(modifier) {
+        val side = size.minDimension
+        val inner = side * .46f
+        val line = side * .085f
+        val c = center
+        val stroke = Stroke(width = line, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        when (mark) {
+            GlyphMark.Cross -> {
+                val h = inner / 2
+                drawLine(color, Offset(c.x - h, c.y - h), Offset(c.x + h, c.y + h), line, StrokeCap.Round)
+                drawLine(color, Offset(c.x + h, c.y - h), Offset(c.x - h, c.y + h), line, StrokeCap.Round)
+            }
+            GlyphMark.Circle -> drawCircle(color, radius = inner * 1.15f / 2 - line / 2, center = c, style = stroke)
+            GlyphMark.Square -> drawRoundRect(
+                color, Offset(c.x - inner / 2 + line / 2, c.y - inner / 2 + line / 2), Size(inner - line, inner - line),
+                CornerRadius(line), stroke,
+            )
+            GlyphMark.Triangle -> {
+                val w = inner * 1.1f
+                val path = Path().apply {
+                    moveTo(c.x, c.y - inner / 2 + line / 2)
+                    lineTo(c.x + w / 2 - line / 2, c.y + inner / 2 - line / 2)
+                    lineTo(c.x - w / 2 + line / 2, c.y + inner / 2 - line / 2)
+                    close()
+                }
+                drawPath(path, color, style = stroke)
+            }
+            GlyphMark.Touchpad -> {
+                val w = inner * 1.35f
+                val h = inner * .95f
+                drawRoundRect(
+                    color, Offset(c.x - w / 2 + line / 2, c.y - h / 2 + line / 2), Size(w - line, h - line),
+                    CornerRadius(line * 1.4f), stroke,
+                )
+            }
+            else -> Unit
         }
     }
 }
