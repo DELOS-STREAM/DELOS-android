@@ -50,9 +50,21 @@ public class VirtualController {
     private final Context context;
     private final Handler handler;
 
-    // The screen size the controls are laid out on; a saved layout is stored against it
+    // The size the controls are laid out on (the frame they are drawn in); a saved layout is stored against it
     private int panelWidth;
     private int panelHeight;
+
+    // Whether the layout follows the frame's size (refreshLayout), not a size given (the debug previews' layOutDefault)
+    private boolean followFrame = false;
+
+    private final Runnable relayoutRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (followFrame) {
+                refreshLayout();
+            }
+        }
+    };
 
     private final Runnable delayedRetransmitRunnable = new Runnable() {
         @Override
@@ -82,6 +94,14 @@ public class VirtualController {
         DisplayMetrics screen = context.getResources().getDisplayMetrics();
         this.panelWidth = screen.widthPixels;
         this.panelHeight = screen.heightPixels;
+        // The frame got another size (laid out for the first time, rotation, PiP, the window's insets): lay the controls out on it again,
+        // after this layout pass
+        frame_layout.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            if (followFrame && frameWidth() > 0 && frameHeight() > 0 && (frameWidth() != panelWidth || frameHeight() != panelHeight)) {
+                handler.removeCallbacks(relayoutRunnable);
+                handler.post(relayoutRunnable);
+            }
+        });
         // Delos: the profile's main color for pressed controls
         OscStyle.refresh(context);
 
@@ -228,15 +248,31 @@ public class VirtualController {
         return panelHeight;
     }
 
-    /** Lays the controls out on the window's current size. */
+    /**
+     * Lays the controls out on the frame they are drawn in, and again whenever its size changes. Their positions are margins in that
+     * frame, so the default layout centres the middle controls on its width. The display metrics are not that size: on Android 13 they
+     * leave out a navigation bar at the side (a screen under 600 dp tall, such as the AYN Odin 2 Portal at 369 dpi, keeps it at the right
+     * in landscape) and a display cutout, while the full-screen stream and the edge-to-edge shell draw under both. They only stand in
+     * until the frame has been laid out.
+     */
     public void refreshLayout() {
-        DisplayMetrics screen = context.getResources().getDisplayMetrics();
-        refreshLayout(screen.widthPixels, screen.heightPixels);
+        followFrame = true;
+        handler.removeCallbacks(relayoutRunnable);
+        if (frameWidth() > 0 && frameHeight() > 0) {
+            layOut(frameWidth(), frameHeight(), true, null);
+        } else {
+            DisplayMetrics screen = context.getResources().getDisplayMetrics();
+            layOut(screen.widthPixels, screen.heightPixels, true, null);
+        }
     }
 
-    /** Lays the controls out on a screen of {@code width} x {@code height} pixels (the real screen's size; the debug preview passes another shape's). */
-    public void refreshLayout(int width, int height) {
-        layOut(width, height, true, null);
+    /** The frame's inner width and height, where the margins of the controls start; 0 before it was laid out. */
+    private int frameWidth() {
+        return Math.max(0, frame_layout.getWidth() - frame_layout.getPaddingLeft() - frame_layout.getPaddingRight());
+    }
+
+    private int frameHeight() {
+        return Math.max(0, frame_layout.getHeight() - frame_layout.getPaddingTop() - frame_layout.getPaddingBottom());
     }
 
     /**
@@ -244,6 +280,8 @@ public class VirtualController {
      * the given settings.
      */
     public void layOutDefault(int width, int height, PreferenceConfiguration config) {
+        followFrame = false;
+        handler.removeCallbacks(relayoutRunnable);
         layOut(width, height, false, config);
     }
 

@@ -479,7 +479,11 @@ Issue #9. `OscGeometry`, `OscDefaultLayout`, `VideoFit`, `KeyBoardGeometry` and
 
 ### 9.1 On-screen controls
 
-`VirtualController`, default layout on the 128 × 72 grid. One unit is height / 72.
+`VirtualController`, default layout on the 128 × 72 grid. One unit is height / 72. The panel is the frame the controls
+are drawn in (their positions are margins in it), laid out again when its size changes. It is not the display metrics:
+on Android 13 they leave out a navigation bar at the side and a display cutout, which the full-screen stream and the
+edge-to-edge shell draw under. A side bar on a phone-sized screen such as the Odin's (369 dpi) put Back, Guide, Start
+and the trackpad left of the centre (#101).
 
 | Panel | Layout |
 |---|---|
@@ -505,8 +509,11 @@ Issue #9. `OscGeometry`, `OscDefaultLayout`, `VideoFit`, `KeyBoardGeometry` and
    middle by thirds of the old height. A layout made on 16:9 keeps its right-hand controls on the right edge of a 21:9
    panel.
 5. Layouts saved without a panel size keep their pixels but are pulled onto the screen.
-6. The result is always on the panel.
-7. `--es preview_saved_from <W>x<H>` shows this on the emulator.
+6. Only what the user changed is saved: leaving the editor drops every element that is on and where the default puts
+   it, so it follows the default layout. A saved element that equals the default of its `REF_W` x `REF_H` (of the
+   display metrics when it has none: older versions laid out on them) is dropped when loaded.
+7. The result is always on the panel.
+8. `--es preview_saved_from <W>x<H>` shows this on the emulator.
 
 ### 9.3 Key grid
 

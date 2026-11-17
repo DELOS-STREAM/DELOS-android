@@ -29,6 +29,8 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - The update card no longer stays on Installing until the app restarts when Android's install prompt cannot be shown; the install ends as failed. Covered by a unit test; not reproduced on a device. (by [@Mimir-apk](https://github.com/Mimir-apk), [#93](https://github.com/Meitoncz/DELOS/pull/93))
 - Starting a game can be cancelled at any moment, by B and by touch, in every phase of the loader: before, B did nothing once the stream window had opened (and the first phase lasts under a second). Cancelling ends only the connection attempt and returns to the library; the game on the PC keeps running. Covered by unit tests; not checked on a device.
 - The stream menu's swipe up no longer starts at the very edge of the screen, where Android's gesture bar takes it: it starts in the bottom 18 % of the screen above the system's gesture strip. A tap outside the stream menu (above or beside the tiles) closes it; it never quits or disconnects and the tap does not reach the game.
+### Fixed
+- On-screen controls: Back, Guide, Start and the trackpad are centred on the area the controls are drawn in, not on the display size Android 13 reports without a navigation bar at the side or a cutout, which put them left of the centre. Leaving the layout editor saves only what was changed, and an untouched layout saved earlier gives way to the default ([#101](https://github.com/Meitoncz/DELOS/issues/101)).
 
 ## [1.1.0] - 2026-11-16
 _Hold Back for Guide and updated libraries._

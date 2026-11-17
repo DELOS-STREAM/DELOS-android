@@ -152,12 +152,6 @@ public class VirtualControllerConfigurationLoader {
     }
 
 
-    /** The default layout on the screen the controls are drawn on (the window's size, from the resources). */
-    public static void createDefaultLayout(final VirtualController controller, final Context context) {
-        DisplayMetrics screen = context.getResources().getDisplayMetrics();
-        createDefaultLayout(controller, context, screen.widthPixels, screen.heightPixels);
-    }
-
     /**
      * The default layout on a screen of {@code width} x {@code height} pixels. The positions come from {@link OscDefaultLayout}
      * (docs/GUI.md, "Screen shapes"): the 16:9 layout of the prototype from 3:2 up, shrunk to fit on squarer screens.
@@ -264,8 +258,13 @@ public class VirtualControllerConfigurationLoader {
         // Delos: editable layouts belong to the active user profile.
         SharedPreferences.Editor prefEditor = com.limelight.shell.settings.ProfileLayouts.preferences(context, OSC_PREFERENCE).edit();
 
+        // Only what the user changed: an untouched element stays out, so it follows the default layout (also a later, corrected one)
         for (VirtualControllerElement element : controller.getElements()) {
             String prefKey = ""+element.elementId;
+            if (element.isDefaultPlacement()) {
+                prefEditor.remove(prefKey);
+                continue;
+            }
             try {
                 prefEditor.putString(prefKey, element.getConfiguration().toString());
             } catch (JSONException e) {
@@ -280,13 +279,20 @@ public class VirtualControllerConfigurationLoader {
         // Delos: editable layouts belong to the active user profile.
         SharedPreferences pref = com.limelight.shell.settings.ProfileLayouts.preferences(context, OSC_PREFERENCE);
 
+        DisplayMetrics screen = context.getResources().getDisplayMetrics();
         for (VirtualControllerElement element : controller.getElements()) {
             String prefKey = ""+element.elementId;
 
             String jsonConfig = pref.getString(prefKey, null);
             if (jsonConfig != null) {
                 try {
-                    element.loadConfiguration(new JSONObject(jsonConfig));
+                    JSONObject configuration = new JSONObject(jsonConfig);
+                    if (savedDefault(element.elementId, configuration, screen)) {
+                        // A default that was stored without being edited: the default of this frame replaces it
+                        pref.edit().remove(prefKey).apply();
+                        continue;
+                    }
+                    element.loadConfiguration(configuration);
                 } catch (JSONException e) {
                     e.printStackTrace();
 
@@ -295,5 +301,24 @@ public class VirtualControllerConfigurationLoader {
                 }
             }
         }
+    }
+
+    /**
+     * Whether a saved element only repeats the default layout of the screen it was saved on: the editor used to store every element,
+     * the untouched ones too, and such a copy would freeze that default (on the Odin, the middle controls centred on the display
+     * metrics, left of the frame's centre). Saved without its screen (older versions): the display metrics, which they laid out on.
+     */
+    private static boolean savedDefault(int elementId, JSONObject configuration, DisplayMetrics screen) throws JSONException {
+        if (!configuration.getBoolean("ENABLED")) {
+            return false;
+        }
+        int refWidth = configuration.optInt("REF_W", 0);
+        int refHeight = configuration.optInt("REF_H", 0);
+        if (refWidth <= 0 || refHeight <= 0) {
+            refWidth = screen.widthPixels;
+            refHeight = screen.heightPixels;
+        }
+        return OscDefaultLayout.isDefault(elementId, configuration.getInt("LEFT"), configuration.getInt("TOP"),
+                configuration.getInt("WIDTH"), configuration.getInt("HEIGHT"), refWidth, refHeight);
     }
 }
