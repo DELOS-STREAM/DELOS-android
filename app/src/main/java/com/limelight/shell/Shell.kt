@@ -181,8 +181,8 @@ fun Shell(
     // Only the animated background, for glass that is always on (the focused row, the top bar)
     val backdropHaze = rememberHazeState()
     var blurSource by remember { mutableStateOf(false) }
-    LaunchedEffect(shell.layer != null || shell.portal != null) {
-        if (shell.layer != null || shell.portal != null) {
+    LaunchedEffect(shell.layer != null || shell.portal != null || shell.picker != null) {
+        if (shell.layer != null || shell.portal != null || shell.picker != null) {
             blurSource = true
         } else {
             delay(600)
@@ -694,7 +694,7 @@ fun Shell(
             // The blur source re-records the whole screen every frame, so it is only active while an overlay
             // is shown (and while it fades out)
             // On in the very frame an overlay appears (its blur would otherwise start empty and clipped)
-            Box(Modifier.fillMaxSize().then(if (blurSource || shell.layer != null || shell.portal != null || shell.result != null) Modifier.hazeSource(haze) else Modifier)) {
+            Box(Modifier.fillMaxSize().then(if (blurSource || shell.layer != null || shell.portal != null || shell.result != null || shell.picker != null) Modifier.hazeSource(haze) else Modifier)) {
                 Box(Modifier.fillMaxSize().hazeSource(backdropHaze)) {
                     ShellBackdrop(shell, appearance, colors, heroShown = shell.screen == Screen.Home, animate = shell.launch == null && shell.portal == null)
                 }
@@ -819,7 +819,7 @@ fun Shell(
                 }
 
                 // The popup of a settings row (touch, issue #92): over every layer, the side menu's rows open it too
-                RowPickerLayer(shell.picker) { shell.closePicker() }
+                RowPickerLayer(shell.picker, haze) { shell.closePicker() }
 
                 // Fully there from the first frame: the stream window's portal already ended on this very background
                 val cover by animateFloatAsState(if (shell.exitCover) 1f else 0f, if (shell.exitCover) snap() else tween(350, easing = EaseOut), label = "exitCover")

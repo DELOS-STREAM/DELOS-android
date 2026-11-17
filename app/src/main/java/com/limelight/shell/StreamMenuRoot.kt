@@ -460,7 +460,7 @@ internal fun StreamMenuRoot(
                 }
             }
             // The popup of a choice or slider row (touch, issue #92), over the dock and the card
-            RowPickerLayer(picker) { picker = null }
+            RowPickerLayer(picker, haze = null) { picker = null }
         }
     }
 }

@@ -99,7 +99,7 @@ private val CardTint = Color(34, 44, 84)
  * prototype's (61, 61, 89)), so the tint is denser (.80) and the backdrop is hardly saturated (1.15): the same navy on any background.
  */
 @Composable
-private fun Modifier.menuGlass(haze: HazeState): Modifier {
+internal fun Modifier.menuGlass(haze: HazeState): Modifier {
     val radius = 46f.px
     val saturate = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.15f) })
     val tint = CardTint.copy(alpha = .80f)

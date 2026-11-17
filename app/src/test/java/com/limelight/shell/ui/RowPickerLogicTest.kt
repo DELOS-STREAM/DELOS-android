@@ -149,29 +149,38 @@ class RowPickerLogicTest {
     private val w = 1920f
     private val h = 1080f
 
-    private val point = row.right - PickerLayout.VALUE_INSET
     private val d = PickerLayout.CARET_HEIGHT
 
-    @Test fun theCardLiesLeftOfTheRowsValueCentredOnTheRowWithItsCaretInTheRow() {
+    @Test fun theCardGrowsOutOfItsCaretToTheRightCentredOnTheRow() {
         val p = PickerLayout.options(row, count = 3, selected = 1, stageW = w, stageH = h)
         assertEquals(PickerLayout.OPTIONS_WIDTH, p.width, 0f)
-        assertTrue(p.caretRight)
-        assertEquals(point - d, p.x + p.width, .001f)
-        assertEquals(point, p.tipX, .001f)
+        // The caret is on the card's left edge, its tip inside the row at the right part of it, the card to the right of it
+        assertTrue(!p.caretRight)
+        assertEquals(p.tipX + d, p.x, .001f)
         assertTrue(p.tipX > row.left && p.tipX < row.right)
+        assertTrue(p.x + p.width <= w - PickerLayout.SIDE_MARGIN)
         assertEquals(PickerLayout.CHROME + PickerLayout.listHeight(3), p.height, 0f)
         assertEquals(row.center.y, p.y + p.height / 2f, .001f)
-        // The caret points at the middle of the row
         assertEquals(row.center.y, p.y + p.caretY, .001f)
     }
 
-    @Test fun theCardFlipsToTheRightWhenTheLeftHasNoRoom() {
-        // A row near the left edge: only the right side has room for the card
-        val near = Rect(40f, 300f, 600f, 392f)
+    @Test fun theTipIsLeftOfTheValueWhenThereIsRoomAndMovesLeftForAWideCard() {
+        val narrow = PickerLayout.options(row, count = 3, selected = 0, stageW = 3000f, stageH = h)
+        assertEquals(row.right - PickerLayout.VALUE_AREA, narrow.tipX, .001f)
+        val wide = PickerLayout.value(row, w, h)
+        assertTrue(!wide.caretRight)
+        assertEquals(w - PickerLayout.SIDE_MARGIN, wide.x + wide.width, .001f)
+        assertTrue(wide.tipX >= row.left + PickerLayout.TIP_INSET)
+    }
+
+    @Test fun theCardFlipsToTheLeftOnlyWhenTheRightHasNoRoom() {
+        // A row at the right edge of a narrow stage: the card does not fit right of any tip inside the row
+        val near = Rect(1200f, 300f, 1900f, 392f)
         val p = PickerLayout.options(near, count = 3, selected = 0, stageW = w, stageH = h)
-        assertTrue(!p.caretRight)
-        assertEquals(near.right - PickerLayout.VALUE_INSET + d, p.x, .001f)
-        assertEquals(p.x - d, p.tipX, .001f)
+        assertTrue(p.caretRight)
+        assertEquals(near.right - PickerLayout.TIP_INSET, p.tipX, .001f)
+        assertEquals(p.tipX - d, p.x + p.width, .001f)
+        assertEquals(PickerLayout.OPTIONS_WIDTH, p.width, 0f)
     }
 
     @Test fun theCaretStaysClearOfTheCornersWhereTheRowIsNearTheCardsEdge() {
@@ -200,6 +209,7 @@ class RowPickerLogicTest {
     @Test fun theCardKeepsItsDistanceFromTheSidesAndIsNarrowedToTheRoom() {
         val p = PickerLayout.value(row, w, h)
         assertTrue(p.x >= PickerLayout.SIDE_MARGIN && p.x + p.width <= w - PickerLayout.SIDE_MARGIN)
+        // Neither side has the room: the card is narrowed, last
         val narrow = PickerLayout.options(Rect(0f, 300f, 390f, 392f), 3, 0, stageW = 400f, stageH = h)
         assertTrue(narrow.x >= PickerLayout.SIDE_MARGIN && narrow.x + narrow.width <= 400f - PickerLayout.SIDE_MARGIN)
         assertTrue(narrow.width < PickerLayout.OPTIONS_WIDTH)

@@ -5,9 +5,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import com.limelight.shell.paintPopoverGlass
 import com.limelight.shell.sideCaretCardPath
-import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import dev.chrisbanes.haze.HazeState
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -19,6 +22,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -63,6 +67,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
@@ -136,7 +141,7 @@ private class CloseHook {
  * [request] null: it shrinks back into the row. With a controller: up and down, A picks, B closes (the focus is trapped inside); the slider popup takes left and right.
  */
 @Composable
-fun RowPickerLayer(request: RowPopupRequest?, onClose: () -> Unit) {
+fun RowPickerLayer(request: RowPopupRequest?, haze: HazeState?, onClose: () -> Unit) {
     // The last request stays while the card shrinks back
     var shown by remember { mutableStateOf(request) }
     if (request != null) shown = request
@@ -144,12 +149,12 @@ fun RowPickerLayer(request: RowPopupRequest?, onClose: () -> Unit) {
     var layerAt by remember { mutableStateOf(Offset.Zero) }
     Box(Modifier.fillMaxSize().onGloballyPositioned { layerAt = it.positionInRoot() }) {
         val r = shown ?: return@Box
-        key(r) { PickerSheet(r, layerAt, active = request != null, onClose) }
+        key(r) { PickerSheet(r, layerAt, haze, active = request != null, onClose) }
     }
 }
 
 @Composable
-private fun PickerSheet(request: RowPopupRequest, layerAt: Offset, active: Boolean, onClose: () -> Unit) {
+private fun PickerSheet(request: RowPopupRequest, layerAt: Offset, haze: HazeState?, active: Boolean, onClose: () -> Unit) {
     val k = stageUnit()
     val stage = LocalStage.current
     val colors = LocalDelosColors.current
@@ -187,10 +192,10 @@ private fun PickerSheet(request: RowPopupRequest, layerAt: Offset, active: Boole
             Box(
                 Modifier
                     .size(boxW.px, place.height.px)
-                    .pickerCard(place, d, sheen)
                     // A tap on the card itself must not reach the layer behind
                     .pointerInput(Unit) { detectTapGestures { } },
             ) {
+                PickerGlass(place, d, haze, sheen)
                 Box(Modifier.padding(start = (if (caretLeft) d else 0f).px, end = (if (caretRight) d else 0f).px).fillMaxSize()) {
                     when (popup) {
                         is RowPopup.Options -> OptionsCard(popup, place.list, active, onClose)
@@ -203,21 +208,35 @@ private fun PickerSheet(request: RowPopupRequest, layerAt: Offset, active: Boole
 }
 
 /**
- * The popover's card, drawn like the stream menu's: its glass, outline and caret as one path ([sideCaretCardPath]) and its shadow.
+ * The popover's card behind the content, like the stream menu's popover (glass, outline and caret as one path, [sideCaretCardPath]) and its shadow. With a
+ * [haze] (the shell: the screen behind is its source) the glass is the context menu's: the screen under it blurred under the card's navy tint, plus the
+ * sheen; without one (the stream, which has no source) it is the stream popover's translucent glass.
  */
 @Composable
-private fun Modifier.pickerCard(place: PickerPlacement, caret: Float, sheen: Color): Modifier {
+private fun BoxScope.PickerGlass(place: PickerPlacement, caret: Float, haze: HazeState?, sheen: Color) {
     val k = stageUnit()
-    return this.drawWithContent {
-        val left = if (place.hasCaret && !place.caretRight) caret * k else 0f
-        val bodyW = size.width - caret * k
-        drawBoxShadow(Rect(left, 0f, left + bodyW, size.height), P.CORNER * k, 40f * k, 90f * k, -20f * k, Color.Black.copy(alpha = .62f))
-        val path = sideCaretCardPath(left, bodyW, size.height, if (place.hasCaret) place.caretY * k else size.height / 2f, place.caretRight, k)
-        clipPath(path) {
-            paintPopoverGlass(1f, sheen, k)
-            this@drawWithContent.drawContent()
+    val left = if (place.hasCaret && !place.caretRight) caret else 0f
+    val shape = remember(place, caret, k) {
+        object : Shape {
+            override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
+                Outline.Generic(sideCaretCardPath(left * k, size.width - caret * k, size.height, if (place.hasCaret) place.caretY * k else size.height / 2f, place.caretRight, k))
         }
     }
+    Box(
+        Modifier.matchParentSize().drawBehind {
+            drawBoxShadow(Rect(left * k, 0f, size.width - (if (place.hasCaret && place.caretRight) caret * k else 0f), size.height), P.CORNER * k, 40f * k, 90f * k, -20f * k, Color.Black.copy(alpha = .62f))
+        },
+    )
+    Box(
+        Modifier
+            .matchParentSize()
+            .graphicsLayer { this.shape = shape; clip = true }
+            .then(if (haze != null) Modifier.menuGlass(haze) else Modifier)
+            .drawBehind {
+                if (haze == null) paintPopoverGlass(1f, sheen, k)
+                else drawRect(Brush.verticalGradient(0f to Color.White.copy(alpha = .13f), .52f to Color.Transparent, 1f to Color.Transparent))
+            },
+    )
 }
 
 @Composable

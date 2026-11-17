@@ -74,9 +74,10 @@ internal data class PickerPlacement(
 
 /**
  * The geometry of the contextual popover of a settings row, in stage pixels: the stream menu's popover card (glass, one outline with its caret) grown
- * out of the tapped row. The card is vertically centred on the row (kept inside the stage by margins) and lies beside the row's VALUE, on the side that
- * has the room: its caret points into the row at [VALUE_INSET] from the row's right edge, on the card's right edge when the card lies left of that point,
- * on its left edge when it lies right of it. A long options list scrolls.
+ * out of the tapped row. The card is vertically centred on the row (kept inside the stage by margins) and grows out of its caret TO THE RIGHT: the caret
+ * sits on the card's left edge, pointing left into the row at the right part of the row, [VALUE_AREA] from its right edge (left of the value's text), or
+ * further left when the card needs the room, so it covers the right side of the screen. Only when the right side has no room does it flip: the caret on the
+ * card's right edge, the card to the left of it; the card is narrowed last. A long options list scrolls.
  */
 internal object PickerLayout {
     /** The options' card and the slider popup's: the slider's is about twice as wide, its buttons and number are for a finger. */
@@ -90,8 +91,11 @@ internal object PickerLayout {
     const val OPTION = 64f
     const val GAP = 4f
 
-    /** Where the caret's tip enters the row, from its right edge: on the row's value. */
-    const val VALUE_INSET = 120f
+    /** Where the caret's tip enters the row, from its right edge: the right part of the row, left of the value's text. */
+    const val VALUE_AREA = 360f
+
+    /** The caret's tip stays this far inside the row's edges. */
+    const val TIP_INSET = 120f
 
     /** The card keeps this far from the stage's sides, and below the status bar / above the bottom edge by the margins the shell passes in. */
     const val SIDE_MARGIN = 24f
@@ -130,8 +134,9 @@ internal object PickerLayout {
         card(anchor, VALUE_HEIGHT, 0f, VALUE_WIDTH, stageW, stageH, top, bottom)
 
     /**
-     * A card of [height] centred vertically on the row, inside the margins, beside the point of the row's value on the side that has the room for
-     * [wanted] (the left one when both have), narrowed to the room when neither has.
+     * A card of [height] centred vertically on the row, inside the margins. Its caret's tip lies [VALUE_AREA] from the row's right edge, moved left as
+     * far as the card's [wanted] width needs to fit to the right of it (never beyond [TIP_INSET] inside the row's left edge); where that fails the card flips
+     * to the left of a tip [TIP_INSET] inside the row's right edge; where that fails too it takes the side with more room, narrowed to it.
      */
     private fun card(anchor: Rect?, height: Float, list: Float, wanted: Float, stageW: Float, stageH: Float, top: Float, bottom: Float): PickerPlacement {
         val h = height.coerceAtMost((stageH - top - bottom).coerceAtLeast(OPTION))
@@ -140,16 +145,25 @@ internal object PickerLayout {
             val width = wanted.coerceAtMost(limit)
             return PickerPlacement((stageW - width) / 2f, ((stageH - h) / 2f).coerceIn(top, (stageH - bottom - h).coerceAtLeast(top)), width, h, list)
         }
-        val point = anchor.right - VALUE_INSET
-        val roomLeft = point - CARET_HEIGHT - SIDE_MARGIN
-        val roomRight = stageW - SIDE_MARGIN - (point + CARET_HEIGHT)
-        val onLeft = roomLeft >= wanted || (roomRight < wanted && roomLeft >= roomRight)
-        val width = wanted.coerceAtMost(if (onLeft) roomLeft else roomRight).coerceAtLeast(OPTION)
-        val x = (if (onLeft) point - CARET_HEIGHT - width else point + CARET_HEIGHT).coerceIn(SIDE_MARGIN, (stageW - SIDE_MARGIN - width).coerceAtLeast(SIDE_MARGIN))
+        val farRight = stageW - SIDE_MARGIN
+        val minTip = anchor.left + TIP_INSET
+        val maxTip = anchor.right - TIP_INSET
+        // Right: the tip as far right as VALUE_AREA allows, moved left until the card fits
+        val tipRight = minOf(anchor.right - VALUE_AREA, farRight - wanted - CARET_HEIGHT)
+        val rightFits = tipRight >= minTip
+        // Left: the tip near the value, the card ending a caret before it
+        val tipLeft = maxTip
+        val leftFits = tipLeft - CARET_HEIGHT - wanted >= SIDE_MARGIN
+        val roomRight = farRight - CARET_HEIGHT - minTip
+        val roomLeft = maxTip - CARET_HEIGHT - SIDE_MARGIN
+        val onRight = if (rightFits) true else if (leftFits) false else roomRight >= roomLeft
+        val width = if (rightFits && onRight || leftFits && !onRight) wanted else wanted.coerceAtMost(if (onRight) roomRight else roomLeft).coerceAtLeast(OPTION)
+        val tip = if (onRight) (if (rightFits) tipRight else minTip) else tipLeft
+        val x = (if (onRight) tip + CARET_HEIGHT else tip - CARET_HEIGHT - width).coerceIn(SIDE_MARGIN, (stageW - SIDE_MARGIN - width).coerceAtLeast(SIDE_MARGIN))
         val y = (anchor.center.y - h / 2f).coerceIn(top, (stageH - bottom - h).coerceAtLeast(top))
         // The caret stays on the straight part of the edge, clear of the rounded corners
         val edge = (CORNER + CARET_WIDTH / 2f).coerceAtMost(h / 2f)
         val caretY = (anchor.center.y - y).coerceIn(edge, h - edge)
-        return PickerPlacement(x, y, width, h, list, caretRight = onLeft, caretY = caretY, tipX = if (onLeft) x + width + CARET_HEIGHT else x - CARET_HEIGHT)
+        return PickerPlacement(x, y, width, h, list, caretRight = !onRight, caretY = caretY, tipX = if (onRight) x - CARET_HEIGHT else x + width + CARET_HEIGHT)
     }
 }

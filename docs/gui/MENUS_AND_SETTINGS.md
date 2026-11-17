@@ -314,9 +314,10 @@ The list is the **contextual popover**: the stream menu's popover card (glass, o
 | Element | Value |
 |---|---|
 | Scrim | None, like the stream menu's popover: nothing is dimmed; a tap beside the card closes it |
-| Card | 560 wide (the slider's is 1040), corner 44 (the stream popover's), padding 20 above and below; the stream popover's glass, shadow and no outline; at least 24 from the stage's sides |
-| Place | Vertically centred on the tapped row, kept 104 below the stage's top (the status bar, and the cutout) and 24 above its bottom edge (a compact stage uses the context menu's margins); beside the row's value: the point 120 inside the row's right edge, the card on its left, or on its right when the left has no room (and narrowed to the room when neither has) |
-| Caret | The stream popover's caret (60 wide, 24 tall) on the card's edge that faces the point, at the row's middle (never on a rounded corner), its tip in the row |
+| Card | 560 wide (the slider's is 1040), corner 44 (the stream popover's), padding 20 above and below; at least 24 from the stage's sides |
+| Glass | In the shell the screen behind is really blurred: the context menu's glass (`menuGlass`: blur 46 under the navy tint at 80 %, with its white sheen), the card clipped to its outline with the caret (`sideCaretCardPath`); the shell's blur source (`hazeSource`) is on while a popup is open. The stream menu has no blur source (the stream is a surface), so there the card is the stream popover's translucent glass (`paintPopoverGlass`). Both: the popover's shadow, no outline |
+| Place | Vertically centred on the tapped row and kept 104 below the stage's top (the status bar, and the cutout) and 24 above its bottom edge (a compact stage uses the context menu's margins). The card grows out of its caret TO THE RIGHT: the caret is on its left edge pointing left into the row, its tip 360 from the row's right edge (left of the value's text), moved left as far as the card needs the room to end 24 before the stage's right edge (at most to 120 inside the row's left edge). Only when the right side has no room it flips: the caret on the right edge, its tip 120 inside the row's right edge, the card to the left. When neither side has the room the card is narrowed, last |
+| Caret | The stream popover's caret (60 wide, 24 tall) at the row's middle (never on a rounded corner), its tip in the row |
 | Title | The row's name, Figtree 20 semibold, third text color, 36 high |
 | Option | 64 high, 4 apart, Figtree 23 semibold, corner 28; the focused one has a 17 % tint of the main color and a 3 px ring; the current one has a check (30) |
 | Long list | The card is cut to the room and the list scrolls inside it; the current option is in view when it opens |
