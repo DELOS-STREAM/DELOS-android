@@ -14,9 +14,9 @@ fun Glyph.forKind(kind: InputKind): Glyph? = when (kind) {
     InputKind.TOUCH -> if (this == Glyph.A) Glyph.TAP else null
     InputKind.POINTER -> if (this == Glyph.A) Glyph.CLICK else null
     InputKind.KEYBOARD -> when (this) {
-        Glyph.A -> Glyph.Key(KeyCap.RETURN)
-        Glyph.B -> Glyph.Key(KeyCap.ESCAPE)
-        Glyph.ADJUST -> Glyph.Key(KeyCap.ARROWS)
+        Glyph.A -> Glyph.Cap(InputCap.RETURN)
+        Glyph.B -> Glyph.Cap(InputCap.ESCAPE)
+        Glyph.ADJUST -> Glyph.Cap(InputCap.ARROWS)
         else -> null
     }
 }

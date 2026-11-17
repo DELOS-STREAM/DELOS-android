@@ -28,11 +28,11 @@ class HintKindsTest {
 
     @Test fun `the keyboard has Enter, Esc and the arrows`() {
         assertEquals(
-            listOf(Glyph.Key(KeyCap.ARROWS), Glyph.Key(KeyCap.RETURN), Glyph.Key(KeyCap.ESCAPE)),
+            listOf(Glyph.Cap(InputCap.ARROWS), Glyph.Cap(InputCap.RETURN), Glyph.Cap(InputCap.ESCAPE)),
             settings.adaptedTo(InputKind.KEYBOARD).map { it.glyph },
         )
         // No key for the tabs, search (Y) or the menu buttons
-        assertEquals(listOf(Hint(Glyph.Key(KeyCap.RETURN), "Start")), home.adaptedTo(InputKind.KEYBOARD))
+        assertEquals(listOf(Hint(Glyph.Cap(InputCap.RETURN), "Start")), home.adaptedTo(InputKind.KEYBOARD))
     }
 
     @Test fun `the labels and short labels stay`() {
@@ -44,14 +44,14 @@ class HintKindsTest {
         assertEquals(Glyph.X, Glyph.X.forKind(InputKind.CONTROLLER))
         assertNull(Glyph.X.forKind(InputKind.KEYBOARD))
         assertEquals(Glyph.TAP, Glyph.A.forKind(InputKind.TOUCH))
-        assertEquals(Glyph.Key(KeyCap.ESCAPE), Glyph.B.forKind(InputKind.KEYBOARD))
+        assertEquals(Glyph.Cap(InputCap.ESCAPE), Glyph.B.forKind(InputKind.KEYBOARD))
     }
 
     @Test fun `the adapted primary action ranks first in a cramped bar`() {
         assertEquals(0, hintRank(Glyph.TAP))
         assertEquals(0, hintRank(Glyph.CLICK))
-        assertEquals(0, hintRank(Glyph.Key(KeyCap.RETURN)))
-        assertEquals(1, hintRank(Glyph.Key(KeyCap.ESCAPE)))
+        assertEquals(0, hintRank(Glyph.Cap(InputCap.RETURN)))
+        assertEquals(1, hintRank(Glyph.Cap(InputCap.ESCAPE)))
     }
 
     @Test fun `the touch-only chrome is for every input but a controller`() {

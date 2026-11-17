@@ -8,21 +8,27 @@ import com.limelight.R
 import com.limelight.shell.data.ProfileStore
 
 /**
- * How the Delos stream menu opens: the buttons pressed together (L3 + R3 unless the user chose others)
- * and the swipe up from the bottom edge of the touchscreen. Kept with the profile's settings.
+ * How the Delos stream menu opens besides a tap of Guide/Home or Back (issue #102): the buttons the user chose to press
+ * together (none by default; until 1.1.0 the default was L3 + R3, which is no longer assumed, while a combination the user
+ * recorded, L3 + R3 included, is kept) and the swipe up from the bottom edge of the touchscreen. Kept with the profile's settings.
  */
 object StreamMenuSettings {
     const val KEY_BUTTONS = "ui_stream_menu_buttons"
     const val KEY_SWIPE = "ui_stream_menu_swipe"
-    val DEFAULT_BUTTONS = setOf(KeyEvent.KEYCODE_BUTTON_THUMBL, KeyEvent.KEYCODE_BUTTON_THUMBR)
 
+    /** The chosen buttons, empty when none are set (the default). */
     fun buttons(prefs: SharedPreferences): Set<Int> =
-        prefs.getString(KEY_BUTTONS, null)?.split(',')?.mapNotNull { it.trim().toIntOrNull() }?.toSet()?.takeIf { it.isNotEmpty() } ?: DEFAULT_BUTTONS
+        prefs.getString(KEY_BUTTONS, null)?.split(',')?.mapNotNull { it.trim().toIntOrNull() }?.toSet().orEmpty()
 
     fun swipe(prefs: SharedPreferences): Boolean = prefs.getBoolean(KEY_SWIPE, true)
 
     fun setButtons(prefs: SharedPreferences, buttons: Set<Int>) {
         prefs.edit().putString(KEY_BUTTONS, buttons.sorted().joinToString(",")).apply()
+    }
+
+    /** No buttons open the stream menu any more. */
+    fun clearButtons(prefs: SharedPreferences) {
+        prefs.edit().remove(KEY_BUTTONS).apply()
     }
 
     /** For the stream window: the current profile's choice. */

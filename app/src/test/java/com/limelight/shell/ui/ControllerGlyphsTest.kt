@@ -1,7 +1,7 @@
 package com.limelight.shell.ui
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ControllerGlyphsTest {
@@ -41,34 +41,50 @@ class ControllerGlyphsTest {
         assertEquals(PadFamily.XBOX, ControllerGlyphs.choose(pad(0x054c, 1, "x", gamepad = false), listOf(xbox)))
     }
 
-    @Test fun `confirm is the south button on every layout, only the mark changes`() {
-        assertEquals(GlyphMark.Letter("A"), PadFamily.GENERIC.mark(GlyphRole.SOUTH))
-        assertEquals(GlyphMark.Letter("A"), PadFamily.XBOX.mark(GlyphRole.SOUTH))
-        assertEquals(GlyphMark.Cross, PadFamily.DUALSENSE.mark(GlyphRole.SOUTH))
-        assertEquals(GlyphMark.Cross, PadFamily.DUALSHOCK.mark(GlyphRole.SOUTH))
-        assertEquals(GlyphMark.Letter("B"), PadFamily.NINTENDO.mark(GlyphRole.SOUTH))
+    @Test fun `family face labels preserve physical button positions`() {
+        val roles = listOf(GlyphRole.SOUTH, GlyphRole.EAST, GlyphRole.WEST, GlyphRole.NORTH)
+        val expected = mapOf(
+            PadFamily.GENERIC to listOf(Symbols.PAD_XBOX_A, Symbols.PAD_XBOX_B, Symbols.PAD_XBOX_X, Symbols.PAD_XBOX_Y),
+            PadFamily.XBOX to listOf(Symbols.PAD_XBOX_A, Symbols.PAD_XBOX_B, Symbols.PAD_XBOX_X, Symbols.PAD_XBOX_Y),
+            PadFamily.DUALSENSE to listOf(Symbols.PAD_DUALSENSE_CROSS, Symbols.PAD_DUALSENSE_CIRCLE, Symbols.PAD_DUALSENSE_SQUARE, Symbols.PAD_DUALSENSE_TRIANGLE),
+            PadFamily.DUALSHOCK to listOf(Symbols.PAD_DUALSHOCK4_CROSS, Symbols.PAD_DUALSHOCK4_CIRCLE, Symbols.PAD_DUALSHOCK4_SQUARE, Symbols.PAD_DUALSHOCK4_TRIANGLE),
+            PadFamily.NINTENDO to listOf(Symbols.PAD_JOYCON_B, Symbols.PAD_JOYCON_A, Symbols.PAD_JOYCON_Y, Symbols.PAD_JOYCON_X),
+        )
+        expected.forEach { (family, symbols) -> assertEquals(family.name, symbols, roles.map(family::fontSymbol)) }
     }
 
-    @Test fun `face buttons by position`() {
-        val ps = listOf(GlyphRole.EAST, GlyphRole.WEST, GlyphRole.NORTH).map { PadFamily.DUALSENSE.mark(it) }
-        assertEquals(listOf(GlyphMark.Circle, GlyphMark.Square, GlyphMark.Triangle), ps)
-        val nintendo = listOf(GlyphRole.EAST, GlyphRole.WEST, GlyphRole.NORTH).map { PadFamily.NINTENDO.mark(it).text }
-        assertEquals(listOf("A", "Y", "X"), nintendo)
-        val xbox = listOf(GlyphRole.EAST, GlyphRole.WEST, GlyphRole.NORTH).map { PadFamily.XBOX.mark(it).text }
-        assertEquals(listOf("B", "X", "Y"), xbox)
+    @Test fun `shoulders and triggers preserve each family and generic labels`() {
+        val roles = listOf(GlyphRole.LEFT_SHOULDER, GlyphRole.RIGHT_SHOULDER, GlyphRole.LEFT_TRIGGER, GlyphRole.RIGHT_TRIGGER)
+        val expected = mapOf(
+            PadFamily.GENERIC to listOf(Symbols.PAD_DUALSENSE_L1, Symbols.PAD_DUALSENSE_R1, Symbols.PAD_DUALSENSE_L2, Symbols.PAD_DUALSENSE_R2),
+            PadFamily.XBOX to listOf(Symbols.PAD_XBOX_LB, Symbols.PAD_XBOX_RB, Symbols.PAD_XBOX_LT, Symbols.PAD_XBOX_RT),
+            PadFamily.DUALSENSE to listOf(Symbols.PAD_DUALSENSE_L1, Symbols.PAD_DUALSENSE_R1, Symbols.PAD_DUALSENSE_L2, Symbols.PAD_DUALSENSE_R2),
+            PadFamily.DUALSHOCK to listOf(Symbols.PAD_DUALSHOCK4_L1, Symbols.PAD_DUALSHOCK4_R1, Symbols.PAD_DUALSHOCK4_L2, Symbols.PAD_DUALSHOCK4_R2),
+            PadFamily.NINTENDO to listOf(Symbols.PAD_JOYCON_L, Symbols.PAD_JOYCON_R, Symbols.PAD_JOYCON_ZL, Symbols.PAD_JOYCON_ZR),
+        )
+        expected.forEach { (family, symbols) -> assertEquals(family.name, symbols, roles.map(family::fontSymbol)) }
     }
 
-    @Test fun `shoulders, triggers and menu buttons`() {
-        fun texts(f: PadFamily) = listOf(GlyphRole.LEFT_SHOULDER, GlyphRole.RIGHT_SHOULDER, GlyphRole.LEFT_TRIGGER, GlyphRole.RIGHT_TRIGGER).map { f.mark(it).text }
-        assertEquals(listOf("L1", "R1", "L2", "R2"), texts(PadFamily.DUALSENSE))
-        assertEquals(listOf("L1", "R1", "L2", "R2"), texts(PadFamily.GENERIC))
-        assertEquals(listOf("LB", "RB", "LT", "RT"), texts(PadFamily.XBOX))
-        assertEquals(listOf("L", "R", "ZL", "ZR"), texts(PadFamily.NINTENDO))
-        assertEquals(GlyphMark.View, PadFamily.DUALSENSE.mark(GlyphRole.MENU_LEFT))
-        assertEquals(GlyphMark.Menu, PadFamily.DUALSENSE.mark(GlyphRole.MENU_RIGHT))
-        assertEquals("\u2212", PadFamily.NINTENDO.mark(GlyphRole.MENU_LEFT).text)
-        assertEquals("+", PadFamily.NINTENDO.mark(GlyphRole.MENU_RIGHT).text)
-        assertEquals(GlyphMark.Touchpad, PadFamily.DUALSENSE.mark(GlyphRole.TOUCHPAD))
-        assertNull(PadFamily.DUALSENSE.mark(GlyphRole.TOUCHPAD).text)
+    @Test fun `menu stick dpad and guide glyphs belong to their physical family`() {
+        val roles = listOf(GlyphRole.MENU_LEFT, GlyphRole.MENU_RIGHT, GlyphRole.LEFT_STICK, GlyphRole.RIGHT_STICK, GlyphRole.DPAD, GlyphRole.GUIDE, GlyphRole.TOUCHPAD)
+        val expected = mapOf(
+            PadFamily.GENERIC to listOf(Symbols.PAD_XBOX_VIEW, Symbols.PAD_XBOX_MENU, Symbols.PAD_XBOX_STICK_L_CLICK, Symbols.PAD_XBOX_STICK_R_CLICK, Symbols.PAD_XBOX_DPAD_NEUTRAL, Symbols.PAD_XBOX_GUIDE, Symbols.PAD_DUALSENSE_TOUCHPAD),
+            PadFamily.XBOX to listOf(Symbols.PAD_XBOX_VIEW, Symbols.PAD_XBOX_MENU, Symbols.PAD_XBOX_STICK_L_CLICK, Symbols.PAD_XBOX_STICK_R_CLICK, Symbols.PAD_XBOX_DPAD_NEUTRAL, Symbols.PAD_XBOX_GUIDE, Symbols.PAD_DUALSENSE_TOUCHPAD),
+            PadFamily.DUALSENSE to listOf(Symbols.PAD_DUALSENSE_CREATE, Symbols.PAD_DUALSENSE_OPTIONS, Symbols.PAD_DUALSENSE_STICK_L_CLICK, Symbols.PAD_DUALSENSE_STICK_R_CLICK, Symbols.PAD_DUALSENSE_DPAD_NEUTRAL, Symbols.PAD_DUALSENSE_PS, Symbols.PAD_DUALSENSE_TOUCHPAD),
+            PadFamily.DUALSHOCK to listOf(Symbols.PAD_DUALSHOCK4_SHARE, Symbols.PAD_DUALSHOCK4_OPTIONS, Symbols.PAD_DUALSHOCK4_STICK_L_CLICK, Symbols.PAD_DUALSHOCK4_STICK_R_CLICK, Symbols.PAD_DUALSHOCK4_DPAD_NEUTRAL, Symbols.PAD_DUALSHOCK4_PS, Symbols.PAD_DUALSHOCK4_TOUCHPAD),
+            PadFamily.NINTENDO to listOf(Symbols.PAD_JOYCON_MINUS, Symbols.PAD_JOYCON_PLUS, Symbols.PAD_JOYCON_STICK_L_CLICK, Symbols.PAD_JOYCON_STICK_R_CLICK, Symbols.PAD_JOYCON_DPAD_NEUTRAL, Symbols.PAD_JOYCON_HOME, Symbols.PAD_DUALSENSE_TOUCHPAD),
+        )
+        expected.forEach { (family, symbols) -> assertEquals(family.name, symbols, roles.map(family::fontSymbol)) }
+    }
+
+    @Test fun `every role on every controller resolves in both bundled fonts`() {
+        val fonts = FontCoverageTest()
+        for (style in listOf("phosphor_regular", "phosphor_fill")) {
+            val covered = fonts.cmap(style)
+            for (family in PadFamily.entries) for (role in GlyphRole.entries) {
+                val codepoint = family.fontSymbol(role).single().code
+                assertTrue("$family / $role is missing from $style", codepoint in covered)
+            }
+        }
     }
 }

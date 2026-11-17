@@ -36,7 +36,6 @@
     <string name="help_checkbox_mouse_emulation">Maintiens Start pendant un stream pour basculer la manette entre commande de jeu et émulation de souris.</string>
     <string name="help_analog_scrolling">Stick qui défile en mode souris de la manette.</string>
     <string name="help_checkbox_flip_face_buttons">Échange A/B et X/Y pour la manette et les commandes à l’écran (disposition Nintendo). Pas la navigation dans Delos.</string>
-    <string name="help_checkbox_back_hold_guide">Maintenez Retour une demi-seconde pour envoyer Guide (le bouton Xbox) au PC, par exemple pour la Game Bar ou l\'overlay Steam. Un appui court reste Retour, au relâchement.</string>
     <string name="help_checkbox_gamepad_touchpad_as_mouse">Utilise toujours le pavé tactile d’une manette comme souris du PC. Désactivé, les PC compatibles reçoivent le pavé tactile natif.</string>
     <string name="help_checkbox_gamepad_motion_sensors">Permet au PC de lire le gyroscope et l’accéléromètre d’une manette externe. Nécessite Android 12 ou plus récent. Désactive si aucune appli n’utilise le mouvement, pour économiser un peu d’énergie et de trafic.</string>
     <string name="help_checkbox_gamepad_motion_fallback">Utilise le gyroscope et l’accéléromètre de cet appareil quand la manette n’en a pas ou qu’Android ne peut pas les lire. Le PC peut alors voir une manette PlayStation.</string>

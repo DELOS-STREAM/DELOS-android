@@ -163,7 +163,6 @@ The header pills. The per-app settings tab pills use the same glyphs.
 | Mouse emulation | `mouse` | `MOUSE` |  |
 | Analog scrolling | `mouse-scroll` | `ANALOG_SCROLL` |  |
 | Flip face buttons | `circles-four` | `GAMEPAD_BUTTONS` |  |
-| Hold Back for Guide | `arrow-left` | `ARROW_BACK` |  |
 | Gamepad touchpad as mouse | `hand-pointing` | `TOUCHPAD` |  |
 | Motion sensors | `compass` | `MOTION_SENSORS` | the Adventure genre has the signpost |
 | Motion fallback | `navigation-arrow` | `MOTION_FALLBACK` |  |

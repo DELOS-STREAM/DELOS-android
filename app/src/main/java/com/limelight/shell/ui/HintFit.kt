@@ -24,8 +24,8 @@ class HintBarFit(val note: Int?, val details: List<HintDetail>)
  * then the tab hints (L1, R1), then the menu buttons. Lower is more important.
  */
 fun hintRank(glyph: Glyph): Int = when (glyph) {
-    Glyph.A, Glyph.TAP, Glyph.CLICK, Glyph.Key(KeyCap.RETURN) -> 0
-    Glyph.B, Glyph.Key(KeyCap.ESCAPE) -> 1
+    Glyph.A, Glyph.TAP, Glyph.CLICK, Glyph.Cap(InputCap.RETURN) -> 0
+    Glyph.B, Glyph.Cap(InputCap.ESCAPE) -> 1
     Glyph.L1, Glyph.R1 -> 3
     Glyph.MENU_LEFT, Glyph.MENU_RIGHT -> 4
     else -> 2

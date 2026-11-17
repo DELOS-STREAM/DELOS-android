@@ -100,7 +100,8 @@
 
     <!-- Native settings: Controls, Display, Devices -->
     <string name="settings_native_menu_buttons_title">Tlačítka menu streamu</string>
-    <string name="settings_native_menu_buttons_description">Tlačítka, která se během streamu stisknou společně pro otevření nebo zavření menu streamu. Výběrem nahraješ jiná, třeba zadní tlačítko.</string>
+    <string name="settings_native_menu_buttons_description">Klepnutí na Guide nebo Zpět otevře menu streamu; podržení pošle do PC Guide. Tady můžeš přidat vlastní tlačítka stisknutá společně, třeba zadní tlačítko. Výchozí je žádná.</string>
+    <string name="settings_native_menu_buttons_record">Nahrát tlačítka</string>
     <string name="settings_native_menu_swipe_title">Přejetí nahoru otevře menu</string>
     <string name="settings_native_menu_swipe_description">Přejetí nahoru od spodního okraje také otevře menu streamu. Dotyky začínající tam se do aplikace nedostanou.</string>
     <string name="settings_native_osc_opacity_title">Neprůhlednost ovládání na obrazovce</string>

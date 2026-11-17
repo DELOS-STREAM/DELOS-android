@@ -128,8 +128,25 @@ class ButtonShortcutTest {
         }
     }
 
-    @Test fun theDefaultIsL3AndR3() {
+    /** Issue #102: a tap of Guide or Back opens the menu, so no buttons are set by default (L3 + R3 was the default until 1.1.0). */
+    @Test fun noButtonsAreSetByDefault() {
+        assertEquals(emptySet<Int>(), StreamMenuSettings.buttons(context))
+        val s = shortcut(StreamMenuSettings.buttons(context))
+        assertFalse("L3 + R3 reach the game", s.down(l3))
+        assertFalse(s.down(r3))
+        assertFalse(s.up(l3))
+        assertFalse(s.up(r3))
+        assertEquals(0, opened)
+    }
+
+    /** A combination recorded by an earlier version (L3 + R3 included) is kept; clearing it goes back to none. */
+    @Test fun aRecordedCombinationIsKeptAndCanBeCleared() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        prefs.edit().putString(StreamMenuSettings.KEY_BUTTONS, "$l3,$r3").commit()
         assertEquals(setOf(l3, r3), StreamMenuSettings.buttons(context))
+        StreamMenuSettings.clearButtons(prefs)
+        assertEquals(emptySet<Int>(), StreamMenuSettings.buttons(context))
+        assertFalse(prefs.contains(StreamMenuSettings.KEY_BUTTONS))
     }
 
     @Test fun theRecordedL3R3ChoiceIsStoredAndReadBackAsTheSameCombination() {

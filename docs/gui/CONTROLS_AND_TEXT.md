@@ -30,6 +30,14 @@ field being edited stays clear of Android's keyboard, and how a one-line label t
 
 The **two menu buttons at the top left and top right** of the handheld are used in the UI.
 
+During a stream ([STREAM_MENU.md](STREAM_MENU.md#22-ownership-and-entry-points)):
+
+| Input | Action |
+|---|---|
+| **Tap of Guide/Home or Back** | Opens the **stream menu**; nothing is sent to the PC. |
+| **Hold of Guide/Home or Back** (500 ms) | Sends **Guide** to the PC while held (Steam overlay, Game Bar). |
+| **Own stream menu buttons** (Settings → Controls → Stream menu, none by default) | Pressed together, open or close the stream menu. L3 + R3 is no longer the default. |
+
 ### Context menu button
 
 1. Only elements with something to offer have a context menu. There is no generic fallback menu.
@@ -99,13 +107,15 @@ pointer, touch) is what the hints and the input-dependent controls are drawn for
   hints at once.
 - **Hints by kind** (`Glyph.forKind`, `List<Hint>.adaptedTo`, `shell/ui/HintKinds.kt`; the screens only write controller
   hints): controller: unchanged; touch: only the primary action (A: Select, Start, Connect, Change), drawn with the hand-tap
-  symbol (`Glyph.TAP`); pointer: the same with the mouse symbol (`Glyph.CLICK`); keyboard: Enter for the primary action, Esc
-  for back, the arrows for the adjust cue, drawn as key caps (`Glyph.Key`: the legend on a rounded cap); the other actions
+  symbol on the cue disc (`Glyph.TAP`: the shared font has no touch caps); pointer: the same with the font's left-click cap
+  (`Glyph.CLICK`, `Symbols.MAC_MOUSE_CLICK_LEFT`); keyboard: Return for the primary action, Esc for back, the left and right
+  arrows for the adjust cue, the font's complete key caps (`Glyph.Cap`, `InputCap`: `MAC_RETURN`, `MAC_ESCAPE`,
+  `MAC_ARROW_LEFT` + `MAC_ARROW_RIGHT`), drawn like the pad caps (`GlyphButton`, no disc); the other actions
   (tabs, menu buttons, X, Y) have a control on the screen or no key and are dropped. This applies to the hint bar, the
   companion window's copy of it and the stream menu's dock.
 - **Pills a finger can press** keep working for every kind. The button glyph on them (`PillButton(glyph = ...)`, drawn by
   `PillGlyph`: the update and problem cards, the artwork search, filter and sheet pills) shows only for a kind that has that
-  button (a key cap for Enter and Esc) and gives way like `InputKindVisibility`, the pill narrowing with it. The toast's Y
+  button (a key cap for Return and Esc) and gives way like `InputKindVisibility`, the pill narrowing with it. The toast's Y
   chip shows its Y only for a controller; the settings rows' reset pill drops its X for a keyboard, and the per-app settings
   show the round reset button on every custom row while a finger or a mouse is the input.
 - **`InputKindVisibility`** (`shell/ui/InputKindVisibility.kt`) is the one component for chrome that depends on the kind
@@ -346,6 +356,10 @@ On a device, `adb logcat -s DelosIme` shows the keyboard-avoidance values of a d
 ### Not verified
 
 The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verified).
+
+- Guide/Home and Back during a stream (tap = stream menu, hold of 500 ms = Guide on the PC): unit tested
+  (`GuideTapHoldTest`), not yet checked in a stream on the Odin (the built-in Back, a controller's Guide, the Steam
+  overlay or Game Bar opening on the PC).
 
 ## Related
 

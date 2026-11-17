@@ -2661,27 +2661,17 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             keyCode = handleFlipFaceButtons(keyCode);
         }
 
-        if (keyCode == KeyEvent.KEYCODE_BACK && prefConfig.backHoldForGuide) {
-            if (context.backGuideTimer != null) {
-                mainThreadHandler.removeCallbacks(context.backGuideTimer);
-                context.backGuideTimer = null;
-            }
-            switch (context.backGuide.onUp()) {
+        // Delos: Guide/Home and Back are a tap (the stream menu) or a hold (Guide on the PC), issue #102
+        TapHoldButton tapHold = context.tapHold(keyCode);
+        if (tapHold != null) {
+            tapHold.cancelTimer();
+            switch (tapHold.gesture.onUp()) {
             case GUIDE_UP:
                 context.inputMap &= ~ControllerPacket.SPECIAL_BUTTON_FLAG;
                 sendControllerInputPacket(context);
                 break;
-            case TAP_BACK:
-                context.hasSelect = true;
-                context.inputMap |= ControllerPacket.BACK_FLAG;
-                sendControllerInputPacket(context);
-                try {
-                    Thread.sleep(ControllerHandler.MINIMUM_BUTTON_DOWN_TIME_MS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                context.inputMap &= ~ControllerPacket.BACK_FLAG;
-                sendControllerInputPacket(context);
+            case TAP_MENU:
+                gestures.showGameMenu();
                 break;
             default:
                 break;
@@ -2710,9 +2700,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
 
         switch (keyCode) {
-        case KeyEvent.KEYCODE_BUTTON_MODE:
-            context.inputMap &= ~ControllerPacket.SPECIAL_BUTTON_FLAG;
-            break;
         case KeyEvent.KEYCODE_BUTTON_START:
         case KeyEvent.KEYCODE_MENU:
             context.startUpTime = event.getEventTime();
@@ -2731,7 +2718,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             }
             context.inputMap &= ~ControllerPacket.PLAY_FLAG;
             break;
-        case KeyEvent.KEYCODE_BACK:
         case KeyEvent.KEYCODE_BUTTON_SELECT:
             context.inputMap &= ~ControllerPacket.BACK_FLAG;
             break;
@@ -2936,11 +2922,27 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             keyCode = handleFlipFaceButtons(keyCode);
         }
 
+        // Delos: Guide/Home and Back are decided on release (a tap: the stream menu) or after the hold time (Guide), issue #102
+        TapHoldButton tapHold = context.tapHold(keyCode);
+        if (tapHold != null) {
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_MODE) {
+                context.hasMode = true;
+            }
+            if (tapHold.gesture.onDown(event.getEventTime())) {
+                final InputDeviceContext ctx = context;
+                tapHold.timer = () -> {
+                    tapHold.timer = null;
+                    if (tapHold.gesture.onHoldTimeout(SystemClock.uptimeMillis()) == GuideTapHold.Action.GUIDE_DOWN) {
+                        ctx.inputMap |= ControllerPacket.SPECIAL_BUTTON_FLAG;
+                        sendControllerInputPacket(ctx);
+                    }
+                };
+                mainThreadHandler.postAtTime(tapHold.timer, event.getEventTime() + GuideTapHold.HOLD_MS);
+            }
+            return true;
+        }
+
         switch (keyCode) {
-        case KeyEvent.KEYCODE_BUTTON_MODE:
-            context.hasMode = true;
-            context.inputMap |= ControllerPacket.SPECIAL_BUTTON_FLAG;
-            break;
         case KeyEvent.KEYCODE_BUTTON_START:
         case KeyEvent.KEYCODE_MENU:
             if (event.getRepeatCount() == 0) {
@@ -2953,22 +2955,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             }
             context.inputMap |= ControllerPacket.PLAY_FLAG;
             break;
-        case KeyEvent.KEYCODE_BACK:
-            if (prefConfig.backHoldForGuide) {
-                // Delos: Back is decided on release (tap) or after the hold time (Guide), see BackGuideGesture
-                if (context.backGuide.onDown()) {
-                    final InputDeviceContext ctx = context;
-                    context.backGuideTimer = () -> {
-                        if (ctx.backGuide.onHoldTimeout() == BackGuideGesture.Action.GUIDE_DOWN) {
-                            ctx.inputMap |= ControllerPacket.SPECIAL_BUTTON_FLAG;
-                            sendControllerInputPacket(ctx);
-                        }
-                    };
-                    mainThreadHandler.postDelayed(context.backGuideTimer, BackGuideGesture.HOLD_MS);
-                }
-                return true;
-            }
-            // fall through
         case KeyEvent.KEYCODE_BUTTON_SELECT:
             context.hasSelect = true;
             context.inputMap |= ControllerPacket.BACK_FLAG;
@@ -3103,7 +3089,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             return false;
         }
 
-        // Delos: Start+Back+LB+RB no longer quits the stream; the Delos stream menu (L3+R3 by default)
+        // Delos: Start+Back+LB+RB no longer quits the stream; the Delos stream menu (a tap of Guide or Back)
         // has Disconnect and Quit game.
 
         // Start+LB acts like select for controllers with one button
@@ -3336,6 +3322,24 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     }
 
+    /** One Guide/Home or Back button: its tap/hold decision and the hold timer of the current press. */
+    final class TapHoldButton {
+        final GuideTapHold gesture = new GuideTapHold();
+        Runnable timer;
+
+        void cancelTimer() {
+            if (timer != null) {
+                mainThreadHandler.removeCallbacks(timer);
+                timer = null;
+            }
+        }
+
+        void forget() {
+            cancelTimer();
+            gesture.reset();
+        }
+    }
+
     class InputDeviceContext extends GenericControllerContext {
         public String name;
         public VibratorManager vibratorManager;
@@ -3393,9 +3397,16 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         public int emulatingButtonFlags = 0;
         public boolean hasSelect;
-        // Delos: Hold Back for Guide (issue #90); the hold timer of the current press
-        public final BackGuideGesture backGuide = new BackGuideGesture();
-        public Runnable backGuideTimer;
+        // Delos: Guide/Home and Back, each a tap (the stream menu) or a hold (Guide), issue #102
+        public final TapHoldButton guideTapHold = new TapHoldButton();
+        public final TapHoldButton backTapHold = new TapHoldButton();
+
+        /** The tap/hold state of [keyCode] when it is Guide/Home or Back, else null. */
+        TapHoldButton tapHold(int keyCode) {
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_MODE) return guideTapHold;
+            if (keyCode == KeyEvent.KEYCODE_BACK) return backTapHold;
+            return null;
+        }
         public boolean hasMode;
         public boolean hasPaddles;
         public boolean hasShare;
@@ -3467,12 +3478,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         @Override
         public void destroy() {
             super.destroy();
-            // Delos: a held Back must not leave a hold timer behind (issue #90)
-            if (backGuideTimer != null) {
-                mainThreadHandler.removeCallbacks(backGuideTimer);
-                backGuideTimer = null;
-            }
-            backGuide.reset();
+            // Delos: a held Guide or Back must not leave a hold timer behind (issue #102)
+            guideTapHold.forget();
+            backTapHold.forget();
             if (vibratorManager != null || vibrator != null) {
                 LimeLog.info("RumblePlayback teardown: controller context '" + name + "' is destroyed, its vibrator "
                         + (vibratorManager != null ? "manager#" + rumbleObject(vibratorManager) : "single#" + rumbleObject(vibrator))

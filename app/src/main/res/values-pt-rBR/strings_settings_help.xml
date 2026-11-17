@@ -36,7 +36,6 @@
     <string name="help_checkbox_mouse_emulation">Segure Start durante o stream para alternar o controle entre entrada do jogo e emulação de mouse.</string>
     <string name="help_analog_scrolling">Analógico que rola a tela no modo mouse do controle.</string>
     <string name="help_checkbox_flip_face_buttons">Troca A/B e X/Y na entrada do controle e nos controles na tela (layout Nintendo). Não afeta a navegação do Delos.</string>
-    <string name="help_checkbox_back_hold_guide">Segure Voltar por meio segundo para enviar Guide (o botão Xbox) ao PC, por exemplo para a Game Bar ou a sobreposição do Steam. Um toque curto continua sendo Voltar, ao soltar.</string>
     <string name="help_checkbox_gamepad_touchpad_as_mouse">Sempre usa o touchpad do controle como mouse do PC. Desativado, PCs compatíveis recebem a entrada nativa do touchpad.</string>
     <string name="help_checkbox_gamepad_motion_sensors">Permite que o PC leia o giroscópio e o acelerômetro de um controle externo. Requer Android 12 ou mais recente. Desative se nenhum app usa movimento, para economizar um pouco de energia e tráfego.</string>
     <string name="help_checkbox_gamepad_motion_fallback">Usa o giroscópio e o acelerômetro deste dispositivo quando o controle não tem ou o Android não consegue lê-los. O PC pode então ver um controle PlayStation.</string>
