@@ -140,6 +140,16 @@ The design is "Console tiles" (prototype B, approved):
 ### 2.2 Ownership and entry points
 
 - `StreamMenu` owns every stream-menu entry point, including controller, touch and Back.
+- Guide/Home and Back (issue [#102](https://github.com/Meitoncz/DELOS/issues/102)): a **tap** of the controller's
+  Guide/Home button or of the device's built-in Back button opens the stream menu and sends nothing to the PC; a
+  **hold** of 500 ms sends Guide to the PC (Steam overlay, Game Bar). The hold is decided while the button is held:
+  Guide goes down on the PC when the 500 ms pass and comes up with the button. `GuideTapHold` (pure state, the
+  caller's clock, unit tested) decides; `ControllerHandler` keeps one per button and the hold timer. A Back that
+  Android delivers as a system key instead of a controller key (`onBackPressed`) only opens the menu.
+- The stream menu buttons (Settings → Controls → Stream menu) are the user's own combination, **none by default**
+  (L3 + R3 was the default until 1.1.0: a profile that never recorded one has none now, a recorded one is kept). The
+  row's list clears them (Not set) or records new ones.
+- The 1.1.0 setting Hold Back for Guide is removed: a hold of Back is always Guide now.
 - There is no classic dialog fallback.
 - `GameMenu` remains only as the special-key action helper and storage constants used by the stream menu and keyboard
   layouts; it does not create a menu window.
@@ -363,7 +373,7 @@ rotation re-lays out the overlays.
 | B | Dock | Resumes the stream. |
 
 - The focus cannot leave the popover with the D-pad.
-- The open and close buttons (L3 + R3 by default, the swipe up from the band above the edge) and the external display's input
+- The open and close buttons (a tap of Guide/Home or Back, the user's own buttons, the swipe up from the band above the edge) and the external display's input
   routing are unchanged by the menu.
 
 **Touch**:

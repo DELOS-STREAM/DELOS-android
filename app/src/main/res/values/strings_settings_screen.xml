@@ -115,7 +115,8 @@
 
     <!-- Native settings: Controls, Display, Devices -->
     <string name="settings_native_menu_buttons_title">Stream menu buttons</string>
-    <string name="settings_native_menu_buttons_description">Buttons pressed together during a stream to open or close the stream menu. Select to record others, e.g. a rear button.</string>
+    <string name="settings_native_menu_buttons_description">A tap of Guide or Back opens the stream menu; holding it sends Guide to the PC. Here you can add your own buttons pressed together, e.g. a rear button. None by default.</string>
+    <string name="settings_native_menu_buttons_record">Record buttons</string>
     <string name="settings_native_menu_swipe_title">Swipe up to open the menu</string>
     <string name="settings_native_menu_swipe_description">A swipe up from the bottom edge also opens the stream menu. Touches starting there do not reach the app.</string>
     <string name="settings_native_osc_opacity_title">On-screen controls opacity</string>

@@ -174,17 +174,20 @@ fun LaunchScene(
         }
         LaunchInformation(card, stage, progress, opening, Modifier.align(Alignment.BottomCenter))
         if (onCancel != null) {
-            // A persistent pill, not a tap-to-reveal one like the portal's: the loader lasts seconds on a LAN, so revealing
-            // Cancel with a first tap would need two taps and the loader would be gone. Same label, icon and look as the portal's.
-            LaunchCancelButton(onCancel, Modifier.align(Alignment.BottomCenter).padding(bottom = 24.px)
-                .graphicsLayer { alpha = HyperspaceTimeline.infoAlpha(opening()) })
+            // A persistent pill while a finger, a mouse or a keyboard is the input (a controller has B), not a tap-to-reveal one: the
+            // loader lasts seconds on a LAN, so revealing Cancel with a first tap would need two taps and the loader would be gone. Same
+            // label, icon and look as the portal's.
+            InputKindVisibility(InputKindRule.WITHOUT_CONTROLLER, Modifier.align(Alignment.BottomCenter).padding(bottom = 24.px)
+                .graphicsLayer { alpha = HyperspaceTimeline.infoAlpha(opening()) }, collapse = null) {
+                LaunchCancelButton(onCancel)
+            }
         }
     }
 }
 
 /**
- * Touch-only Cancel pill of the launch scene (the look of the portal's PillButton). It has no focus effects on
- * purpose: the stream's loader composition provides neither LocalFeedback nor LocalFocusTracker, and B cancels by key.
+ * The Cancel pill of the launch scene (the look of the portal's PillButton), for the inputs without B ([LaunchScene]). It has no focus
+ * effects on purpose: the stream's loader composition provides neither LocalFeedback nor LocalFocusTracker, and B cancels by key.
  */
 @Composable
 fun LaunchCancelButton(onCancel: () -> Unit, modifier: Modifier = Modifier) {

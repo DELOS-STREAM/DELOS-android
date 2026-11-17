@@ -1,5 +1,8 @@
 package com.limelight.shell.ui
 
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.withFrameNanos
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -184,6 +187,7 @@ fun Modifier.focusEffects(
     val currentTouchTap by rememberUpdatedState(onTouchTap)
     val currentOpener by rememberUpdatedState(LocalContextMenuOpener.current)
     val currentMenu by rememberUpdatedState(contextMenu)
+    val menuScope = rememberCoroutineScope()
 
     // The animated values (scale, glow and ring alpha) are only read while drawing, never while composing:
     // a focus change would otherwise rebuild both affected elements on every frame of the animation
@@ -269,8 +273,27 @@ fun Modifier.focusEffects(
                 val open = currentOpener
                 val menu = currentMenu
                 if (menu != null && open != null) {
+                    val hadFocus = focused
                     requester.requestFocus()
-                    open(menu, position[0]?.takeIf { it.isAttached }?.boundsInRoot())
+                    fun bounds() = position[0]?.takeIf { it.isAttached }?.boundsInRoot()
+                    if (hadFocus) {
+                        open(menu, bounds())
+                    } else {
+                        // The focus scrolls the element into view first (the library row glides the cover to its place): the menu opens
+                        // where the element comes to rest, not where it was pressed (at most 0.9 s, 4 still frames in a row)
+                        menuScope.launch {
+                            var last = bounds()
+                            var still = 0
+                            val end = System.nanoTime() + 900_000_000L
+                            while (still < 4 && System.nanoTime() < end) {
+                                withFrameNanos { }
+                                val now = bounds()
+                                still = if (now == last) still + 1 else 0
+                                last = now
+                            }
+                            open(menu, bounds())
+                        }
+                    }
                 }
             }, onTap = {
                 val wasFocused = focused

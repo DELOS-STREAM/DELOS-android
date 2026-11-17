@@ -16,6 +16,15 @@ object StatusBarLayout {
     const val SIDE = 72f
     const val MIN_GAP = 24f
 
+    /**
+     * The back button at the start of the bar (`BackButton` of DELOS for Apple): its circle, its arrow and the gap after it, which goes
+     * with it. It is for fingers, pointers and keyboards; a controller's B goes back ([BACK_RULE]).
+     */
+    const val BACK_SIZE = 68f
+    const val BACK_ARROW = 34f
+    const val BACK_GAP = 24f
+    val BACK_RULE = InputKindRule.WITHOUT_CONTROLLER
+
     /** A navigation button on a compact stage (64 elsewhere), the pill's padding around the buttons and the gap between them (normal, tight). */
     const val NAV_BUTTON = 56f
     const val NAV_PADDING = 8f

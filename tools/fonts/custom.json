@@ -3,5 +3,1690 @@
     "codepoint": "F000",
     "regular": "logo/a-wordmark-plate-regular.svg",
     "fill": "logo/a-wordmark-plate-fill.svg"
+  },
+  "delos-pad-xbox-a": {
+    "codepoint": "F001",
+    "regular": "controller/xbox/outline/a.svg",
+    "fill": "controller/xbox/solid/a.svg"
+  },
+  "delos-pad-xbox-b": {
+    "codepoint": "F002",
+    "regular": "controller/xbox/outline/b.svg",
+    "fill": "controller/xbox/solid/b.svg"
+  },
+  "delos-pad-xbox-x": {
+    "codepoint": "F003",
+    "regular": "controller/xbox/outline/x.svg",
+    "fill": "controller/xbox/solid/x.svg"
+  },
+  "delos-pad-xbox-y": {
+    "codepoint": "F004",
+    "regular": "controller/xbox/outline/y.svg",
+    "fill": "controller/xbox/solid/y.svg"
+  },
+  "delos-pad-xbox-view": {
+    "codepoint": "F005",
+    "regular": "controller/xbox/outline/view.svg",
+    "fill": "controller/xbox/solid/view.svg"
+  },
+  "delos-pad-xbox-menu": {
+    "codepoint": "F006",
+    "regular": "controller/xbox/outline/menu.svg",
+    "fill": "controller/xbox/solid/menu.svg"
+  },
+  "delos-pad-xbox-guide": {
+    "codepoint": "F007",
+    "regular": "controller/xbox/outline/guide.svg",
+    "fill": "controller/xbox/solid/guide.svg"
+  },
+  "delos-pad-xbox-dpad-neutral": {
+    "codepoint": "F008",
+    "regular": "controller/xbox/outline/dpad-neutral.svg",
+    "fill": "controller/xbox/solid/dpad-neutral.svg"
+  },
+  "delos-pad-xbox-dpad-up": {
+    "codepoint": "F009",
+    "regular": "controller/xbox/outline/dpad-up.svg",
+    "fill": "controller/xbox/solid/dpad-up.svg"
+  },
+  "delos-pad-xbox-dpad-right": {
+    "codepoint": "F00A",
+    "regular": "controller/xbox/outline/dpad-right.svg",
+    "fill": "controller/xbox/solid/dpad-right.svg"
+  },
+  "delos-pad-xbox-dpad-down": {
+    "codepoint": "F00B",
+    "regular": "controller/xbox/outline/dpad-down.svg",
+    "fill": "controller/xbox/solid/dpad-down.svg"
+  },
+  "delos-pad-xbox-dpad-left": {
+    "codepoint": "F00C",
+    "regular": "controller/xbox/outline/dpad-left.svg",
+    "fill": "controller/xbox/solid/dpad-left.svg"
+  },
+  "delos-pad-xbox-dpad-horizontal": {
+    "codepoint": "F00D",
+    "regular": "controller/xbox/outline/dpad-horizontal.svg",
+    "fill": "controller/xbox/solid/dpad-horizontal.svg"
+  },
+  "delos-pad-xbox-dpad-vertical": {
+    "codepoint": "F00E",
+    "regular": "controller/xbox/outline/dpad-vertical.svg",
+    "fill": "controller/xbox/solid/dpad-vertical.svg"
+  },
+  "delos-pad-xbox-stick-l-neutral": {
+    "codepoint": "F00F",
+    "regular": "controller/xbox/outline/stick-l-neutral.svg",
+    "fill": "controller/xbox/solid/stick-l-neutral.svg"
+  },
+  "delos-pad-xbox-stick-l-click": {
+    "codepoint": "F010",
+    "regular": "controller/xbox/outline/stick-l-click.svg",
+    "fill": "controller/xbox/solid/stick-l-click.svg"
+  },
+  "delos-pad-xbox-stick-l-up": {
+    "codepoint": "F011",
+    "regular": "controller/xbox/outline/stick-l-up.svg",
+    "fill": "controller/xbox/solid/stick-l-up.svg"
+  },
+  "delos-pad-xbox-stick-l-right": {
+    "codepoint": "F012",
+    "regular": "controller/xbox/outline/stick-l-right.svg",
+    "fill": "controller/xbox/solid/stick-l-right.svg"
+  },
+  "delos-pad-xbox-stick-l-down": {
+    "codepoint": "F013",
+    "regular": "controller/xbox/outline/stick-l-down.svg",
+    "fill": "controller/xbox/solid/stick-l-down.svg"
+  },
+  "delos-pad-xbox-stick-l-left": {
+    "codepoint": "F014",
+    "regular": "controller/xbox/outline/stick-l-left.svg",
+    "fill": "controller/xbox/solid/stick-l-left.svg"
+  },
+  "delos-pad-xbox-stick-r-neutral": {
+    "codepoint": "F015",
+    "regular": "controller/xbox/outline/stick-r-neutral.svg",
+    "fill": "controller/xbox/solid/stick-r-neutral.svg"
+  },
+  "delos-pad-xbox-stick-r-click": {
+    "codepoint": "F016",
+    "regular": "controller/xbox/outline/stick-r-click.svg",
+    "fill": "controller/xbox/solid/stick-r-click.svg"
+  },
+  "delos-pad-xbox-stick-r-up": {
+    "codepoint": "F017",
+    "regular": "controller/xbox/outline/stick-r-up.svg",
+    "fill": "controller/xbox/solid/stick-r-up.svg"
+  },
+  "delos-pad-xbox-stick-r-right": {
+    "codepoint": "F018",
+    "regular": "controller/xbox/outline/stick-r-right.svg",
+    "fill": "controller/xbox/solid/stick-r-right.svg"
+  },
+  "delos-pad-xbox-stick-r-down": {
+    "codepoint": "F019",
+    "regular": "controller/xbox/outline/stick-r-down.svg",
+    "fill": "controller/xbox/solid/stick-r-down.svg"
+  },
+  "delos-pad-xbox-stick-r-left": {
+    "codepoint": "F01A",
+    "regular": "controller/xbox/outline/stick-r-left.svg",
+    "fill": "controller/xbox/solid/stick-r-left.svg"
+  },
+  "delos-pad-xbox-lb": {
+    "codepoint": "F01B",
+    "regular": "controller/xbox/outline/lb.svg",
+    "fill": "controller/xbox/solid/lb.svg"
+  },
+  "delos-pad-xbox-rb": {
+    "codepoint": "F01C",
+    "regular": "controller/xbox/outline/rb.svg",
+    "fill": "controller/xbox/solid/rb.svg"
+  },
+  "delos-pad-xbox-lt": {
+    "codepoint": "F01D",
+    "regular": "controller/xbox/outline/lt.svg",
+    "fill": "controller/xbox/solid/lt.svg"
+  },
+  "delos-pad-xbox-rt": {
+    "codepoint": "F01E",
+    "regular": "controller/xbox/outline/rt.svg",
+    "fill": "controller/xbox/solid/rt.svg"
+  },
+  "delos-pad-xbox-trigger-l-pull": {
+    "codepoint": "F01F",
+    "regular": "controller/xbox/outline/trigger-l-pull.svg",
+    "fill": "controller/xbox/solid/trigger-l-pull.svg"
+  },
+  "delos-pad-xbox-trigger-r-pull": {
+    "codepoint": "F020",
+    "regular": "controller/xbox/outline/trigger-r-pull.svg",
+    "fill": "controller/xbox/solid/trigger-r-pull.svg"
+  },
+  "delos-pad-xbox-share": {
+    "codepoint": "F021",
+    "regular": "controller/xbox/outline/share.svg",
+    "fill": "controller/xbox/solid/share.svg"
+  },
+  "delos-pad-xbox-paddle-1": {
+    "codepoint": "F022",
+    "regular": "controller/xbox/outline/paddle-1.svg",
+    "fill": "controller/xbox/solid/paddle-1.svg"
+  },
+  "delos-pad-xbox-paddle-2": {
+    "codepoint": "F023",
+    "regular": "controller/xbox/outline/paddle-2.svg",
+    "fill": "controller/xbox/solid/paddle-2.svg"
+  },
+  "delos-pad-xbox-paddle-3": {
+    "codepoint": "F024",
+    "regular": "controller/xbox/outline/paddle-3.svg",
+    "fill": "controller/xbox/solid/paddle-3.svg"
+  },
+  "delos-pad-xbox-paddle-4": {
+    "codepoint": "F025",
+    "regular": "controller/xbox/outline/paddle-4.svg",
+    "fill": "controller/xbox/solid/paddle-4.svg"
+  },
+  "delos-pad-xbox-sticks": {
+    "codepoint": "F026",
+    "regular": "controller/xbox/outline/sticks.svg",
+    "fill": "controller/xbox/solid/sticks.svg"
+  },
+  "delos-pad-dualsense-cross": {
+    "codepoint": "F027",
+    "regular": "controller/dualsense/outline/cross.svg",
+    "fill": "controller/dualsense/solid/cross.svg"
+  },
+  "delos-pad-dualsense-circle": {
+    "codepoint": "F028",
+    "regular": "controller/dualsense/outline/circle.svg",
+    "fill": "controller/dualsense/solid/circle.svg"
+  },
+  "delos-pad-dualsense-square": {
+    "codepoint": "F029",
+    "regular": "controller/dualsense/outline/square.svg",
+    "fill": "controller/dualsense/solid/square.svg"
+  },
+  "delos-pad-dualsense-triangle": {
+    "codepoint": "F02A",
+    "regular": "controller/dualsense/outline/triangle.svg",
+    "fill": "controller/dualsense/solid/triangle.svg"
+  },
+  "delos-pad-dualsense-create": {
+    "codepoint": "F02B",
+    "regular": "controller/dualsense/outline/create.svg",
+    "fill": "controller/dualsense/solid/create.svg"
+  },
+  "delos-pad-dualsense-options": {
+    "codepoint": "F02C",
+    "regular": "controller/dualsense/outline/options.svg",
+    "fill": "controller/dualsense/solid/options.svg"
+  },
+  "delos-pad-dualsense-ps": {
+    "codepoint": "F02D",
+    "regular": "controller/dualsense/outline/ps.svg",
+    "fill": "controller/dualsense/solid/ps.svg"
+  },
+  "delos-pad-dualsense-dpad-neutral": {
+    "codepoint": "F02E",
+    "regular": "controller/dualsense/outline/dpad-neutral.svg",
+    "fill": "controller/dualsense/solid/dpad-neutral.svg"
+  },
+  "delos-pad-dualsense-dpad-up": {
+    "codepoint": "F02F",
+    "regular": "controller/dualsense/outline/dpad-up.svg",
+    "fill": "controller/dualsense/solid/dpad-up.svg"
+  },
+  "delos-pad-dualsense-dpad-right": {
+    "codepoint": "F030",
+    "regular": "controller/dualsense/outline/dpad-right.svg",
+    "fill": "controller/dualsense/solid/dpad-right.svg"
+  },
+  "delos-pad-dualsense-dpad-down": {
+    "codepoint": "F031",
+    "regular": "controller/dualsense/outline/dpad-down.svg",
+    "fill": "controller/dualsense/solid/dpad-down.svg"
+  },
+  "delos-pad-dualsense-dpad-left": {
+    "codepoint": "F032",
+    "regular": "controller/dualsense/outline/dpad-left.svg",
+    "fill": "controller/dualsense/solid/dpad-left.svg"
+  },
+  "delos-pad-dualsense-dpad-horizontal": {
+    "codepoint": "F033",
+    "regular": "controller/dualsense/outline/dpad-horizontal.svg",
+    "fill": "controller/dualsense/solid/dpad-horizontal.svg"
+  },
+  "delos-pad-dualsense-dpad-vertical": {
+    "codepoint": "F034",
+    "regular": "controller/dualsense/outline/dpad-vertical.svg",
+    "fill": "controller/dualsense/solid/dpad-vertical.svg"
+  },
+  "delos-pad-dualsense-stick-l-neutral": {
+    "codepoint": "F035",
+    "regular": "controller/dualsense/outline/stick-l-neutral.svg",
+    "fill": "controller/dualsense/solid/stick-l-neutral.svg"
+  },
+  "delos-pad-dualsense-stick-l-click": {
+    "codepoint": "F036",
+    "regular": "controller/dualsense/outline/stick-l-click.svg",
+    "fill": "controller/dualsense/solid/stick-l-click.svg"
+  },
+  "delos-pad-dualsense-stick-l-up": {
+    "codepoint": "F037",
+    "regular": "controller/dualsense/outline/stick-l-up.svg",
+    "fill": "controller/dualsense/solid/stick-l-up.svg"
+  },
+  "delos-pad-dualsense-stick-l-right": {
+    "codepoint": "F038",
+    "regular": "controller/dualsense/outline/stick-l-right.svg",
+    "fill": "controller/dualsense/solid/stick-l-right.svg"
+  },
+  "delos-pad-dualsense-stick-l-down": {
+    "codepoint": "F039",
+    "regular": "controller/dualsense/outline/stick-l-down.svg",
+    "fill": "controller/dualsense/solid/stick-l-down.svg"
+  },
+  "delos-pad-dualsense-stick-l-left": {
+    "codepoint": "F03A",
+    "regular": "controller/dualsense/outline/stick-l-left.svg",
+    "fill": "controller/dualsense/solid/stick-l-left.svg"
+  },
+  "delos-pad-dualsense-stick-r-neutral": {
+    "codepoint": "F03B",
+    "regular": "controller/dualsense/outline/stick-r-neutral.svg",
+    "fill": "controller/dualsense/solid/stick-r-neutral.svg"
+  },
+  "delos-pad-dualsense-stick-r-click": {
+    "codepoint": "F03C",
+    "regular": "controller/dualsense/outline/stick-r-click.svg",
+    "fill": "controller/dualsense/solid/stick-r-click.svg"
+  },
+  "delos-pad-dualsense-stick-r-up": {
+    "codepoint": "F03D",
+    "regular": "controller/dualsense/outline/stick-r-up.svg",
+    "fill": "controller/dualsense/solid/stick-r-up.svg"
+  },
+  "delos-pad-dualsense-stick-r-right": {
+    "codepoint": "F03E",
+    "regular": "controller/dualsense/outline/stick-r-right.svg",
+    "fill": "controller/dualsense/solid/stick-r-right.svg"
+  },
+  "delos-pad-dualsense-stick-r-down": {
+    "codepoint": "F03F",
+    "regular": "controller/dualsense/outline/stick-r-down.svg",
+    "fill": "controller/dualsense/solid/stick-r-down.svg"
+  },
+  "delos-pad-dualsense-stick-r-left": {
+    "codepoint": "F040",
+    "regular": "controller/dualsense/outline/stick-r-left.svg",
+    "fill": "controller/dualsense/solid/stick-r-left.svg"
+  },
+  "delos-pad-dualsense-l1": {
+    "codepoint": "F041",
+    "regular": "controller/dualsense/outline/l1.svg",
+    "fill": "controller/dualsense/solid/l1.svg"
+  },
+  "delos-pad-dualsense-r1": {
+    "codepoint": "F042",
+    "regular": "controller/dualsense/outline/r1.svg",
+    "fill": "controller/dualsense/solid/r1.svg"
+  },
+  "delos-pad-dualsense-l2": {
+    "codepoint": "F043",
+    "regular": "controller/dualsense/outline/l2.svg",
+    "fill": "controller/dualsense/solid/l2.svg"
+  },
+  "delos-pad-dualsense-r2": {
+    "codepoint": "F044",
+    "regular": "controller/dualsense/outline/r2.svg",
+    "fill": "controller/dualsense/solid/r2.svg"
+  },
+  "delos-pad-dualsense-stick-l-press": {
+    "codepoint": "F045",
+    "regular": "controller/dualsense/outline/stick-l-press.svg",
+    "fill": "controller/dualsense/solid/stick-l-press.svg"
+  },
+  "delos-pad-dualsense-stick-r-press": {
+    "codepoint": "F046",
+    "regular": "controller/dualsense/outline/stick-r-press.svg",
+    "fill": "controller/dualsense/solid/stick-r-press.svg"
+  },
+  "delos-pad-dualsense-touchpad": {
+    "codepoint": "F047",
+    "regular": "controller/dualsense/outline/touchpad.svg",
+    "fill": "controller/dualsense/solid/touchpad.svg"
+  },
+  "delos-pad-dualsense-touchpad-swipe-up": {
+    "codepoint": "F048",
+    "regular": "controller/dualsense/outline/touchpad-swipe-up.svg",
+    "fill": "controller/dualsense/solid/touchpad-swipe-up.svg"
+  },
+  "delos-pad-dualsense-touchpad-swipe-right": {
+    "codepoint": "F049",
+    "regular": "controller/dualsense/outline/touchpad-swipe-right.svg",
+    "fill": "controller/dualsense/solid/touchpad-swipe-right.svg"
+  },
+  "delos-pad-dualsense-touchpad-swipe-down": {
+    "codepoint": "F04A",
+    "regular": "controller/dualsense/outline/touchpad-swipe-down.svg",
+    "fill": "controller/dualsense/solid/touchpad-swipe-down.svg"
+  },
+  "delos-pad-dualsense-touchpad-swipe-left": {
+    "codepoint": "F04B",
+    "regular": "controller/dualsense/outline/touchpad-swipe-left.svg",
+    "fill": "controller/dualsense/solid/touchpad-swipe-left.svg"
+  },
+  "delos-pad-dualsense-sticks": {
+    "codepoint": "F04C",
+    "regular": "controller/dualsense/outline/sticks.svg",
+    "fill": "controller/dualsense/solid/sticks.svg"
+  },
+  "delos-pad-dualshock4-cross": {
+    "codepoint": "F04D",
+    "regular": "controller/dualshock4/outline/cross.svg",
+    "fill": "controller/dualshock4/solid/cross.svg"
+  },
+  "delos-pad-dualshock4-circle": {
+    "codepoint": "F04E",
+    "regular": "controller/dualshock4/outline/circle.svg",
+    "fill": "controller/dualshock4/solid/circle.svg"
+  },
+  "delos-pad-dualshock4-square": {
+    "codepoint": "F04F",
+    "regular": "controller/dualshock4/outline/square.svg",
+    "fill": "controller/dualshock4/solid/square.svg"
+  },
+  "delos-pad-dualshock4-triangle": {
+    "codepoint": "F050",
+    "regular": "controller/dualshock4/outline/triangle.svg",
+    "fill": "controller/dualshock4/solid/triangle.svg"
+  },
+  "delos-pad-dualshock4-share": {
+    "codepoint": "F051",
+    "regular": "controller/dualshock4/outline/share.svg",
+    "fill": "controller/dualshock4/solid/share.svg"
+  },
+  "delos-pad-dualshock4-options": {
+    "codepoint": "F052",
+    "regular": "controller/dualshock4/outline/options.svg",
+    "fill": "controller/dualshock4/solid/options.svg"
+  },
+  "delos-pad-dualshock4-ps": {
+    "codepoint": "F053",
+    "regular": "controller/dualshock4/outline/ps.svg",
+    "fill": "controller/dualshock4/solid/ps.svg"
+  },
+  "delos-pad-dualshock4-dpad-neutral": {
+    "codepoint": "F054",
+    "regular": "controller/dualshock4/outline/dpad-neutral.svg",
+    "fill": "controller/dualshock4/solid/dpad-neutral.svg"
+  },
+  "delos-pad-dualshock4-dpad-up": {
+    "codepoint": "F055",
+    "regular": "controller/dualshock4/outline/dpad-up.svg",
+    "fill": "controller/dualshock4/solid/dpad-up.svg"
+  },
+  "delos-pad-dualshock4-dpad-right": {
+    "codepoint": "F056",
+    "regular": "controller/dualshock4/outline/dpad-right.svg",
+    "fill": "controller/dualshock4/solid/dpad-right.svg"
+  },
+  "delos-pad-dualshock4-dpad-down": {
+    "codepoint": "F057",
+    "regular": "controller/dualshock4/outline/dpad-down.svg",
+    "fill": "controller/dualshock4/solid/dpad-down.svg"
+  },
+  "delos-pad-dualshock4-dpad-left": {
+    "codepoint": "F058",
+    "regular": "controller/dualshock4/outline/dpad-left.svg",
+    "fill": "controller/dualshock4/solid/dpad-left.svg"
+  },
+  "delos-pad-dualshock4-dpad-horizontal": {
+    "codepoint": "F059",
+    "regular": "controller/dualshock4/outline/dpad-horizontal.svg",
+    "fill": "controller/dualshock4/solid/dpad-horizontal.svg"
+  },
+  "delos-pad-dualshock4-dpad-vertical": {
+    "codepoint": "F05A",
+    "regular": "controller/dualshock4/outline/dpad-vertical.svg",
+    "fill": "controller/dualshock4/solid/dpad-vertical.svg"
+  },
+  "delos-pad-dualshock4-stick-l-neutral": {
+    "codepoint": "F05B",
+    "regular": "controller/dualshock4/outline/stick-l-neutral.svg",
+    "fill": "controller/dualshock4/solid/stick-l-neutral.svg"
+  },
+  "delos-pad-dualshock4-stick-l-click": {
+    "codepoint": "F05C",
+    "regular": "controller/dualshock4/outline/stick-l-click.svg",
+    "fill": "controller/dualshock4/solid/stick-l-click.svg"
+  },
+  "delos-pad-dualshock4-stick-l-up": {
+    "codepoint": "F05D",
+    "regular": "controller/dualshock4/outline/stick-l-up.svg",
+    "fill": "controller/dualshock4/solid/stick-l-up.svg"
+  },
+  "delos-pad-dualshock4-stick-l-right": {
+    "codepoint": "F05E",
+    "regular": "controller/dualshock4/outline/stick-l-right.svg",
+    "fill": "controller/dualshock4/solid/stick-l-right.svg"
+  },
+  "delos-pad-dualshock4-stick-l-down": {
+    "codepoint": "F05F",
+    "regular": "controller/dualshock4/outline/stick-l-down.svg",
+    "fill": "controller/dualshock4/solid/stick-l-down.svg"
+  },
+  "delos-pad-dualshock4-stick-l-left": {
+    "codepoint": "F060",
+    "regular": "controller/dualshock4/outline/stick-l-left.svg",
+    "fill": "controller/dualshock4/solid/stick-l-left.svg"
+  },
+  "delos-pad-dualshock4-stick-r-neutral": {
+    "codepoint": "F061",
+    "regular": "controller/dualshock4/outline/stick-r-neutral.svg",
+    "fill": "controller/dualshock4/solid/stick-r-neutral.svg"
+  },
+  "delos-pad-dualshock4-stick-r-click": {
+    "codepoint": "F062",
+    "regular": "controller/dualshock4/outline/stick-r-click.svg",
+    "fill": "controller/dualshock4/solid/stick-r-click.svg"
+  },
+  "delos-pad-dualshock4-stick-r-up": {
+    "codepoint": "F063",
+    "regular": "controller/dualshock4/outline/stick-r-up.svg",
+    "fill": "controller/dualshock4/solid/stick-r-up.svg"
+  },
+  "delos-pad-dualshock4-stick-r-right": {
+    "codepoint": "F064",
+    "regular": "controller/dualshock4/outline/stick-r-right.svg",
+    "fill": "controller/dualshock4/solid/stick-r-right.svg"
+  },
+  "delos-pad-dualshock4-stick-r-down": {
+    "codepoint": "F065",
+    "regular": "controller/dualshock4/outline/stick-r-down.svg",
+    "fill": "controller/dualshock4/solid/stick-r-down.svg"
+  },
+  "delos-pad-dualshock4-stick-r-left": {
+    "codepoint": "F066",
+    "regular": "controller/dualshock4/outline/stick-r-left.svg",
+    "fill": "controller/dualshock4/solid/stick-r-left.svg"
+  },
+  "delos-pad-dualshock4-l1": {
+    "codepoint": "F067",
+    "regular": "controller/dualshock4/outline/l1.svg",
+    "fill": "controller/dualshock4/solid/l1.svg"
+  },
+  "delos-pad-dualshock4-r1": {
+    "codepoint": "F068",
+    "regular": "controller/dualshock4/outline/r1.svg",
+    "fill": "controller/dualshock4/solid/r1.svg"
+  },
+  "delos-pad-dualshock4-l2": {
+    "codepoint": "F069",
+    "regular": "controller/dualshock4/outline/l2.svg",
+    "fill": "controller/dualshock4/solid/l2.svg"
+  },
+  "delos-pad-dualshock4-r2": {
+    "codepoint": "F06A",
+    "regular": "controller/dualshock4/outline/r2.svg",
+    "fill": "controller/dualshock4/solid/r2.svg"
+  },
+  "delos-pad-dualshock4-stick-l-press": {
+    "codepoint": "F06B",
+    "regular": "controller/dualshock4/outline/stick-l-press.svg",
+    "fill": "controller/dualshock4/solid/stick-l-press.svg"
+  },
+  "delos-pad-dualshock4-stick-r-press": {
+    "codepoint": "F06C",
+    "regular": "controller/dualshock4/outline/stick-r-press.svg",
+    "fill": "controller/dualshock4/solid/stick-r-press.svg"
+  },
+  "delos-pad-dualshock4-touchpad": {
+    "codepoint": "F06D",
+    "regular": "controller/dualshock4/outline/touchpad.svg",
+    "fill": "controller/dualshock4/solid/touchpad.svg"
+  },
+  "delos-pad-dualshock4-touchpad-swipe-up": {
+    "codepoint": "F06E",
+    "regular": "controller/dualshock4/outline/touchpad-swipe-up.svg",
+    "fill": "controller/dualshock4/solid/touchpad-swipe-up.svg"
+  },
+  "delos-pad-dualshock4-touchpad-swipe-right": {
+    "codepoint": "F06F",
+    "regular": "controller/dualshock4/outline/touchpad-swipe-right.svg",
+    "fill": "controller/dualshock4/solid/touchpad-swipe-right.svg"
+  },
+  "delos-pad-dualshock4-touchpad-swipe-down": {
+    "codepoint": "F070",
+    "regular": "controller/dualshock4/outline/touchpad-swipe-down.svg",
+    "fill": "controller/dualshock4/solid/touchpad-swipe-down.svg"
+  },
+  "delos-pad-dualshock4-touchpad-swipe-left": {
+    "codepoint": "F071",
+    "regular": "controller/dualshock4/outline/touchpad-swipe-left.svg",
+    "fill": "controller/dualshock4/solid/touchpad-swipe-left.svg"
+  },
+  "delos-pad-dualshock4-sticks": {
+    "codepoint": "F072",
+    "regular": "controller/dualshock4/outline/sticks.svg",
+    "fill": "controller/dualshock4/solid/sticks.svg"
+  },
+  "delos-pad-joycon-a": {
+    "codepoint": "F073",
+    "regular": "controller/joycon/outline/a.svg",
+    "fill": "controller/joycon/solid/a.svg"
+  },
+  "delos-pad-joycon-b": {
+    "codepoint": "F074",
+    "regular": "controller/joycon/outline/b.svg",
+    "fill": "controller/joycon/solid/b.svg"
+  },
+  "delos-pad-joycon-x": {
+    "codepoint": "F075",
+    "regular": "controller/joycon/outline/x.svg",
+    "fill": "controller/joycon/solid/x.svg"
+  },
+  "delos-pad-joycon-y": {
+    "codepoint": "F076",
+    "regular": "controller/joycon/outline/y.svg",
+    "fill": "controller/joycon/solid/y.svg"
+  },
+  "delos-pad-joycon-home": {
+    "codepoint": "F077",
+    "regular": "controller/joycon/outline/home.svg",
+    "fill": "controller/joycon/solid/home.svg"
+  },
+  "delos-pad-joycon-capture": {
+    "codepoint": "F078",
+    "regular": "controller/joycon/outline/capture.svg",
+    "fill": "controller/joycon/solid/capture.svg"
+  },
+  "delos-pad-joycon-pair": {
+    "codepoint": "F079",
+    "regular": "controller/joycon/outline/pair.svg",
+    "fill": "controller/joycon/solid/pair.svg"
+  },
+  "delos-pad-joycon-dpad-neutral": {
+    "codepoint": "F07A",
+    "regular": "controller/joycon/outline/dpad-neutral.svg",
+    "fill": "controller/joycon/solid/dpad-neutral.svg"
+  },
+  "delos-pad-joycon-dpad-up": {
+    "codepoint": "F07B",
+    "regular": "controller/joycon/outline/dpad-up.svg",
+    "fill": "controller/joycon/solid/dpad-up.svg"
+  },
+  "delos-pad-joycon-dpad-right": {
+    "codepoint": "F07C",
+    "regular": "controller/joycon/outline/dpad-right.svg",
+    "fill": "controller/joycon/solid/dpad-right.svg"
+  },
+  "delos-pad-joycon-dpad-down": {
+    "codepoint": "F07D",
+    "regular": "controller/joycon/outline/dpad-down.svg",
+    "fill": "controller/joycon/solid/dpad-down.svg"
+  },
+  "delos-pad-joycon-dpad-left": {
+    "codepoint": "F07E",
+    "regular": "controller/joycon/outline/dpad-left.svg",
+    "fill": "controller/joycon/solid/dpad-left.svg"
+  },
+  "delos-pad-joycon-stick-l-neutral": {
+    "codepoint": "F07F",
+    "regular": "controller/joycon/outline/stick-l-neutral.svg",
+    "fill": "controller/joycon/solid/stick-l-neutral.svg"
+  },
+  "delos-pad-joycon-stick-l-click": {
+    "codepoint": "F080",
+    "regular": "controller/joycon/outline/stick-l-click.svg",
+    "fill": "controller/joycon/solid/stick-l-click.svg"
+  },
+  "delos-pad-joycon-stick-l-up": {
+    "codepoint": "F081",
+    "regular": "controller/joycon/outline/stick-l-up.svg",
+    "fill": "controller/joycon/solid/stick-l-up.svg"
+  },
+  "delos-pad-joycon-stick-l-right": {
+    "codepoint": "F082",
+    "regular": "controller/joycon/outline/stick-l-right.svg",
+    "fill": "controller/joycon/solid/stick-l-right.svg"
+  },
+  "delos-pad-joycon-stick-l-down": {
+    "codepoint": "F083",
+    "regular": "controller/joycon/outline/stick-l-down.svg",
+    "fill": "controller/joycon/solid/stick-l-down.svg"
+  },
+  "delos-pad-joycon-stick-l-left": {
+    "codepoint": "F084",
+    "regular": "controller/joycon/outline/stick-l-left.svg",
+    "fill": "controller/joycon/solid/stick-l-left.svg"
+  },
+  "delos-pad-joycon-stick-r-neutral": {
+    "codepoint": "F085",
+    "regular": "controller/joycon/outline/stick-r-neutral.svg",
+    "fill": "controller/joycon/solid/stick-r-neutral.svg"
+  },
+  "delos-pad-joycon-stick-r-click": {
+    "codepoint": "F086",
+    "regular": "controller/joycon/outline/stick-r-click.svg",
+    "fill": "controller/joycon/solid/stick-r-click.svg"
+  },
+  "delos-pad-joycon-stick-r-up": {
+    "codepoint": "F087",
+    "regular": "controller/joycon/outline/stick-r-up.svg",
+    "fill": "controller/joycon/solid/stick-r-up.svg"
+  },
+  "delos-pad-joycon-stick-r-right": {
+    "codepoint": "F088",
+    "regular": "controller/joycon/outline/stick-r-right.svg",
+    "fill": "controller/joycon/solid/stick-r-right.svg"
+  },
+  "delos-pad-joycon-stick-r-down": {
+    "codepoint": "F089",
+    "regular": "controller/joycon/outline/stick-r-down.svg",
+    "fill": "controller/joycon/solid/stick-r-down.svg"
+  },
+  "delos-pad-joycon-stick-r-left": {
+    "codepoint": "F08A",
+    "regular": "controller/joycon/outline/stick-r-left.svg",
+    "fill": "controller/joycon/solid/stick-r-left.svg"
+  },
+  "delos-pad-joycon-l": {
+    "codepoint": "F08B",
+    "regular": "controller/joycon/outline/l.svg",
+    "fill": "controller/joycon/solid/l.svg"
+  },
+  "delos-pad-joycon-r": {
+    "codepoint": "F08C",
+    "regular": "controller/joycon/outline/r.svg",
+    "fill": "controller/joycon/solid/r.svg"
+  },
+  "delos-pad-joycon-zl": {
+    "codepoint": "F08D",
+    "regular": "controller/joycon/outline/zl.svg",
+    "fill": "controller/joycon/solid/zl.svg"
+  },
+  "delos-pad-joycon-zr": {
+    "codepoint": "F08E",
+    "regular": "controller/joycon/outline/zr.svg",
+    "fill": "controller/joycon/solid/zr.svg"
+  },
+  "delos-pad-joycon-direction-up": {
+    "codepoint": "F08F",
+    "regular": "controller/joycon/outline/direction-up.svg",
+    "fill": "controller/joycon/solid/direction-up.svg"
+  },
+  "delos-pad-joycon-direction-right": {
+    "codepoint": "F090",
+    "regular": "controller/joycon/outline/direction-right.svg",
+    "fill": "controller/joycon/solid/direction-right.svg"
+  },
+  "delos-pad-joycon-direction-down": {
+    "codepoint": "F091",
+    "regular": "controller/joycon/outline/direction-down.svg",
+    "fill": "controller/joycon/solid/direction-down.svg"
+  },
+  "delos-pad-joycon-direction-left": {
+    "codepoint": "F092",
+    "regular": "controller/joycon/outline/direction-left.svg",
+    "fill": "controller/joycon/solid/direction-left.svg"
+  },
+  "delos-pad-joycon-stick-l-press": {
+    "codepoint": "F093",
+    "regular": "controller/joycon/outline/stick-l-press.svg",
+    "fill": "controller/joycon/solid/stick-l-press.svg"
+  },
+  "delos-pad-joycon-stick-r-press": {
+    "codepoint": "F094",
+    "regular": "controller/joycon/outline/stick-r-press.svg",
+    "fill": "controller/joycon/solid/stick-r-press.svg"
+  },
+  "delos-pad-joycon-plus": {
+    "codepoint": "F095",
+    "regular": "controller/joycon/outline/plus.svg",
+    "fill": "controller/joycon/solid/plus.svg"
+  },
+  "delos-pad-joycon-minus": {
+    "codepoint": "F096",
+    "regular": "controller/joycon/outline/minus.svg",
+    "fill": "controller/joycon/solid/minus.svg"
+  },
+  "delos-pad-joycon-motion-up": {
+    "codepoint": "F097",
+    "regular": "controller/joycon/outline/motion-up.svg",
+    "fill": "controller/joycon/solid/motion-up.svg"
+  },
+  "delos-pad-joycon-motion-right": {
+    "codepoint": "F098",
+    "regular": "controller/joycon/outline/motion-right.svg",
+    "fill": "controller/joycon/solid/motion-right.svg"
+  },
+  "delos-pad-joycon-motion-down": {
+    "codepoint": "F099",
+    "regular": "controller/joycon/outline/motion-down.svg",
+    "fill": "controller/joycon/solid/motion-down.svg"
+  },
+  "delos-pad-joycon-motion-left": {
+    "codepoint": "F09A",
+    "regular": "controller/joycon/outline/motion-left.svg",
+    "fill": "controller/joycon/solid/motion-left.svg"
+  },
+  "delos-mac-letter-a": {
+    "codepoint": "F09B",
+    "regular": "mac/outline/letter-a.svg",
+    "fill": "mac/solid/letter-a.svg"
+  },
+  "delos-mac-letter-b": {
+    "codepoint": "F09C",
+    "regular": "mac/outline/letter-b.svg",
+    "fill": "mac/solid/letter-b.svg"
+  },
+  "delos-mac-letter-c": {
+    "codepoint": "F09D",
+    "regular": "mac/outline/letter-c.svg",
+    "fill": "mac/solid/letter-c.svg"
+  },
+  "delos-mac-letter-d": {
+    "codepoint": "F09E",
+    "regular": "mac/outline/letter-d.svg",
+    "fill": "mac/solid/letter-d.svg"
+  },
+  "delos-mac-letter-e": {
+    "codepoint": "F09F",
+    "regular": "mac/outline/letter-e.svg",
+    "fill": "mac/solid/letter-e.svg"
+  },
+  "delos-mac-letter-f": {
+    "codepoint": "F0A0",
+    "regular": "mac/outline/letter-f.svg",
+    "fill": "mac/solid/letter-f.svg"
+  },
+  "delos-mac-letter-g": {
+    "codepoint": "F0A1",
+    "regular": "mac/outline/letter-g.svg",
+    "fill": "mac/solid/letter-g.svg"
+  },
+  "delos-mac-letter-h": {
+    "codepoint": "F0A2",
+    "regular": "mac/outline/letter-h.svg",
+    "fill": "mac/solid/letter-h.svg"
+  },
+  "delos-mac-letter-i": {
+    "codepoint": "F0A3",
+    "regular": "mac/outline/letter-i.svg",
+    "fill": "mac/solid/letter-i.svg"
+  },
+  "delos-mac-letter-j": {
+    "codepoint": "F0A4",
+    "regular": "mac/outline/letter-j.svg",
+    "fill": "mac/solid/letter-j.svg"
+  },
+  "delos-mac-letter-k": {
+    "codepoint": "F0A5",
+    "regular": "mac/outline/letter-k.svg",
+    "fill": "mac/solid/letter-k.svg"
+  },
+  "delos-mac-letter-l": {
+    "codepoint": "F0A6",
+    "regular": "mac/outline/letter-l.svg",
+    "fill": "mac/solid/letter-l.svg"
+  },
+  "delos-mac-letter-m": {
+    "codepoint": "F0A7",
+    "regular": "mac/outline/letter-m.svg",
+    "fill": "mac/solid/letter-m.svg"
+  },
+  "delos-mac-letter-n": {
+    "codepoint": "F0A8",
+    "regular": "mac/outline/letter-n.svg",
+    "fill": "mac/solid/letter-n.svg"
+  },
+  "delos-mac-letter-o": {
+    "codepoint": "F0A9",
+    "regular": "mac/outline/letter-o.svg",
+    "fill": "mac/solid/letter-o.svg"
+  },
+  "delos-mac-letter-p": {
+    "codepoint": "F0AA",
+    "regular": "mac/outline/letter-p.svg",
+    "fill": "mac/solid/letter-p.svg"
+  },
+  "delos-mac-letter-q": {
+    "codepoint": "F0AB",
+    "regular": "mac/outline/letter-q.svg",
+    "fill": "mac/solid/letter-q.svg"
+  },
+  "delos-mac-letter-r": {
+    "codepoint": "F0AC",
+    "regular": "mac/outline/letter-r.svg",
+    "fill": "mac/solid/letter-r.svg"
+  },
+  "delos-mac-letter-s": {
+    "codepoint": "F0AD",
+    "regular": "mac/outline/letter-s.svg",
+    "fill": "mac/solid/letter-s.svg"
+  },
+  "delos-mac-letter-t": {
+    "codepoint": "F0AE",
+    "regular": "mac/outline/letter-t.svg",
+    "fill": "mac/solid/letter-t.svg"
+  },
+  "delos-mac-letter-u": {
+    "codepoint": "F0AF",
+    "regular": "mac/outline/letter-u.svg",
+    "fill": "mac/solid/letter-u.svg"
+  },
+  "delos-mac-letter-v": {
+    "codepoint": "F0B0",
+    "regular": "mac/outline/letter-v.svg",
+    "fill": "mac/solid/letter-v.svg"
+  },
+  "delos-mac-letter-w": {
+    "codepoint": "F0B1",
+    "regular": "mac/outline/letter-w.svg",
+    "fill": "mac/solid/letter-w.svg"
+  },
+  "delos-mac-letter-x": {
+    "codepoint": "F0B2",
+    "regular": "mac/outline/letter-x.svg",
+    "fill": "mac/solid/letter-x.svg"
+  },
+  "delos-mac-letter-y": {
+    "codepoint": "F0B3",
+    "regular": "mac/outline/letter-y.svg",
+    "fill": "mac/solid/letter-y.svg"
+  },
+  "delos-mac-letter-z": {
+    "codepoint": "F0B4",
+    "regular": "mac/outline/letter-z.svg",
+    "fill": "mac/solid/letter-z.svg"
+  },
+  "delos-mac-digit-0": {
+    "codepoint": "F0B5",
+    "regular": "mac/outline/digit-0.svg",
+    "fill": "mac/solid/digit-0.svg"
+  },
+  "delos-mac-digit-1": {
+    "codepoint": "F0B6",
+    "regular": "mac/outline/digit-1.svg",
+    "fill": "mac/solid/digit-1.svg"
+  },
+  "delos-mac-digit-2": {
+    "codepoint": "F0B7",
+    "regular": "mac/outline/digit-2.svg",
+    "fill": "mac/solid/digit-2.svg"
+  },
+  "delos-mac-digit-3": {
+    "codepoint": "F0B8",
+    "regular": "mac/outline/digit-3.svg",
+    "fill": "mac/solid/digit-3.svg"
+  },
+  "delos-mac-digit-4": {
+    "codepoint": "F0B9",
+    "regular": "mac/outline/digit-4.svg",
+    "fill": "mac/solid/digit-4.svg"
+  },
+  "delos-mac-digit-5": {
+    "codepoint": "F0BA",
+    "regular": "mac/outline/digit-5.svg",
+    "fill": "mac/solid/digit-5.svg"
+  },
+  "delos-mac-digit-6": {
+    "codepoint": "F0BB",
+    "regular": "mac/outline/digit-6.svg",
+    "fill": "mac/solid/digit-6.svg"
+  },
+  "delos-mac-digit-7": {
+    "codepoint": "F0BC",
+    "regular": "mac/outline/digit-7.svg",
+    "fill": "mac/solid/digit-7.svg"
+  },
+  "delos-mac-digit-8": {
+    "codepoint": "F0BD",
+    "regular": "mac/outline/digit-8.svg",
+    "fill": "mac/solid/digit-8.svg"
+  },
+  "delos-mac-digit-9": {
+    "codepoint": "F0BE",
+    "regular": "mac/outline/digit-9.svg",
+    "fill": "mac/solid/digit-9.svg"
+  },
+  "delos-mac-f1": {
+    "codepoint": "F0BF",
+    "regular": "mac/outline/f1.svg",
+    "fill": "mac/solid/f1.svg"
+  },
+  "delos-mac-f2": {
+    "codepoint": "F0C0",
+    "regular": "mac/outline/f2.svg",
+    "fill": "mac/solid/f2.svg"
+  },
+  "delos-mac-f3": {
+    "codepoint": "F0C1",
+    "regular": "mac/outline/f3.svg",
+    "fill": "mac/solid/f3.svg"
+  },
+  "delos-mac-f4": {
+    "codepoint": "F0C2",
+    "regular": "mac/outline/f4.svg",
+    "fill": "mac/solid/f4.svg"
+  },
+  "delos-mac-f5": {
+    "codepoint": "F0C3",
+    "regular": "mac/outline/f5.svg",
+    "fill": "mac/solid/f5.svg"
+  },
+  "delos-mac-f6": {
+    "codepoint": "F0C4",
+    "regular": "mac/outline/f6.svg",
+    "fill": "mac/solid/f6.svg"
+  },
+  "delos-mac-f7": {
+    "codepoint": "F0C5",
+    "regular": "mac/outline/f7.svg",
+    "fill": "mac/solid/f7.svg"
+  },
+  "delos-mac-f8": {
+    "codepoint": "F0C6",
+    "regular": "mac/outline/f8.svg",
+    "fill": "mac/solid/f8.svg"
+  },
+  "delos-mac-f9": {
+    "codepoint": "F0C7",
+    "regular": "mac/outline/f9.svg",
+    "fill": "mac/solid/f9.svg"
+  },
+  "delos-mac-f10": {
+    "codepoint": "F0C8",
+    "regular": "mac/outline/f10.svg",
+    "fill": "mac/solid/f10.svg"
+  },
+  "delos-mac-f11": {
+    "codepoint": "F0C9",
+    "regular": "mac/outline/f11.svg",
+    "fill": "mac/solid/f11.svg"
+  },
+  "delos-mac-f12": {
+    "codepoint": "F0CA",
+    "regular": "mac/outline/f12.svg",
+    "fill": "mac/solid/f12.svg"
+  },
+  "delos-mac-f13": {
+    "codepoint": "F0CB",
+    "regular": "mac/outline/f13.svg",
+    "fill": "mac/solid/f13.svg"
+  },
+  "delos-mac-f14": {
+    "codepoint": "F0CC",
+    "regular": "mac/outline/f14.svg",
+    "fill": "mac/solid/f14.svg"
+  },
+  "delos-mac-f15": {
+    "codepoint": "F0CD",
+    "regular": "mac/outline/f15.svg",
+    "fill": "mac/solid/f15.svg"
+  },
+  "delos-mac-f16": {
+    "codepoint": "F0CE",
+    "regular": "mac/outline/f16.svg",
+    "fill": "mac/solid/f16.svg"
+  },
+  "delos-mac-f17": {
+    "codepoint": "F0CF",
+    "regular": "mac/outline/f17.svg",
+    "fill": "mac/solid/f17.svg"
+  },
+  "delos-mac-f18": {
+    "codepoint": "F0D0",
+    "regular": "mac/outline/f18.svg",
+    "fill": "mac/solid/f18.svg"
+  },
+  "delos-mac-f19": {
+    "codepoint": "F0D1",
+    "regular": "mac/outline/f19.svg",
+    "fill": "mac/solid/f19.svg"
+  },
+  "delos-mac-f20": {
+    "codepoint": "F0D2",
+    "regular": "mac/outline/f20.svg",
+    "fill": "mac/solid/f20.svg"
+  },
+  "delos-mac-grave": {
+    "codepoint": "F0D3",
+    "regular": "mac/outline/grave.svg",
+    "fill": "mac/solid/grave.svg"
+  },
+  "delos-mac-minus": {
+    "codepoint": "F0D4",
+    "regular": "mac/outline/minus.svg",
+    "fill": "mac/solid/minus.svg"
+  },
+  "delos-mac-equal": {
+    "codepoint": "F0D5",
+    "regular": "mac/outline/equal.svg",
+    "fill": "mac/solid/equal.svg"
+  },
+  "delos-mac-left-bracket": {
+    "codepoint": "F0D6",
+    "regular": "mac/outline/left-bracket.svg",
+    "fill": "mac/solid/left-bracket.svg"
+  },
+  "delos-mac-right-bracket": {
+    "codepoint": "F0D7",
+    "regular": "mac/outline/right-bracket.svg",
+    "fill": "mac/solid/right-bracket.svg"
+  },
+  "delos-mac-backslash": {
+    "codepoint": "F0D8",
+    "regular": "mac/outline/backslash.svg",
+    "fill": "mac/solid/backslash.svg"
+  },
+  "delos-mac-semicolon": {
+    "codepoint": "F0D9",
+    "regular": "mac/outline/semicolon.svg",
+    "fill": "mac/solid/semicolon.svg"
+  },
+  "delos-mac-apostrophe": {
+    "codepoint": "F0DA",
+    "regular": "mac/outline/apostrophe.svg",
+    "fill": "mac/solid/apostrophe.svg"
+  },
+  "delos-mac-comma": {
+    "codepoint": "F0DB",
+    "regular": "mac/outline/comma.svg",
+    "fill": "mac/solid/comma.svg"
+  },
+  "delos-mac-period": {
+    "codepoint": "F0DC",
+    "regular": "mac/outline/period.svg",
+    "fill": "mac/solid/period.svg"
+  },
+  "delos-mac-slash": {
+    "codepoint": "F0DD",
+    "regular": "mac/outline/slash.svg",
+    "fill": "mac/solid/slash.svg"
+  },
+  "delos-mac-section": {
+    "codepoint": "F0DE",
+    "regular": "mac/outline/section.svg",
+    "fill": "mac/solid/section.svg"
+  },
+  "delos-mac-plus": {
+    "codepoint": "F0DF",
+    "regular": "mac/outline/plus.svg",
+    "fill": "mac/solid/plus.svg"
+  },
+  "delos-mac-less": {
+    "codepoint": "F0E0",
+    "regular": "mac/outline/less.svg",
+    "fill": "mac/solid/less.svg"
+  },
+  "delos-mac-greater": {
+    "codepoint": "F0E1",
+    "regular": "mac/outline/greater.svg",
+    "fill": "mac/solid/greater.svg"
+  },
+  "delos-mac-command": {
+    "codepoint": "F0E2",
+    "regular": "mac/outline/command.svg",
+    "fill": "mac/solid/command.svg"
+  },
+  "delos-mac-option": {
+    "codepoint": "F0E3",
+    "regular": "mac/outline/option.svg",
+    "fill": "mac/solid/option.svg"
+  },
+  "delos-mac-control": {
+    "codepoint": "F0E4",
+    "regular": "mac/outline/control.svg",
+    "fill": "mac/solid/control.svg"
+  },
+  "delos-mac-shift": {
+    "codepoint": "F0E5",
+    "regular": "mac/outline/shift.svg",
+    "fill": "mac/solid/shift.svg"
+  },
+  "delos-mac-caps-lock": {
+    "codepoint": "F0E6",
+    "regular": "mac/outline/caps-lock.svg",
+    "fill": "mac/solid/caps-lock.svg"
+  },
+  "delos-mac-fn": {
+    "codepoint": "F0E7",
+    "regular": "mac/outline/fn.svg",
+    "fill": "mac/solid/fn.svg"
+  },
+  "delos-mac-escape": {
+    "codepoint": "F0E8",
+    "regular": "mac/outline/escape.svg",
+    "fill": "mac/solid/escape.svg"
+  },
+  "delos-mac-globe": {
+    "codepoint": "F0E9",
+    "regular": "mac/outline/globe.svg",
+    "fill": "mac/solid/globe.svg"
+  },
+  "delos-mac-arrow-up": {
+    "codepoint": "F0EA",
+    "regular": "mac/outline/arrow-up.svg",
+    "fill": "mac/solid/arrow-up.svg"
+  },
+  "delos-mac-arrow-right": {
+    "codepoint": "F0EB",
+    "regular": "mac/outline/arrow-right.svg",
+    "fill": "mac/solid/arrow-right.svg"
+  },
+  "delos-mac-arrow-down": {
+    "codepoint": "F0EC",
+    "regular": "mac/outline/arrow-down.svg",
+    "fill": "mac/solid/arrow-down.svg"
+  },
+  "delos-mac-arrow-left": {
+    "codepoint": "F0ED",
+    "regular": "mac/outline/arrow-left.svg",
+    "fill": "mac/solid/arrow-left.svg"
+  },
+  "delos-mac-return": {
+    "codepoint": "F0EE",
+    "regular": "mac/outline/return.svg",
+    "fill": "mac/solid/return.svg"
+  },
+  "delos-mac-return-iso": {
+    "codepoint": "F0EF",
+    "regular": "mac/outline/return-iso.svg",
+    "fill": "mac/solid/return-iso.svg"
+  },
+  "delos-mac-enter": {
+    "codepoint": "F0F0",
+    "regular": "mac/outline/enter.svg",
+    "fill": "mac/solid/enter.svg"
+  },
+  "delos-mac-tab": {
+    "codepoint": "F0F1",
+    "regular": "mac/outline/tab.svg",
+    "fill": "mac/solid/tab.svg"
+  },
+  "delos-mac-delete": {
+    "codepoint": "F0F2",
+    "regular": "mac/outline/delete.svg",
+    "fill": "mac/solid/delete.svg"
+  },
+  "delos-mac-forward-delete": {
+    "codepoint": "F0F3",
+    "regular": "mac/outline/forward-delete.svg",
+    "fill": "mac/solid/forward-delete.svg"
+  },
+  "delos-mac-space": {
+    "codepoint": "F0F4",
+    "regular": "mac/outline/space.svg",
+    "fill": "mac/solid/space.svg"
+  },
+  "delos-mac-home": {
+    "codepoint": "F0F5",
+    "regular": "mac/outline/home.svg",
+    "fill": "mac/solid/home.svg"
+  },
+  "delos-mac-end": {
+    "codepoint": "F0F6",
+    "regular": "mac/outline/end.svg",
+    "fill": "mac/solid/end.svg"
+  },
+  "delos-mac-page-up": {
+    "codepoint": "F0F7",
+    "regular": "mac/outline/page-up.svg",
+    "fill": "mac/solid/page-up.svg"
+  },
+  "delos-mac-page-down": {
+    "codepoint": "F0F8",
+    "regular": "mac/outline/page-down.svg",
+    "fill": "mac/solid/page-down.svg"
+  },
+  "delos-mac-keypad-clear": {
+    "codepoint": "F0F9",
+    "regular": "mac/outline/keypad-clear.svg",
+    "fill": "mac/solid/keypad-clear.svg"
+  },
+  "delos-mac-keypad-equal": {
+    "codepoint": "F0FA",
+    "regular": "mac/outline/keypad-equal.svg",
+    "fill": "mac/solid/keypad-equal.svg"
+  },
+  "delos-mac-keypad-divide": {
+    "codepoint": "F0FB",
+    "regular": "mac/outline/keypad-divide.svg",
+    "fill": "mac/solid/keypad-divide.svg"
+  },
+  "delos-mac-keypad-multiply": {
+    "codepoint": "F0FC",
+    "regular": "mac/outline/keypad-multiply.svg",
+    "fill": "mac/solid/keypad-multiply.svg"
+  },
+  "delos-mac-keypad-minus": {
+    "codepoint": "F0FD",
+    "regular": "mac/outline/keypad-minus.svg",
+    "fill": "mac/solid/keypad-minus.svg"
+  },
+  "delos-mac-keypad-plus": {
+    "codepoint": "F0FE",
+    "regular": "mac/outline/keypad-plus.svg",
+    "fill": "mac/solid/keypad-plus.svg"
+  },
+  "delos-mac-keypad-decimal": {
+    "codepoint": "F0FF",
+    "regular": "mac/outline/keypad-decimal.svg",
+    "fill": "mac/solid/keypad-decimal.svg"
+  },
+  "delos-mac-keypad-0": {
+    "codepoint": "F100",
+    "regular": "mac/outline/keypad-0.svg",
+    "fill": "mac/solid/keypad-0.svg"
+  },
+  "delos-mac-keypad-1": {
+    "codepoint": "F101",
+    "regular": "mac/outline/keypad-1.svg",
+    "fill": "mac/solid/keypad-1.svg"
+  },
+  "delos-mac-keypad-2": {
+    "codepoint": "F102",
+    "regular": "mac/outline/keypad-2.svg",
+    "fill": "mac/solid/keypad-2.svg"
+  },
+  "delos-mac-keypad-3": {
+    "codepoint": "F103",
+    "regular": "mac/outline/keypad-3.svg",
+    "fill": "mac/solid/keypad-3.svg"
+  },
+  "delos-mac-keypad-4": {
+    "codepoint": "F104",
+    "regular": "mac/outline/keypad-4.svg",
+    "fill": "mac/solid/keypad-4.svg"
+  },
+  "delos-mac-keypad-5": {
+    "codepoint": "F105",
+    "regular": "mac/outline/keypad-5.svg",
+    "fill": "mac/solid/keypad-5.svg"
+  },
+  "delos-mac-keypad-6": {
+    "codepoint": "F106",
+    "regular": "mac/outline/keypad-6.svg",
+    "fill": "mac/solid/keypad-6.svg"
+  },
+  "delos-mac-keypad-7": {
+    "codepoint": "F107",
+    "regular": "mac/outline/keypad-7.svg",
+    "fill": "mac/solid/keypad-7.svg"
+  },
+  "delos-mac-keypad-8": {
+    "codepoint": "F108",
+    "regular": "mac/outline/keypad-8.svg",
+    "fill": "mac/solid/keypad-8.svg"
+  },
+  "delos-mac-keypad-9": {
+    "codepoint": "F109",
+    "regular": "mac/outline/keypad-9.svg",
+    "fill": "mac/solid/keypad-9.svg"
+  },
+  "delos-mac-brightness-down": {
+    "codepoint": "F10A",
+    "regular": "mac/outline/brightness-down.svg",
+    "fill": "mac/solid/brightness-down.svg"
+  },
+  "delos-mac-brightness-up": {
+    "codepoint": "F10B",
+    "regular": "mac/outline/brightness-up.svg",
+    "fill": "mac/solid/brightness-up.svg"
+  },
+  "delos-mac-mission-control": {
+    "codepoint": "F10C",
+    "regular": "mac/outline/mission-control.svg",
+    "fill": "mac/solid/mission-control.svg"
+  },
+  "delos-mac-spotlight": {
+    "codepoint": "F10D",
+    "regular": "mac/outline/spotlight.svg",
+    "fill": "mac/solid/spotlight.svg"
+  },
+  "delos-mac-dictation": {
+    "codepoint": "F10E",
+    "regular": "mac/outline/dictation.svg",
+    "fill": "mac/solid/dictation.svg"
+  },
+  "delos-mac-do-not-disturb": {
+    "codepoint": "F10F",
+    "regular": "mac/outline/do-not-disturb.svg",
+    "fill": "mac/solid/do-not-disturb.svg"
+  },
+  "delos-mac-play-pause": {
+    "codepoint": "F110",
+    "regular": "mac/outline/play-pause.svg",
+    "fill": "mac/solid/play-pause.svg"
+  },
+  "delos-mac-next": {
+    "codepoint": "F111",
+    "regular": "mac/outline/next.svg",
+    "fill": "mac/solid/next.svg"
+  },
+  "delos-mac-previous": {
+    "codepoint": "F112",
+    "regular": "mac/outline/previous.svg",
+    "fill": "mac/solid/previous.svg"
+  },
+  "delos-mac-mute": {
+    "codepoint": "F113",
+    "regular": "mac/outline/mute.svg",
+    "fill": "mac/solid/mute.svg"
+  },
+  "delos-mac-volume-down": {
+    "codepoint": "F114",
+    "regular": "mac/outline/volume-down.svg",
+    "fill": "mac/solid/volume-down.svg"
+  },
+  "delos-mac-volume-up": {
+    "codepoint": "F115",
+    "regular": "mac/outline/volume-up.svg",
+    "fill": "mac/solid/volume-up.svg"
+  },
+  "delos-mac-eject": {
+    "codepoint": "F116",
+    "regular": "mac/outline/eject.svg",
+    "fill": "mac/solid/eject.svg"
+  },
+  "delos-mac-power": {
+    "codepoint": "F117",
+    "regular": "mac/outline/power.svg",
+    "fill": "mac/solid/power.svg"
+  },
+  "delos-mac-touch-id": {
+    "codepoint": "F118",
+    "regular": "mac/outline/touch-id.svg",
+    "fill": "mac/solid/touch-id.svg"
+  },
+  "delos-mac-lock": {
+    "codepoint": "F119",
+    "regular": "mac/outline/lock.svg",
+    "fill": "mac/solid/lock.svg"
+  },
+  "delos-mac-context-menu": {
+    "codepoint": "F11A",
+    "regular": "mac/outline/context-menu.svg",
+    "fill": "mac/solid/context-menu.svg"
+  },
+  "delos-mac-keyboard-brightness-down": {
+    "codepoint": "F11B",
+    "regular": "mac/outline/keyboard-brightness-down.svg",
+    "fill": "mac/solid/keyboard-brightness-down.svg"
+  },
+  "delos-mac-keyboard-brightness-up": {
+    "codepoint": "F11C",
+    "regular": "mac/outline/keyboard-brightness-up.svg",
+    "fill": "mac/solid/keyboard-brightness-up.svg"
+  },
+  "delos-mac-launchpad": {
+    "codepoint": "F11D",
+    "regular": "mac/outline/launchpad.svg",
+    "fill": "mac/solid/launchpad.svg"
+  },
+  "delos-mac-mouse": {
+    "codepoint": "F11E",
+    "regular": "mac/outline/mouse.svg",
+    "fill": "mac/solid/mouse.svg"
+  },
+  "delos-mac-mouse-click-left": {
+    "codepoint": "F11F",
+    "regular": "mac/outline/mouse-click-left.svg",
+    "fill": "mac/solid/mouse-click-left.svg"
+  },
+  "delos-mac-mouse-click-right": {
+    "codepoint": "F120",
+    "regular": "mac/outline/mouse-click-right.svg",
+    "fill": "mac/solid/mouse-click-right.svg"
+  },
+  "delos-mac-mouse-click-middle": {
+    "codepoint": "F121",
+    "regular": "mac/outline/mouse-click-middle.svg",
+    "fill": "mac/solid/mouse-click-middle.svg"
+  },
+  "delos-mac-mouse-double-click": {
+    "codepoint": "F122",
+    "regular": "mac/outline/mouse-double-click.svg",
+    "fill": "mac/solid/mouse-double-click.svg"
+  },
+  "delos-mac-mouse-hold-left": {
+    "codepoint": "F123",
+    "regular": "mac/outline/mouse-hold-left.svg",
+    "fill": "mac/solid/mouse-hold-left.svg"
+  },
+  "delos-mac-mouse-move-up": {
+    "codepoint": "F124",
+    "regular": "mac/outline/mouse-move-up.svg",
+    "fill": "mac/solid/mouse-move-up.svg"
+  },
+  "delos-mac-mouse-move-right": {
+    "codepoint": "F125",
+    "regular": "mac/outline/mouse-move-right.svg",
+    "fill": "mac/solid/mouse-move-right.svg"
+  },
+  "delos-mac-mouse-move-down": {
+    "codepoint": "F126",
+    "regular": "mac/outline/mouse-move-down.svg",
+    "fill": "mac/solid/mouse-move-down.svg"
+  },
+  "delos-mac-mouse-move-left": {
+    "codepoint": "F127",
+    "regular": "mac/outline/mouse-move-left.svg",
+    "fill": "mac/solid/mouse-move-left.svg"
+  },
+  "delos-mac-mouse-move-vertical": {
+    "codepoint": "F128",
+    "regular": "mac/outline/mouse-move-vertical.svg",
+    "fill": "mac/solid/mouse-move-vertical.svg"
+  },
+  "delos-mac-mouse-move-horizontal": {
+    "codepoint": "F129",
+    "regular": "mac/outline/mouse-move-horizontal.svg",
+    "fill": "mac/solid/mouse-move-horizontal.svg"
+  },
+  "delos-mac-mouse-drag": {
+    "codepoint": "F12A",
+    "regular": "mac/outline/mouse-drag.svg",
+    "fill": "mac/solid/mouse-drag.svg"
+  },
+  "delos-mac-mouse-drop": {
+    "codepoint": "F12B",
+    "regular": "mac/outline/mouse-drop.svg",
+    "fill": "mac/solid/mouse-drop.svg"
+  },
+  "delos-mac-mouse-scroll-up": {
+    "codepoint": "F12C",
+    "regular": "mac/outline/mouse-scroll-up.svg",
+    "fill": "mac/solid/mouse-scroll-up.svg"
+  },
+  "delos-mac-mouse-scroll-down": {
+    "codepoint": "F12D",
+    "regular": "mac/outline/mouse-scroll-down.svg",
+    "fill": "mac/solid/mouse-scroll-down.svg"
+  },
+  "delos-mac-mouse-scroll-left": {
+    "codepoint": "F12E",
+    "regular": "mac/outline/mouse-scroll-left.svg",
+    "fill": "mac/solid/mouse-scroll-left.svg"
+  },
+  "delos-mac-mouse-scroll-right": {
+    "codepoint": "F12F",
+    "regular": "mac/outline/mouse-scroll-right.svg",
+    "fill": "mac/solid/mouse-scroll-right.svg"
+  },
+  "delos-mac-trackpad": {
+    "codepoint": "F130",
+    "regular": "mac/outline/trackpad.svg",
+    "fill": "mac/solid/trackpad.svg"
+  },
+  "delos-mac-trackpad-tap": {
+    "codepoint": "F131",
+    "regular": "mac/outline/trackpad-tap.svg",
+    "fill": "mac/solid/trackpad-tap.svg"
+  },
+  "delos-mac-trackpad-click": {
+    "codepoint": "F132",
+    "regular": "mac/outline/trackpad-click.svg",
+    "fill": "mac/solid/trackpad-click.svg"
+  },
+  "delos-mac-trackpad-secondary-click": {
+    "codepoint": "F133",
+    "regular": "mac/outline/trackpad-secondary-click.svg",
+    "fill": "mac/solid/trackpad-secondary-click.svg"
+  },
+  "delos-mac-trackpad-double-tap": {
+    "codepoint": "F134",
+    "regular": "mac/outline/trackpad-double-tap.svg",
+    "fill": "mac/solid/trackpad-double-tap.svg"
+  },
+  "delos-mac-trackpad-smart-zoom": {
+    "codepoint": "F135",
+    "regular": "mac/outline/trackpad-smart-zoom.svg",
+    "fill": "mac/solid/trackpad-smart-zoom.svg"
+  },
+  "delos-mac-trackpad-force-click": {
+    "codepoint": "F136",
+    "regular": "mac/outline/trackpad-force-click.svg",
+    "fill": "mac/solid/trackpad-force-click.svg"
+  },
+  "delos-mac-trackpad-scroll-up": {
+    "codepoint": "F137",
+    "regular": "mac/outline/trackpad-scroll-up.svg",
+    "fill": "mac/solid/trackpad-scroll-up.svg"
+  },
+  "delos-mac-trackpad-scroll-right": {
+    "codepoint": "F138",
+    "regular": "mac/outline/trackpad-scroll-right.svg",
+    "fill": "mac/solid/trackpad-scroll-right.svg"
+  },
+  "delos-mac-trackpad-scroll-down": {
+    "codepoint": "F139",
+    "regular": "mac/outline/trackpad-scroll-down.svg",
+    "fill": "mac/solid/trackpad-scroll-down.svg"
+  },
+  "delos-mac-trackpad-scroll-left": {
+    "codepoint": "F13A",
+    "regular": "mac/outline/trackpad-scroll-left.svg",
+    "fill": "mac/solid/trackpad-scroll-left.svg"
+  },
+  "delos-mac-trackpad-swipe-up": {
+    "codepoint": "F13B",
+    "regular": "mac/outline/trackpad-swipe-up.svg",
+    "fill": "mac/solid/trackpad-swipe-up.svg"
+  },
+  "delos-mac-trackpad-swipe-right": {
+    "codepoint": "F13C",
+    "regular": "mac/outline/trackpad-swipe-right.svg",
+    "fill": "mac/solid/trackpad-swipe-right.svg"
+  },
+  "delos-mac-trackpad-swipe-down": {
+    "codepoint": "F13D",
+    "regular": "mac/outline/trackpad-swipe-down.svg",
+    "fill": "mac/solid/trackpad-swipe-down.svg"
+  },
+  "delos-mac-trackpad-swipe-left": {
+    "codepoint": "F13E",
+    "regular": "mac/outline/trackpad-swipe-left.svg",
+    "fill": "mac/solid/trackpad-swipe-left.svg"
+  },
+  "delos-mac-trackpad-four-finger-swipe-up": {
+    "codepoint": "F13F",
+    "regular": "mac/outline/trackpad-four-finger-swipe-up.svg",
+    "fill": "mac/solid/trackpad-four-finger-swipe-up.svg"
+  },
+  "delos-mac-trackpad-four-finger-swipe-right": {
+    "codepoint": "F140",
+    "regular": "mac/outline/trackpad-four-finger-swipe-right.svg",
+    "fill": "mac/solid/trackpad-four-finger-swipe-right.svg"
+  },
+  "delos-mac-trackpad-four-finger-swipe-down": {
+    "codepoint": "F141",
+    "regular": "mac/outline/trackpad-four-finger-swipe-down.svg",
+    "fill": "mac/solid/trackpad-four-finger-swipe-down.svg"
+  },
+  "delos-mac-trackpad-four-finger-swipe-left": {
+    "codepoint": "F142",
+    "regular": "mac/outline/trackpad-four-finger-swipe-left.svg",
+    "fill": "mac/solid/trackpad-four-finger-swipe-left.svg"
+  },
+  "delos-mac-trackpad-three-finger-drag": {
+    "codepoint": "F143",
+    "regular": "mac/outline/trackpad-three-finger-drag.svg",
+    "fill": "mac/solid/trackpad-three-finger-drag.svg"
+  },
+  "delos-mac-trackpad-pinch-in": {
+    "codepoint": "F144",
+    "regular": "mac/outline/trackpad-pinch-in.svg",
+    "fill": "mac/solid/trackpad-pinch-in.svg"
+  },
+  "delos-mac-trackpad-zoom-out": {
+    "codepoint": "F145",
+    "regular": "mac/outline/trackpad-zoom-out.svg",
+    "fill": "mac/solid/trackpad-zoom-out.svg"
+  },
+  "delos-mac-trackpad-spread": {
+    "codepoint": "F146",
+    "regular": "mac/outline/trackpad-spread.svg",
+    "fill": "mac/solid/trackpad-spread.svg"
+  },
+  "delos-mac-trackpad-zoom-in": {
+    "codepoint": "F147",
+    "regular": "mac/outline/trackpad-zoom-in.svg",
+    "fill": "mac/solid/trackpad-zoom-in.svg"
+  },
+  "delos-mac-trackpad-rotate-clockwise": {
+    "codepoint": "F148",
+    "regular": "mac/outline/trackpad-rotate-clockwise.svg",
+    "fill": "mac/solid/trackpad-rotate-clockwise.svg"
+  },
+  "delos-mac-trackpad-rotate-counterclockwise": {
+    "codepoint": "F149",
+    "regular": "mac/outline/trackpad-rotate-counterclockwise.svg",
+    "fill": "mac/solid/trackpad-rotate-counterclockwise.svg"
+  },
+  "delos-mac-magic-mouse-neutral": {
+    "codepoint": "F14A",
+    "regular": "mac/outline/magic-mouse-neutral.svg",
+    "fill": "mac/solid/magic-mouse-neutral.svg"
+  },
+  "delos-mac-magic-mouse-primary-click": {
+    "codepoint": "F14B",
+    "regular": "mac/outline/magic-mouse-primary-click.svg",
+    "fill": "mac/solid/magic-mouse-primary-click.svg"
+  },
+  "delos-mac-magic-mouse-secondary-click": {
+    "codepoint": "F14C",
+    "regular": "mac/outline/magic-mouse-secondary-click.svg",
+    "fill": "mac/solid/magic-mouse-secondary-click.svg"
+  },
+  "delos-mac-magic-mouse-scroll": {
+    "codepoint": "F14D",
+    "regular": "mac/outline/magic-mouse-scroll.svg",
+    "fill": "mac/solid/magic-mouse-scroll.svg"
+  },
+  "delos-mac-magic-mouse-smart-zoom": {
+    "codepoint": "F14E",
+    "regular": "mac/outline/magic-mouse-smart-zoom.svg",
+    "fill": "mac/solid/magic-mouse-smart-zoom.svg"
+  },
+  "delos-mac-magic-mouse-mission-control": {
+    "codepoint": "F14F",
+    "regular": "mac/outline/magic-mouse-mission-control.svg",
+    "fill": "mac/solid/magic-mouse-mission-control.svg"
+  },
+  "delos-mac-magic-mouse-swipe-left": {
+    "codepoint": "F150",
+    "regular": "mac/outline/magic-mouse-swipe-left.svg",
+    "fill": "mac/solid/magic-mouse-swipe-left.svg"
+  },
+  "delos-mac-magic-mouse-swipe-right": {
+    "codepoint": "F151",
+    "regular": "mac/outline/magic-mouse-swipe-right.svg",
+    "fill": "mac/solid/magic-mouse-swipe-right.svg"
   }
 }

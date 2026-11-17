@@ -126,8 +126,6 @@
     <string name="summary_checkbox_remember_mouse_mode">Remember mouse mode selected during stream. When disabled, mouse mode changed during stream will be temporary.</string>
     <string name="title_checkbox_flip_face_buttons">Flip face buttons</string>
     <string name="summary_checkbox_flip_face_buttons">Switches the face buttons A/B and X/Y for gamepads and the on-screen controls</string>
-    <string name="title_checkbox_back_hold_guide">Hold Back for Guide</string>
-    <string name="summary_checkbox_back_hold_guide">Holding Back for half a second sends the Guide button to the PC; a short press is still Back</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Always control mouse with touchpad</string>
     <string name="summary_checkbox_gamepad_touchpad_as_mouse">Forces gamepad touchpad input to control the host mouse, even when emulating a gamepad with a touchpad.</string>
     <string name="title_checkbox_gamepad_motion_sensors">External gamepad gyroscope</string>

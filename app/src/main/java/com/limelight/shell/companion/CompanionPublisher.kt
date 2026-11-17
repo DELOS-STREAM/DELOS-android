@@ -19,6 +19,7 @@ import com.limelight.shell.data.ProfileStore
 import com.limelight.shell.screens.appArt
 import com.limelight.shell.screens.hdrBadgeKind
 import com.limelight.shell.settings.GameSettingsStore
+import com.limelight.shell.ui.fontSymbol
 import com.limelight.shell.ui.genreName
 import com.limelight.shell.ui.textResources
 import com.limelight.shell.ui.themeName
@@ -142,13 +143,17 @@ internal fun PublishCompanionContext(hints: List<com.limelight.shell.ui.Hint>, l
     }
     val running = (library as? com.limelight.shell.data.Library.Ready)?.apps?.firstOrNull { it.running }?.name
     val welcome = pcs.none { it.paired }
-    val context = remember(res, screen, hints, pc?.name, pc?.online, pc?.canWake, running, welcome) {
+    val family = com.limelight.shell.ui.ControllerGlyphs.family
+    val context = remember(res, screen, hints, family, pc?.name, pc?.online, pc?.canWake, running, welcome) {
         ShellContext(
             title = res.getString(screenTitle(screen)),
             purpose = res.getString(screenPurpose(screen)),
             hints = hints.map { hint ->
-                val glyph = hint.glyph
-                CompanionHint((glyph as? com.limelight.shell.ui.Glyph.Letter)?.text, (glyph as? com.limelight.shell.ui.Glyph.Icon)?.symbol, hint.label)
+                when (val glyph = hint.glyph) {
+                    is com.limelight.shell.ui.Glyph.Pad -> CompanionHint(null, family.fontSymbol(glyph.role), hint.label, completeButton = true)
+                    is com.limelight.shell.ui.Glyph.Cap -> CompanionHint(null, glyph.cap.symbols.joinToString(""), hint.label, completeButton = true)
+                    is com.limelight.shell.ui.Glyph.Icon -> CompanionHint(null, glyph.symbol, hint.label)
+                }
             },
             host = pc?.let { CompanionHostLine(it.name, pcStatusText(res, it), running) },
             welcome = welcome,

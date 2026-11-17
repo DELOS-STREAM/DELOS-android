@@ -636,7 +636,7 @@ The test uses the portal (`Portal`).
 
 | Element | Value |
 |---|---|
-| Cancel | Cancellable like a PC wake-up: B stops it, the hint bar says Cancel; on touch a tap shows a Cancel button that does the same |
+| Cancel | Cancellable like a PC wake-up: B stops it, the hint bar says Cancel; while a finger, a mouse or a keyboard is the input a Cancel pill under the PC does the same ([input kind](CONTROLS_AND_TEXT.md#input-kind)) |
 | Touch | The portal takes every touch while it is up, so nothing underneath reacts |
 | Orb | With the network-check icon |
 | Title | "Testing the link to <PC>" |

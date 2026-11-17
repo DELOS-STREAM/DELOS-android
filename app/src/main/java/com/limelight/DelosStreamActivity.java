@@ -56,6 +56,7 @@ import com.limelight.shell.ui.LaunchHandoff;
 import com.limelight.shell.LoaderKey;
 import com.limelight.shell.LoaderKeys;
 import com.limelight.shell.StreamLoader;
+import com.limelight.shell.ui.ControllerGlyphs;
 import com.limelight.shell.data.PlaytimeKey;
 import com.limelight.shell.data.PlaytimeStore;
 import com.limelight.shell.data.PlaytimeTracker;
@@ -263,6 +264,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ControllerGlyphs.INSTANCE.start(this);
         com.limelight.shell.DelosToastOverlay.attach(this);
 
         // External-display DelosStreamActivity runs as a separate task. Android otherwise applies its default
@@ -463,6 +465,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
                 public boolean onCapturedPointer(View view, MotionEvent motionEvent) {
 //                    LimeLog.info("onCapturedPointer="+motionEvent.toString());
 //                    LimeLog.info("onCapturedPointer-Device="+motionEvent.getDevice().toString());
+                    ControllerGlyphs.INSTANCE.motion(motionEvent);
                     return handleMotionEvent(view, motionEvent);
                 }
             });
@@ -2089,9 +2092,11 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
 
     // Delos: every way into the menu opens the Delos stream menu.
-    // The shortcut (L3+R3 or the buttons chosen in Delos) and the swipe up are checked before the stream.
+    // The buttons chosen in Delos (none by default) and the swipe up are checked before the stream; a tap of Guide/Home or
+    // Back is decided in ControllerHandler (issue #102).
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        ControllerGlyphs.INSTANCE.key(event);
         if (cancelLoaderOnKey(event)) {
             return true;
         }
@@ -2118,6 +2123,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
+        ControllerGlyphs.INSTANCE.touch(event);
         if (inputBlocked) {
             return true;
         }
@@ -2131,6 +2137,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        ControllerGlyphs.INSTANCE.motion(event);
         return inputBlocked || super.dispatchGenericMotionEvent(event);
     }
 

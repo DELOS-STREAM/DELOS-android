@@ -59,7 +59,7 @@ and touchscreen/cursor. Resume uses Play/Pause; starting an app uses Play. Ident
 closely related settings deliberately share a symbol across screens, including the per-app settings.
 
 The battery body is a custom drawing with a proportional charge fill; only its
-charging bolt comes from the icon font. Controller letters and the Delos logo are custom too.
+charging bolt comes from the icon font. Controller caps, their lettering and the Delos logo are local font glyphs too.
 
 ## Glyph origins (alignment)
 
@@ -89,6 +89,37 @@ resolves to **U+F000** in both subsets (`Symbols.LOGO`). Sources are
 `tools/fonts/logo/a-wordmark-plate-{regular,fill}.svg`. The other SVGs in `tools/fonts/logo/`
 (B "Title over a scene", C "Emblem + title") are candidates that were not chosen; they are not imported
 into the fonts. No company logo or real game wordmark is used in any of them.
+
+## Controller and Mac input glyph sources
+
+The approved library contains 337 complete control glyph pairs (674 native 256-unit SVGs):
+Xbox 38, DualSense 38, DualShock 4 38, Joy-Con 40 and Mac keyboard/mouse/trackpad 183.
+Canonical sources live in `tools/fonts/controller/<family>/{outline,solid}/` and
+`tools/fonts/mac/{outline,solid}/`. Outline maps to Regular and Solid maps to Fill.
+The SVG bytes are preserved from the approved artwork; rejected controller prototypes are not imported.
+These are complete caps, not letters to place inside an additional disc.
+For 38-unit cap ink on the 192/256 drawing area, use a font em size of 38 / 0.75
+(50.6667), without shrinking the source artwork.
+
+`custom.json` explicitly assigns U+F001–U+F151 in approved inventory order; U+F000 remains
+the Logo. Allocation checked every Unicode cmap in both complete, SHA-256-pinned
+Phosphor 2.1.2 source fonts, not just the bundled subsets. Keep these assignments stable.
+Local names are `delos-pad-<family>-<name>` and `delos-mac-<name>`.
+Semantic names are `PAD_XBOX_<NAME>`, `PAD_DUALSENSE_<NAME>`,
+`PAD_DUALSHOCK4_<NAME>`, `PAD_JOYCON_<NAME>` and `MAC_<NAME>` (hyphens become underscores).
+Nintendo physical south/east/west/north remains B/A/Y/X; generic face/menu controls use Xbox
+and generic shoulder/trigger labels retain L1/R1/L2/R2.
+
+The original hardware-informed geometry does not incorporate commercial icon packs or SF Symbols.
+Lettering derives from Figtree Medium and remains OFL-1.1, with notices beside both source sets
+and in the app's `Figtree-OFL.txt`. Xbox/PlayStation Guide marks derive from Simple Icons 11.0.0
+(CC0-1.0); `controller/brand-marks.json` retains original paths, versioned URLs and source hashes.
+`Simple-Icons-CC0.txt` is kept with the sources and in the app's licence assets.
+CC0 does not waive trademarks; the marks identify controls without endorsement.
+Source and notice digests are recorded in `third_party/CHECKSUMS.sha256`; upstream provenance
+is detailed in [THIRD_PARTY.md](THIRD_PARTY.md).
+
+## Adding custom glyphs
 
 `tools/fonts/custom.json` declares a local source name, explicit hexadecimal `codepoint`, and
 `regular`/`fill` SVG paths relative to `tools/fonts/`. To add a glyph:

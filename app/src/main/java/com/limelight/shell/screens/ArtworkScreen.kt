@@ -130,7 +130,6 @@ import com.limelight.shell.ui.FocusGlow
 import com.limelight.shell.ui.FocusRing
 import com.limelight.shell.ui.FocusTransferTarget
 import com.limelight.shell.ui.Glyph
-import com.limelight.shell.ui.GlyphButton
 import com.limelight.shell.ui.HeroMotion
 import com.limelight.shell.ui.InitialFocus
 import com.limelight.shell.ui.LocalDelosColors
@@ -474,7 +473,7 @@ fun ArtworkScreen(screen: Screen.Artwork) {
             label, Symbols.SEARCH_NAME, { openSearch() },
             Modifier.focusRequester(searchRequester).alpha(if (searchEnabled) 1f else .4f)
                 .then(if (searchEnabled) Modifier else Modifier.focusProperties { canFocus = false }),
-            clickCue = Cue.OPEN, compact = true, trailing = { GlyphButton(Glyph.X, 32) },
+            clickCue = Cue.OPEN, compact = true, glyph = Glyph.X,
         )
     }
     val filterPill: @Composable () -> Unit = {
@@ -483,10 +482,8 @@ fun ArtworkScreen(screen: Screen.Artwork) {
             stringResource(R.string.artwork_filter), Symbols.FILTER, { openSheet() },
             Modifier.alpha(if (filterEnabled) 1f else .4f).then(if (filterEnabled) Modifier else Modifier.focusProperties { canFocus = false }),
             clickCue = null, compact = true,
-            trailing = {
-                if (filters.active) CountBadge(filters.activeCount)
-                GlyphButton(Glyph.Y, 32)
-            },
+            trailing = { if (filters.active) CountBadge(filters.activeCount) },
+            glyph = Glyph.Y,
         )
     }
     // The result line and the active filters, removable one by one
@@ -900,8 +897,8 @@ private fun NoImages(tab: ArtTab, filters: ArtFilters, ready: Choices.Ready, gam
             BasicText(explanation, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 22.tpx, textAlign = TextAlign.Center), modifier = Modifier.width(minOf(820f, LocalStage.current.stageWidth - 160f).px))
             BasicText(stringResource(R.string.artwork_filtered_active, summary), style = TextStyle(color = colors.text3, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 20.tpx, textAlign = TextAlign.Center), modifier = Modifier.width(minOf(820f, LocalStage.current.stageWidth - 160f).px))
             Row(horizontalArrangement = Arrangement.spacedBy(16.px)) {
-                PillButton(stringResource(R.string.filters_art_reset), Symbols.RESET, onReset, compact = true, trailing = { GlyphButton(Glyph.X, 32) })
-                PillButton(stringResource(R.string.filters_art_change), Symbols.FILTER, onChange, compact = true, clickCue = null, trailing = { GlyphButton(Glyph.Y, 32) })
+                PillButton(stringResource(R.string.filters_art_reset), Symbols.RESET, onReset, compact = true, glyph = Glyph.X)
+                PillButton(stringResource(R.string.filters_art_change), Symbols.FILTER, onChange, compact = true, clickCue = null, glyph = Glyph.Y)
             }
         } else {
             BasicText(stringResource(tab.empty), style = TextStyle(color = colors.text3, fontFamily = Figtree, fontSize = 22.tpx))
@@ -1061,9 +1058,9 @@ private fun FilterSheetLayer(
                 PillButton(
                     stringResource(R.string.filters_art_reset), Symbols.RESET, onReset,
                     Modifier.alpha(if (active) 1f else .4f).then(if (active) Modifier else Modifier.focusProperties { canFocus = false }),
-                    compact = true, clickCue = null, trailing = { GlyphButton(Glyph.X, 32) },
+                    compact = true, clickCue = null, glyph = Glyph.X,
                 )
-                PillButton(stringResource(R.string.filters_art_done), Symbols.CHECK, onClose, compact = true, clickCue = Cue.BACK, trailing = { GlyphButton(Glyph.Y, 32) })
+                PillButton(stringResource(R.string.filters_art_done), Symbols.CHECK, onClose, compact = true, clickCue = Cue.BACK, glyph = Glyph.Y)
             }
             // The compact sheet may be taller than the page leaves it: its options scroll, fading at an edge they continue behind. The header
             // above them is the padding, the 64 px pills and 16 px

@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,6 +22,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.limelight.shell.ui.ControllerGlyphs
 import com.limelight.shell.companion.CompanionHost
 import com.limelight.shell.companion.CompanionState
 import com.limelight.shell.data.ArtworkStore
@@ -90,6 +92,7 @@ class ShellActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        ControllerGlyphs.start(this)
         placement = ShellPlacement(this)
         if (savedInstanceState == null && placement?.moveOnCreate() == true) {
             movedToMain = true
@@ -161,9 +164,23 @@ class ShellActivity : ComponentActivity() {
         StreamResult.take(intent)?.let { results.value = it }
     }
 
-    // Activity's public key dispatcher must still run after the shell's global controller keys.
+    // Activity's public key dispatcher must still run after the shell's global controller keys. Every event first tells the input kind
+    // what was used (ControllerGlyphs: the hints follow the last input)
     @SuppressLint("RestrictedApi")
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean = keys.dispatch(event) || super.dispatchKeyEvent(event)
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        ControllerGlyphs.key(event)
+        return keys.dispatch(event) || super.dispatchKeyEvent(event)
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        ControllerGlyphs.touch(event)
+        return super.dispatchTouchEvent(event)
+    }
+
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        ControllerGlyphs.motion(event)
+        return super.dispatchGenericMotionEvent(event)
+    }
 
     /** Follows the current profile's settings for the Language row: it shows the app language, and choosing there sets it. */
     private fun bindLanguage() {

@@ -1,6 +1,5 @@
 package com.limelight.shell.ui
 
-import android.os.Build
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -28,13 +27,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +60,13 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.runtime.rememberUpdatedState
 import com.limelight.R
 import com.limelight.shell.system.BatteryStatus
 import com.limelight.shell.system.WifiStatus
@@ -87,7 +95,8 @@ data class NavButton(val icon: String, val label: String, val current: Boolean, 
 
 /**
  * Delos draws its own status bar (the system bars are hidden): brand on the left, the main navigation
- * in the middle and Wi-Fi, battery and clock on the right.
+ * in the middle and Wi-Fi, battery and clock on the right. [onBack]: the screen can go back; a round back button before the brand
+ * does it while no controller is the input ([StatusBarBack]).
  */
 @Composable
 fun StatusBar(
@@ -100,25 +109,53 @@ fun StatusBar(
     modifier: Modifier = Modifier,
     /** False where the screen shows something else in the corner (the start screen's profile). */
     brand: Boolean = true,
+    onBack: (() -> Unit)? = null,
 ) {
     val stage = LocalStage.current
     if (stage.compact) {
-        CompactStatusBar(nav, pcName, pcOnline, wifi, battery, clock, modifier, brand)
+        CompactStatusBar(nav, pcName, pcOnline, wifi, battery, clock, modifier, brand, onBack)
         return
     }
     val colors = LocalDelosColors.current
     // The display cutout pads the bar (zero on a screen without one, so nothing moves there)
     val safe = stage.safe
     Box(modifier.fillMaxWidth().padding(top = safe.top.px).height(104.px).padding(start = 72.px + safe.left.px, end = 72.px + safe.right.px)) {
-        if (brand) {
-            Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
-                LogoMark()
-                BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
-                if (pcName != null) PcPill(pcName, pcOnline)
+        Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {
+            StatusBarBack(onBack)
+            if (brand) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
+                    LogoMark()
+                    BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
+                    if (pcName != null) PcPill(pcName, pcOnline)
+                }
             }
         }
         if (nav != null) TopNav(nav, Modifier.align(Alignment.Center))
         StatusCluster(wifi, battery, clock, Modifier.align(Alignment.CenterEnd))
+    }
+}
+
+/**
+ * The round glass back button at the start of the status bar (`BackButton` of DELOS for Apple): shown while the screen can go back
+ * ([onBack]) and no controller is the input (a controller has B), it comes and goes with [InputKindVisibility] and the brand after it
+ * glides. A tap does what B does.
+ */
+@Composable
+private fun StatusBarBack(onBack: (() -> Unit)?) {
+    val colors = LocalDelosColors.current
+    val back = remember { arrayOfNulls<() -> Unit>(1) }
+    if (onBack != null) back[0] = onBack
+    val label = stringResource(R.string.shell_hint_back)
+    val c = StatusBarLayout
+    InputKindVisibility(c.BACK_RULE, visible = onBack != null, after = c.BACK_GAP.px) {
+        Box(
+            Modifier.size(c.BACK_SIZE.px).clip(CircleShape).glass(colors.surface).border(1.px, colors.line, CircleShape)
+                .semantics { contentDescription = label; role = Role.Button; onClick { back[0]?.invoke(); true } }
+                .pointerInput(Unit) { detectTapGestures { back[0]?.invoke() } },
+            contentAlignment = Alignment.Center,
+        ) {
+            Symbol(Symbols.ARROW_BACK, c.BACK_ARROW.tpx, colors.text)
+        }
     }
 }
 
@@ -156,6 +193,7 @@ private fun StatusCluster(
 @Composable
 private fun CompactStatusBar(
     nav: List<NavButton>?, pcName: String?, pcOnline: Boolean, wifi: WifiStatus, battery: BatteryStatus?, clock: String, modifier: Modifier, brand: Boolean,
+    onBack: (() -> Unit)?,
 ) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
@@ -172,11 +210,15 @@ private fun CompactStatusBar(
     SubcomposeLayout(modifier.fillMaxWidth().padding(top = safe.top.px).height(104.px)) { constraints ->
         val open = Constraints(maxHeight = constraints.maxHeight)
         val width = constraints.maxWidth
+        // The back button and the brand: the whole left cluster, measured as it is (the navigation's place follows it as the button comes and goes)
         val left = subcompose("left") {
-            if (brand) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
-                LogoMark()
-                if (wordmark) BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
-                if (pcName != null) PcDot(pcName, pcOnline)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusBarBack(onBack)
+                if (brand) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
+                    LogoMark()
+                    if (wordmark) BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
+                    if (pcName != null) PcDot(pcName, pcOnline)
+                }
             }
         }.firstOrNull()?.measure(open)
         // Only the steps that are tried are composed: the full cluster first
@@ -414,10 +456,29 @@ private fun NavButtonView(button: NavButton, requester: FocusRequester, wrapLeft
     }
 }
 
-/** What a hint's button looks like: a letter (A, B, L1…) or an icon (menu buttons, adjust). */
+/**
+ * A complete cap of the keyboard and mouse library in the shared font (`Symbols.MAC_*`): what a keyboard or a mouse does instead of a
+ * pad's button. [symbols] are the caps drawn side by side (the arrows are two keys).
+ */
+enum class InputCap(val symbols: List<String>) {
+    RETURN(listOf(Symbols.MAC_RETURN)),
+    ESCAPE(listOf(Symbols.MAC_ESCAPE)),
+    ARROWS(listOf(Symbols.MAC_ARROW_LEFT, Symbols.MAC_ARROW_RIGHT)),
+    CLICK(listOf(Symbols.MAC_MOUSE_CLICK_LEFT)),
+}
+
+/**
+ * What a hint's button names: a place on the connected controller ([Pad], drawn with its glyph family by [ControllerGlyphs]), the adjust
+ * cue, which is no button, or what the other kinds of input do instead ([InputKind]): a tap of the finger ([TAP]), a click of the mouse
+ * ([CLICK]), a key of the keyboard ([Cap]). The names A, B, X, Y, L1, R1 are positions (A is the south button, B the east one...), as on
+ * an Xbox pad; a PlayStation pad draws the cross for [A] and a Nintendo pad its own letters.
+ */
 @Immutable
 sealed interface Glyph {
-    data class Letter(val text: String) : Glyph
+    data class Pad(val role: GlyphRole) : Glyph
+
+    data class Cap(val cap: InputCap) : Glyph
+
     /**
      * [scale] multiplies the 24 px base font size to even out icons that look too big or too small next to
      * the others. The scales are measured against the Material Symbols Rounded glyphs (FILL 1, wght 600,
@@ -428,47 +489,41 @@ sealed interface Glyph {
     data class Icon(val symbol: String, val scale: Float = 1f) : Glyph
 
     companion object {
-        val A = Letter("A")
-        val B = Letter("B")
-        val X = Letter("X")
-        val Y = Letter("Y")
-        val L1 = Letter("L1")
-        val R1 = Letter("R1")
-
-        /** AYN handhelds (Odin, Thor) have a square and a play icon on their two menu buttons. */
-        private val ayn = Build.MANUFACTURER.equals("AYN", ignoreCase = true)
-
-        /**
-         * The left top menu button (View / Select). AYN square: ink 0.790 em (Material, scale .72 = 13.65 px) vs
-         * 0.750 em (Phosphor) -> .72 * 0.790 / 0.750 = .758, the same 13.65 px. Other devices, copy: 0.9005 em vs
-         * 0.750 em -> 1.2, 21.6 px.
-         */
-        val MENU_LEFT = if (ayn) Icon(Symbols.SQUARE, scale = .758f) else Icon(Symbols.FILTER_NONE, scale = 1.2f)
-
-        /**
-         * The right top menu button (Start). AYN play: ink 0.4672 x 0.5640 em (Material, scale 1.3 = 14.6 x 17.6 px)
-         * vs 0.6875 x 0.8125 em (Phosphor) -> 1.3 * 0.5640 / 0.8125 = .9025, 14.9 x 17.6 px (the same height). Other
-         * devices, list: Material bars 0.790 x 0.558 em vs the Phosphor list-fill block 0.750 x 0.750 em; the shapes
-         * differ, so the area-equivalent factor sqrt(0.790/0.750 * 0.558/0.750) = .885 is used (15.9 px block).
-         */
-        val MENU_RIGHT = if (ayn) Icon(Symbols.PLAY_ARROW, scale = .9025f) else Icon(Symbols.MENU, scale = .885f)
+        val A = Pad(GlyphRole.SOUTH)
+        val B = Pad(GlyphRole.EAST)
+        val X = Pad(GlyphRole.WEST)
+        val Y = Pad(GlyphRole.NORTH)
+        val L1 = Pad(GlyphRole.LEFT_SHOULDER)
+        val R1 = Pad(GlyphRole.RIGHT_SHOULDER)
+        val MENU_LEFT = Pad(GlyphRole.MENU_LEFT)
+        val MENU_RIGHT = Pad(GlyphRole.MENU_RIGHT)
 
         /** Material swap_horiz 0.827 x 0.661 em vs Phosphor arrows-left-right 0.6875 x 0.6875 em -> area-equivalent 1.075 (17.7 px). */
         val ADJUST = Icon(Symbols.SWAP_HORIZ, scale = 1.075f)
+
+        /** The primary action for a finger: the hand tapping (the font has no touch caps, so it keeps the disc of the other cues). */
+        val TAP = Icon(Symbols.TOUCH_APP)
+
+        /** The primary action for a mouse or a trackpad: the mouse's left click. */
+        val CLICK = Cap(InputCap.CLICK)
     }
 }
 
+/**
+ * [shortLabel] is the label a cramped (compact) bar uses before it drops the label altogether. [tappable]: a finger, a mouse or a
+ * keyboard can press it in the bar (the library's Filter): while no controller is the input it is a glyphless pill that runs the bar's
+ * `onTap`; a controller has the button itself, and the hint stays a hint (`Hint.tappable` of DELOS for Apple).
+ */
 @Immutable
-/** [shortLabel] is the label a cramped (compact) bar uses before it drops the label altogether. */
-data class Hint(val glyph: Glyph, val label: String, val shortLabel: String? = null)
+data class Hint(val glyph: Glyph, val label: String, val shortLabel: String? = null, val tappable: Boolean = false, val icon: String? = null)
 
-/** The bottom bar: an optional note on the left, the button hints on the right. */
+/** The bottom bar: an optional note on the left, the button hints on the right; [onTap] runs a [Hint.tappable] hint's pill. */
 @Composable
-fun HintBar(hints: List<Hint>, note: String?, modifier: Modifier = Modifier, noteLabel: String? = null) {
+fun HintBar(hints: List<Hint>, note: String?, modifier: Modifier = Modifier, noteLabel: String? = null, onTap: ((Hint) -> Unit)? = null) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
     if (stage.compact) {
-        CompactHintBar(hints, note, noteLabel, modifier)
+        CompactHintBar(hints, note, noteLabel, modifier, onTap)
         return
     }
     val safe = stage.safe
@@ -485,12 +540,7 @@ fun HintBar(hints: List<Hint>, note: String?, modifier: Modifier = Modifier, not
                 modifier = Modifier.alignByBaseline())
         }
         Spacer(Modifier.weight(1f))
-        hints.forEach { hint ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
-                GlyphButton(hint.glyph)
-                BasicText(hint.label, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 21.tpx))
-            }
-        }
+        hints.forEach { hint -> HintCell(hint, HintDetail.FULL, onTap) }
     }
 }
 
@@ -501,7 +551,7 @@ fun HintBar(hints: List<Hint>, note: String?, modifier: Modifier = Modifier, not
  * most important (A, then Back) keep theirs longest.
  */
 @Composable
-private fun CompactHintBar(hints: List<Hint>, note: String?, noteLabel: String?, modifier: Modifier) {
+private fun CompactHintBar(hints: List<Hint>, note: String?, noteLabel: String?, modifier: Modifier, onTap: ((Hint) -> Unit)?) {
     val safe = LocalStage.current.safe
     val noteVariants = remember(note, noteLabel) {
         buildList {
@@ -519,7 +569,7 @@ private fun CompactHintBar(hints: List<Hint>, note: String?, noteLabel: String?,
             subcompose("note$i") { HintNote(note!!, if (withLabel) noteLabel else null) }.map { it.measure(open) }
         }
         val cells = hints.mapIndexed { i, hint ->
-            fun cell(detail: HintDetail) = subcompose("hint$i${detail.name}") { HintCell(hint, detail) }.map { it.measure(open) }
+            fun cell(detail: HintDetail) = subcompose("hint$i${detail.name}") { HintCell(hint, detail, onTap) }.map { it.measure(open) }
             val full = cell(HintDetail.FULL)
             val short = if (hint.shortLabel != null) cell(HintDetail.SHORT) else null
             val bare = cell(HintDetail.BARE)
@@ -558,35 +608,77 @@ private fun HintNote(note: String, noteLabel: String?) {
     }
 }
 
-/** One hint of a compact bar: its button and, by [detail], its full label, its short label or nothing. */
+/**
+ * One hint: its button and, by [detail], its full label, its short label or nothing. A [Hint.tappable] hint is a glyphless pill with its
+ * label that runs [onTap] while no controller is the input, and turns into the hint when one is (the animation of [InputKindVisibility]).
+ */
 @Composable
-private fun HintCell(hint: Hint, detail: HintDetail) {
+private fun HintCell(hint: Hint, detail: HintDetail, onTap: ((Hint) -> Unit)?) {
     val colors = LocalDelosColors.current
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
-        GlyphButton(hint.glyph)
-        if (detail != HintDetail.BARE) BasicText(
-            if (detail == HintDetail.SHORT) hint.shortLabel ?: hint.label else hint.label,
-            style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 21.tpx), maxLines = 1,
-        )
+    val reduced = LocalReducedMotion.current
+    val label = if (detail == HintDetail.SHORT) hint.shortLabel ?: hint.label else hint.label
+    val pill = hint.tappable && onTap != null && ControllerGlyphs.kind != InputKind.CONTROLLER
+    androidx.compose.animation.Crossfade(
+        pill,
+        animationSpec = if (reduced) tween(Motion.FADE, easing = Motion.EaseOutCss) else tween(Motion.ROW_IN, easing = EaseOut),
+        label = "hintPill",
+    ) { asPill ->
+        if (asPill) {
+            val tap by rememberUpdatedState(onTap)
+            // A button, and it looks like one: the glass pill with its symbol (the filter's funnel) and label
+            Row(
+                Modifier
+                    .clip(CircleShape)
+                    .glass(colors.surface)
+                    .border(1.px, colors.line, CircleShape)
+                    .semantics(mergeDescendants = true) { role = Role.Button; onClick { tap?.invoke(hint); true } }
+                    .pointerInput(hint) { detectTapGestures { tap?.invoke(hint) } }
+                    .height(52.px)
+                    .padding(start = (if (hint.icon != null) 18 else 24).px, end = 24.px),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.px),
+            ) {
+                hint.icon?.let { Symbol(it, 26.tpx, colors.text) }
+                BasicText(label, maxLines = 1,
+                    style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 21.tpx))
+            }
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
+                GlyphButton(hint.glyph)
+                if (detail != HintDetail.BARE) BasicText(
+                    label, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 21.tpx), maxLines = 1,
+                )
+            }
+        }
     }
 }
 
-/** A button hint's glyph, [size] stage pixels (the stream menu's bar uses a bigger one than the hint bars). */
+/** Native input caps occupy .75 em; their visible circular button remains [size] stage pixels. */
+internal const val BUTTON_INK_FRACTION = .75f
+
+/** Complete pad, key and mouse caps come from the shared font; the other cues retain their existing disc. */
 @Composable
 fun GlyphButton(glyph: Glyph, size: Int = 38) {
     val colors = LocalDelosColors.current
-    val k = size / 38f
-    Box(
-        // Icons always sit in a circle; letters (L1…) may widen it into a pill
-        (if (glyph is Glyph.Icon) Modifier.size(size.px) else Modifier.defaultMinSize(minWidth = size.px).height(size.px))
-            .clip(CircleShape)
-            .background(colors.text)
-            .then(if (glyph is Glyph.Icon) Modifier else Modifier.padding(horizontal = 8.px)),
-        contentAlignment = Alignment.Center,
-    ) {
-        when (glyph) {
-            is Glyph.Letter -> BasicText(glyph.text, style = TextStyle(color = colors.bg, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = (21f * k).tpx))
-            is Glyph.Icon -> Symbol(glyph.symbol, (24f * glyph.scale * k).tpx, colors.bg, filled = true)
+    when (glyph) {
+        is Glyph.Pad -> FontCap(ControllerGlyphs.family.fontSymbol(glyph.role), size, colors.text)
+        is Glyph.Cap -> Row(verticalAlignment = Alignment.CenterVertically) { glyph.cap.symbols.forEach { FontCap(it, size, colors.text) } }
+        is Glyph.Icon -> Box(
+            Modifier.size(size.px).clip(CircleShape).background(colors.text),
+            contentAlignment = Alignment.Center,
+        ) {
+            Symbol(glyph.symbol, (24f * glyph.scale * size / 38f).tpx, colors.bg, filled = true)
         }
+    }
+}
+
+/** One complete cap of the shared font, [size] stage pixels high. */
+@Composable
+private fun FontCap(symbol: String, size: Int, color: Color) {
+    // The glyph is text (em.tpx grows with the text scale): its box grows the same way, so the cap is never cut at a text scale above 100 %
+    val em = size / BUTTON_INK_FRACTION
+    val scale = LocalStage.current.textScale
+    Box(Modifier.width((em * scale).px).height((size * scale).px), contentAlignment = Alignment.Center) {
+        Symbol(symbol, em.tpx, color, modifier = Modifier.requiredSize((em * scale).px), filled = true)
     }
 }

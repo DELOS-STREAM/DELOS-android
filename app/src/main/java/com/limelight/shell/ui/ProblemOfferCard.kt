@@ -120,8 +120,8 @@ fun ProblemOfferCard(problem: Problem?, reducedMotion: Boolean, onReport: () -> 
                 BasicText(stringResource(if (uploads) R.string.shell_problem_note_upload else R.string.shell_problem_note), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 20.tpx, lineHeight = 1.4.em))
                 Row(Modifier.padding(top = 6.px), horizontalArrangement = Arrangement.spacedBy((if (compact) Compact.BUTTON_GAP else 18f).px)) {
                     PillButton(stringResource(R.string.shell_problem_report), Symbols.REPORT_ISSUE, onReport, Modifier.focusRequester(report), primary = true, compact = true,
-                        trailing = { GlyphButton(Glyph.A, 34) })
-                    PillButton(stringResource(R.string.shell_problem_dismiss), Symbols.CLOSE, onDismiss, compact = true, clickCue = Cue.BACK, trailing = { GlyphButton(Glyph.B, 34) })
+                        glyph = Glyph.A, glyphSize = 34)
+                    PillButton(stringResource(R.string.shell_problem_dismiss), Symbols.CLOSE, onDismiss, compact = true, clickCue = Cue.BACK, glyph = Glyph.B, glyphSize = 34)
                 }
                 if (uploads) PillButton(stringResource(R.string.report_save_downloads), Symbols.DOWNLOAD, onSaveToDownloads, compact = true)
             }

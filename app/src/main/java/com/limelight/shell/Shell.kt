@@ -19,6 +19,7 @@ import com.limelight.display.DualScreen
 import com.limelight.shell.ui.textResources
 import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -102,6 +103,8 @@ import com.limelight.shell.ui.Feedback
 import com.limelight.shell.ui.Glyph
 import com.limelight.shell.ui.Hint
 import com.limelight.shell.ui.HintBar
+import com.limelight.shell.ui.ControllerGlyphs
+import com.limelight.shell.ui.adaptedTo
 import com.limelight.shell.ui.HeroBitmaps
 import com.limelight.shell.ui.HeroMotion
 import com.limelight.shell.ui.HANDOFF_PROGRESS
@@ -835,9 +838,13 @@ fun Shell(
                 }
                 // The on-screen controls preview is full screen like a stream
                 if (shell.screen != Screen.OscPreview) ZoomedBar(uiScale) {
+                    // The back button (no controller in use) does what B does: the same back dispatch, so a screen's own handler wins as for B
+                    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+                    val goBack = remember(backDispatcher) { { backDispatcher?.onBackPressed(); Unit } }
                     StatusBar(
                         nav.takeIf { shell.screen.main }, pcName = pc?.name.takeIf { shell.screen.main }, pcOnline = pc?.online == true,
                         wifi = wifi, battery = battery, clock = clock, brand = shell.screen != Screen.Start,
+                        onBack = goBack.takeIf { shell.screen.back != null },
                     )
                 }
             }
@@ -933,9 +940,14 @@ fun Shell(
             }
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                 val filterHint = (library as? Library.Ready)?.takeIf { it.apps.isNotEmpty() }?.let { filterHintLabel(res, metadata.filters) }
-                val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint)
+                // Written for a controller, shown for the input in use (a finger, a mouse, a keyboard: ui/HintKinds.kt)
+                val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint).adaptedTo(ControllerGlyphs.kind)
                 com.limelight.shell.companion.PublishCompanionContext(hintEntries, library, pcs)
-                ZoomedBar(uiScale) { HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null) }
+                // A tap on the Filter pill (no controller in use) does what Y does: opens the library's filters
+                ZoomedBar(uiScale) {
+                    HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null,
+                        onTap = { if (keys.canFilter()) keys.onFilter?.invoke() })
+                }
             }
             val launch = shell.launch
             val launchLogo = launch?.let { rememberArtwork(artwork, it.pc, it.app, ArtKind.LOGO).value }
@@ -1063,7 +1075,7 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
         Layer.Filters -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.X, R.string.shell_hint_reset), hint(Glyph.Y, R.string.shell_hint_close), hint(Glyph.B, R.string.shell_hint_close))
         is Layer.Dialog -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_cancel))
         null -> when (val screen = shell.screen) {
-            Screen.Home -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it) }, hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)
+            Screen.Home -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it, tappable = true, icon = Symbols.FILTER) }, hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)
             Screen.Settings -> adjust + listOf(hint(Glyph.L1, R.string.shell_hint_previous_tab), hint(Glyph.R1, R.string.shell_hint_next_tab), hint(Glyph.Y, R.string.shell_hint_search), hint(Glyph.A, R.string.shell_hint_change), hint(Glyph.B, R.string.shell_hint_back))
             Screen.SettingsSearch -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             Screen.Start -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_connect), hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)
