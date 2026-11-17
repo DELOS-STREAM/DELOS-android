@@ -112,7 +112,10 @@ pointer, touch) is what the hints and the input-dependent controls are drawn for
   arrows for the adjust cue, the font's complete key caps (`Glyph.Cap`, `InputCap`: `MAC_RETURN`, `MAC_ESCAPE`,
   `MAC_ARROW_LEFT` + `MAC_ARROW_RIGHT`), drawn like the pad caps (`GlyphButton`, no disc); the other actions
   (tabs, menu buttons, X, Y) have a control on the screen or no key and are dropped. This applies to the hint bar, the
-  companion window's copy of it and the stream menu's dock.
+  companion window's copy of it and the stream menu's dock. A tappable hint (`Hint.tappable`: the library's Filter) stays for
+  every kind: while no controller is the input the bar draws it as a glyphless glass pill with its label (44 high, 24 at the
+  sides; it cross-fades into the hint with `Motion.ROW_IN`, reduced motion a fade), and a tap runs `HintBar(onTap)`, which
+  opens the filters exactly like Y (`GlobalKeys.canFilter` / `onFilter`). The Artwork screen has its own Filter pill.
 - **Pills a finger can press** keep working for every kind. The button glyph on them (`PillButton(glyph = ...)`, drawn by
   `PillGlyph`: the update and problem cards, the artwork search, filter and sheet pills) shows only for a kind that has that
   button (a key cap for Return and Esc) and gives way like `InputKindVisibility`, the pill narrowing with it. The toast's Y

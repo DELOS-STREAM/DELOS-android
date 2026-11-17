@@ -21,6 +21,9 @@ fun Glyph.forKind(kind: InputKind): Glyph? = when (kind) {
     }
 }
 
-/** The hints (written for a controller) for [kind]: each with its glyph for the kind, the ones it has no button for left out ([forKind]). */
+/**
+ * The hints (written for a controller) for [kind]: each with its glyph for the kind, the ones it has no button for left out ([forKind]).
+ * A [Hint.tappable] hint stays as it is for every kind: the bar draws it as a pill to tap while no controller is the input.
+ */
 fun List<Hint>.adaptedTo(kind: InputKind): List<Hint> =
-    if (kind == InputKind.CONTROLLER) this else mapNotNull { hint -> hint.glyph.forKind(kind)?.let { hint.copy(glyph = it) } }
+    if (kind == InputKind.CONTROLLER) this else mapNotNull { hint -> if (hint.tappable) hint else hint.glyph.forKind(kind)?.let { hint.copy(glyph = it) } }

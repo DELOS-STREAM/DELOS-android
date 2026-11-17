@@ -60,6 +60,13 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.runtime.rememberUpdatedState
 import com.limelight.R
 import com.limelight.shell.system.BatteryStatus
 import com.limelight.shell.system.WifiStatus
@@ -468,19 +475,21 @@ sealed interface Glyph {
     }
 }
 
-
-
+/**
+ * [shortLabel] is the label a cramped (compact) bar uses before it drops the label altogether. [tappable]: a finger, a mouse or a
+ * keyboard can press it in the bar (the library's Filter): while no controller is the input it is a glyphless pill that runs the bar's
+ * `onTap`; a controller has the button itself, and the hint stays a hint (`Hint.tappable` of DELOS for Apple).
+ */
 @Immutable
-/** [shortLabel] is the label a cramped (compact) bar uses before it drops the label altogether. */
-data class Hint(val glyph: Glyph, val label: String, val shortLabel: String? = null)
+data class Hint(val glyph: Glyph, val label: String, val shortLabel: String? = null, val tappable: Boolean = false)
 
-/** The bottom bar: an optional note on the left, the button hints on the right. */
+/** The bottom bar: an optional note on the left, the button hints on the right; [onTap] runs a [Hint.tappable] hint's pill. */
 @Composable
-fun HintBar(hints: List<Hint>, note: String?, modifier: Modifier = Modifier, noteLabel: String? = null) {
+fun HintBar(hints: List<Hint>, note: String?, modifier: Modifier = Modifier, noteLabel: String? = null, onTap: ((Hint) -> Unit)? = null) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
     if (stage.compact) {
-        CompactHintBar(hints, note, noteLabel, modifier)
+        CompactHintBar(hints, note, noteLabel, modifier, onTap)
         return
     }
     val safe = stage.safe
@@ -497,12 +506,7 @@ fun HintBar(hints: List<Hint>, note: String?, modifier: Modifier = Modifier, not
                 modifier = Modifier.alignByBaseline())
         }
         Spacer(Modifier.weight(1f))
-        hints.forEach { hint ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
-                GlyphButton(hint.glyph)
-                BasicText(hint.label, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 21.tpx))
-            }
-        }
+        hints.forEach { hint -> HintCell(hint, HintDetail.FULL, onTap) }
     }
 }
 
@@ -513,7 +517,7 @@ fun HintBar(hints: List<Hint>, note: String?, modifier: Modifier = Modifier, not
  * most important (A, then Back) keep theirs longest.
  */
 @Composable
-private fun CompactHintBar(hints: List<Hint>, note: String?, noteLabel: String?, modifier: Modifier) {
+private fun CompactHintBar(hints: List<Hint>, note: String?, noteLabel: String?, modifier: Modifier, onTap: ((Hint) -> Unit)?) {
     val safe = LocalStage.current.safe
     val noteVariants = remember(note, noteLabel) {
         buildList {
@@ -531,7 +535,7 @@ private fun CompactHintBar(hints: List<Hint>, note: String?, noteLabel: String?,
             subcompose("note$i") { HintNote(note!!, if (withLabel) noteLabel else null) }.map { it.measure(open) }
         }
         val cells = hints.mapIndexed { i, hint ->
-            fun cell(detail: HintDetail) = subcompose("hint$i${detail.name}") { HintCell(hint, detail) }.map { it.measure(open) }
+            fun cell(detail: HintDetail) = subcompose("hint$i${detail.name}") { HintCell(hint, detail, onTap) }.map { it.measure(open) }
             val full = cell(HintDetail.FULL)
             val short = if (hint.shortLabel != null) cell(HintDetail.SHORT) else null
             val bare = cell(HintDetail.BARE)
@@ -570,16 +574,44 @@ private fun HintNote(note: String, noteLabel: String?) {
     }
 }
 
-/** One hint of a compact bar: its button and, by [detail], its full label, its short label or nothing. */
+/**
+ * One hint: its button and, by [detail], its full label, its short label or nothing. A [Hint.tappable] hint is a glyphless pill with its
+ * label that runs [onTap] while no controller is the input, and turns into the hint when one is (the animation of [InputKindVisibility]).
+ */
 @Composable
-private fun HintCell(hint: Hint, detail: HintDetail) {
+private fun HintCell(hint: Hint, detail: HintDetail, onTap: ((Hint) -> Unit)?) {
     val colors = LocalDelosColors.current
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
-        GlyphButton(hint.glyph)
-        if (detail != HintDetail.BARE) BasicText(
-            if (detail == HintDetail.SHORT) hint.shortLabel ?: hint.label else hint.label,
-            style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 21.tpx), maxLines = 1,
-        )
+    val reduced = LocalReducedMotion.current
+    val label = if (detail == HintDetail.SHORT) hint.shortLabel ?: hint.label else hint.label
+    val pill = hint.tappable && onTap != null && ControllerGlyphs.kind != InputKind.CONTROLLER
+    androidx.compose.animation.Crossfade(
+        pill,
+        animationSpec = if (reduced) tween(Motion.FADE, easing = Motion.EaseOutCss) else tween(Motion.ROW_IN, easing = EaseOut),
+        label = "hintPill",
+    ) { asPill ->
+        if (asPill) {
+            val tap by rememberUpdatedState(onTap)
+            BasicText(
+                label, maxLines = 1,
+                style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 21.tpx),
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .glass(colors.surface)
+                    .border(1.px, colors.line, CircleShape)
+                    .semantics { role = Role.Button; onClick { tap?.invoke(hint); true } }
+                    .pointerInput(hint) { detectTapGestures { tap?.invoke(hint) } }
+                    .height(44.px)
+                    .wrapContentHeight(Alignment.CenterVertically)
+                    .padding(horizontal = 24.px),
+            )
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
+                GlyphButton(hint.glyph)
+                if (detail != HintDetail.BARE) BasicText(
+                    label, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 21.tpx), maxLines = 1,
+                )
+            }
+        }
     }
 }
 

@@ -40,6 +40,15 @@ class HintKindsTest {
         assertEquals(Hint(Glyph.TAP, "Use image", "Choose"), listOf(hint).adaptedTo(InputKind.TOUCH).single())
     }
 
+    @Test fun `the library's Filter stays a tappable hint for every kind`() {
+        val filter = Hint(Glyph.Y, "Filter • 2 active", tappable = true)
+        val library = listOf(Hint(Glyph.A, "Start"), filter, Hint(Glyph.MENU_LEFT, "Menu"))
+        assertEquals(listOf(Hint(Glyph.TAP, "Start"), filter), library.adaptedTo(InputKind.TOUCH))
+        assertEquals(listOf(Hint(Glyph.CLICK, "Start"), filter), library.adaptedTo(InputKind.POINTER))
+        assertEquals(listOf(Hint(Glyph.Cap(InputCap.RETURN), "Start"), filter), library.adaptedTo(InputKind.KEYBOARD))
+        assertEquals(library, library.adaptedTo(InputKind.CONTROLLER))
+    }
+
     @Test fun `a pill's glyph shows only for the kinds with its button`() {
         assertEquals(Glyph.X, Glyph.X.forKind(InputKind.CONTROLLER))
         assertNull(Glyph.X.forKind(InputKind.KEYBOARD))

@@ -938,7 +938,11 @@ fun Shell(
                 // Written for a controller, shown for the input in use (a finger, a mouse, a keyboard: ui/HintKinds.kt)
                 val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint).adaptedTo(ControllerGlyphs.kind)
                 com.limelight.shell.companion.PublishCompanionContext(hintEntries, library, pcs)
-                ZoomedBar(uiScale) { HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null) }
+                // A tap on the Filter pill (no controller in use) does what Y does: opens the library's filters
+                ZoomedBar(uiScale) {
+                    HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null,
+                        onTap = { if (keys.canFilter()) keys.onFilter?.invoke() })
+                }
             }
             val launch = shell.launch
             val launchLogo = launch?.let { rememberArtwork(artwork, it.pc, it.app, ArtKind.LOGO).value }
@@ -1066,7 +1070,7 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
         Layer.Filters -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.X, R.string.shell_hint_reset), hint(Glyph.Y, R.string.shell_hint_close), hint(Glyph.B, R.string.shell_hint_close))
         is Layer.Dialog -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_cancel))
         null -> when (val screen = shell.screen) {
-            Screen.Home -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it) }, hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)
+            Screen.Home -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it, tappable = true) }, hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)
             Screen.Settings -> adjust + listOf(hint(Glyph.L1, R.string.shell_hint_previous_tab), hint(Glyph.R1, R.string.shell_hint_next_tab), hint(Glyph.Y, R.string.shell_hint_search), hint(Glyph.A, R.string.shell_hint_change), hint(Glyph.B, R.string.shell_hint_back))
             Screen.SettingsSearch -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             Screen.Start -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_connect), hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)
