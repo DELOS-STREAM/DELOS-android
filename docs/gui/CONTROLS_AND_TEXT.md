@@ -128,7 +128,10 @@ pointer, touch) is what the hints and the input-dependent controls are drawn for
   takes its size and its `before` / `after` gaps only while shown, so the neighbours glide; it takes no touches and is hidden
   from accessibility while hidden, and is not composed once faded out. The launch scene's and the loader's Cancel pill and
   the portal's Cancel pill use it: shown for touch, pointer and keyboard, hidden while a controller is the input (B cancels).
-  Android's system back makes a back arrow in the top bar unnecessary, so there is none to hide.
+  The status bar's back button uses it too (Apple's `BackButton`): a 68 px glass circle (surface tint, 1 px line border) with
+  the back arrow at 34, 24 px before the brand, on every screen that can go back (`Screen.back`), in the regular and the
+  compact bar (`StatusBarLayout.BACK_*`); the brand glides as it comes and goes. A tap runs the activity's back dispatch, so it
+  does exactly what B does (the screen's own back handler first, the shell's with the BACK cue otherwise).
 
 ### Navigation
 

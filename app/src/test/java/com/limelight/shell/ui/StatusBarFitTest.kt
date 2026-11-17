@@ -143,4 +143,15 @@ class StatusBarFitTest {
         assertNull(placeBetween(100f, 250f, 200f, 175f))
         assertEquals(100f, placeBetween(100f, 300f, 200f, 200f)!!, 0f)
     }
+
+    /** The back button of the bar (Apple's `BackButton`): for fingers, pointers and keyboards, hidden while a controller is the input. */
+    @Test
+    fun theBackButtonIsForEveryInputButAController() {
+        assertFalse(StatusBarLayout.BACK_RULE.shows(InputKind.CONTROLLER))
+        assertTrue(StatusBarLayout.BACK_RULE.shows(InputKind.TOUCH))
+        assertTrue(StatusBarLayout.BACK_RULE.shows(InputKind.POINTER))
+        assertTrue(StatusBarLayout.BACK_RULE.shows(InputKind.KEYBOARD))
+        assertEquals(68f, StatusBarLayout.BACK_SIZE, 0f)
+        assertEquals(24f, StatusBarLayout.BACK_GAP, 0f)
+    }
 }

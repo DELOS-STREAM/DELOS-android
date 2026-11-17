@@ -19,6 +19,7 @@ import com.limelight.display.DualScreen
 import com.limelight.shell.ui.textResources
 import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -837,9 +838,13 @@ fun Shell(
                 }
                 // The on-screen controls preview is full screen like a stream
                 if (shell.screen != Screen.OscPreview) ZoomedBar(uiScale) {
+                    // The back button (no controller in use) does what B does: the same back dispatch, so a screen's own handler wins as for B
+                    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+                    val goBack = remember(backDispatcher) { { backDispatcher?.onBackPressed(); Unit } }
                     StatusBar(
                         nav.takeIf { shell.screen.main }, pcName = pc?.name.takeIf { shell.screen.main }, pcOnline = pc?.online == true,
                         wifi = wifi, battery = battery, clock = clock, brand = shell.screen != Screen.Start,
+                        onBack = goBack.takeIf { shell.screen.back != null },
                     )
                 }
             }

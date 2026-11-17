@@ -95,7 +95,8 @@ data class NavButton(val icon: String, val label: String, val current: Boolean, 
 
 /**
  * Delos draws its own status bar (the system bars are hidden): brand on the left, the main navigation
- * in the middle and Wi-Fi, battery and clock on the right.
+ * in the middle and Wi-Fi, battery and clock on the right. [onBack]: the screen can go back; a round back button before the brand
+ * does it while no controller is the input ([StatusBarBack]).
  */
 @Composable
 fun StatusBar(
@@ -108,25 +109,53 @@ fun StatusBar(
     modifier: Modifier = Modifier,
     /** False where the screen shows something else in the corner (the start screen's profile). */
     brand: Boolean = true,
+    onBack: (() -> Unit)? = null,
 ) {
     val stage = LocalStage.current
     if (stage.compact) {
-        CompactStatusBar(nav, pcName, pcOnline, wifi, battery, clock, modifier, brand)
+        CompactStatusBar(nav, pcName, pcOnline, wifi, battery, clock, modifier, brand, onBack)
         return
     }
     val colors = LocalDelosColors.current
     // The display cutout pads the bar (zero on a screen without one, so nothing moves there)
     val safe = stage.safe
     Box(modifier.fillMaxWidth().padding(top = safe.top.px).height(104.px).padding(start = 72.px + safe.left.px, end = 72.px + safe.right.px)) {
-        if (brand) {
-            Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
-                LogoMark()
-                BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
-                if (pcName != null) PcPill(pcName, pcOnline)
+        Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {
+            StatusBarBack(onBack)
+            if (brand) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
+                    LogoMark()
+                    BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
+                    if (pcName != null) PcPill(pcName, pcOnline)
+                }
             }
         }
         if (nav != null) TopNav(nav, Modifier.align(Alignment.Center))
         StatusCluster(wifi, battery, clock, Modifier.align(Alignment.CenterEnd))
+    }
+}
+
+/**
+ * The round glass back button at the start of the status bar (`BackButton` of DELOS for Apple): shown while the screen can go back
+ * ([onBack]) and no controller is the input (a controller has B), it comes and goes with [InputKindVisibility] and the brand after it
+ * glides. A tap does what B does.
+ */
+@Composable
+private fun StatusBarBack(onBack: (() -> Unit)?) {
+    val colors = LocalDelosColors.current
+    val back = remember { arrayOfNulls<() -> Unit>(1) }
+    if (onBack != null) back[0] = onBack
+    val label = stringResource(R.string.shell_hint_back)
+    val c = StatusBarLayout
+    InputKindVisibility(c.BACK_RULE, visible = onBack != null, after = c.BACK_GAP.px) {
+        Box(
+            Modifier.size(c.BACK_SIZE.px).clip(CircleShape).glass(colors.surface).border(1.px, colors.line, CircleShape)
+                .semantics { contentDescription = label; role = Role.Button; onClick { back[0]?.invoke(); true } }
+                .pointerInput(Unit) { detectTapGestures { back[0]?.invoke() } },
+            contentAlignment = Alignment.Center,
+        ) {
+            Symbol(Symbols.ARROW_BACK, c.BACK_ARROW.tpx, colors.text)
+        }
     }
 }
 
@@ -164,6 +193,7 @@ private fun StatusCluster(
 @Composable
 private fun CompactStatusBar(
     nav: List<NavButton>?, pcName: String?, pcOnline: Boolean, wifi: WifiStatus, battery: BatteryStatus?, clock: String, modifier: Modifier, brand: Boolean,
+    onBack: (() -> Unit)?,
 ) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
@@ -180,11 +210,15 @@ private fun CompactStatusBar(
     SubcomposeLayout(modifier.fillMaxWidth().padding(top = safe.top.px).height(104.px)) { constraints ->
         val open = Constraints(maxHeight = constraints.maxHeight)
         val width = constraints.maxWidth
+        // The back button and the brand: the whole left cluster, measured as it is (the navigation's place follows it as the button comes and goes)
         val left = subcompose("left") {
-            if (brand) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
-                LogoMark()
-                if (wordmark) BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
-                if (pcName != null) PcDot(pcName, pcOnline)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusBarBack(onBack)
+                if (brand) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
+                    LogoMark()
+                    if (wordmark) BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
+                    if (pcName != null) PcDot(pcName, pcOnline)
+                }
             }
         }.firstOrNull()?.measure(open)
         // Only the steps that are tried are composed: the full cluster first
