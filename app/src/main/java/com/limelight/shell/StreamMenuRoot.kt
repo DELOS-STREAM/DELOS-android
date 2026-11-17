@@ -41,6 +41,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import com.limelight.binding.video.UpscalerStatus
 import com.limelight.preferences.UpscalerMode
+import com.limelight.shell.settings.OscOpacity
 import com.limelight.shell.settings.StreamMenuHelp
 import com.limelight.shell.ui.label
 import com.limelight.utils.RumblePresets
@@ -492,6 +493,7 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
             add(MenuKey.ZOOM)
             if (host.allowChangeMouseMode) add(MoreRow.MOUSE)
             add(MenuKey.ONSCREEN_CONTROLS)
+            add(MoreRow.OSC_OPACITY)
             add(MoreRow.ANDROID_KEYBOARD)
             add(MenuKey.TOUCH_SENSITIVITY)
             add(MoreRow.RUMBLE)
@@ -553,6 +555,12 @@ private fun PageRows(
             KeyedRow(Symbols.ZOOM_IN, R.string.stream_menu_row_zoom, MenuKey.ZOOM, RowValue.Toggle(host.zoomOn) { toggle { host.toggleZoom() } })
             if (host.allowChangeMouseMode) KeyedRow(Symbols.MOUSE, R.string.stream_menu_row_mouse_mode, MoreRow.MOUSE, RowValue.Action { openPage(MenuPage.MOUSE) }, entry(MoreRow.MOUSE))
             KeyedRow(Symbols.JOYSTICK, R.string.stream_menu_row_onscreen_controls, MenuKey.ONSCREEN_CONTROLS, RowValue.Toggle(host.onscreenControlsOn) { toggle { host.toggleOnscreenControls() } })
+            // Applies to the running controls at once and is the profile's value, the same as the Settings row; changesTick recomposes the value
+            KeyedRow(Symbols.OPACITY, R.string.settings_native_osc_opacity_title, MoreRow.OSC_OPACITY,
+                RowValue.Slider(host.oscOpacity, OscOpacity.MIN, OscOpacity.MAX, OscOpacity.STEP, " %") {
+                    host.setOscOpacity(it)
+                    changesTick()
+                })
             KeyedRow(Symbols.ANDROID_KEYBOARD, R.string.stream_menu_row_android_keyboard, MoreRow.ANDROID_KEYBOARD, RowValue.Action { close { host.toggleSystemKeyboard() } })
             KeyedRow(Symbols.TOUCH_SENSITIVITY, R.string.stream_menu_row_touch_sensitivity, MenuKey.TOUCH_SENSITIVITY, RowValue.Toggle(host.touchSensitivityOn) { toggle { host.toggleTouchSensitivity() } })
             KeyedRow(Symbols.VIBRATION, R.string.stream_menu_row_rumble_feel, MoreRow.RUMBLE, RowValue.Text(host.rumblePreset?.label(res) ?: stringResource(R.string.stream_menu_rumble_custom)) { openPage(MenuPage.RUMBLE) }, entry(MoreRow.RUMBLE))

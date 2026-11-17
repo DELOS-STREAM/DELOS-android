@@ -58,6 +58,9 @@ internal object MoreRow {
 
     /** The help key of [GYRO] while no gyroscope source is on: it says why the row does nothing. */
     const val GYRO_DISABLED = "Gyro smoothing (disabled)"
+
+    /** The More slider row for the on-screen controls' opacity (live; the same profile value as the Settings row). */
+    const val OSC_OPACITY = "On-screen controls opacity"
 }
 
 /**

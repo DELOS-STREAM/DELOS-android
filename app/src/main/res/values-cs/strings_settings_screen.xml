@@ -103,6 +103,7 @@
     <string name="settings_native_menu_buttons_description">Tlačítka, která se během streamu stisknou společně pro otevření nebo zavření menu streamu. Výběrem nahraješ jiná, třeba zadní tlačítko.</string>
     <string name="settings_native_menu_swipe_title">Přejetí nahoru otevře menu</string>
     <string name="settings_native_menu_swipe_description">Přejetí nahoru od spodního okraje také otevře menu streamu. Dotyky začínající tam se do aplikace nedostanou.</string>
+    <string name="settings_native_osc_opacity_title">Neprůhlednost ovládání na obrazovce</string>
     <string name="settings_native_stats_position_title">Pozice statistik</string>
     <string name="settings_native_stats_position_description">Roh panelu s plnými statistikami při streamování. Kompaktní režim je vždy nahoře uprostřed.</string>
     <string name="settings_native_stats_top_left">Vlevo nahoře</string>

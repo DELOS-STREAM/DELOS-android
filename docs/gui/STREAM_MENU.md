@@ -304,6 +304,7 @@ Rows of the More page:
 | Zoom | |
 | Mouse mode | When allowed. Opens a page. |
 | On-screen controls | |
+| **On-screen controls opacity** | See below. |
 | **Open Android keyboard** | An action: closes the menu, then opens or closes Android's system keyboard. |
 | Touch sensitivity | |
 | Rumble feel | |
@@ -319,6 +320,14 @@ Rows of the More page:
   menu closes or the stream ends. It is saved as this game's `seekbar_gyro_smoothing` override, never the profile,
   which is changed in Settings.
 - See [STREAM_QUALITY.md](../STREAM_QUALITY.md#gyro-smoothing-77).
+
+**On-screen controls opacity**:
+
+- A 0 to 100 % slider in steps of 5, the same profile value (`seekbar_osc_opacity`) as the row in Settings → Controls
+  ([MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md#15-on-screen-controls-opacity)).
+- It applies at once to the running on-screen controls (`DelosStreamActivity.setVirtualControllerOpacity`, which also
+  keeps it for every later layout of them in this stream) and is saved in the profile at every change, not per game.
+- It shows whether the on-screen controls are on or off.
 
 **Key layout** and **Rotate** are not offered: the key-layout overlay is hidden (its code and preferences stay) and a
 rotation re-lays out the overlays.

@@ -833,6 +833,14 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         prefConfig.onscreenController= virtualController.switchShowHide() != 0;
     }
 
+    /** The stream menu's opacity slider: the running on-screen controls take {@code percent} at once, and so does every later layout of them. */
+    public void setVirtualControllerOpacity(int percent) {
+        prefConfig.oscOpacity = percent;
+        if (virtualController != null) {
+            virtualController.setOpacity(percent);
+        }
+    }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);

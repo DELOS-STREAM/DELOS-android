@@ -118,6 +118,7 @@
     <string name="settings_native_menu_buttons_description">Buttons pressed together during a stream to open or close the stream menu. Select to record others, e.g. a rear button.</string>
     <string name="settings_native_menu_swipe_title">Swipe up to open the menu</string>
     <string name="settings_native_menu_swipe_description">A swipe up from the bottom edge also opens the stream menu. Touches starting there do not reach the app.</string>
+    <string name="settings_native_osc_opacity_title">On-screen controls opacity</string>
     <string name="settings_native_stats_position_title">Statistics position</string>
     <string name="settings_native_stats_position_description">Corner of the full statistics panel while streaming. Compact mode is always top center.</string>
     <string name="settings_native_stats_top_left">Top left</string>

@@ -42,6 +42,7 @@ import com.limelight.shell.settings.SettingSpec
 import com.limelight.shell.settings.SettingsTab
 import com.limelight.shell.settings.SettingsHelp
 import com.limelight.shell.settings.Startup
+import com.limelight.shell.settings.OscOpacity
 import com.limelight.shell.settings.StreamMenuSettings
 import com.limelight.shell.ui.RowValue
 import com.limelight.shell.ui.Symbols
@@ -160,6 +161,13 @@ internal fun nativeSettings(
         settings.edit().putBoolean(StreamMenuSettings.KEY_SWIPE, on).apply()
     }, res.getString(R.string.settings_native_menu_swipe_description),
         tab = SettingsTab.CONTROLS, section = streamMenuSection)
+    // The on-screen controls' opacity, the same profile value as the stream menu's More slider; only where there is a touchscreen to use them
+    // (the other on-screen controls settings are phone-only, see PhoneOnlySettings)
+    if (context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)) {
+        row(OscOpacity.KEY, Symbols.OPACITY, res.getString(R.string.settings_native_osc_opacity_title),
+            RowValue.Slider(OscOpacity.read(settings), OscOpacity.MIN, OscOpacity.MAX, OscOpacity.STEP, " %") { v -> OscOpacity.write(settings, v) },
+            res.getString(R.string.summary_osc_opacity), tab = SettingsTab.CONTROLS, section = res.getString(R.string.category_on_screen_controls_settings))
+    }
     val statsPosition = StatsPosition.read(settings)
     row("ui_stats_position", Symbols.STATS_POSITION, res.getString(R.string.settings_native_stats_position_title),
         RowValue.Choice(res.getString(statsPosition.labelRes), { dir ->

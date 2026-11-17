@@ -84,6 +84,9 @@ internal interface StreamMenuHost {
     fun toggleZoom()
     val onscreenControlsOn: Boolean
     fun toggleOnscreenControls()
+    /** The on-screen controls' opacity in percent; [setOscOpacity] applies it to the running controls and saves it in the profile. */
+    val oscOpacity: Int
+    fun setOscOpacity(percent: Int)
     val fullKeyboardOn: Boolean
     fun toggleFullKeyboard()
     val touchSensitivityOn: Boolean

@@ -225,6 +225,7 @@
     <string name="stream_help_touch_sensitivity">Toggles extra touchscreen sensitivity scaling, configured in settings.</string>
     <string name="stream_help_gyro_smoothing">Steadies gyro aiming at once, kept for this app. 0 is off. More smoothing adds a little delay to slow movement.</string>
     <string name="stream_help_gyro_smoothing_disabled">Needs External gamepad gyroscope or Built-in device gyroscope turned on in Settings; applies from the next stream.</string>
+    <string name="stream_help_on_screen_controls_opacity">Opacity of the on-screen controls. Applies at once and is saved in the profile, the same value as in Settings.</string>
     <string name="stream_help_rumble_feel">Picks how host rumble feels, at once and saved. Stays open: pick again to compare. %1$s goes back.</string>
     <!-- %1$s: a key combination such as Ctrl + Alt + Delete -->
     <string name="stream_help_format_keys">Sends %1$s to the PC once, then returns to the stream.</string>

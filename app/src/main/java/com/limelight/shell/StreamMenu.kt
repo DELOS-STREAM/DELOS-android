@@ -42,6 +42,7 @@ import com.limelight.shell.settings.GameSettingsStore
 import com.limelight.shell.settings.StreamMenuSettings
 import com.limelight.shell.settings.MenuAutoSave
 import com.limelight.shell.settings.MenuSavedSetting
+import com.limelight.shell.settings.OscOpacity
 import com.limelight.shell.settings.gyroSmoothingSaveValues
 import com.limelight.shell.settings.upscalerSaveValues
 import com.limelight.shell.ui.Feedback
@@ -456,6 +457,11 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override fun toggleZoom() { game.pointerHandler.toggleZoomMode() }
         override val onscreenControlsOn get() = game.isVirtualControllerShown
         override fun toggleOnscreenControls() { game.toggleVirtualController() }
+        override val oscOpacity get() = prefs.oscOpacity
+        // The profile value, like the Settings row: the next layout of the controls (a rotation, the next stream) reads it from there
+        override fun setOscOpacity(percent: Int) {
+            game.setVirtualControllerOpacity(OscOpacity.write(ProfileStore.currentSettings(game), percent))
+        }
         override val fullKeyboardOn get() = game.isFullKeyboardShown
         override fun toggleFullKeyboard() { game.toggleFullKeyboard() }
         override val touchSensitivityOn get() = prefs.enableTouchSensitivity
