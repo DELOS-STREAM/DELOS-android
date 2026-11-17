@@ -37,7 +37,6 @@
     <string name="help_checkbox_mouse_emulation">Podržením Start během streamu přepneš gamepad mezi herním vstupem a emulací myši.</string>
     <string name="help_analog_scrolling">Stick, který posouvá v režimu myši přes gamepad.</string>
     <string name="help_checkbox_flip_face_buttons">Prohodí A/B a X/Y pro vstup z gamepadu i ovládání na obrazovce (rozložení Nintendo). Netýká se navigace v aplikaci Delos.</string>
-    <string name="help_checkbox_back_hold_guide">Podržte Zpět půl sekundy a do PC se pošle Guide (tlačítko Xbox), třeba pro Game Bar nebo překryv Steamu. Krátký stisk je dál Zpět, pošle se po puštění.</string>
     <string name="help_checkbox_gamepad_touchpad_as_mouse">Touchpad gamepadu vždy slouží jako myš v PC. Když je vypnuto, podporovaná PC mohou přijímat nativní vstup z touchpadu.</string>
     <string name="help_checkbox_gamepad_motion_sensors">Umožní PC číst gyroskop a akcelerometr externího gamepadu. Vyžaduje Android 12 nebo novější. Pokud žádná aplikace pohyb nepoužívá, vypni – ušetříš trochu energie a provozu.</string>
     <string name="help_checkbox_gamepad_motion_fallback">Použije vlastní gyroskop a akcelerometr zařízení, když je gamepad nemá nebo je Android neumí číst. PC pak může vidět gamepad PlayStation.</string>

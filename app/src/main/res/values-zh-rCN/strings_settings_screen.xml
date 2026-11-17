@@ -89,7 +89,8 @@
     <string name="settings_native_sounds_description">在菜单中移动时发出轻柔的点击声。</string>
 
     <string name="settings_native_menu_buttons_title">串流菜单按键</string>
-    <string name="settings_native_menu_buttons_description">串流时同时按下这些按键可打开或关闭串流菜单。选择后可录制其他按键，例如背键。</string>
+    <string name="settings_native_menu_buttons_description">短按 Guide 或返回键打开串流菜单；长按则向电脑发送 Guide。可在此添加自定义的同时按下的按键，例如背键。默认无。</string>
+    <string name="settings_native_menu_buttons_record">录制按键</string>
     <string name="settings_native_menu_swipe_title">上滑打开菜单</string>
     <string name="settings_native_menu_swipe_description">从底部边缘向上滑动也可打开串流菜单。从该处开始的触摸不会传到应用中。</string>
     <string name="settings_native_osc_opacity_title">屏幕按键不透明度</string>

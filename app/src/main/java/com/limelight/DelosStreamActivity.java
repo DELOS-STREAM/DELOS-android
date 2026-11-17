@@ -2089,7 +2089,8 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
 
     // Delos: every way into the menu opens the Delos stream menu.
-    // The shortcut (L3+R3 or the buttons chosen in Delos) and the swipe up are checked before the stream.
+    // The buttons chosen in Delos (none by default) and the swipe up are checked before the stream; a tap of Guide/Home or
+    // Back is decided in ControllerHandler (issue #102).
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (cancelLoaderOnKey(event)) {

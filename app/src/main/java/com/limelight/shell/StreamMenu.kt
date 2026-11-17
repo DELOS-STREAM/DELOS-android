@@ -67,7 +67,7 @@ import java.io.FileNotFoundException
  * The Delos stream menu (the prototype's `#quickmenu`, "Console tiles"): over the lower part of the stream the game's
  * name and one row of nine glass tiles (Resume, Keyboard, Overlay, Brightness, Bitrate, Upscaler, More, Disconnect,
  * Quit game) with the complete help of the focused tile under them; the pages behind the tiles open in a popover above the tile that opened them. It opens with
- * the buttons set in Delos (L3 + R3 by default), a swipe up from the band above the bottom edge (unless turned off) and every
+ * a tap of Guide/Home or Back (ControllerHandler, issue #102), the buttons the user set in Delos (none by default), a swipe up from the band above the bottom edge (unless turned off) and every
  * way the classic menu opened. It is its own window, so the controller does not reach the game while it is
  * open. This class is that window and the bridge to the stream ([GameHost]); what is drawn is [StreamMenuRoot].
  * Created by DelosStreamActivity (a small "Delos:" hook).

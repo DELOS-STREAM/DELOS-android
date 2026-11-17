@@ -102,7 +102,8 @@
 
     <!-- Native settings: Controls, Display, Devices -->
     <string name="settings_native_menu_buttons_title">Tasten fürs Stream-Menü</string>
-    <string name="settings_native_menu_buttons_description">Tasten, die im Stream gemeinsam gedrückt werden, um das Stream-Menü zu öffnen oder zu schließen. Auswählen, um andere aufzuzeichnen, z. B. eine Rückseitentaste.</string>
+    <string name="settings_native_menu_buttons_description">Kurz Guide oder Zurück drücken öffnet das Stream-Menü; halten sendet Guide an den PC. Hier kannst du eigene, gemeinsam gedrückte Tasten hinzufügen, z. B. eine Rückseitentaste. Standardmäßig keine.</string>
+    <string name="settings_native_menu_buttons_record">Tasten aufzeichnen</string>
     <string name="settings_native_menu_swipe_title">Nach oben wischen öffnet das Menü</string>
     <string name="settings_native_menu_swipe_description">Ein Wischen vom unteren Rand nach oben öffnet ebenfalls das Stream-Menü. Berührungen, die dort beginnen, erreichen die App nicht.</string>
     <string name="settings_native_osc_opacity_title">Deckkraft der Bildschirmsteuerung</string>
