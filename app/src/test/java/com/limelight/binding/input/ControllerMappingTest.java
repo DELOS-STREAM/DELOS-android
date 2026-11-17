@@ -160,7 +160,7 @@ public class ControllerMappingTest {
         table.put(KeyEvent.KEYCODE_BUTTON_START, ControllerPacket.PLAY_FLAG);
         table.put(KeyEvent.KEYCODE_MENU, ControllerPacket.PLAY_FLAG);
         table.put(KeyEvent.KEYCODE_BUTTON_SELECT, ControllerPacket.BACK_FLAG);
-        table.put(KeyEvent.KEYCODE_BUTTON_MODE, ControllerPacket.SPECIAL_BUTTON_FLAG);
+        // Guide (KEYCODE_BUTTON_MODE) is not a plain button: a tap opens the stream menu, a hold sends Guide (GuideTapHoldTest)
         table.put(KeyEvent.KEYCODE_DPAD_UP, ControllerPacket.UP_FLAG);
         table.put(KeyEvent.KEYCODE_DPAD_DOWN, ControllerPacket.DOWN_FLAG);
         table.put(KeyEvent.KEYCODE_DPAD_LEFT, ControllerPacket.LEFT_FLAG);
