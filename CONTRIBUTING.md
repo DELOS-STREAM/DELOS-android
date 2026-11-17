@@ -66,7 +66,7 @@ Refs: #123
 - **`[skip ci]`** is the last line of every commit to `main`, after the footers and an empty line. GitHub Actions does not start workflows for a pushed commit whose message contains it. **CI runs with every public release, starting with the first (1.0.0):** pushing the tag `vX.Y.Z` starts the Build workflow, so the commit that gets a release tag is written without the line. It is not started by hand. A contributor's pull request does not need the line.
 - **One topic per commit.** No `WIP`, `fixup!` or `squash!` commits on `main`: tidy them up before the merge.
 - The convention applies from 2026-11-15. The history of `main` is never rewritten, so older commits keep their subjects; a mistake is fixed by a new commit.
-- **Credit:** a merged pull request keeps its author. The changelog entry for your change ends with `(by [@your-name](https://github.com/your-name), [#123](https://github.com/Meitoncz/DELOS/pull/123))`; the maintainer adds it if you forget.
+- **Credit:** a merged pull request keeps its author. The changelog entry for your change ends with `(by [@your-name](https://github.com/your-name), [#123](https://github.com/DELOS-STREAM/DELOS-android/pull/123))`; the maintainer adds it if you forget.
 
 ## Branch names
 
