@@ -7,6 +7,7 @@
 
 **Game streaming for Android handhelds**, with a console-like interface you can drive entirely with a gamepad.
 
+[![Latest release](https://img.shields.io/github/v/release/DELOS-STREAM/DELOS-android?display_name=tag&sort=semver&color=4fd2ee&labelColor=151b2b&label=release)](https://github.com/DELOS-STREAM/DELOS-android/releases/latest)
 [![License: GPL v3](https://img.shields.io/github/license/DELOS-STREAM/DELOS-android?color=fbbd44&labelColor=151b2b)](LICENSE)
 [![Android 10+](https://img.shields.io/badge/Android-10%2B-4fd2ee?logo=android&logoColor=white&labelColor=151b2b)](docs/BUILDING.md)
 [![Stars](https://img.shields.io/github/stars/DELOS-STREAM/DELOS-android?style=flat&color=fbbd44&labelColor=151b2b)](https://github.com/DELOS-STREAM/DELOS-android/stargazers)
