@@ -61,6 +61,7 @@ Each records what was researched or measured on one day. It is not edited afterw
 | Document | Date | Subject |
 |---|---|---|
 | [VIDEO_OPTICAL_FLOW_RESEARCH.md](VIDEO_OPTICAL_FLOW_RESEARCH.md) | 2026-10-26 | Feasibility of optical flow for video upscaling on the test device |
+| [OPTICAL_FLOW_PYRAMIDS_2026-11-18.md](OPTICAL_FLOW_PYRAMIDS_2026-11-18.md) | 2026-11-18 | Gaussian pyramids and shared optical-flow contract for MetalFX and SGSR2 |
 | [HANDHELD_DEVICES.md](HANDHELD_DEVICES.md) | 2026-11-11 | The displays of the target handhelds, with sources |
 | [CONTROLLER_STATE.md](CONTROLLER_STATE.md) | 2026-11-12 | The stuck rumble with the gyro on: evidence that it is a host problem |
 | [prototype/delos-gui.html](prototype/delos-gui.html) | 2026-10 | The HTML prototype of the first design |
