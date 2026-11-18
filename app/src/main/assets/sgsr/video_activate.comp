@@ -1,13 +1,15 @@
 #version 310 es
-// Video adaptation of SGSR 2's Activate stage. With no engine depth buffer, optical-flow
-// confidence, forward/backward consistency and luma residual identify disocclusions and changes.
+// Video adaptation of SGSR 2's Activate stage. With no engine depth buffer, the reactive mask
+// rises where the luma is outside the range of the four previous texels the flow points between
+// (what the history would bring is not there; within that range bilinear interpolation of fine
+// detail and codec noise explain the difference) and where the previous position is outside the
+// picture. Forward/backward flow disagreement is rejected in sgsr2_video.frag for both modes.
 precision highp float;
 precision highp int;
 layout(local_size_x=8,local_size_y=8) in;
-uniform sampler2D currentLuma;
-uniform sampler2D previousLuma;
-uniform sampler2D backwardFlow;
-uniform sampler2D forwardFlow;
+uniform highp sampler2D currentLuma;
+uniform highp sampler2D previousLuma;
+uniform highp sampler2D backwardFlow;
 uniform ivec2 inputSize;
 layout(rgba16f,binding=0) writeonly uniform highp image2D reactiveMask;
 
@@ -19,16 +21,13 @@ void main() {
     ivec2 p=ivec2(gl_GlobalInvocationID.xy);
     if(any(greaterThanEqual(p,inputSize))) return;
     vec2 uv=(vec2(p)+0.5)/vec2(inputSize);
-    vec4 backward=textureLod(backwardFlow,flowUv(uv),0.0);
-    vec2 previousUv=uv+backward.xy/vec2(inputSize);
-    vec4 forward=textureLod(forwardFlow,flowUv(clamp(previousUv,vec2(0.0),vec2(1.0))),0.0);
-    float consistency=length(backward.xy+forward.xy);
+    vec2 previousUv=uv+textureLod(backwardFlow,flowUv(uv),0.0).xy/vec2(inputSize);
     float current=texelFetch(currentLuma,p,0).r;
-    float previous=textureLod(previousLuma,clamp(previousUv,vec2(0.0),vec2(1.0)),0.0).r;
-    float residual=abs(current-previous);
-    float invalid=1.0-min(backward.w,forward.w);
-    float reactive=max(invalid,smoothstep(0.75,2.5,consistency));
-    reactive=max(reactive,smoothstep(0.025,0.12,residual));
+    // textureGather reads the base level, whatever the pyramid's filter.
+    vec4 around=textureGather(previousLuma,clamp(previousUv,vec2(0.0),vec2(1.0)));
+    float outside=max(max(min(min(around.x,around.y),min(around.z,around.w))-current,
+                          current-max(max(around.x,around.y),max(around.z,around.w))),0.0);
+    float reactive=smoothstep(0.025,0.12,outside);
     if(any(lessThan(previousUv,vec2(0.0)))||any(greaterThan(previousUv,vec2(1.0)))) reactive=1.0;
-    imageStore(reactiveMask,p,vec4(clamp(reactive,0.0,1.0)));
+    imageStore(reactiveMask,p,vec4(reactive));
 }

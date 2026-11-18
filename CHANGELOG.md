@@ -10,6 +10,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Fixed
+- SGSR 2 (MediaCodec path) uses its history on moving pictures. Three faults made it reject the previous frames almost everywhere, so it mostly upscaled each frame alone: the luma pyramid's texture filter made every pyramid level read the full-size picture, so the optical flow of the coarser levels compared the wrong pictures; the flow's trust value counted flat areas and straight edges as unsure and fell with ordinary codec noise; and the Quality mode's luma check failed on fine detail. The flow is now inverse compositional Lucas-Kanade on a smoothed luma pyramid, a finer level starts from zero motion where that matches better, history is rejected where forward and backward flow disagree (from 0.1 px), where the luma is outside the range of the four previous texels the flow points between (Quality), outside the picture and on a cut, and the cut detector compares block means instead of 64 single pixels. Settings are unchanged. The GLSL compiles and the unit tests pass; not yet verified on a device, and the PyroWave path is unchanged.
+
 ## [1.2.0] - 2026-11-17
 _Touch everywhere, the last input decides the hints, new controller glyphs, Guide and Back for the stream menu, anchored on-screen controls; the project moves to the DELOS-STREAM organization._
 
