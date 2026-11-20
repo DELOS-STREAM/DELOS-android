@@ -117,7 +117,8 @@ export function createHandler(deps = {}) {
       parse(params) {
         const values = singleParams(params, ["id"], { required: ["id"] });
         const id = values && validId(values.id, MAX_IGDB_ID);
-        return id ? { normalized: [["id", String(id)]], upstream: (env, io) => gameDetails(env, io, id) } : null;
+        // `v` changes the cache key when the answer's shape grows (2: Steam media), so stale entries are not served.
+        return id ? { normalized: [["id", String(id)], ["v", "2"]], upstream: (env, io) => gameDetails(env, io, id) } : null;
       },
     },
     "/v1/pcgw/cargo": {
