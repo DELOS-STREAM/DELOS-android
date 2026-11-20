@@ -165,6 +165,26 @@ import java.util.TimeZone
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import com.limelight.shell.data.ArtKind
+import com.limelight.shell.data.LocalArtwork
+import com.limelight.shell.data.rememberAnimatedArtwork
+import com.limelight.shell.data.rememberArtworkResult
+import com.limelight.shell.ui.AnimatedArtLayer
+import com.limelight.shell.ui.LocalBackdropMirror
+import com.limelight.shell.ui.drawBackdropMirror
 
 /** The page's sides (`.a-page`: padding 0 150px), the header's top and its column gap, the cover's size, in stage pixels. */
 private const val SIDE = 150f
@@ -173,6 +193,10 @@ private const val COVER_W = 340f
 private const val COVER_H = 510f
 private const val COVER_GAP = 72f
 private const val TITLE_SIZE = 68f
+
+/** The header's logo box: as tall as two lines of the title, and of the dashboard's logo box proportions (900 × 180), so it flies at one scale. */
+private const val LOGO_H = 140f
+private const val LOGO_W = 700f
 private const val SECTION_GAP = 70f
 
 /** Section ids of [OverviewFocus] (the header and the [OverviewModel.Section]s). */
@@ -193,8 +217,10 @@ private class PartFocus(val section: String, val track: LazyListState? = null, v
  * and players' rings, Play and App settings and the streaming stats; About, Screenshots and videos, Details, Your streaming, Links and
  * Similar games follow. The hero behind it is the dashboard's, deepening its blur as the page scrolls.
  *
- * [controller] runs the motion; [cover] is exactly the library card's image (the user's SteamGridDB choice, else the default card
- * art); [library] is every app of the PC, for similar games the user owns. [onClosed] runs once the card is back in its row.
+ * [controller] runs the motion; [cover] is exactly the library card's image (the user's SteamGridDB choice,
+ * else the default card art); [card] is the focused card as the row draws it, which the flying cover crossfades with; [library] is
+ * every app of the PC, for similar games the user owns. [onLeaving] runs as the closing motion begins; the overview leaves composition
+ * once the card is back in its row.
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -205,13 +231,14 @@ internal fun GameOverview(
     library: List<App>,
     cover: ImageBitmap?,
     art: GameArt,
+    card: GraphicsLayer?,
     playtime: Playtime,
     resumes: Int,
     reducedMotion: Boolean,
     onPlay: () -> Unit,
     onSettings: () -> Unit,
     onJump: (App) -> Unit,
-    onClosed: () -> Unit,
+    onLeaving: () -> Unit,
     coverArt: @Composable (App, Modifier) -> Unit,
 ) {
     val shell = LocalShell.current
@@ -234,7 +261,11 @@ internal fun GameOverview(
     val track = rememberLazyListState()
     val similarRow = rememberLazyListState()
     val pageHaze = remember { HazeState() }
-    val viewerHaze = remember { HazeState() }
+    // The shell's background haze: this page is a source over the background in it (z 1), so the top bar and the screenshot viewer,
+    // which float over the page, blur what lies under them now (the background, the page as it scrolls and moves), not a picture
+    // of the dashboard
+    val ownHaze = remember { HazeState() }
+    val viewerHaze = LocalBackdropHaze.current ?: ownHaze
     var viewer by remember { mutableStateOf<ViewerRequest?>(null) }
     var backdropShot by remember { mutableStateOf<String?>(null) }
     var storyOpen by remember(app.id) { mutableStateOf(false) }
@@ -257,15 +288,16 @@ internal fun GameOverview(
         if (media.isNotEmpty()) images.prefetch(media.take(2).map { it.thumb } + listOfNotNull(media.firstOrNull { it.kind == OverviewModel.MediaKind.SCREENSHOT }?.full))
     }
 
-    // Closing: the page scrolls back to its top first, then every motion reverses
+    // Closing: the page scrolls back to its top first, then every motion reverses. The card takes the focus back as the motion
+    // begins: its focus look (scale, ring) settles while it is still hidden, so it is in place when the cover lands on it
     val close: () -> Unit = {
         if (!controller.leaving) {
             feedback.play(Cue.BACK)
             focus.alpha.let { a -> scope.launch { a.animateTo(0f, tween(200)) } }
-            controller.close(
-                prepare = { if (scroll.value > 1) scroll.animateScrollTo(0, tween(if (reduced) 0 else 420, easing = OverviewMotion.InOut)) },
-                done = onClosed,
-            )
+            controller.close {
+                onLeaving()
+                if (scroll.value > 1) scroll.animateScrollTo(0, tween(if (reduced) 0 else 420, easing = OverviewMotion.InOut))
+            }
         }
     }
     val currentClose by rememberUpdatedState(close)
@@ -374,7 +406,7 @@ internal fun GameOverview(
                 true
             },
     ) {
-        Box(Modifier.fillMaxSize().hazeSource(viewerHaze)) {
+        Box(Modifier.fillMaxSize().hazeSource(viewerHaze, zIndex = 1f)) {
             OverviewBackdrop(controller, shell.hero, backdropShot, scroll::value, reducedMotion, pageHaze)
             CompositionLocalProvider(LocalOverviewFocus provides focus, LocalBackdropHaze provides pageHaze, LocalBringIntoViewSpec provides OverviewNoAutoScroll) {
                 Box(
@@ -410,11 +442,12 @@ internal fun GameOverview(
                     ) {
                         Header(
                             controller, pc, app, details, data?.hdr?.support, data?.completion?.seconds, candidate,
-                            art, cover, playtime, resumes, sections, ratings::value, pageMotion, playRequester,
+                            art, cover, card, playtime, resumes, sections, ratings::value, pageMotion, playRequester,
                             onPlay, onSettings, coverArt, pull = { pull },
                             register = { id -> parts[id] = PartFocus(HEAD) }, onFocused = onPartFocused, onHover = { hovered = true },
                         )
-                        Column(Modifier.graphicsLayer { val (dy, a) = pageMotion(); translationY = dy * k; alpha = a }) {
+                        // Fading out while it closes: its alpha applies to each of its parts as they draw (no offscreen copy of the page)
+                        Column(Modifier.graphicsLayer { val (dy, a) = pageMotion(); translationY = dy * k; alpha = a; compositingStrategy = CompositingStrategy.ModulateAlpha }) {
                             if (details == null) {
                                 DetailsStatus(entry.detailsLoading || data?.detailsUpdatedAt == 0L && data.detailsFailedAt == 0L)
                             }
@@ -542,7 +575,7 @@ private fun DetailsStatus(loading: Boolean) {
 @Composable
 private fun Header(
     controller: OverviewController, pc: Pc, app: App, details: GameDetails?, hdr: NativeHdr?, hltbSeconds: Long?,
-    candidate: com.limelight.shell.data.MetadataCandidate?, art: GameArt, cover: ImageBitmap?, playtime: Playtime, resumes: Int,
+    candidate: com.limelight.shell.data.MetadataCandidate?, art: GameArt, cover: ImageBitmap?, card: GraphicsLayer?, playtime: Playtime, resumes: Int,
     sections: List<OverviewModel.Section>, ratings: () -> Float, pageMotion: () -> Pair<Float, Float>, playRequester: FocusRequester,
     onPlay: () -> Unit, onSettings: () -> Unit, coverArt: @Composable (App, Modifier) -> Unit, pull: () -> Float,
     register: (String) -> Unit, onFocused: (String) -> Unit, onHover: () -> Unit,
@@ -567,41 +600,24 @@ private fun Header(
     }
     Box(Modifier.fillMaxWidth().height((stage.stageHeight - 160f).px).overviewSection(HEAD)) {
         Row(Modifier.padding(start = SIDE.px, top = HEAD_TOP.px, end = SIDE.px)) {
-            // The cover: the card's own image, flying in from the card and back ([OverviewMotion.cover])
-            var coverCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+            // The cover: a frame flying from the card's place and shape into the slot and back ([OverviewMotion.cover]). The picture
+            // in it keeps its proportions (one scale, cropped to the frame), and the card as the row drew it ([card]: its own art,
+            // a wide card's too, the current frame of its animation) crossfades into it on the way
+            val pose = remember { CoverPose() }
             Box(
                 Modifier
                     .size(COVER_W.px, COVER_H.px)
-                    .onGloballyPositioned { coverCoordinates = it }
+                    // Where the slot is on screen: it does not move while the cover flies (the page is at its top, nothing lays out)
+                    .onGloballyPositioned { pose.slot = it.rootRect() }
                     .graphicsLayer {
+                        val p = pose.update(controller, size.width, size.height, pull(), k)
                         transformOrigin = TransformOrigin(0f, 0f)
-                        val pulled = pull()
-                        val from = controller.from
-                        val to = coverCoordinates?.takeIf { it.isAttached }?.let { c ->
-                            c.rootRect()
-                        }
-                        val moving = controller.opening || controller.closing
-                        if (controller.reduced) {
-                            alpha = when {
-                                controller.closing -> 1f - Motion.progress(controller.clock.value, 0, Motion.FADE, Motion.Ease)
-                                controller.opening -> Motion.progress(controller.clock.value, 0, Motion.FADE, Motion.Ease)
-                                else -> 1f
-                            }
-                        } else if (moving && from != null && to != null && to.width > 0f) {
-                            val p = OverviewMotion.flight(controller.clock.value, opening = !controller.closing)
-                            val frame = OverviewMotion.cover(p, from, to, OverviewMotion.ARC * k)
-                            translationX = frame.offset.x
-                            translationY = frame.offset.y
-                            scaleX = frame.scaleX
-                            scaleY = frame.scaleY
-                            shape = RoundedCornerShape(frame.corner * k / 1f)
-                        } else {
-                            // Pulled down by a finger at the top, the cover shrinks a little
-                            val s = 1f - min(pulled / k, 300f) / 2400f
-                            scaleX = s
-                            scaleY = s
-                            shape = RoundedCornerShape(OverviewMotion.TO_CORNER * k)
-                        }
+                        scaleX = p.scale
+                        scaleY = p.scale
+                        translationX = p.x
+                        translationY = p.y
+                        alpha = p.alpha
+                        shape = p.shape
                         clip = true
                     }
                     .dropShadow(RoundedCornerShape(OverviewMotion.TO_CORNER.px)) {
@@ -615,7 +631,40 @@ private fun Header(
             ) {
                 if (cover != null) Image(cover, app.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else coverArt(app, Modifier.fillMaxSize())
-                Box(Modifier.fillMaxSize().border(1.px, Color.White.copy(alpha = .08f), RoundedCornerShape(OverviewMotion.TO_CORNER.px)))
+                // The chosen animated cover plays over its still first frame, as on the card (and stops with the overview)
+                val artwork = LocalArtwork.current
+                val animatedArt = LocalDashboardArt.current
+                val animation by rememberAnimatedArtwork(artwork, pc, app, ArtKind.COVER)
+                if (animatedArt != null && animation != null && cover != null) {
+                    AnimatedArtLayer(
+                        animation, animatedArt.motionOn, animatedArt.ticker, (COVER_W * k).roundToInt(), (COVER_H * k).roundToInt(),
+                        Modifier.fillMaxSize(), stamp = artwork.version.intValue,
+                    )
+                }
+                if (card != null) Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = pose.update(controller, size.width, size.height, pull(), k).card }
+                        .drawBehind {
+                            val p = pose.update(controller, size.width, size.height, pull(), k)
+                            val cw = card.size.width.toFloat()
+                            val ch = card.size.height.toFloat()
+                            if (p.card > 0f && cw > 0f && ch > 0f) {
+                                // The card fills the frame at one scale, as the cover does
+                                val u = OverviewMotion.fillScale(p.frameWidth, p.frameHeight, cw, ch)
+                                translate(p.frameLeft + (p.frameWidth - cw * u) / 2f, p.frameTop + (p.frameHeight - ch * u) / 2f) {
+                                    scale(u, u, pivot = Offset.Zero) { drawLayer(card) }
+                                }
+                            }
+                        },
+                )
+                // The rim of the cover at rest (the frame in flight has the card's corner)
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = if (controller.opening || controller.closing) 0f else 1f }
+                        .border(1.px, Color.White.copy(alpha = .08f), RoundedCornerShape(OverviewMotion.TO_CORNER.px)),
+                )
             }
             Spacer(Modifier.width(COVER_GAP.px))
             Column(Modifier.padding(top = 4.px), verticalArrangement = Arrangement.spacedBy(24.px)) {
@@ -624,7 +673,7 @@ private fun Header(
                 val eyebrow = listOfNotNull(year?.toString(), developers.joinToString(", ").takeIf { it.isNotEmpty() })
                     .reduceOrNull { a, b -> res.getString(R.string.home_meta_join, a, b) }
                 OverviewEyebrow(eyebrow ?: "\u00a0", colors.accent, Modifier.st(0))
-                Title(controller, app.name, hue, pageMotion)
+                Title(controller, pc, app, hue, pageMotion)
                 // Up to two genres and two themes (as on the dashboard), then HDR
                 val genres = remember(metadata) { topGenres(candidate?.genres.orEmpty(), metadata?.steamTags.orEmpty()) }
                 val themes = remember(metadata) { topThemes(candidate?.themes.orEmpty(), metadata?.steamTags.orEmpty()) }
@@ -715,53 +764,76 @@ private fun Header(
     }
 }
 
-/** The title (68 px Unbounded in the game's colors), flying from the dashboard's title when that was text ([OverviewController.title]). */
+/**
+ * The title: the game's logo when it has one, exactly the dashboard's (the user's SteamGridDB choice, else the default logo, its
+ * animation playing over it), else its name in 68 px Unbounded in the game's colors; while the logo lookup is pending, the logo's room.
+ * It flies from the dashboard's title when that was the same kind ([OverviewController.title]): the logo from the logo, the name from the
+ * name; otherwise it rises like the header's parts.
+ */
 @Composable
-private fun Title(controller: OverviewController, name: String, hue: Float, pageMotion: () -> Pair<Float, Float>) {
+private fun Title(controller: OverviewController, pc: Pc, app: App, hue: Float, pageMotion: () -> Pair<Float, Float>) {
     val colors = LocalDelosColors.current
     val k = stageUnit()
+    val artwork = LocalArtwork.current
+    val logo by rememberArtworkResult(artwork, pc, app, ArtKind.LOGO)
+    val logoImage = logo.image
+    val isLogo = logoImage != null
     var coordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
-    BasicText(
-        name,
-        modifier = Modifier
-            .widthIn(max = 1150.px)
-            .onGloballyPositioned { coordinates = it }
-            .graphicsLayer {
-                transformOrigin = TransformOrigin(0f, 0f)
-                val source = controller.title
-                val moving = controller.opening || controller.closing
-                val c = coordinates
-                if (source != null && moving && c != null && c.isAttached && !controller.reduced) {
-                    val to = c.rootRect()
-                    val p = OverviewMotion.title(controller.clock.value, opening = !controller.closing)
-                    val scale = source.fontSize / TITLE_SIZE
-                    val dx = source.rect.left - to.left
-                    val dy = source.rect.top - to.top + (source.rect.height - to.height * scale) / 2f
-                    translationX = dx * (1f - p)
-                    translationY = dy * (1f - p)
-                    val s = Motion.lerp(scale, 1f, p)
-                    scaleX = s
-                    scaleY = s
-                } else {
-                    // A logo on the dashboard (or reduced motion): the title enters and leaves like the header's parts
-                    val (pageDy, pageAlpha) = pageMotion()
-                    val (dy, a) = when {
-                        controller.closing -> OverviewMotion.leave(controller.clock.value, controller.reduced)
-                        controller.opening && source == null -> OverviewMotion.rise(controller.clock.value, OverviewMotion.HEADER_DELAY, 0, controller.reduced)
-                        controller.opening -> 0f to Motion.progress(controller.clock.value, 0, Motion.FADE, Motion.Ease)
-                        else -> 0f to 1f
-                    }
-                    translationY = (dy + pageDy) * k
-                    alpha = a * pageAlpha
+    val flight = Modifier
+        .onGloballyPositioned { coordinates = it }
+        .graphicsLayer {
+            transformOrigin = TransformOrigin(0f, 0f)
+            val source = controller.title?.takeIf { (it.fontSize == null) == isLogo }
+            val moving = controller.opening || controller.closing
+            val c = coordinates
+            if (source != null && moving && c != null && c.isAttached && !controller.reduced) {
+                val to = c.rootRect()
+                val p = OverviewMotion.title(controller.clock.value, opening = !controller.closing)
+                // The dashboard's logo box and this one have the same proportions: one scale maps the logo in one onto the other
+                val scale = source.fontSize?.let { it / TITLE_SIZE } ?: (source.rect.height / to.height)
+                val dx = source.rect.left - to.left
+                val dy = source.rect.top - to.top + if (source.fontSize != null) (source.rect.height - to.height * scale) / 2f else 0f
+                translationX = dx * (1f - p)
+                translationY = dy * (1f - p)
+                val s = Motion.lerp(scale, 1f, p)
+                scaleX = s
+                scaleY = s
+            } else {
+                // Nothing of its kind on the dashboard (or reduced motion): the title enters and leaves like the header's parts
+                val (pageDy, pageAlpha) = pageMotion()
+                val (dy, a) = when {
+                    controller.closing -> OverviewMotion.leave(controller.clock.value, controller.reduced)
+                    controller.opening && source == null -> OverviewMotion.rise(controller.clock.value, OverviewMotion.HEADER_DELAY, 0, controller.reduced)
+                    controller.opening -> 0f to Motion.progress(controller.clock.value, 0, Motion.FADE, Motion.Ease)
+                    else -> 0f to 1f
                 }
-            },
+                translationY = (dy + pageDy) * k
+                alpha = a * pageAlpha
+            }
+        }
+    if (logoImage != null) Box(flight) {
+        Image(
+            logoImage, contentDescription = app.name, contentScale = ContentScale.Fit, alignment = Alignment.CenterStart,
+            modifier = Modifier.height(LOGO_H.px).widthIn(max = LOGO_W.px),
+        )
+        val animatedArt = LocalDashboardArt.current
+        val animation by rememberAnimatedArtwork(artwork, pc, app, ArtKind.LOGO)
+        if (animatedArt != null && animation != null) {
+            AnimatedArtLayer(
+                animation, animatedArt.motionOn, animatedArt.ticker, (LOGO_W * k).roundToInt(), (LOGO_H * k).roundToInt(),
+                Modifier.matchParentSize(), fit = true, alignX = 0f, stamp = artwork.version.intValue,
+            )
+        }
+    } else if (logo.resolved) BasicText(
+        app.name,
+        modifier = flight.widthIn(max = 1150.px),
         style = TextStyle(
             brush = Brush.verticalGradient(.3f to colors.text, 1f to hsl(hue, 70f, 68f)),
             fontFamily = Unbounded, fontWeight = FontWeight.Bold, fontSize = TITLE_SIZE.tpx, lineHeight = 1.06.em, letterSpacing = (-.01).em,
             lineBreak = LineBreak.Heading,
             shadow = Shadow(Color.Black.copy(alpha = .4f), Offset(0f, 6f * k), 28f * k),
         ),
-    )
+    ) else Spacer(Modifier.height(LOGO_H.px))
 }
 
 /** Bobs its content by a few pixels (2.2 s, `@keyframes bob`), down or up; still with reduced motion. */
@@ -1207,7 +1279,8 @@ private fun SimilarSection(
         LazyRow(
             state = row,
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(start = SIDE.px, end = SIDE.px, top = 12.px, bottom = 24.px),
+            // Room above and below for the focus growth (6 %) and the ring of the 260 × 390 covers
+            contentPadding = PaddingValues(start = SIDE.px, end = SIDE.px, top = 16.px, bottom = 30.px),
             horizontalArrangement = Arrangement.spacedBy(30.px),
         ) {
             itemsIndexed(details.similarGames, key = { _, game -> game.id }) { index, game ->
@@ -1218,20 +1291,20 @@ private fun SimilarSection(
                     Modifier
                         .part(
                             "similar$index", section, parts, onFocused, onHover, onClick = { onOpen(owned, game.name) },
-                            ring = RingStyle(6f, 20f), corner = 20f, focusScale = 1.06f, group = "similar", locked = true, track = row, index = index,
+                            ring = RingStyle(6f, SIMILAR_CORNER), corner = SIMILAR_CORNER, focusScale = 1.06f, group = "similar", locked = true, track = row, index = index,
                         )
-                        .size(200.px, 300.px)
-                        .clip(RoundedCornerShape(20.px))
+                        .size(SIMILAR_W.px, SIMILAR_H.px)
+                        .clip(RoundedCornerShape(SIMILAR_CORNER.px))
                         .background(colors.surface2),
                 ) {
                     if (owned != null) coverArt(owned, Modifier.fillMaxSize())
                     else {
-                        val image by rememberIgdbImage(game.coverImageId?.let { IgdbImageUrls.image(it, IgdbImageSize.COVER_BIG) }, (200f * 1.06f * k).toInt())
+                        val image by rememberIgdbImage(game.coverImageId?.let { IgdbImageUrls.image(it, IgdbImageSize.COVER_BIG) }, (SIMILAR_W * 1.06f * k).toInt())
                         val bitmap = image
                         if (bitmap != null) Image(bitmap, game.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                         else {
                             val hue = ((game.name.hashCode() and 0x7fffffff) % 360).toFloat()
-                            PlaceholderArt(hue, (hue + 35f) % 360f, Symbols.SPORTS_ESPORTS, Modifier.fillMaxSize(), glyphSize = 220f, title = game.name, titleSize = 22f, titleInset = 16f, titleBottom = 16f, titleFit = true)
+                            PlaceholderArt(hue, (hue + 35f) % 360f, Symbols.SPORTS_ESPORTS, Modifier.fillMaxSize(), glyphSize = 286f, title = game.name, titleSize = 26f, titleInset = 20f, titleBottom = 20f, titleFit = true)
                         }
                     }
                     if (owned != null) {
@@ -1247,20 +1320,113 @@ private fun SimilarSection(
     }
 }
 
+/** A similar game's cover: 1.3 times the first design's 200 × 300, its corner with it. */
+private const val SIMILAR_W = 260f
+private const val SIMILAR_H = 390f
+private const val SIMILAR_CORNER = 24f
+
 /**
- * The page's backdrop: the dashboard's hero as a sharp and a deeply blurred layer, crossfaded by the scroll (opacity only, no animated
- * blur radius), drifting slower than the page and zooming a little; a focused screenshot crossfades in instead. It is the blur source
- * of the page's glass ([haze]).
+ * The header cover this frame ([OverviewMotion.cover], [OverviewMotion.fillScale]): one scale and the translation of its top-left
+ * (its own pixels), the frame it shows in its own unscaled pixels with the clip of that frame, its opacity (reduced motion fades it)
+ * and how much of the row's card shows over it. Read while drawing; only a moving frame makes a new clip.
+ */
+private class CoverPose {
+    var scale = 1f
+        private set
+    var x = 0f
+        private set
+    var y = 0f
+        private set
+    var alpha = 1f
+        private set
+    var card = 0f
+        private set
+    var frameLeft = 0f
+        private set
+    var frameTop = 0f
+        private set
+    var frameWidth = 0f
+        private set
+    var frameHeight = 0f
+        private set
+    var shape: Shape = RectangleShape
+        private set
+    private var rest: Shape? = null
+
+    /** The cover's slot on screen (root pixels), measured when it is placed. */
+    var slot: Rect? = null
+
+    /** The pose of a cover of [w] × [h] in its [slot], pulled down [pulled] pixels by a finger at the top of the page. */
+    fun update(controller: OverviewController, w: Float, h: Float, pulled: Float, k: Float): CoverPose {
+        scale = 1f
+        x = 0f
+        y = 0f
+        alpha = 1f
+        card = 0f
+        frameLeft = 0f
+        frameTop = 0f
+        frameWidth = w
+        frameHeight = h
+        val from = controller.from
+        val to = slot
+        val moving = controller.opening || controller.closing
+        if (controller.reduced) {
+            alpha = when {
+                controller.closing -> 1f - Motion.progress(controller.clock.value, 0, Motion.FADE, Motion.Ease)
+                controller.opening -> Motion.progress(controller.clock.value, 0, Motion.FADE, Motion.Ease)
+                else -> 1f
+            }
+        } else if (moving && from != null && to != null && to.width > 0f && w > 0f) {
+            val p = OverviewMotion.flight(controller.clock.value, opening = !controller.closing)
+            val f = OverviewMotion.cover(p, from, to, OverviewMotion.ARC * k)
+            // Screen pixels in the cover's own (1 unless something above the page scales it)
+            val r = w / to.width
+            val fw = f.rect.width * r
+            val fh = f.rect.height * r
+            val s = OverviewMotion.fillScale(fw, fh, w, h)
+            scale = s
+            x = f.rect.left * r + (fw - w * s) / 2f
+            y = f.rect.top * r + (fh - h * s) / 2f
+            frameLeft = (f.rect.left * r - x) / s
+            frameTop = (f.rect.top * r - y) / s
+            frameWidth = fw / s
+            frameHeight = fh / s
+            card = OverviewMotion.cardShown(p)
+            shape = FrameShape(frameLeft, frameTop, frameWidth, frameHeight, f.corner * k * r / s)
+            return this
+        } else {
+            // Pulled down by a finger at the top, the cover shrinks a little
+            scale = 1f - min(pulled / k, 300f) / 2400f
+        }
+        shape = rest ?: RoundedCornerShape(OverviewMotion.TO_CORNER * k).also { rest = it }
+        return this
+    }
+}
+
+/** A rounded frame at a place inside the cover (its own pixels): the clip of the cover in flight. */
+private class FrameShape(private val left: Float, private val top: Float, private val width: Float, private val height: Float, private val corner: Float) : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
+        Outline.Rounded(RoundRect(left, top, left + width, top + height, CornerRadius(corner)))
+}
+
+/**
+ * The page's backdrop. The dashboard's own background goes on under it ([BackdropMirror]): its hero exactly as the dashboard shows it,
+ * at the user's blur and playing when it is animated, so the overview starts with the dashboard's look. The scroll crossfades a deeply
+ * blurred layer of the hero over it (opacity only, no animated blur radius), drifting slower than the page and zooming a little; a
+ * focused screenshot crossfades in instead, sharp and deep. It is the blur source of the page's glass ([haze]).
  */
 @Composable
 private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, shot: String?, scroll: () -> Int, reduced: Boolean, haze: HazeState) {
     val colors = LocalDelosColors.current
     val k = stageUnit()
     val stage = LocalStage.current
+    val mirror = LocalBackdropMirror.current
+    val anchor = remember { arrayOfNulls<LayoutCoordinates>(1) }
     val area = remember(stage.stageWidth, stage.stageHeight) { HeroArea.of(stage) }
     val shotImage by rememberIgdbImage(shot, (569f * k).toInt())
-    val image = (if (shot != null) shotImage else null) ?: hero?.image
-    val sourceKey = if (shot != null && shotImage != null) "overview/$shot" else "overview/${hero?.id}"
+    val showsShot = shot != null && shotImage != null
+    val image = (if (showsShot) shotImage else null) ?: hero?.image
+    val sourceKey = if (showsShot) "overview/$shot" else "overview/${hero?.id}"
     val bg = colors.bg
     val shadeBottom = remember(bg) { Brush.verticalGradient(0f to Color.Transparent, .42f to Color.Transparent, 1f to bg) }
     val shadeLeft = remember(bg) { Brush.horizontalGradient(0f to bg, .38f to Color.Transparent) }
@@ -1272,23 +1438,41 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, sho
             else -> 1f
         }
     }
-    Box(Modifier.fillMaxSize().hazeSource(haze).graphicsLayer { alpha = enter() }.background(bg)) {
-        Box(Modifier.fillMaxSize().graphicsLayer {
-            val d = depth()
-            translationY = d.offsetY * k
-            scaleX = d.zoom
-            scaleY = d.zoom
-        }) {
-            Crossfade(image to sourceKey, animationSpec = tween(800, easing = Motion.Ease), label = "overviewBackdrop") { (bitmap, key) ->
+    Box(
+        Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { anchor[0] = it }
+            .hazeSource(haze)
+            // Its opacity applies to each layer as it draws: the background it fades over is the same picture, so no offscreen copy
+            // of the whole screen is needed while it fades in and out
+            .graphicsLayer { alpha = enter(); compositingStrategy = CompositingStrategy.ModulateAlpha }
+            .then(if (mirror == null) Modifier.background(bg) else Modifier),
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val d = depth()
+                    translationY = d.offsetY * k
+                    scaleX = d.zoom
+                    scaleY = d.zoom
+                }
+                .drawBackdropMirror(mirror) { anchor[0] },
+        ) {
+            Crossfade(Triple(image, sourceKey, showsShot || mirror == null), animationSpec = tween(800, easing = Motion.Ease), label = "overviewBackdrop") { (bitmap, key, sharp) ->
                 if (bitmap != null) {
                     val deep by produceState(HeroBitmaps.cached(key, bitmap, DEEP_BLUR, area), key, bitmap) {
                         if (value == null) value = withContext(Dispatchers.Default) { runCatching { HeroBitmaps.render(key, bitmap, DEEP_BLUR, area) }.getOrNull() }
                     }
                     Box(Modifier.fillMaxSize()) {
-                        Image(
-                            bitmap, null, contentScale = ContentScale.Crop,
-                            modifier = Modifier.requiredSize(area.width.px, area.height.px).align(Alignment.Center).graphicsLayer { alpha = depth().sharp },
-                        )
+                        // A screenshot covers the dashboard's background: its own sharp picture over the theme color, under the deep one
+                        if (sharp) {
+                            Box(Modifier.fillMaxSize().background(bg))
+                            Image(
+                                bitmap, null, contentScale = ContentScale.Crop,
+                                modifier = Modifier.requiredSize(area.width.px, area.height.px).align(Alignment.Center).graphicsLayer { alpha = depth().sharp },
+                            )
+                        }
                         deep?.let {
                             Image(
                                 it, null, contentScale = ContentScale.Crop, colorFilter = DeepFilter,

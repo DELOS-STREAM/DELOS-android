@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 
 /** The overview's spatial focus, its scroll targets and its motion (docs/gui/GAME_INFO.md, "Game overview"). */
 class OverviewNavTest {
@@ -106,16 +107,35 @@ class OverviewNavTest {
         val card = r(150f, 520f, 316.5f, 474.75f)
         val slot = r(150f, 150f, 340f, 510f)
         val start = OverviewMotion.cover(0f, card, slot, 30f)
-        assertEquals(0f, start.offset.x, 1e-3f)
-        assertEquals(370f, start.offset.y, 1e-3f)
-        assertEquals(316.5f / 340f, start.scaleX, 1e-4f)
+        assertEquals(0f, start.rect.left, 1e-3f)
+        assertEquals(370f, start.rect.top, 1e-3f)
+        assertEquals(316.5f, start.rect.width, 1e-3f)
+        assertEquals(474.75f, start.rect.height, 1e-3f)
         val mid = OverviewMotion.cover(.5f, card, slot, 30f)
-        assertEquals(370f / 2f - 30f, mid.offset.y, 1e-3f)
-        assertEquals((316.5f / 340f + 1f) / 2f * 1.04f, mid.scaleX, 1e-4f)
+        assertEquals(370f / 2f - 30f, mid.rect.top, 1e-3f)
+        assertEquals((316.5f + 340f) / 2f * 1.04f, mid.rect.width, 1e-3f)
         val end = OverviewMotion.cover(1f, card, slot, 30f)
-        assertEquals(0f, end.offset.y, 1e-3f)
-        assertEquals(1f, end.scaleX, 1e-4f)
+        assertEquals(0f, end.rect.top, 1e-3f)
+        assertEquals(340f, end.rect.width, 1e-3f)
+        assertEquals(510f, end.rect.height, 1e-3f)
         assertEquals(30f, end.corner, 1e-4f)
+    }
+
+    @Test fun `a wide card's frame turns portrait while the picture in it keeps its proportions`() {
+        val wide = r(150f, 520f, 980f * 1.055f, 450f * 1.055f)
+        val slot = r(150f, 150f, 340f, 510f)
+        for (p in listOf(0f, .25f, .5f, .75f, 1f)) {
+            val frame = OverviewMotion.cover(p, wide, slot, 30f).rect
+            val s = OverviewMotion.fillScale(frame.width, frame.height, 340f, 510f)
+            // One scale for both axes that covers the frame: the portrait cover is cropped, never stretched
+            assertTrue(340f * s >= frame.width - 1e-3f && 510f * s >= frame.height - 1e-3f)
+            assertTrue(abs(340f * s - frame.width) < 1e-3f || abs(510f * s - frame.height) < 1e-3f)
+        }
+        // The frame starts as the wide card and ends as the slot
+        assertEquals(980f * 1.055f / (450f * 1.055f), OverviewMotion.cover(0f, wide, slot, 30f).rect.let { it.width / it.height }, 1e-4f)
+        assertEquals(340f / 510f, OverviewMotion.cover(1f, wide, slot, 30f).rect.let { it.width / it.height }, 1e-4f)
+        assertEquals(1f, OverviewMotion.cardShown(0f), 0f)
+        assertEquals(0f, OverviewMotion.cardShown(.6f), 0f)
     }
 
     @Test fun `closing reverses the flight and the page`() {

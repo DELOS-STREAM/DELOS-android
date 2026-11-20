@@ -78,6 +78,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.TextStyle
@@ -347,12 +352,8 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
     val k = stage.dpPerPx * LocalDensity.current.density
     fun hasOverview(app: App) = BundledArtwork.kind(app) == null && metadata.entry(pc, app).data?.candidate != null
     val focusedHasOverview = hasOverview(focused)
-    SideEffect { shell.homeOverviewAvailable = focusedHasOverview && overview.app == null }
     DisposableEffect(Unit) {
-        onDispose {
-            shell.homeOverviewAvailable = false
-            shell.overviewViewer = null
-        }
+        onDispose { shell.overviewViewer = null }
     }
     // A game focused for a second loads its details, so its overview opens complete
     LaunchedEffect(homeKey(pc, focused), focusedHasOverview) {
@@ -362,6 +363,8 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
     }
     val tileCoordinates = remember(pc.uuid) { HashMap<Int, LayoutCoordinates>() }
     val titleProbe = remember { TitleProbe() }
+    // The focused card as the row draws it (its image, its animation's current frame, its badge), recorded for the overview's flight
+    val cardLayer = rememberGraphicsLayer()
     // The focused cover dragged up by a finger (stage pixels, negative: up), and the nudge of Down on a game without an overview
     var lift by remember { mutableStateOf(0f) }
     val nudge = remember { Animatable(0f) }
@@ -369,11 +372,16 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
         if (overview.app == null && shell.layer == null) {
             val (dy, scale) = OverviewMotion.drag(lift)
             val from = tileCoordinates[app.id]?.takeIf { it.isAttached }?.rootRect()?.let { r ->
-                val w = r.width * scale
-                val h = r.height * scale
-                Rect(r.center.x - w / 2f, r.center.y - h / 2f + dy * k, r.center.x + w / 2f, r.center.y + h / 2f + dy * k)
+                // The cover's focus scale grows the wide first cover to the left (about its right edge), the others about their middle;
+                // a finger's lift scales the whole item about its middle on top of it (OverviewMotion.drag)
+                val f = TILE_FOCUS_SCALE
+                val x0 = if (apps.indexOf(app) == 0) r.right else r.center.x
+                val c = r.center
+                fun x(edge: Float) = c.x + (x0 + (edge - x0) * f - c.x) * (scale / f)
+                fun y(edge: Float) = c.y + (edge - c.y) * scale + dy * k
+                Rect(x(r.left), y(r.top), x(r.right), y(r.bottom))
             }
-            val title = titleProbe.coordinates?.takeIf { it.isAttached }?.let { c -> titleProbe.fontSize?.let { TitleSource(c.rootRect(), it) } }
+            val title = titleProbe.coordinates?.takeIf { it.isAttached }?.let { c -> TitleSource(c.rootRect(), titleProbe.fontSize) }
             val index = apps.indexOf(app).coerceAtLeast(0)
             val reduced = appearance.reducedMotion
             feedback.play(Cue.OPEN)
@@ -389,9 +397,12 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
         if (app == null || !hasOverview(app)) shell.overviewGame = null
         else overview.open(app, null, null, OverviewMotion.homeTotal(apps.size, appearance.reducedMotion), appearance.reducedMotion, instant = true)
     }
-    val overviewClosed: () -> Unit = {
+    // As the overview's closing motion begins, the card takes the focus back (hidden, its focus look settles before the cover lands)
+    // and the hint bar returns to the dashboard's: nothing but the overview itself is left to change when the card lands
+    val overviewLeaving: () -> Unit = {
         shell.overviewGame = null
         shell.overviewViewer = null
+        feedback.silenceNextFocus()
         runCatching { requester(currentFocused).requestFocus() }
     }
     // A similar game the user owns: its card takes the focus, then its overview opens
@@ -411,6 +422,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
     val tile: @Composable (Int, App) -> Unit = { index, app ->
         GameTile(
             pc, app, index = index,
+            flight = cardLayer.takeIf { index == focusedIndex },
             custom = app.id in customGames,
             badge = when {
                 app.running -> TileBadge.RUNNING
@@ -466,9 +478,11 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                     .fadeMask(stage, vertical = false, startClear = 0f, startSolid = 120f * startFade, endSolid = (if (compact) HomeCompact.FADE_SOLID else 260f) * endFade, endClear = (if (compact) HomeCompact.FADE_CLEAR else 20f) * endFade)
                     // Left on the first game goes round to the last one, right on the last one back to the first
                     .onPreviewKeyEvent { event ->
+                        // While the overview is up or on its way back, the row (which has the focus again as it closes) takes no keys
+                        if (overview.app != null) return@onPreviewKeyEvent true
                         // Down goes deeper into the focused game: its overview, or a nudge when it has none
                         if (event.key == Key.DirectionDown) {
-                            if (event.type == KeyEventType.KeyDown && overview.app == null) {
+                            if (event.type == KeyEventType.KeyDown) {
                                 if (hasOverview(focused)) openOverview(focused)
                                 else if (!reducedMotion) scope.launch {
                                     nudge.snapTo(0f)
@@ -530,62 +544,65 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
             ) {
                 itemsIndexed(apps, key = { _, app -> app.id }) { i, app ->
                     val isFocused = i == focusedIndex
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            Modifier
-                                .onGloballyPositioned { tileCoordinates[app.id] = it }
-                                .graphicsLayer {
-                                    // The other covers lift away one after another as the overview opens; the focused one is the cover that flies
-                                    if (overview.app != null) {
-                                        if (isFocused) alpha = 0f else {
-                                            val (dy, scale, a) = OverviewMotion.homeCover(overview.home.value, abs(i - focusedIndex), reducedMotion)
-                                            translationY = dy * k
-                                            scaleX = scale
-                                            scaleY = scale
-                                            alpha = a
-                                        }
-                                    } else if (isFocused) {
-                                        // A finger lifting the cover (with resistance), or Down's nudge on a game without an overview
-                                        val (dy, scale) = OverviewMotion.drag(lift)
-                                        val n = nudge.value
-                                        translationY = dy * k + Motion.CHEVRON_BUMP * k * (if (n < .5f) n * 2f else (1f - n) * 2f)
-                                        scaleX = scale / TILE_FOCUS_SCALE
-                                        scaleY = scale / TILE_FOCUS_SCALE
+                    Box(
+                        Modifier
+                            .onGloballyPositioned { tileCoordinates[app.id] = it }
+                            .graphicsLayer {
+                                // The other covers lift away one after another as the overview opens; the focused one is the cover that flies
+                                if (overview.app != null) {
+                                    if (isFocused) alpha = 0f else {
+                                        val (dy, scale, a) = OverviewMotion.homeCover(overview.home.value, abs(i - focusedIndex), reducedMotion)
+                                        translationY = dy * k
+                                        scaleX = scale
+                                        scaleY = scale
+                                        alpha = a
                                     }
+                                } else if (isFocused) {
+                                    // A finger lifting the cover (with resistance), or Down's nudge on a game without an overview
+                                    val (dy, scale) = OverviewMotion.drag(lift)
+                                    val n = nudge.value
+                                    translationY = dy * k + Motion.CHEVRON_BUMP * k * (if (n < .5f) n * 2f else (1f - n) * 2f)
+                                    scaleX = scale / TILE_FOCUS_SCALE
+                                    scaleY = scale / TILE_FOCUS_SCALE
                                 }
-                                .then(
-                                    if (isFocused && hasOverview(app)) Modifier.pointerInput(app.id) {
-                                        // Swiping the focused cover up opens its overview: it follows the finger, then flies on from there
-                                        var travel = 0f
-                                        detectVerticalDragGestures(
-                                            onDragStart = { travel = 0f },
-                                            onDragEnd = {
-                                                if (OverviewMotion.drag(lift).first < OverviewMotion.DRAG_OPENS) openOverview(app) else lift = 0f
-                                            },
-                                            onDragCancel = { lift = 0f },
-                                        ) { change, amount ->
-                                            travel += amount
-                                            if (travel < 0f || lift < 0f) {
-                                                change.consume()
-                                                lift = travel.coerceAtMost(0f) / k
-                                            }
+                            }
+                            .then(
+                                if (isFocused && hasOverview(app)) Modifier.pointerInput(app.id) {
+                                    // Swiping the focused cover up opens its overview: it follows the finger, then flies on from there
+                                    var travel = 0f
+                                    detectVerticalDragGestures(
+                                        onDragStart = { travel = 0f },
+                                        onDragEnd = {
+                                            if (OverviewMotion.drag(lift).first < OverviewMotion.DRAG_OPENS) openOverview(app) else lift = 0f
+                                        },
+                                        onDragCancel = { lift = 0f },
+                                    ) { change, amount ->
+                                        travel += amount
+                                        if (travel < 0f || lift < 0f) {
+                                            change.consume()
+                                            lift = travel.coerceAtMost(0f) / k
                                         }
-                                    } else Modifier
-                                ),
-                        ) { tile(i, app) }
+                                    }
+                                } else Modifier
+                            ),
+                    ) {
+                        tile(i, app)
+                        // "Game info" on the focused cover's lower edge: it never covers the hint bar's library note below the row
                         if (isFocused) GameInfoHint(
                             visible = hasOverview(app) && overview.app == null,
                             lift = { lift },
                             onOpen = { openOverview(app) },
+                            // Above the cover, which a focus look lifts to z 1 (focusEffects)
+                            modifier = Modifier.align(Alignment.BottomCenter).zIndex(2f),
                         )
                     }
                 }
             }
         }
-        overview.app?.let { shown ->
+        OverviewLayer(overview) { shown ->
             val cover = rememberCardImage(pc, shown)
             GameOverview(
-                overview, pc, shown, library.apps, cover, appArt(pc, shown),
+                overview, pc, shown, library.apps, cover, appArt(pc, shown), cardLayer,
                 playtime = rememberPlaytime(profileStore, pc.uuid, shown.id, resumes), resumes = resumes, reducedMotion = appearance.reducedMotion,
                 onPlay = {
                     // As A on the card: another game running on the PC offers the choices (quit it, go back to it) first
@@ -607,11 +624,17 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                 },
                 onSettings = { shell.navigate(Screen.GameSettings(pc, shown)) },
                 onJump = jumpTo,
-                onClosed = overviewClosed,
+                onLeaving = overviewLeaving,
                 coverArt = { app, modifier -> CardArt(pc, app, modifier) },
             )
         }
     } }
+}
+
+/** The overview over the dashboard while one is open; reading [OverviewController.app] here, its opening and closing recompose only this. */
+@Composable
+private fun OverviewLayer(overview: OverviewController, content: @Composable (App) -> Unit) {
+    overview.app?.let { content(it) }
 }
 
 /** Row layout: the wide first cover, the others and the gap between them, in stage pixels. */
@@ -781,11 +804,14 @@ private fun GameInfo(
         val logoImage = logo.image
         // The SteamGridDB logo stands in for the icon and the name
         if (logoImage != null) Box(Modifier.height(titleBox.px).then(titleShown).padding(vertical = logoPad.px), contentAlignment = Alignment.CenterStart) {
-            SideEffect { titleProbe.fontSize = null }
             Box(Modifier.gameTitleEntrance(homeKey(pc, app), logoImage, reducedMotion)) {
                 Image(
                     logoImage, contentDescription = app.name, contentScale = ContentScale.Fit, alignment = Alignment.CenterStart,
-                    modifier = Modifier.height(logoHeight.px).widthIn(max = logoWidth.px),
+                    modifier = Modifier.height(logoHeight.px).widthIn(max = logoWidth.px).onGloballyPositioned {
+                        // The overview's header logo flies from here
+                        titleProbe.coordinates = it
+                        titleProbe.fontSize = null
+                    },
                 )
                 // The chosen animated logo plays over its first frame, fitted into the same box (start-aligned like the still)
                 val artwork = LocalArtwork.current
@@ -867,7 +893,7 @@ private fun GameInfo(
     }
 }
 
-/** The dashboard's title text where it was last laid out and its font size (null while a logo stands in for it), for the overview's title flight. */
+/** The dashboard's title where it was last laid out, text or logo, and the text's font size (null for a logo), for the overview's title flight. */
 internal class TitleProbe {
     var coordinates: LayoutCoordinates? = null
     var fontSize: Float? = null
@@ -906,13 +932,13 @@ internal fun CardArt(pc: Pc, app: App, modifier: Modifier) {
 }
 
 /**
- * The "Game info" hint under the focused cover (docs/gui/GAME_INFO.md, "Game overview"), drawn for the input in use: the D-pad's down
- * cap for a controller, the ↓ key for a keyboard, a small arrow up for a finger (swipe the cover up), a clickable arrow down for a
- * mouse. A finger or a mouse can tap or click it. It fades out while the overview is open and for a game without one.
+ * The "Game info" chip on the focused cover's lower edge (docs/gui/GAME_INFO.md, "Game overview"), in the dark glass of the cover's
+ * badges so it reads over any art, drawn for the input in use: the D-pad's down cap for a controller, the ↓ key for a keyboard, a small
+ * arrow up for a finger (swipe the cover up), a clickable arrow down for a mouse. A finger or a mouse can tap or click it. It fades
+ * out while the overview is open and for a game without one.
  */
 @Composable
-private fun GameInfoHint(visible: Boolean, lift: () -> Float, onOpen: () -> Unit) {
-    val colors = LocalDelosColors.current
+private fun GameInfoHint(visible: Boolean, lift: () -> Float, onOpen: () -> Unit, modifier: Modifier) {
     val kind = ControllerGlyphs.kind
     val k = LocalStage.current.dpPerPx * LocalDensity.current.density
     val shown by animateFloatAsState(if (visible) 1f else 0f, tween(Motion.FADE, easing = Motion.Ease), label = "gameInfoHint")
@@ -920,22 +946,17 @@ private fun GameInfoHint(visible: Boolean, lift: () -> Float, onOpen: () -> Unit
     val pointer = kind == InputKind.TOUCH || kind == InputKind.POINTER
     var hovered by remember { mutableStateOf(false) }
     Row(
-        Modifier
-            // It hangs under the cover without taking room: the row's items stay as tall as their covers
-            .layout { measurable, _ ->
-                val placeable = measurable.measure(androidx.compose.ui.unit.Constraints())
-                layout(0, 0) { placeable.place(-placeable.width / 2, 0) }
-            }
-            .padding(top = 30.px)
+        modifier
+            .padding(bottom = 22.px)
             .graphicsLayer {
-                // A finger lifting the cover fades the hint as it goes
+                // A finger lifting the cover fades the chip as it goes
                 alpha = shown * (1f + lift() / 60f).coerceIn(0f, 1f)
-                translationY = -8f * k * (1f - slide)
+                translationY = 8f * k * (1f - slide)
             }
+            .clip(CircleShape)
+            .background(if (hovered) Color(0xC7050A14) else Color(0x8C050A14))
             .then(
                 if (pointer && visible) Modifier
-                    .clip(CircleShape)
-                    .background(if (hovered) colors.surface else Color.Transparent)
                     .pointerInput(Unit) {
                         awaitPointerEventScope {
                             while (true) {
@@ -948,22 +969,19 @@ private fun GameInfoHint(visible: Boolean, lift: () -> Float, onOpen: () -> Unit
                     .pointerInput(Unit) { detectTapGestures { onOpen() } }
                 else Modifier
             )
-            .padding(horizontal = 18.px, vertical = 8.px),
+            .padding(start = 12.px, end = 18.px, top = 6.px, bottom = 6.px),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.px),
+        horizontalArrangement = Arrangement.spacedBy(8.px),
     ) {
         when (kind) {
-            InputKind.CONTROLLER -> Bob(down = true) { GlyphButton(Glyph.DPAD_DOWN, 38) }
-            InputKind.KEYBOARD -> Bob(down = true) { GlyphButton(Glyph.Cap(InputCap.ARROW_DOWN), 38) }
-            InputKind.TOUCH -> Bob(down = false) { Symbol(Symbols.EXPAND_LESS, 26.tpx, colors.accent, filled = true) }
-            InputKind.POINTER -> Bob(down = true) { Symbol(Symbols.EXPAND_MORE, 26.tpx, colors.accent, filled = true) }
+            InputKind.CONTROLLER -> Bob(down = true) { GlyphButton(Glyph.DPAD_DOWN, 32) }
+            InputKind.KEYBOARD -> Bob(down = true) { GlyphButton(Glyph.Cap(InputCap.ARROW_DOWN), 32) }
+            InputKind.TOUCH -> Bob(down = false) { Symbol(Symbols.EXPAND_LESS, 24.tpx, Color.White, filled = true) }
+            InputKind.POINTER -> Bob(down = true) { Symbol(Symbols.EXPAND_MORE, 24.tpx, Color.White, filled = true) }
         }
         BasicText(
             stringResource(R.string.overview_game_info),
-            style = TextStyle(
-                color = if (hovered) colors.text else colors.text2, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 21.tpx,
-                shadow = androidx.compose.ui.graphics.Shadow(Color.Black.copy(alpha = .6f), androidx.compose.ui.geometry.Offset(0f, 2f * k), 8f * k),
-            ),
+            style = TextStyle(color = Color.White, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 18.tpx),
         )
     }
 }
@@ -1026,6 +1044,8 @@ private fun GameTile(
     pc: Pc,
     app: App,
     index: Int,
+    /** The focused cover records what it draws here (inside its corners, before its focus scale), the overview's flight draws it. */
+    flight: GraphicsLayer?,
     /** The game has custom per-game settings: a small icon in the top-right corner. */
     custom: Boolean,
     badge: TileBadge?,
@@ -1114,7 +1134,11 @@ private fun GameTile(
             .staggerEntrance()
             .size((if (wide) geometry.wide else geometry.tile).px, geometry.height.px)
             .clip(RoundedCornerShape(geometry.corner.px))
-            .background(colors.surface2),
+            .background(colors.surface2)
+            .then(if (flight != null) Modifier.drawWithContent {
+                flight.record { this@drawWithContent.drawContent() }
+                drawLayer(flight)
+            } else Modifier),
     ) {
         Crossfade(shown, animationSpec = tween(400), label = "cover") { img ->
             if (img != null) {
