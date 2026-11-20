@@ -48,13 +48,17 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.round
 import com.limelight.R
 import com.limelight.shell.LocalShell
+import com.limelight.shell.LocalWindowHintBar
 import com.limelight.shell.OverviewViewerHints
 import com.limelight.shell.data.rememberIgdbImage
 import com.limelight.shell.ui.ControllerGlyphs
@@ -105,8 +109,8 @@ internal class OverviewViewerInput(now: Long = SystemClock.uptimeMillis()) {
 }
 
 /**
- * Full-viewport media with independent native playback, thumbnail and control siblings. Only the images and overlays animate;
- * the native surface never enters a transformed, clipped, blurred or alpha-composited layer.
+ * Full-viewport media. Only the images and overlays animate; a video plays in a window of its own over the shell's
+ * ([OverviewPlayerWindow]), never inside the shell's Compose layers, with the thumbnail, the overlay and the hint bar composed over it there.
  */
 @Composable
 internal fun OverviewViewer(
@@ -132,6 +136,8 @@ internal fun OverviewViewer(
     val controls = input ?: localInput
     val visibilityChanged by rememberUpdatedState(onControlsVisibilityChanged)
     var root by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    // Where the player's window goes: the viewer, in the shell window's pixels
+    var bounds by remember { mutableStateOf(IntRect.Zero) }
     val zoom = remember { Animatable(0f) }
     val scrim = remember { Animatable(0f) }
     val ui = remember { Animatable(0f) }
@@ -214,7 +220,7 @@ internal fun OverviewViewer(
     BackHandler { controls.onInput(); onCloseRequest() }
     Box(
         Modifier.fillMaxSize()
-            .onGloballyPositioned { root = it }
+            .onGloballyPositioned { root = it; bounds = IntRect(it.positionInWindow().round(), it.size) }
             .onPreviewKeyEvent { event ->
                 controls.onInput()
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent event.key in VIEWER_KEYS
@@ -240,98 +246,108 @@ internal fun OverviewViewer(
                 }
             },
     ) {
-        // Effects belong to this backdrop sibling, never to the native player's ancestors.
+        // Effects belong to this backdrop sibling; the video itself plays in a window of its own over the shell's (OverviewPlayerWindow)
         Box(Modifier.fillMaxSize().graphicsLayer { alpha = scrim.value }
             .backdropBlur(haze, 40f, Color(4, 8, 16).copy(alpha = .55f)))
-        if (settled && player != null && player.error == null) {
-            OverviewVideoView(player, Modifier.fillMaxSize())
-        }
-        // The thumbnail is ABOVE the opaque WebView until state 1 actually reports playing.
-        listOfNotNull(leaving, shown).forEach { index ->
-            val item = media.getOrNull(index) ?: return@forEach
-            val isLeaving = index == leaving
-            Box(
-                Modifier.fillMaxSize().graphicsLayer {
-                    transformOrigin = TransformOrigin(0f, 0f)
-                    val c = change.value
-                    if (isLeaving) {
-                        val p = min(1f, c * 560f / 420f)
-                        alpha = 1f - p
-                        if (!reduced) translationX = -direction * 90f * k * p
-                        return@graphicsLayer
+        // All the viewer draws above the video: here, and again over the video in the player's window while that is there
+        val aboveVideo: @Composable () -> Unit = {
+            // The thumbnail covers the video until state 1 actually reports playing.
+            listOfNotNull(leaving, shown).forEach { index ->
+                val item = media.getOrNull(index) ?: return@forEach
+                val isLeaving = index == leaving
+                Box(
+                    Modifier.fillMaxSize().graphicsLayer {
+                        transformOrigin = TransformOrigin(0f, 0f)
+                        val c = change.value
+                        if (isLeaving) {
+                            val p = min(1f, c * 560f / 420f)
+                            alpha = 1f - p
+                            if (!reduced) translationX = -direction * 90f * k * p
+                            return@graphicsLayer
+                        }
+                        var a = if (leaving != null) c else 1f
+                        if (leaving != null && !reduced) translationX = direction * 160f * k * (1f - c)
+                        val z = zoom.value
+                        val from = zoomFrom
+                        if (fading || from == null || root == null) a *= z
+                        else if (z < 1f) {
+                            val scale = min(from.width / (fit.width * k), from.height / (fit.height * k))
+                            translationX += (from.center.x - fit.width * k * scale / 2f) * (1f - z)
+                            translationY = (from.center.y - fit.height * k * scale / 2f) * (1f - z)
+                            scaleX = Motion.lerp(scale, 1f, z)
+                            scaleY = scaleX
+                        }
+                        if (item.kind != OverviewModel.MediaKind.VIDEO && !reduced) {
+                            translationX += drag.x * .6f
+                            translationY += drag.y.coerceAtLeast(0f)
+                        }
+                        alpha = a * if (item.kind == OverviewModel.MediaKind.VIDEO) thumbnailAlpha else 1f
+                    }.background(Color.Black),
+                ) {
+                    val thumb by rememberIgdbImage(item.thumb, (569f * k).toInt())
+                    val full by rememberIgdbImage(item.full, (maxOf(fit.width, fit.height) * k).toInt())
+                    (full ?: thumb)?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit) }
+                }
+            }
+            if (settled && player?.error != null) VideoError(player.error!!, Modifier.fillMaxSize())
+            // An input-only sibling keeps embedded web content out of focus.
+            Box(Modifier.fillMaxSize()
+                .pointerInput(shown) { detectTapGestures { controls.onInput() } }
+                .pointerInput(shown) {
+                    detectDragGestures(
+                        onDragEnd = {
+                            val d = drag / k
+                            drag = Offset.Zero
+                            when {
+                                d.y > 120f && abs(d.y) > abs(d.x) -> onCloseRequest()
+                                d.x < -90f -> go(shown + 1)
+                                d.x > 90f -> go(shown - 1)
+                            }
+                        },
+                        onDragCancel = { drag = Offset.Zero },
+                    ) { change, amount -> change.consume(); drag += amount; controls.onInput() }
+                })
+            // The DELOS overlay (count and title, transport, buttons) fades out after 3 s without input and back on any input
+            val overlayShown = controls.controlsVisible && !request.closing
+            val overlay by animateFloatAsState(if (overlayShown) 1f else 0f, tween(if (reduced) 0 else Motion.FADE, easing = Motion.Ease), label = "viewerOverlay")
+            if (overlayShown || overlay > 0f) {
+                Box(Modifier.fillMaxSize().graphicsLayer { alpha = ui.value * overlay }) {
+                    Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
+                        0f to Color.Black.copy(alpha = .65f), .2f to Color.Transparent,
+                        .7f to Color.Transparent, 1f to Color.Black.copy(alpha = .8f),
+                    )))
+                    val item = media.getOrNull(shown)
+                    Row(Modifier.offset(72.px, 40.px).padding(end = 180.px), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.px)) {
+                        BasicText((shown + 1).toString(), style = TextStyle(color = colors.accent, fontFamily = Unbounded, fontWeight = FontWeight.Bold, fontSize = 26.tpx))
+                        val name = when {
+                            item == null -> ""
+                            item.kind == OverviewModel.MediaKind.VIDEO -> item.name ?: stringResource(R.string.overview_video)
+                            else -> stringResource(R.string.overview_screenshot, item.number)
+                        }
+                        BasicText(stringResource(R.string.overview_viewer_count, media.size, name),
+                            style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 22.tpx))
                     }
-                    var a = if (leaving != null) c else 1f
-                    if (leaving != null && !reduced) translationX = direction * 160f * k * (1f - c)
-                    val z = zoom.value
-                    val from = zoomFrom
-                    if (fading || from == null || root == null) a *= z
-                    else if (z < 1f) {
-                        val scale = min(from.width / (fit.width * k), from.height / (fit.height * k))
-                        translationX += (from.center.x - fit.width * k * scale / 2f) * (1f - z)
-                        translationY = (from.center.y - fit.height * k * scale / 2f) * (1f - z)
-                        scaleX = Motion.lerp(scale, 1f, z)
-                        scaleY = scaleX
+                    if (video != null) {
+                        VideoControls(video, Modifier.align(Alignment.BottomCenter).padding(start = 72.px, end = 72.px, bottom = 112.px)
+                            .fillMaxWidth().height(72.px))
                     }
-                    if (item.kind != OverviewModel.MediaKind.VIDEO && !reduced) {
-                        translationX += drag.x * .6f
-                        translationY += drag.y.coerceAtLeast(0f)
+                    if (kind == InputKind.POINTER) {
+                        ViewerButton(Symbols.CHEVRON_LEFT, stringResource(R.string.overview_previous), Modifier.align(Alignment.CenterStart).padding(start = 40.px)) { go(shown - 1) }
+                        ViewerButton(Symbols.CHEVRON_RIGHT, stringResource(R.string.overview_next), Modifier.align(Alignment.CenterEnd).padding(end = 40.px)) { go(shown + 1) }
                     }
-                    alpha = a * if (item.kind == OverviewModel.MediaKind.VIDEO) thumbnailAlpha else 1f
-                }.background(Color.Black),
-            ) {
-                val thumb by rememberIgdbImage(item.thumb, (569f * k).toInt())
-                val full by rememberIgdbImage(item.full, (maxOf(fit.width, fit.height) * k).toInt())
-                (full ?: thumb)?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit) }
+                    if (kind == InputKind.POINTER || kind == InputKind.TOUCH) {
+                        ViewerButton(Symbols.CLOSE, stringResource(R.string.shell_hint_close), Modifier.align(Alignment.TopEnd).padding(top = 30.px, end = 56.px), size = 72f, onClick = onCloseRequest)
+                    }
+                }
             }
         }
-        if (settled && player?.error != null) VideoError(player.error!!, Modifier.fillMaxSize())
-        // An input-only sibling keeps embedded web content out of focus and leaves native rendering untouched.
-        Box(Modifier.fillMaxSize()
-            .pointerInput(shown) { detectTapGestures { controls.onInput() } }
-            .pointerInput(shown) {
-                detectDragGestures(
-                    onDragEnd = {
-                        val d = drag / k
-                        drag = Offset.Zero
-                        when {
-                            d.y > 120f && abs(d.y) > abs(d.x) -> onCloseRequest()
-                            d.x < -90f -> go(shown + 1)
-                            d.x > 90f -> go(shown - 1)
-                        }
-                    },
-                    onDragCancel = { drag = Offset.Zero },
-                ) { change, amount -> change.consume(); drag += amount; controls.onInput() }
-            })
-        // The DELOS overlay (count and title, transport, buttons) fades out after 3 s without input and back on any input
-        val overlayShown = controls.controlsVisible && !request.closing
-        val overlay by animateFloatAsState(if (overlayShown) 1f else 0f, tween(if (reduced) 0 else Motion.FADE, easing = Motion.Ease), label = "viewerOverlay")
-        if (overlayShown || overlay > 0f) {
-            Box(Modifier.fillMaxSize().graphicsLayer { alpha = ui.value * overlay }) {
-                Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
-                    0f to Color.Black.copy(alpha = .65f), .2f to Color.Transparent,
-                    .7f to Color.Transparent, 1f to Color.Black.copy(alpha = .8f),
-                )))
-                val item = media.getOrNull(shown)
-                Row(Modifier.offset(72.px, 40.px).padding(end = 180.px), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.px)) {
-                    BasicText((shown + 1).toString(), style = TextStyle(color = colors.accent, fontFamily = Unbounded, fontWeight = FontWeight.Bold, fontSize = 26.tpx))
-                    val name = when {
-                        item == null -> ""
-                        item.kind == OverviewModel.MediaKind.VIDEO -> item.name ?: stringResource(R.string.overview_video)
-                        else -> stringResource(R.string.overview_screenshot, item.number)
-                    }
-                    BasicText(stringResource(R.string.overview_viewer_count, media.size, name),
-                        style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 22.tpx))
-                }
-                if (video != null) {
-                    VideoControls(video, Modifier.align(Alignment.BottomCenter).padding(start = 72.px, end = 72.px, bottom = 112.px)
-                        .fillMaxWidth().height(72.px))
-                }
-                if (kind == InputKind.POINTER) {
-                    ViewerButton(Symbols.CHEVRON_LEFT, stringResource(R.string.overview_previous), Modifier.align(Alignment.CenterStart).padding(start = 40.px)) { go(shown - 1) }
-                    ViewerButton(Symbols.CHEVRON_RIGHT, stringResource(R.string.overview_next), Modifier.align(Alignment.CenterEnd).padding(end = 40.px)) { go(shown + 1) }
-                }
-                if (kind == InputKind.POINTER || kind == InputKind.TOUCH) {
-                    ViewerButton(Symbols.CLOSE, stringResource(R.string.shell_hint_close), Modifier.align(Alignment.TopEnd).padding(top = 30.px, end = 56.px), size = 72f, onClick = onCloseRequest)
+        aboveVideo()
+        if (settled && player != null && player.error == null) {
+            OverviewPlayerWindow(player, bounds, onPointer = { controls.onInput() }) {
+                Box(Modifier.fillMaxSize()) {
+                    aboveVideo()
+                    // The window covers the shell's hint bar: the same hints again, over the video
+                    LocalWindowHintBar.current?.invoke()
                 }
             }
         }
