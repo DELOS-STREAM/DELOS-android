@@ -257,6 +257,7 @@ internal object ArtworkLayout {
     const val ROW_GAP = 26f
     const val TOOLBAR_Y = TABS_Y + TABS_HEIGHT + ROW_GAP
     const val TOOLBAR_HEIGHT = 64f
+    val SHEET_HEADER = FocusGap(FocusSpacing.PILL, TOOLBAR_HEIGHT, 32f)
 
     /** Between the strip and the two toolbar pills, and between the pills: the focus spacing of the wider pill ([widestPill] stage px). */
     fun toolbarGap(widestPill: Float): Float = FocusSpacing.PILL.minGap(widestPill)
@@ -274,7 +275,7 @@ internal object ArtworkLayout {
 
     /** The filter sheet's rows of chips: [SHEET_ROW_PAD] above and below each, [SHEET_ROW_SPACING] on both sides of the 1 px line between two. */
     const val SHEET_ROW_PAD = 6f
-    const val SHEET_ROW_SPACING = 6f
+    const val SHEET_ROW_SPACING = ChipFocus.BASE_GAP / 2f
     val SHEET_ROWS = FocusGap(ChipFocus.LOOK, ChipFocus.HEIGHT, 2f * SHEET_ROW_PAD + 2f * SHEET_ROW_SPACING + 1f)
 
     /**

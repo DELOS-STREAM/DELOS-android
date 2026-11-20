@@ -322,7 +322,7 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft,
             Modifier
                 .verticalScroll(chipScroll)
                 .padding(start = 12.px, end = 12.px, top = 24.cpx, bottom = 48.cpx),
-            verticalArrangement = Arrangement.spacedBy(34.cpx),
+            verticalArrangement = Arrangement.spacedBy(LibraryFilterLayout.SECTION_GAP.cpx),
         ) {
             FilterSection(Symbols.GENRE_UNKNOWN, stringResource(R.string.filters_section_genre)) {
                 ChipRow {
@@ -408,9 +408,9 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft,
 @Composable
 private fun FilterSection(icon: String, title: String, content: @Composable () -> Unit) {
     val colors = LocalDelosColors.current
-    Column(verticalArrangement = Arrangement.spacedBy(22.cpx)) {
+    Column(verticalArrangement = Arrangement.spacedBy(LibraryFilterLayout.HEADING_GAP.cpx)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
-            Box(Modifier.size(60.cpx).clip(CircleShape).background(colors.accent.copy(alpha = .18f)), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(LibraryFilterLayout.HEADING_HEIGHT.cpx).clip(CircleShape).background(colors.accent.copy(alpha = .18f)), contentAlignment = Alignment.Center) {
                 Symbol(icon, 32.tpx, colors.accent2, filled = true)
             }
             BasicText(title, style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 29.tpx))
@@ -431,6 +431,16 @@ internal object ChipFocus {
 
     /** A [FilterChip]'s least height. */
     const val HEIGHT = 60f
+    /** Shared chip gap floor; width-aware rows still widen it for longer labels. */
+    const val BASE_GAP = 40f
+    const val ROW_ROOM = 12f
+}
+
+/** Physical separation between library chip rows also includes the next heading and both rows' focus room. */
+internal object LibraryFilterLayout {
+    const val SECTION_GAP = 34f
+    const val HEADING_GAP = 22f
+    const val HEADING_HEIGHT = 60f
 }
 
 /**
@@ -439,7 +449,7 @@ internal object ChipFocus {
  */
 @Composable
 internal fun ChipRow(content: @Composable () -> Unit) {
-    ScrollRow(gap = 0f, ringRoom = 12f) { FocusRow(ChipFocus.LOOK, 14f, content = content) }
+    ScrollRow(gap = 0f, ringRoom = ChipFocus.ROW_ROOM) { FocusRow(ChipFocus.LOOK, ChipFocus.BASE_GAP, content = content) }
 }
 
 /**

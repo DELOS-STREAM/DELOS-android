@@ -1053,7 +1053,7 @@ private fun FilterSheetLayer(
                 .focusProperties { onExit = { if (open) cancelFocusChange() } }
                 .focusGroup()
                 .rowNavScope(),
-            verticalArrangement = Arrangement.spacedBy(8.px),
+            verticalArrangement = Arrangement.spacedBy(ArtworkLayout.SHEET_HEADER.gap.px),
         ) {
             val live: @Composable () -> Unit = {
                 if (ready != null) {
@@ -1083,7 +1083,7 @@ private fun FilterSheetLayer(
             // The compact sheet may be taller than the page leaves it: its options scroll, fading at an edge they continue behind. The header
             // above them is the padding, the 64 px pills and 16 px
             val optionsScroll = rememberScrollState()
-            val optionsMax = (stage.stageHeight - top - bottom - 8f - padTop - 64f - 16f - padBottom).coerceAtLeast(120f)
+            val optionsMax = (stage.stageHeight - top - bottom - ArtworkLayout.SHEET_HEADER.gap - padTop - 64f - 16f - padBottom).coerceAtLeast(120f)
             // A focused option of the scrolling sheet stays clear of the faded edges
             val k = stage.dpPerPx * LocalDensity.current.density
             val optionsIntoView = rememberMarginBringIntoView(optionsScroll, before = 24f * k, after = 40f * k, stagePx = k)

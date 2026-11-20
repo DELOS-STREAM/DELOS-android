@@ -807,7 +807,7 @@ private fun Header(
                 // Up to two genres and two themes (as on the dashboard), then HDR
                 val genres = remember(metadata) { topGenres(candidate?.genres.orEmpty(), metadata?.steamTags.orEmpty()) }
                 val themes = remember(metadata) { topThemes(candidate?.themes.orEmpty(), metadata?.steamTags.orEmpty()) }
-                FlowRow(Modifier.st(1), horizontalArrangement = Arrangement.spacedBy(10.px), verticalArrangement = Arrangement.spacedBy(10.px)) {
+                FlowRow(Modifier.st(1), horizontalArrangement = Arrangement.spacedBy(OverviewGaps.TAG_GAP.px), verticalArrangement = Arrangement.spacedBy(OverviewGaps.TAG_GAP.px)) {
                     // Each chip pops in as its row rises, one after another
                     val tagsStart = OverviewMotion.HEADER_DELAY + OverviewMotion.HEADER_STAGGER
                     var chip = 0
@@ -1430,7 +1430,8 @@ private fun DetailsSection(
                     pair.forEach { (label, content) ->
                         Column(Modifier.weight(1f)) {
                             OverviewEyebrow(stringResource(label), colors.text3, Modifier.padding(bottom = 12.px))
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(if (label == R.string.overview_detail_age) 28.px else 10.px), verticalArrangement = Arrangement.spacedBy(10.px)) { content() }
+                            val gap = if (label == R.string.overview_detail_age) OverviewGaps.BADGE_GAP else OverviewGaps.TAG_GAP
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(gap.px), verticalArrangement = Arrangement.spacedBy(gap.px)) { content() }
                         }
                     }
                     if (pair.size == 1) Spacer(Modifier.weight(1f))

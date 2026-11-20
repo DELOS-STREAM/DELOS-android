@@ -32,6 +32,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - Game overview motion: opening and closing are about a quarter faster and springy. The cover flies into the header with a small overshoot and settles (closing lands with a smaller one), while the title, the page, the header's parts, the dashboard's covers and the info row land on the same gentle spring; opacity and corners never overshoot. A close during the opening turns everything back from where it is. The critics' and players' rings fill and count up on a spring that passes the score once (at most 6 %, never showing more than 100), 90 ms apart, and the tags, the HDR badge and the age rating pop in. Reduced motion keeps short fades only. While the storyline opens or closes, its cut edge fades out instead of a hard cut.
 - Game overview: the flight from the dashboard is smoother. The sections below the header, the screenshot prefetch and the deeply blurred backdrop wait until the opening has landed, the page's edge mask is not drawn offscreen during it, the flying focus ring's glow is blurred once instead of every frame, and opening or closing the overview no longer recomposes the whole dashboard.
 
+### Fixed
+- Wrapped game-info tags, age badges and links keep their group gap vertically too; filter and artwork rows retain the required focus clearance without shrinking controls ([#111](https://github.com/DELOS-STREAM/DELOS-android/issues/111)).
+
 ## [1.2.0] - 2026-11-17
 _Touch everywhere, the last input decides the hints, new controller glyphs, Guide and Back for the stream menu, anchored on-screen controls; the project moves to the DELOS-STREAM organization._
 
