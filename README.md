@@ -13,7 +13,7 @@
 [![Stars](https://img.shields.io/github/stars/DELOS-STREAM/DELOS-android?style=flat&color=fbbd44&labelColor=151b2b)](https://github.com/DELOS-STREAM/DELOS-android/stargazers)
 [![Open issues](https://img.shields.io/github/issues/DELOS-STREAM/DELOS-android?color=e8639a&labelColor=151b2b)](https://github.com/DELOS-STREAM/DELOS-android/issues)
 [![Last commit](https://img.shields.io/github/last-commit/DELOS-STREAM/DELOS-android?color=4fd2ee&labelColor=151b2b)](https://github.com/DELOS-STREAM/DELOS-android/commits/main)
-[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-support-e8639a?logo=kofi&logoColor=white&labelColor=151b2b)](https://ko-fi.com/delos_stream)
+[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-support-e8639a?logo=kofi&logoColor=white&labelColor=151b2b)](https://ko-fi.com/meiton)
 
 [Website](https://delos-stream.com) · [Releases](https://github.com/DELOS-STREAM/DELOS-android/releases) · [Issues](https://github.com/DELOS-STREAM/DELOS-android/issues) · [Add to Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/DELOS-STREAM/DELOS-android)
 
