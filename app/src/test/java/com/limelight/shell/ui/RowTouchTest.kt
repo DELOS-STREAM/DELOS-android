@@ -76,4 +76,13 @@ class RowTouchTest {
         listOf(toggle, action, text, info).forEach { assertNull(it.toString(), rowPopupFor("Row", it)) }
         assertTrue(rowPopupFor("Slider", slider) != null)
     }
+
+    @Test fun aCustomChoiceListEndsWithItsReset() {
+        var reset = false
+        val popup = rowPopupFor("Frame rate", listed) { reset = true } as RowPopup.Options
+        assertEquals(4, popup.count)
+        popup.onReset?.invoke()
+        assertTrue(reset)
+        assertEquals(3, (rowPopupFor("Frame rate", listed) as RowPopup.Options).count)
+    }
 }

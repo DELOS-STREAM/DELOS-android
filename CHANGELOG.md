@@ -10,6 +10,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Added
+- In Settings and the app settings, the right menu button (Start) on a choice or slider row opens the same list of values or slider popup a tap opens, so a controller shows every value at once; a custom app setting's list ends with "Reset to profile value", and a custom slider's menu offers Adjust and the reset.
+
 ### Changed
 - The GPU impact chip shows the chip icon again instead of a graphics card, because handhelds have a system on a chip rather than a separate graphics card.
 - Frame pacing lists Fast V-Sync first and Warp Drive and Warp 2 last (Fast V-Sync, Lowest latency, Balanced, Balanced with FPS limit, Smoothest video, Warp Drive, Warp 2), and video codec lists H.264, HEVC, AV1, then PyroWave (after Automatic), in settings, per-app settings and the stream menu, so the familiar choices come first.

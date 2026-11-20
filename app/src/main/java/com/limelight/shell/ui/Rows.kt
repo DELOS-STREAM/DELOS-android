@@ -166,6 +166,11 @@ fun SettingRow(
     override: RowOverride? = null,
     onFocused: (() -> Unit)? = null,
     impact: SettingImpact? = null,
+    /**
+     * A custom game setting's reset: its choice popup ends with "Reset to profile value"; a custom slider's Options opens [contextMenu] instead of
+     * its popup (the menu has both).
+     */
+    popupReset: (() -> Unit)? = null,
 ) {
     val colors = LocalDelosColors.current
     val feedback = LocalFeedback.current
@@ -198,7 +203,7 @@ fun SettingRow(
     }
     // Touch (issue #92): a first tap focuses and shows the help; the focused row's tap changes it, or opens its options list / its slider popup
     val touchTap: (Boolean) -> Boolean = { wasFocused ->
-        val popup = rowPopupFor(label, value)
+        val popup = rowPopupFor(label, value, popupReset)
         when (rowTouch(value, wasFocused, enabled, picker != null && popup != null)) {
             RowTouch.ACTIVATE -> true
             RowTouch.PICK, RowTouch.ADJUST -> {
@@ -210,6 +215,9 @@ fun SettingRow(
             RowTouch.FOCUS_ONLY, RowTouch.NONE -> false
         }
     }
+    // Options (the right menu button): the popup a tap opens, so a controller sees every value at once
+    val options: (() -> Unit)? = if (picker == null || !enabled || (value is RowValue.Slider && popupReset != null)) null
+        else rowPopupFor(label, value, popupReset)?.let { popup -> { feedback.play(Cue.OPEN); picker(popup) } }
     // A tap on a part of the value that changes it directly (a choice's arrows, the switch): focus the row too, for its help
     val partTap: (() -> Unit) -> Unit = { change ->
         requester.requestFocus()
@@ -256,6 +264,7 @@ fun SettingRow(
                 onLookChange = { focused = it },
                 focusRequester = requester,
                 onTouchTap = touchTap,
+                onOptions = options,
             )
             .clip(shape),
     ) {

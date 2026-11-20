@@ -219,8 +219,11 @@ class FocusTracker {
         private set
     var adjustable by mutableStateOf(false)
         private set
+    /** What Options (the right menu button, Start) does on the focused element instead of opening [contextMenu]: a settings row's popup. */
+    var options: (() -> Unit)? = null
+        private set
 
-    /** Whether the focused element has a context menu (the Options hint shows only then); a mirror of [contextMenu] that is read in composition. */
+    /** Whether Options opens something on the focused element (the Options hint shows only then): its [options] or its [contextMenu], read in composition. */
     var hasContextMenu by mutableStateOf(false)
         private set
 
@@ -241,12 +244,14 @@ class FocusTracker {
         adjustable: Boolean,
         activate: (() -> Unit)? = null,
         adjust: ((direction: Int, repeatCount: Int) -> Unit)? = null,
+        options: (() -> Unit)? = null,
     ) {
         if (requester == held) held = null
         this.requester = requester
         this.coordinates = coordinates
         this.contextMenu = contextMenu
-        hasContextMenu = contextMenu != null
+        this.options = options
+        hasContextMenu = contextMenu != null || options != null
         this.adjustable = adjustable
         this.activate = activate
         this.adjust = adjust

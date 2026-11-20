@@ -141,6 +141,8 @@ fun Modifier.focusEffects(
      * gamepad never reach it.
      */
     onTouchTap: ((wasFocused: Boolean) -> Boolean)? = null,
+    /** What Options (the right menu button, Start) does while the element has the focus, instead of opening [contextMenu]; null: the menu. */
+    onOptions: (() -> Unit)? = null,
 ): Modifier = composed {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
@@ -185,6 +187,7 @@ fun Modifier.focusEffects(
     val currentActivate by rememberUpdatedState(activate)
     val currentAdjust by rememberUpdatedState(controllerAdjust)
     val currentTouchTap by rememberUpdatedState(onTouchTap)
+    val currentOptions by rememberUpdatedState(onOptions)
     val currentOpener by rememberUpdatedState(LocalContextMenuOpener.current)
     val currentMenu by rememberUpdatedState(contextMenu)
     val menuScope = rememberCoroutineScope()
@@ -252,6 +255,7 @@ fun Modifier.focusEffects(
                         adjust = if (controllerAdjust == null) null else { direction, repeatCount ->
                             currentAdjust?.invoke(direction, repeatCount)
                         },
+                        options = if (onOptions == null) null else { { currentOptions?.invoke() } },
                     )
                 }
                 onFocusChange?.invoke(focused)

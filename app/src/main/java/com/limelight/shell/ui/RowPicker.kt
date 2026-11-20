@@ -108,8 +108,16 @@ import com.limelight.shell.ui.PickerLayout as P
 sealed interface RowPopup {
     val title: String
 
-    /** [options] (their labels) with the current one [selected] (-1: none); a pick calls [onPick] with its index. */
-    data class Options(override val title: String, val options: List<String>, val selected: Int, val onPick: (Int) -> Unit) : RowPopup
+    /**
+     * [options] (their labels) with the current one [selected] (-1: none); a pick calls [onPick] with its index. [onReset]: "Reset to profile value"
+     * as the last item (a custom game setting).
+     */
+    data class Options(
+        override val title: String, val options: List<String>, val selected: Int, val onPick: (Int) -> Unit, val onReset: (() -> Unit)? = null,
+    ) : RowPopup {
+        /** The list's items: the options and the reset. */
+        val count get() = options.size + if (onReset != null) 1 else 0
+    }
 
     /** The popup of [slider]: its value is changed through [RowValue.Slider.onChange]. */
     data class Value(override val title: String, val slider: RowValue.Slider) : RowPopup
@@ -122,9 +130,9 @@ data class RowPopupRequest(val popup: RowPopup, val anchor: Rect?)
 /** Opens a row's popup at the focused row; null where no shell can show one (the row then steps on a tap, as A does). */
 val LocalRowPicker = staticCompositionLocalOf<((RowPopup) -> Unit)?> { null }
 
-/** The popup [value] opens on a touch tap, or null for a row that has none (a toggle, an action, a choice without its options). */
-internal fun rowPopupFor(title: String, value: RowValue): RowPopup? = when {
-    value is RowValue.Choice && value.onPick != null && !value.options.isNullOrEmpty() -> RowPopup.Options(title, value.options, value.selected, value.onPick)
+/** The popup [value] opens on a touch tap or Options, or null for a row that has none (a toggle, an action, a choice without its options). [onReset]: a choice's reset item. */
+internal fun rowPopupFor(title: String, value: RowValue, onReset: (() -> Unit)? = null): RowPopup? = when {
+    value is RowValue.Choice && value.onPick != null && !value.options.isNullOrEmpty() -> RowPopup.Options(title, value.options, value.selected, value.onPick, onReset)
     value is RowValue.Slider -> RowPopup.Value(title, value)
     else -> null
 }
@@ -164,7 +172,7 @@ private fun PickerSheet(request: RowPopupRequest, layerAt: Offset, haze: HazeSta
     val top = if (stage.compact) ContextMenuLayout.compactTopMargin(stage.textScale, stage.safe.top) else P.TOP_MARGIN + stage.safe.top
     val bottom = if (stage.compact) ContextMenuLayout.compactBottomMargin(stage.textScale, stage.safe.bottom) else P.BOTTOM_MARGIN + stage.safe.bottom
     val place = when (popup) {
-        is RowPopup.Options -> P.options(anchor, popup.options.size, popup.selected, stage.stageWidth, stage.stageHeight, top, bottom)
+        is RowPopup.Options -> P.options(anchor, popup.count, popup.selected, stage.stageWidth, stage.stageHeight, top, bottom)
         is RowPopup.Value -> P.value(anchor, stage.stageWidth, stage.stageHeight, top, bottom)
     }
     val hook = remember { CloseHook() }
@@ -272,13 +280,19 @@ private fun OptionsCard(popup: RowPopup.Options, list: Float, active: Boolean, o
                     onClose()
                 }
             }
+            popup.onReset?.let { reset ->
+                OptionRow(stringResource(R.string.settings_game_reset_menu), current = false, requester = null, icon = Symbols.RESET) {
+                    onClose()
+                    reset()
+                }
+            }
         }
     }
 }
 
 /** An option (`.menu-item` of the prototype): the focused one on a tint of the main color with a 3 px ring, the current one with a check. */
 @Composable
-private fun OptionRow(label: String, current: Boolean, requester: FocusRequester?, onClick: () -> Unit) {
+private fun OptionRow(label: String, current: Boolean, requester: FocusRequester?, icon: String? = null, onClick: () -> Unit) {
     val colors = LocalDelosColors.current
     var focused by remember { mutableStateOf(false) }
     val fill by animateColorAsState(if (focused) colors.accent.copy(alpha = .17f) else Color.Transparent, tween(Motion.ROW_FOCUS, easing = Motion.Ease), label = "optionFill")
@@ -296,6 +310,7 @@ private fun OptionRow(label: String, current: Boolean, requester: FocusRequester
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(18.px),
     ) {
+        if (icon != null) Symbol(icon, 30.tpx, if (focused) colors.accent else colors.text2)
         MarqueeText(
             label, active = focused, modifier = Modifier.weight(1f),
             style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 23.tpx),
