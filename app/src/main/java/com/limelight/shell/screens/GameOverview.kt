@@ -129,7 +129,6 @@ import com.limelight.shell.data.IgdbImageSize
 import com.limelight.shell.data.IgdbImageUrls
 import com.limelight.shell.data.LastStreamed
 import com.limelight.shell.data.LocalGameMetadata
-import com.limelight.shell.data.LocalIgdbImages
 import com.limelight.shell.data.NativeHdr
 import com.limelight.shell.data.Pc
 import com.limelight.shell.data.Playtime
@@ -299,7 +298,6 @@ internal fun GameOverview(
             shell.overviewViewerControlsVisible = true
         }
     }
-    var backdropShot by remember { mutableStateOf<String?>(null) }
     var storyOpen by remember(app.id) { mutableStateOf(false) }
     var hovered by remember { mutableStateOf(false) }
     var root by remember { mutableStateOf<LayoutCoordinates?>(null) }
@@ -324,12 +322,6 @@ internal fun GameOverview(
         snapshotFlow { controller.settled }.first { it }
         sectionsReady = true
         sectionsIn.animateTo(1f, tween(Motion.FADE, easing = Motion.Ease))
-    }
-
-    // The first two thumbnails and the first full screenshot load once the opening has landed: no decoding during the flight
-    val images = LocalIgdbImages.current
-    LaunchedEffect(media, sectionsReady) {
-        if (sectionsReady && media.isNotEmpty()) images.prefetch(media.take(2).map { it.thumb } + listOfNotNull(media.firstOrNull { it.kind == OverviewModel.MediaKind.SCREENSHOT }?.full))
     }
 
     // Closing: the page scrolls back to its top first, then every motion reverses. The card takes the focus back as the motion
@@ -383,7 +375,6 @@ internal fun GameOverview(
         if (part?.section == OverviewModel.Section.STREAMING.name && streaming.value < 1f) {
             scope.launch { delay(200); streaming.animateTo(1f, tween(OverviewMotion.COUNT_UP, easing = LinearEasing)) }
         }
-        backdropShot = if (part?.section == OverviewModel.Section.MEDIA.name) media.getOrNull(part.index)?.thumb else null
     }
 
     // Play takes the focus from the overview's first frame
@@ -486,7 +477,7 @@ internal fun GameOverview(
             },
     ) {
         Box(Modifier.fillMaxSize().hazeSource(viewerHaze, zIndex = 1f)) {
-            OverviewBackdrop(controller, shell.hero, backdropShot, scroll::value, reducedMotion, pageHaze, maxOf(DEEP_BLUR, dashboardBlur))
+            OverviewBackdrop(controller, shell.hero, scroll::value, reducedMotion, pageHaze, maxOf(DEEP_BLUR, dashboardBlur))
             CompositionLocalProvider(LocalOverviewFocus provides focus, LocalBackdropHaze provides pageHaze, LocalBringIntoViewSpec provides OverviewNoAutoScroll) {
                 Box(
                     Modifier
@@ -597,7 +588,6 @@ internal fun GameOverview(
                 thumbRect = { index -> carouselIndex(index).takeIf { it >= 0 }?.let { thumbRect(focus, it, root) } },
                 onIndex = { index ->
                     viewer = request.copy(index = index)
-                    backdropShot = viewerMedia.getOrNull(index)?.thumb
                     carouselIndex(index).takeIf { it >= 0 }?.let { scope.launch { track.anchor(it, reducedMotion) } }
                 },
                 onClosed = {
@@ -1752,23 +1742,18 @@ private class FrameShape(private val left: Float, private val top: Float, privat
 }
 
 /**
- * The page's backdrop. The dashboard's own background goes on under it ([BackdropMirror]): its hero exactly as the dashboard shows it,
- * at the user's blur and playing when it is animated, so the overview starts with the dashboard's look. The scroll crossfades a deeply
- * blurred layer of the hero over it (opacity only, no animated blur radius), drifting slower than the page and zooming a little; a
- * focused screenshot crossfades in instead, sharp and deep. It is the blur source of the page's glass ([haze]).
+ * The page's backdrop keeps the dashboard's hero ([BackdropMirror]), at the user's blur and playing when animated.
+ * The scroll crossfades a deeply blurred layer of that hero over it (opacity only, no animated blur radius), drifting
+ * slower than the page and zooming a little. Browsing media never changes this source. It supplies the page's glass ([haze]).
  */
 @Composable
-private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, shot: String?, scroll: () -> Int, reduced: Boolean, haze: HazeState, deepBlur: Int) {
+private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, scroll: () -> Int, reduced: Boolean, haze: HazeState, deepBlur: Int) {
     val colors = LocalDelosColors.current
     val k = stageUnit()
     val stage = LocalStage.current
     val mirror = LocalBackdropMirror.current
     val anchor = remember { arrayOfNulls<LayoutCoordinates>(1) }
     val area = remember(stage.stageWidth, stage.stageHeight) { HeroArea.of(stage) }
-    val shotImage by rememberIgdbImage(shot, (569f * k).toInt())
-    val showsShot = shot != null && shotImage != null
-    val image = (if (showsShot) shotImage else null) ?: hero?.image
-    val sourceKey = if (showsShot) "overview/$shot" else "overview/${hero?.id}"
     val bg = colors.bg
     val shadeBottom = remember(bg) { Brush.verticalGradient(0f to Color.Transparent, .42f to Color.Transparent, 1f to bg) }
     val depth = { BackdropDepth.at(scroll() / k, reduced) }
@@ -1800,8 +1785,10 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, sho
                 }
                 .drawBackdropMirror(mirror) { anchor[0] },
         ) {
-            Crossfade(Triple(image, sourceKey, showsShot || mirror == null), animationSpec = tween(800, easing = Motion.Ease), label = "overviewBackdrop") { (bitmap, key, sharp) ->
+            Crossfade(hero, animationSpec = tween(800, easing = Motion.Ease), label = "overviewBackdrop") { art ->
+                val bitmap = art?.image
                 if (bitmap != null) {
+                    val key = remember(art?.id) { "overview/${art?.id}" }
                     val deep by produceState(HeroBitmaps.cached(key, bitmap, deepBlur, area), key, bitmap, deepBlur) {
                         if (value != null) return@produceState
                         // Rendered once the opening has landed: the deep layer is clear at the page's top, and blurring the hero
@@ -1810,8 +1797,8 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, sho
                         value = withContext(Dispatchers.Default) { runCatching { HeroBitmaps.render(key, bitmap, deepBlur, area) }.getOrNull() }
                     }
                     Box(Modifier.fillMaxSize()) {
-                        // A screenshot covers the dashboard's background: its own sharp picture over the theme color, under the deep one
-                        if (sharp) {
+                        // Without the dashboard mirror, draw this same hero below its deep layer.
+                        if (mirror == null) {
                             Box(Modifier.fillMaxSize().background(bg))
                             Image(
                                 bitmap, null, contentScale = ContentScale.Crop,
@@ -1835,7 +1822,7 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, sho
             val below = android.graphics.LinearGradient(0f, SHADE_TOP * k, 0f, SHADE_SOLID * k, 0, android.graphics.Color.BLACK, android.graphics.Shader.TileMode.CLAMP)
             val paint = android.graphics.Paint().apply { shader = android.graphics.ComposeShader(left, below, android.graphics.PorterDuff.Mode.DST_IN) }
             onDrawBehind {
-                val a = depth().shade
+                val a = depth().shade * .7f
                 drawRect(shadeBottom, alpha = a)
                 paint.alpha = (a * 255f).roundToInt()
                 drawContext.canvas.nativeCanvas.drawRect(0f, 0f, size.width, size.height, paint)
