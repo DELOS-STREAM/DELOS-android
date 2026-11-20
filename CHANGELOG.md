@@ -16,6 +16,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 ### Changed
 - The GPU impact chip shows the chip icon again instead of a graphics card, because handhelds have a system on a chip rather than a separate graphics card.
 - Frame pacing lists Fast V-Sync first and Warp Drive and Warp 2 last (Fast V-Sync, Lowest latency, Balanced, Balanced with FPS limit, Smoothest video, Warp Drive, Warp 2), and video codec lists H.264, HEVC, AV1, then PyroWave (after Automatic), in settings, per-app settings and the stream menu, so the familiar choices come first.
+- Touch: on the home screen a tap on a game cover that does not have the focus only focuses it (the background, the info and the chips show that game); a tap on the focused cover starts or resumes it, as Settings rows already work, so a tap meant to look at a game never launches it. A controller and a long press are unchanged.
 
 ## [1.2.0] - 2026-11-17
 _Touch everywhere, the last input decides the hints, new controller glyphs, Guide and Back for the stream menu, anchored on-screen controls; the project moves to the DELOS-STREAM organization._

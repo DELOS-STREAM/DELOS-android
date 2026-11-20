@@ -808,6 +808,9 @@ private fun GameTile(
                 onFocusChange = { if (it) onFocused(index, app) },
                 // The cover stays lit (ring, scale, colors, pulse) while its context menu is open
                 onLookChange = { focused = it },
+                // Touch: a first tap on a cover only focuses it (its hero, info and chips follow), a tap on the focused cover starts it,
+                // so a tap meant to look at a game never launches it (the Settings rows' rule, issue #92)
+                onTouchTap = { wasFocused -> wasFocused },
             )
             // The online pulse of the start screen, around the selected game
             .then(if (focused) Modifier.focusPulse(geometry.corner) else Modifier)
