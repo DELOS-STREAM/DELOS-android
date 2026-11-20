@@ -10,6 +10,8 @@ import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -17,6 +19,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -51,6 +54,7 @@ import com.limelight.shell.ui.Stage
 import com.limelight.shell.ui.animateDelosColors
 import com.limelight.shell.ui.delosColors
 import com.limelight.shell.ui.systemAccentHue
+import com.limelight.shell.ui.rowFirstNavigation
 import kotlinx.coroutines.flow.MutableStateFlow
 import com.limelight.utils.DelosToast
 
@@ -281,7 +285,10 @@ private fun ShellRoot(
         CompositionLocalProvider(
             LocalBoxArt provides boxArt, LocalArtwork provides artwork, LocalGameMetadata provides metadata, LocalIgdbImages provides igdbImages,
         ) {
-            Shell(appearance, store::update, keys, repo, launcher, profiles, startup, setup, links, results, shell)
+            // Up and Down that no element handled land on the first element of the next row (RowNav, docs/GUI.md)
+            Box(Modifier.fillMaxSize().rowFirstNavigation(), propagateMinConstraints = true) {
+                Shell(appearance, store::update, keys, repo, launcher, profiles, startup, setup, links, results, shell)
+            }
         }
     }
 }

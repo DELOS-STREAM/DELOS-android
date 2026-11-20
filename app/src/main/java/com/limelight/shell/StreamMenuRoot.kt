@@ -68,6 +68,7 @@ import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.icon
 import com.limelight.shell.ui.px
 import com.limelight.shell.ui.tpx
+import com.limelight.shell.ui.RowNav
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
@@ -264,14 +265,13 @@ internal fun StreamMenuRoot(
                         else -> 0
                     }
                     if (adjustment == 0 || !focusTracker.adjust(adjustment, action.repeatCount)) {
-                        focusManager.moveFocus(
-                            when (action.direction) {
-                                MenuDirection.UP -> FocusDirection.Up
-                                MenuDirection.DOWN -> FocusDirection.Down
-                                MenuDirection.LEFT -> FocusDirection.Left
-                                MenuDirection.RIGHT -> FocusDirection.Right
-                            }
-                        )
+                        // Up and Down land on the first element of the next row (RowNav, docs/GUI.md)
+                        when (action.direction) {
+                            MenuDirection.UP -> RowNav.moveFocus(focusManager, down = false)
+                            MenuDirection.DOWN -> RowNav.moveFocus(focusManager, down = true)
+                            MenuDirection.LEFT -> focusManager.moveFocus(FocusDirection.Left)
+                            MenuDirection.RIGHT -> focusManager.moveFocus(FocusDirection.Right)
+                        }
                     }
                 }
             }
@@ -474,7 +474,7 @@ private fun PreviewRow(start: StreamMenuStart, current: MenuPage) {
     LaunchedEffect(Unit) {
         delay(500)
         repeat(start.row) {
-            focusManager.moveFocus(FocusDirection.Down)
+            RowNav.moveFocus(focusManager, down = true)
             delay(60)
         }
     }

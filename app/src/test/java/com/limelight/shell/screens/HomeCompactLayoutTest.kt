@@ -1,6 +1,7 @@
 package com.limelight.shell.screens
 
 import com.limelight.shell.ui.Compact
+import com.limelight.shell.ui.FocusSpacing
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -116,32 +117,37 @@ class HomeCompactLayoutTest {
             val l = c.layout(stage.first, stage.second, scale)
             val s = l.coverScale
             val tile = c.TILE * s
-            // The focused wide cover (its left edge on the side margin, grown), a whole cover and at least a third of the next one end
-            // PEEK_EDGE before the stage's edge, where the right fade is still opaque enough to read
-            val shown = stage.first - c.PEEK_EDGE - (Compact.SIDE + c.WIDE * c.FOCUS_SCALE * s + c.coverGap(s) + tile + c.coverGap(s))
+            // The focused wide cover (its left edge on the side margin, grown), a whole cover and at least a third of the next one are in
+            // sight: the cover size is reckoned with the prototype's gaps and a PEEK_EDGE, which the wider focus-rule gaps take back
+            val shown = stage.first - (Compact.SIDE + c.WIDE * c.FOCUS_SCALE * s + c.coverGap(s) + tile + c.coverGap(s))
             assertTrue("${name(stage)} at $scale shows $shown of a $tile cover", shown >= tile / 3f - .5f)
             // The focused first cover's ring (10 px beyond its edge) keeps the 48 px margin
-            assertTrue("${name(stage)} at $scale ring margin", c.rowStart(s) - c.WIDE * s * (c.FOCUS_SCALE - 1f) - c.RING * c.FOCUS_SCALE >= 48f)
+            assertTrue("${name(stage)} at $scale ring margin", c.rowStart(s) - c.WIDE * s * (c.FOCUS_SCALE - 1f) - c.ringReach(0f) >= 48f)
         }
     }
 
     @Test
     fun aFocusedCoverKeepsItsRingOffItsNeighbour() {
-        for (s in listOf(.45f, .5f, .6f, .7f, .8f, 1f)) {
-            val reach = c.TILE * s * (c.FOCUS_SCALE - 1f) / 2f + c.RING * c.FOCUS_SCALE
-            assertTrue("scale $s gap ${c.coverGap(s)}", c.coverGap(s) >= reach + 12f - .001f)
-            assertTrue("scale $s never under the prototype's scaled gap", c.coverGap(s) >= 44f * s)
+        // focusEffects' look: 1.055 and a 10 px ring that grows with the cover; the wide first cover grows to the left only, so a 300 px
+        // cover's reach is the one toward a neighbour
+        assertEquals(FocusSpacing.TILE, c.COVER.look)
+        assertEquals(c.TILE, c.COVER.size, 0f)
+        assertEquals(45.6f, c.COVER.minGap, .001f)
+        assertTrue(c.COVER.gap >= c.COVER.minGap)
+        for (s in listOf(.3f, .45f, .5f, .6f, .7f, .8f, 1f)) {
+            assertTrue("scale $s gap ${c.coverGap(s)}", c.coverGap(s) >= c.COVER.look.minGap(c.TILE * s) - .001f)
+            assertTrue("scale $s never under the prototype's gap scaled", c.coverGap(s) >= c.COVER.gap * s)
         }
-        // From 0.63 up the prototype's gap, scaled, is enough by itself
-        assertEquals(44f * .7f, c.coverGap(.7f), .001f)
-        assertEquals(27.5f, c.coverGap(.6f), .01f)
+        // The prototype's size: 46; at 0.6 the ring, which does not shrink with the cover, sets it (46 scaled would be 27.6)
+        assertEquals(46f, c.coverGap(1f), .001f)
+        assertEquals(39f, c.coverGap(.6f), .01f)
     }
 
     @Test
     fun theNumbersOfTheSixStages() {
         // Cover scale at interface scale 1: the width rule where the stage is tall for its width, the comfortable gaps on the lower ones,
         // the least gaps on the lowest
-        val expected = mapOf("1099x957" to .6554f, "1488x893" to .7665f, "1191x893" to .7155f, "1108x831" to .6359f, "1051x1051" to .6237f, "1082x722" to .45f)
+        val expected = mapOf("1099x957" to .6554f, "1488x893" to .7665f, "1191x893" to .7155f, "1108x831" to .6359f, "1051x1051" to .624f, "1082x722" to .45f)
         for (stage in stages) assertEquals(name(stage), expected.getValue(name(stage)), c.layout(stage.first, stage.second).coverScale, .0005f)
         // The lowest stage's cover is at the floor and the least gaps (and the 64 px title box) are kept
         val low = c.layout(1082f, 722f)

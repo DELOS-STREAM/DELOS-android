@@ -664,28 +664,20 @@ private fun OverviewLayer(overview: OverviewController, content: @Composable (Ap
     overview.app?.let { content(it) }
 }
 
-/** Row layout: the wide first cover, the others and the gap between them, in stage pixels. */
-private const val ROW_TILE = 300f
-private const val ROW_HEIGHT = 450f
-private const val ROW_GAP = 44f
-
-/** The wide first cover is as wide as three covers and the two gaps between them. */
-private const val ROW_WIDE = 3 * ROW_TILE + 2 * ROW_GAP
-
 /** A compact stage: the room above the row's covers for the focus scale, the ring, the pulse and the glow (the scroll area would cut them). */
 private const val COMPACT_ROW_PAD = 48f
 
 /**
  * The size of the covers and where the row starts, stage pixels: a cover is [scale] times the prototype's 300 x 450 (the wide first one
- * 3 covers and 2 gaps wide, so it keeps its ratio too), its gap and corner scale with it, and [start] is the first cover's left edge.
+ * [HomeCompact.WIDE], so it keeps its ratio too), its gap and corner scale with it, and [start] is the first cover's left edge.
  * Everywhere but on a compact stage the scale is 1 and the start 150, which are the prototype's numbers.
  */
 private class CoverGeometry(val scale: Float, val start: Float) {
-    val tile = ROW_TILE * scale
-    val height = ROW_HEIGHT * scale
-    /** Between two covers: the prototype's 44 scaled, on a compact stage at least the room a focused cover needs ([HomeCompact.coverGap]). */
-    val gap = if (scale < 1f) HomeCompact.coverGap(scale) else ROW_GAP * scale
-    val wide = 3 * tile + 2 * ROW_GAP * scale
+    val tile = HomeCompact.TILE * scale
+    val height = HomeCompact.COVER_HEIGHT * scale
+    /** Between two covers: [HomeCompact.COVER]'s 46 scaled, at least the focus rule's for covers that size ([HomeCompact.coverGap]). */
+    val gap = HomeCompact.coverGap(scale)
+    val wide = HomeCompact.WIDE * scale
     val corner = 26f * scale
 
     /**
@@ -706,8 +698,8 @@ private val StandardCovers = CoverGeometry(1f, 150f)
 /** A wrap round the row glides over the last this many covers (the rest is a quick jump). */
 private const val WRAP_GLIDE_ITEMS = 12
 
-/** How much a cover grows when focused (focusEffects' default). */
-private const val TILE_FOCUS_SCALE = 1.055f
+/** How much a cover grows when focused (focusEffects' default, [HomeCompact.COVER]'s look). */
+private val TILE_FOCUS_SCALE = HomeCompact.FOCUS_SCALE
 
 /**
  * The ids of [apps] with custom per-game settings in the current profile ([GameSettingsStore.customAppIds]), recomputed when the

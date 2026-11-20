@@ -15,7 +15,6 @@ import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -80,6 +79,7 @@ fun DialogLayer(spec: DialogSpec?, haze: HazeState, onDismiss: () -> Unit) {
                     .moveAboveIme()
                     .focusProperties { onExit = { if (open) cancelFocusChange() } }
                     .focusGroup()
+                    .rowNavScope()
                     // box-shadow: 0 40px 100px -30px rgba(0, 0, 0, .7)
                     .dropShadow(shape) {
                         radius = 100f * k
@@ -93,20 +93,26 @@ fun DialogLayer(spec: DialogSpec?, haze: HazeState, onDismiss: () -> Unit) {
                     .border(1.px, colors.line, shape)
                     .padding((if (stage.compact) 36 else 52).px),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(22.px),
+                verticalArrangement = Arrangement.spacedBy(DIALOG_GAP.px),
             ) {
                 BasicText(d.title, modifier = Modifier.staggerEntrance(0, Motion.MENU_DELAY), style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 38.tpx, textAlign = TextAlign.Center))
                 BasicText(d.note, modifier = Modifier.staggerEntrance(1, Motion.MENU_DELAY), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 24.tpx, lineHeight = 1.4.em, textAlign = TextAlign.Center))
-                d.fields.forEachIndexed { i, field ->
-                    TextFieldPill(
-                        values[i], field.icon,
-                        modifier = (if (i == 0) Modifier.focusRequester(first) else Modifier).staggerEntrance(i + 2, Motion.MENU_DELAY),
-                        placeholder = field.placeholder, keyboardType = field.keyboard, password = field.password, maxLength = field.maxLength,
-                        // Done on the last field confirms, like the button
-                        onDone = { if (i == d.fields.lastIndex) confirm() },
-                    )
+                // The fields and the buttons after them keep the focus rule's gaps, wider than the texts'
+                if (d.fields.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(DIALOG_FIELDS.gap.px)) {
+                    d.fields.forEachIndexed { i, field ->
+                        TextFieldPill(
+                            values[i], field.icon,
+                            modifier = (if (i == 0) Modifier.focusRequester(first) else Modifier).staggerEntrance(i + 2, Motion.MENU_DELAY),
+                            placeholder = field.placeholder, keyboardType = field.keyboard, password = field.password, maxLength = field.maxLength,
+                            // Done on the last field confirms, like the button
+                            onDone = { if (i == d.fields.lastIndex) confirm() },
+                        )
+                    }
                 }
-                Row(Modifier.staggerEntrance(d.fields.size + 2, Motion.MENU_DELAY).padding(top = 8.px), horizontalArrangement = Arrangement.spacedBy((if (stage.compact) Compact.BUTTON_GAP else 24f).px)) {
+                FocusRow(
+                    FocusSpacing.PILL, gap = if (stage.compact) Compact.BUTTON_GAP else 24f,
+                    Modifier.staggerEntrance(d.fields.size + 2, Motion.MENU_DELAY).padding(top = (if (d.fields.isEmpty()) 8f else DIALOG_BUTTONS.gap - DIALOG_GAP).px),
+                ) {
                     // A dialog without fields (a question) starts on its button
                     PillButton(d.confirm, Symbols.CHECK, confirm, if (d.fields.isEmpty()) Modifier.focusRequester(first) else Modifier, primary = true)
                     PillButton(stringResource(R.string.common_cancel), null, onDismiss, clickCue = Cue.BACK)
@@ -115,3 +121,10 @@ fun DialogLayer(spec: DialogSpec?, haze: HazeState, onDismiss: () -> Unit) {
         }
     }
 }
+
+/** The gap between a dialog's title, its note and what follows. */
+private const val DIALOG_GAP = 22f
+
+/** Between a dialog's text fields ([TextFieldPill]), and from the last one to the buttons (a pill's reach is the larger of the two). */
+internal val DIALOG_FIELDS = FocusGap(FIELD_LOOK, FIELD_HEIGHT, 30f)
+internal val DIALOG_BUTTONS = FocusGap(FocusSpacing.PILL, PILL_HEIGHT, 32f)

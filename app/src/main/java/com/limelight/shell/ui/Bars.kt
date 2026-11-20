@@ -186,7 +186,7 @@ private fun StatusCluster(
  * but the navigation's buttons are 56 px, the connected PC is only its status dot with the PC glyph (its name is in Home's hint bar and
  * on the Devices screen; a screen reader still gets it) and the wordmark goes under [Compact.NARROW_STAGE]. [fitStatusBar] places the
  * navigation: on the bar's middle while that leaves [StatusBarLayout.MIN_GAP] to both clusters, else in the middle of the free space
- * between them; when even that is too narrow the inner gaps tighten and, last, the battery's percentage goes ([StatusBarStep]).
+ * between them; when even that is too narrow the status cluster's gaps tighten and, last, the battery's percentage goes ([StatusBarStep]).
  */
 @Composable
 private fun CompactStatusBar(
@@ -203,8 +203,7 @@ private fun CompactStatusBar(
     val sideRight = (c.SIDE + safe.right).px
     val minGap = c.MIN_GAP.px
     val buttons = nav?.size ?: 0
-    val navWide = c.navWidth(buttons, c.NAV_BUTTON, c.NAV_GAP).px
-    val navTight = c.navWidth(buttons, c.NAV_BUTTON, c.NAV_GAP_TIGHT).px
+    val navWidth = c.navWidth(buttons, c.NAV_BUTTON, c.NAV_COMPACT.gap).px
     SubcomposeLayout(modifier.fillMaxWidth().padding(top = safe.top.px).height(104.px)) { constraints ->
         val open = Constraints(maxHeight = constraints.maxHeight)
         val width = constraints.maxWidth
@@ -229,12 +228,12 @@ private fun CompactStatusBar(
         }.first().measure(open).also { rights[step.ordinal] = it }
         val fit = fitStatusBar(width.toFloat(), sideLeft.toPx(), sideRight.toPx(), minGap.toPx()) { step ->
             StatusBarWidths(
-                (left?.width ?: 0).toFloat(), if (buttons == 0) 0f else (if (step.tight) navTight else navWide).toPx(), right(step).width.toFloat(),
+                (left?.width ?: 0).toFloat(), if (buttons == 0) 0f else navWidth.toPx(), right(step).width.toFloat(),
             )
         }
         val status = right(fit.step)
         val bar = if (nav != null) subcompose("nav") {
-            TopNav(nav, Modifier, buttonSize = c.NAV_BUTTON, gap = if (fit.step.tight) c.NAV_GAP_TIGHT else c.NAV_GAP)
+            TopNav(nav, Modifier, buttonSize = c.NAV_COMPACT.size, gap = c.NAV_COMPACT.gap)
         }.first().measure(open) else null
         val statusX = width - sideRight.roundToPx() - status.width
         layout(width, constraints.maxHeight) {
@@ -356,9 +355,9 @@ private fun PcPill(name: String, online: Boolean) {
 
 private val ONLINE = androidx.compose.ui.graphics.Color(0xFF3DDC84)
 
-/** The top navigation: round buttons [buttonSize] wide and [gap] apart in a glass pill (64 and 14; a compact stage's are smaller, see [StatusBarLayout]). */
+/** The top navigation: round buttons [buttonSize] wide and [gap] apart in a glass pill (64 and 16; a compact stage's are smaller, see [StatusBarLayout]). */
 @Composable
-internal fun TopNav(buttons: List<NavButton>, modifier: Modifier, buttonSize: Float = 64f, gap: Float = StatusBarLayout.NAV_GAP) {
+internal fun TopNav(buttons: List<NavButton>, modifier: Modifier, buttonSize: Float = StatusBarLayout.NAV.size, gap: Float = StatusBarLayout.NAV.gap) {
     val colors = LocalDelosColors.current
     val glass = LocalBackdropHaze.current
     val requesters = remember(buttons.size) { List(buttons.size) { FocusRequester() } }
@@ -390,7 +389,7 @@ internal fun TopNav(buttons: List<NavButton>, modifier: Modifier, buttonSize: Fl
 }
 
 /** What a focused top menu button is scaled to; the transient pill takes its focused bounds. */
-private const val NAV_FOCUS_SCALE = 1.12f
+private val NAV_FOCUS_SCALE = StatusBarLayout.NAV_LOOK.scale
 
 @Composable
 private fun NavButtonView(button: NavButton, requester: FocusRequester, wrapLeft: FocusRequester?, wrapRight: FocusRequester?, size: Float) {
