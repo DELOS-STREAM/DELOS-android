@@ -251,9 +251,9 @@ The tiles, in order:
 - An open popover adds a 22 % scrim.
 - Glass is drawn as the prototype's tints and white gradients over a dark undercoat: 28 % under the tiles
   (`TILE_BACKING_ALPHA`), 30 % under the card (`CARD_BACKING_ALPHA`).
-- The stream is a separate window (a `SurfaceView`), so the frosted blur of the prototype is not available. The
-  undercoat keeps the glass readable over a bright picture.
-- A window that can blur its backdrop replaces the undercoat later.
+- The stream is a separate window (a `SurfaceView`), so Compose cannot blur it. The menu's window blurs the stream
+  behind it instead (`FLAG_BLUR_BEHIND`, `StreamMenu`), on Android 12 and newer with cross-window blur enabled; the
+  undercoat keeps the glass readable over a bright picture, and is all there is where the system cannot blur.
 
 ### 2.7 Popover
 

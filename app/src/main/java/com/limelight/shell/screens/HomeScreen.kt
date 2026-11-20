@@ -181,6 +181,10 @@ import com.limelight.shell.ui.InputCap
 import com.limelight.shell.ui.InputKind
 import com.limelight.shell.ui.EaseOut
 import kotlin.math.abs
+import androidx.compose.runtime.staticCompositionLocalOf
+import com.limelight.shell.ui.backdropBlur
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 /** Hues and icon of an app's placeholder art, derived from its name. */
 fun appArt(pc: Pc, app: App, image: androidx.compose.ui.graphics.ImageBitmap? = null, animated: java.io.File? = null): GameArt {
@@ -612,15 +616,18 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                                 } else Modifier
                             ),
                     ) {
-                        tile(i, app)
-                        // "Game info" on the focused cover's lower edge: it never covers the hint bar's library note below the row
-                        if (isFocused) GameInfoHint(
-                            visible = hasOverview(app) && overview.app == null,
-                            lift = { lift },
-                            onOpen = { openOverview(app) },
-                            // Above the cover, which a focus look lifts to z 1 (focusEffects)
-                            modifier = Modifier.align(Alignment.BottomCenter).zIndex(2f),
-                        )
+                        // The cover's picture is the blur source of the glass on it: its badges and the "Game info" chip
+                        CompositionLocalProvider(LocalCoverArt provides remember { HazeState() }) {
+                            tile(i, app)
+                            // "Game info" on the focused cover's lower edge: it never covers the hint bar's library note below the row
+                            if (isFocused) GameInfoHint(
+                                visible = hasOverview(app) && overview.app == null,
+                                lift = { lift },
+                                onOpen = { openOverview(app) },
+                                // Above the cover, which a focus look lifts to z 1 (focusEffects)
+                                modifier = Modifier.align(Alignment.BottomCenter).zIndex(2f),
+                            )
+                        }
                     }
                 }
             }
@@ -978,7 +985,7 @@ private fun GameInfoHint(visible: Boolean, lift: () -> Float, onOpen: () -> Unit
                 translationY = 8f * k * (1f - slide)
             }
             .clip(CircleShape)
-            .background(if (hovered) Color(0xC7050A14) else Color(0x8C050A14))
+            .coverGlass(if (hovered) Color(0xC7050A14) else Color(0x8C050A14))
             .then(
                 if (pointer && visible) Modifier
                     .pointerInput(Unit) {
@@ -1208,41 +1215,45 @@ private fun GameTile(
                 drawLayer(flight)
             } else Modifier),
     ) {
-        Crossfade(shown, animationSpec = tween(400), label = "cover") { img ->
-            if (img != null) {
-                CoverImage(img, app.name, Modifier.fillMaxSize(), coverFilter)
-            } else {
-                PlaceholderArt(
-                    art.hue, art.hue2, art.icon,
-                    modifier = Modifier.fillMaxSize(),
-                    glyphSize = (if (wide) 420f else 320f) * geometry.scale,
-                    glyphRight = (if (wide) 40f else -36f) * geometry.scale,
-                    glyphTop = if (wide) .04f else .24f,
-                    title = app.name,
-                    // A compact stage's small covers set the placeholder's title smaller (the wide one at most 40 % and so that its name stays on
-                    // one line clear of the badge, the others at most 20 % and then fitted to their longest word), with the cover's own inset
-                    titleSize = (if (wide) 72f else 34f) * geometry.scale.coerceAtLeast(if (wide) .6f else .8f).coerceAtMost(1f),
-                    titleInset = (if (wide) 44f else 26f) * geometry.scale,
-                    titleBottom = (if (wide) 40f else 26f) * geometry.scale,
-                    titleFit = geometry.scale < 1f,
+        // The picture (still and animated) records itself for the glass on it, only while it carries some (a badge, a corner pill, the spinner,
+        // the focused cover's Game info chip): a cover without glass is no extra layer
+        Box(Modifier.matchParentSize().then(if (focused || badge != null || custom || hidden || artwork.isBusy(pc, app)) Modifier.coverArtSource() else Modifier)) {
+            Crossfade(shown, animationSpec = tween(400), label = "cover") { img ->
+                if (img != null) {
+                    CoverImage(img, app.name, Modifier.fillMaxSize(), coverFilter)
+                } else {
+                    PlaceholderArt(
+                        art.hue, art.hue2, art.icon,
+                        modifier = Modifier.fillMaxSize(),
+                        glyphSize = (if (wide) 420f else 320f) * geometry.scale,
+                        glyphRight = (if (wide) 40f else -36f) * geometry.scale,
+                        glyphTop = if (wide) .04f else .24f,
+                        title = app.name,
+                        // A compact stage's small covers set the placeholder's title smaller (the wide one at most 40 % and so that its name stays on
+                        // one line clear of the badge, the others at most 20 % and then fitted to their longest word), with the cover's own inset
+                        titleSize = (if (wide) 72f else 34f) * geometry.scale.coerceAtLeast(if (wide) .6f else .8f).coerceAtMost(1f),
+                        titleInset = (if (wide) 44f else 26f) * geometry.scale,
+                        titleBottom = (if (wide) 40f else 26f) * geometry.scale,
+                        titleFit = geometry.scale < 1f,
+                    )
+                }
+            }
+            // The chosen animated cover plays over its still first frame, cropped and muted exactly like it (the idle filter), only while
+            // the tile is on screen; decoded no bigger than the tile (its focused size) needs
+            val animatedArt = LocalDashboardArt.current
+            val animation by rememberAnimatedArtwork(artwork, pc, app, if (wide) ArtKind.WIDE else ArtKind.COVER)
+            val playing by remember(animatedArt, app.id) { derivedStateOf { animatedArt?.plays(app.id) == true } }
+            if (animatedArt != null && animation != null && (if (wide) wideCover else cover) != null) {
+                val k = LocalStage.current.dpPerPx * LocalDensity.current.density * TILE_FOCUS_SCALE
+                AnimatedArtLayer(
+                    animation, playing, animatedArt.ticker, ((if (wide) geometry.wide else geometry.tile) * k).roundToInt(), (geometry.height * k).roundToInt(),
+                    Modifier.fillMaxSize(), colorFilter = coverFilter, stamp = artwork.version.intValue,
                 )
             }
         }
-        // The chosen animated cover plays over its still first frame, cropped and muted exactly like it (the idle filter), only while
-        // the tile is on screen; decoded no bigger than the tile (its focused size) needs
-        val animatedArt = LocalDashboardArt.current
-        val animation by rememberAnimatedArtwork(artwork, pc, app, if (wide) ArtKind.WIDE else ArtKind.COVER)
-        val playing by remember(animatedArt, app.id) { derivedStateOf { animatedArt?.plays(app.id) == true } }
-        if (animatedArt != null && animation != null && (if (wide) wideCover else cover) != null) {
-            val k = LocalStage.current.dpPerPx * LocalDensity.current.density * TILE_FOCUS_SCALE
-            AnimatedArtLayer(
-                animation, playing, animatedArt.ticker, ((if (wide) geometry.wide else geometry.tile) * k).roundToInt(), (geometry.height * k).roundToInt(),
-                Modifier.fillMaxSize(), colorFilter = coverFilter, stamp = artwork.version.intValue,
-            )
-        }
         if (artwork.isBusy(pc, app)) {
             Box(
-                Modifier.align(Alignment.TopEnd).padding(16.px).size(56.px).clip(CircleShape).background(Color(0x8C050A14)),
+                Modifier.align(Alignment.TopEnd).padding(16.px).size(56.px).clip(CircleShape).coverGlass(Color(0x8C050A14)),
                 contentAlignment = Alignment.Center,
             ) { Spinner(32f) }
         } else if (custom || hidden) {
@@ -1259,7 +1270,7 @@ private fun GameTile(
                 Modifier
                     .padding(18.px)
                     .clip(CircleShape)
-                    .background(Color(0x8C050A14))
+                    .coverGlass(Color(0x8C050A14))
                     .padding(horizontal = 14.px, vertical = 6.px),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.px),
@@ -1275,12 +1286,23 @@ private fun GameTile(
 @Composable
 private fun CornerPill(icon: String, tint: Color, description: String) {
     Box(
-        Modifier.clip(CircleShape).background(Color(0x8C050A14))
+        Modifier.clip(CircleShape).coverGlass(Color(0x8C050A14))
             .padding(horizontal = 14.px, vertical = 6.px)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) { Symbol(icon, 22.tpx, tint, filled = true) }
 }
+
+/** The cover a tile draws, as the blur source of the glass on it ([coverArtSource], [coverGlass]); null outside the home row. */
+private val LocalCoverArt = staticCompositionLocalOf<HazeState?> { null }
+
+/** Records this cover's picture for the glass on it. */
+@Composable
+private fun Modifier.coverArtSource(): Modifier = LocalCoverArt.current?.let { hazeSource(it) } ?: this
+
+/** The dark glass of a cover's badges: the picture under it blurred for real under [tint] (just [tint] where no cover records itself). */
+@Composable
+private fun Modifier.coverGlass(tint: Color): Modifier = LocalCoverArt.current?.let { backdropBlur(it, 16f, tint) } ?: background(tint)
 
 /** A centered message for the empty, loading and offline states. */
 @Composable

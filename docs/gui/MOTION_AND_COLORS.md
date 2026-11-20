@@ -260,26 +260,26 @@ rules are in [DIAGNOSTICS.md](../DIAGNOSTICS.md).
 
 ### 3.1 Card
 
-`ui/ProblemOfferCard.kt` is a glass card in the top right corner of the start screen and the home screen, under the
-toast's place.
+`ui/ProblemOfferCard.kt` is a glass card in the centre of the start screen and the home screen; a compact stage
+centres it between the status bar and the hint bar.
 
 | Element | Value |
 |---|---|
-| Corner | 34 |
-| Fill | The shared `glass` fill |
+| Corner | 38 |
+| Fill | `surface` over a real 24 px blur of the screen under the card (the shell's screen haze, [GUI.md, "Glass"](../GUI.md#glass)) |
 | Border | 1 px `line` |
-| Padding | 36 px |
-| Width | 780 px |
-| Distance from the top | 230 px |
-| Distance from the right edge | 64 px |
+| Padding | 48 px (38 on a compact stage) |
+| Gap between its parts | 24 px |
+| Width | 936 px (a compact stage: the width less 48 px on each side, 936 at most) |
+| Pop | From its centre |
 
 | Content | Style |
 |---|---|
-| An accent disc with the bug icon | |
-| Title: *Delos had a problem*, or *A stream could not run* | Unbounded 28 |
-| One sentence for the kind of problem | Figtree 22 |
-| The one-line technical summary | 18, at most two lines, ellipsis |
-| The note: what Report does and that nothing is sent before the user chooses. With the report service (`DELOS_REPORTS_URL`) it is `shell_problem_note_upload`: Report sends a cleaned log to the Delos report service, kept 30 days, readable by anyone who has the link, and opens a GitHub draft | 20 |
+| An accent disc with the bug icon, 28 px from the title | |
+| Title: *Delos had a problem*, or *A stream could not run* | Unbounded 28, line height 1.3 |
+| One sentence for the kind of problem, 10 px under the title | Figtree 22, line height 1.45 |
+| The one-line technical summary | 18, line height 1.45, at most two lines, ellipsis |
+| The note: what Report does and that nothing is sent before the user chooses. With the report service (`DELOS_REPORTS_URL`) it is `shell_problem_note_upload`: Report sends a cleaned log to the Delos report service, kept 30 days, readable by anyone who has the link, and opens a GitHub draft | 20, line height 1.5 |
 
 The card has two `PillButton`s (compact):
 
@@ -294,7 +294,7 @@ shows the old note.
 
 ### 3.2 Behavior
 
-- The card is not a dialog: no scrim, no blur of the screen, no confirmation.
+- The card is not a dialog: no scrim, no confirmation. Only what lies under the card is blurred.
 - It shows only while no layer, portal, launch loader or stream result is up and the shell is on Start or Home
   (`ShellState.offerShown`). The result screen of a failed stream comes first and the card follows it.
 

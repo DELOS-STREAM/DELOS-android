@@ -201,8 +201,10 @@ fun Shell(
     // The same background, recorded for a page that continues it over the dashboard (the game overview)
     val backdropMirror = rememberBackdropMirror()
     var blurSource by remember { mutableStateOf(false) }
-    LaunchedEffect(shell.layer != null || shell.portal != null || shell.picker != null) {
-        if (shell.layer != null || shell.portal != null || shell.picker != null) {
+    // The glass cards over the screen (the problem offer, the button capture) blur what lies under them through the same source as the layers
+    val screenGlass = shell.layer != null || shell.portal != null || shell.picker != null || shell.buttonCapture != null || (shell.offerShown && shell.problem != null)
+    LaunchedEffect(screenGlass) {
+        if (screenGlass) {
             blurSource = true
         } else {
             delay(600)
@@ -803,7 +805,7 @@ fun Shell(
             // The blur source re-records the whole screen every frame, so it is only active while an overlay
             // is shown (and while it fades out)
             // On in the very frame an overlay appears (its blur would otherwise start empty and clipped)
-            Box(Modifier.fillMaxSize().then(if (blurSource || shell.layer != null || shell.portal != null || shell.result != null || shell.picker != null) Modifier.hazeSource(haze) else Modifier)) {
+            Box(Modifier.fillMaxSize().then(if (blurSource || screenGlass || shell.result != null) Modifier.hazeSource(haze) else Modifier)) {
                 Box(Modifier.fillMaxSize().hazeSource(backdropHaze).backdropMirrorSource(backdropMirror)) {
                     ShellBackdrop(shell, appearance, colors, heroShown = shell.screen == Screen.Home, animate = shell.launch == null && shell.portal == null)
                 }
@@ -956,7 +958,7 @@ fun Shell(
 
                 StreamResultLayer(shell.result, haze, appearance.reducedMotion, onRetry = ::retryStream, onBack = ::dismissResult)
 
-                ButtonCaptureLayer(shell.buttonCapture != null, keys) { buttons ->
+                ButtonCaptureLayer(shell.buttonCapture != null, keys, haze) { buttons ->
                     val save = shell.buttonCapture
                     shell.buttonCapture = null
                     if (buttons != null) save?.invoke(buttons)
@@ -980,7 +982,7 @@ fun Shell(
                 instantExit = launchExitInstant.value,
                 onCancel = ::cancelLaunch,
             )
-            ProblemOfferCard(if (shell.offerShown) shell.problem else null, appearance.reducedMotion, onReport = { reportProblem(ReportMode.UPLOAD) }, onSaveToDownloads = { reportProblem(ReportMode.DOWNLOADS) }, onDismiss = ::dismissProblem)
+            ProblemOfferCard(if (shell.offerShown) shell.problem else null, haze, appearance.reducedMotion, onReport = { reportProblem(ReportMode.UPLOAD) }, onSaveToDownloads = { reportProblem(ReportMode.DOWNLOADS) }, onDismiss = ::dismissProblem)
             UpdateOfferCard(
                 if (updateShown) updateState else null, appearance.reducedMotion,
                 onUpdate = { updates.accept() }, onAllow = updates::openPermissionSettings, onCancel = ::updateBack, onLater = ::updateBack,

@@ -49,7 +49,8 @@ The principles hold on every screen. The documents above specify how each screen
 4. There is a **light / dark mode**, plus an extra **Material You** switch that takes the overall color palette
    from the system. With Material You on, **all dynamic backgrounds use only the system palette** (no other colors
    mixed in); the "System" wallpaper color is the default.
-5. Overlays such as the **portal and the game loader blur the content behind them**.
+5. Overlays such as the **portal and the game loader blur the content behind them**, and **every semi-transparent
+   surface is glass**: it blurs what lies behind it for real ([Glass](#glass)).
 6. The design is slightly **rounded**, with generous paddings and margins.
 7. An **interface scale** setting enlarges text, the status bar and the button hints. The covers keep their size.
 8. Icons are **Phosphor icons**, bundled offline under the MIT license: Regular at rest and Fill on focus, with a
@@ -57,6 +58,39 @@ The principles hold on every screen. The documents above specify how each screen
    across screens. The color-palette selector uses **Palette** for every palette choice. The approved
    implementation and the generation workflow are in [ICONS.md](ICONS.md).
 
+## Glass
+
+Every semi-transparent surface blurs what lies behind it for real (Haze). A surface is a panel, pill, chip, card,
+overlay on a picture, dialog, menu, toast, hint bar pill, top bar pill, info box, dock, sheet or popover with a
+translucent fill.
+
+| Where the surface lies | Its glass |
+|---|---|
+| On a page, over the animated background | `glass(tint)`: the shell's background haze (`LocalBackdropHaze`, recorded once for the whole screen), 8 px |
+| Inside the game overview | The same `glass(tint)`: the page's own backdrop haze; its cards `overviewGlass` |
+| Over the whole screen (side menu, context menu, dialogs, filters, row popups, the result, the button capture, the problem report card) | `backdropBlur(haze, …)` over the shell's screen haze, which records the screen only while one of them is up (and 600 ms after) |
+| On a picture (a cover's badges and Game info chip, an artwork tile's caption and Animated badge, the launch scene's Cancel pill) | `backdropBlur` over the picture itself: the picture is a `hazeSource` of its own, 16 to 24 px |
+| Over the stream's video (a `SurfaceView`): the statistics, the classic notification and performance overlays | Nothing can blur it: a darker tint, black at 70 % |
+| The stream menu's window | The window blurs the stream behind it (`FLAG_BLUR_BEHIND`, Android 12 with cross-window blur); its tiles and cards are drawn over that blur |
+
+Not surfaces, and so flat: full-screen dims and veils (scrims), dividers, tracks, bar segments, text shadows,
+gradient masks and fades, focus rings and glows, the stream's video. A fill inside a glass surface stays flat too: a
+blur is never nested in a blur. The companion panel's surfaces stay flat: its background is a flat opaque colour, so a
+blur would draw the same colour.
+
+Performance rules:
+
+- A screen blurs through one shared source (the background haze, or the screen haze for the layers). A picture is
+  the only other source, its own, and a home cover records itself only while it carries glass (a badge, a corner pill,
+  the spinner, the focused cover's Game info chip): no extra layer per cover.
+- A grid of many small surfaces is not glass one by one: the settings search's letter keys stay a flat tint, since
+  one blur per key (30 to 45 of them) cost janky frames on the emulator (0.6 % to 9.8 %).
+- No blur radius is animated per frame; a glass surface fades with its alpha.
+- Below Android 12 Haze draws the tint alone, made more opaque (`backdropBlur`'s fallback).
+
+`TranslucentSurfaceTest` fails on a translucent `.background(…)` (a palette surface or scrim, an alpha below `FF`, a
+`.copy(alpha = …)`) on a line without glass. Its allowlist names every exception and why; an entry that matches no
+line any more fails too.
 ## Focus spacing
 
 A focused element's ring, glow and lift never touch or overlap the next focusable element. The rule holds for every

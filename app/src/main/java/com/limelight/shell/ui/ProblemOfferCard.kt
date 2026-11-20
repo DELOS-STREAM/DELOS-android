@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.em
 import com.limelight.diag.Problem
 import com.limelight.diag.ProblemKind
 import com.limelight.diag.ReportUploader
+import dev.chrisbanes.haze.HazeState
 
 @Composable
 internal fun offerTitle(kind: ProblemKind): String = stringResource(if (kind == ProblemKind.STREAM_FAILED) R.string.shell_problem_title_stream else R.string.shell_problem_title_generic)
@@ -74,51 +75,55 @@ internal fun problemSummary(res: Resources, problem: Problem): String {
 }
 
 /**
- * The offer after a problem (docs/DIAGNOSTICS.md, docs/GUI.md "Problem report card"): a glass card in the top right corner of the
- * start screen and the home screen, in the toast's place but with two actions. It is not a dialog: nothing is dimmed, the
- * rest of the screen stays usable, and it asks nothing before leaving. Focus starts on Report this problem; A activates the
- * focused button, left/right moves between the two, B is Dismiss (the shell's back handler). It is offered once per problem.
- * In a build with the report service ([ReportUploader.enabled]) the note says what Report uploads, and a second row offers
+ * The offer after a problem (docs/DIAGNOSTICS.md, docs/GUI.md "Problem report card"): a glass card in the centre of the start screen
+ * and the home screen, with two actions. It is not a dialog: nothing is dimmed, the rest of the screen stays usable, and it asks
+ * nothing before leaving; only what lies under the card is blurred ([haze], the shell's screen). Focus starts on Report this problem;
+ * A activates the focused button, left/right moves between the two, B is Dismiss (the shell's back handler). It is offered once per
+ * problem. In a build with the report service ([ReportUploader.enabled]) the note says what Report uploads, and a second row offers
  * [onSaveToDownloads]: the same pill as Dismiss, without a glyph, for people who want no upload.
  */
 @Composable
-fun ProblemOfferCard(problem: Problem?, reducedMotion: Boolean, onReport: () -> Unit, onSaveToDownloads: () -> Unit, onDismiss: () -> Unit) {
+fun ProblemOfferCard(problem: Problem?, haze: HazeState, reducedMotion: Boolean, onReport: () -> Unit, onSaveToDownloads: () -> Unit, onDismiss: () -> Unit) {
     val colors = LocalDelosColors.current
     val uploads = remember { ReportUploader.shared.enabled }
     var shown by remember { mutableStateOf(problem) }
     if (problem != null) shown = problem
-    val origin = TransformOrigin(1f, 0f)
-    // A compact stage tucks the card under the status bar, 48 px from the edge, and gives it the width that is left (780 at most)
+    val origin = TransformOrigin.Center
+    // A compact stage centres the card between the status bar and the hint bar, 48 px from the sides, in the width that is left
     val stage = LocalStage.current
     val compact = stage.compact
-    val margin = if (compact) 48f else 64f
-    Box(Modifier.fillMaxSize().padding(top = (if (compact) Compact.STATUS_BAR * stage.textScale + stage.safe.top else 230f).px, end = margin.px), contentAlignment = Alignment.TopEnd) {
+    val bars = if (compact) Modifier.padding(
+        top = (Compact.STATUS_BAR * stage.textScale + stage.safe.top).px,
+        bottom = (Compact.HINT_BAR * stage.textScale + stage.safe.bottom).px,
+    ) else Modifier
+    Box(Modifier.fillMaxSize().then(bars), contentAlignment = Alignment.Center) {
         AnimatedVisibility(problem != null, enter = popEnter(origin, reducedMotion), exit = popExit(origin, reducedMotion)) {
             val p = shown ?: return@AnimatedVisibility
             val report = remember { FocusRequester() }
             InitialFocus(report, p.id)
-            val shape = RoundedCornerShape(34.px)
+            val shape = RoundedCornerShape(38.px)
             val res = textResources()
             Column(
-                Modifier.width((if (compact) minOf(780f, stage.stageWidth - 2f * 48f) else 780f).px).clip(shape).glass(colors.surface).border(1.px, colors.line, shape).padding((if (compact) 32 else 36).px).focusGroup(),
+                Modifier.width((if (compact) minOf(CARD_WIDTH, stage.stageWidth - 2f * 48f) else CARD_WIDTH).px).clip(shape)
+                    .backdropBlur(haze, 24f, colors.surface).border(1.px, colors.line, shape).padding((if (compact) 38 else 48).px).focusGroup(),
                 verticalArrangement = Arrangement.spacedBy(CARD_GAP.px),
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(22.px), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(28.px), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(84.px).clip(CircleShape).background(colors.accent), contentAlignment = Alignment.Center) {
                         Symbol(Symbols.DEBUG, 46.tpx, colors.onAccent, filled = true)
                     }
-                    Column(verticalArrangement = Arrangement.spacedBy(6.px)) {
-                        BasicText(offerTitle(p.kind), style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 28.tpx))
-                        BasicText(problemSentence(res, p.kind), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 22.tpx, lineHeight = 1.35.em))
+                    Column(verticalArrangement = Arrangement.spacedBy(10.px)) {
+                        BasicText(offerTitle(p.kind), style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 28.tpx, lineHeight = 1.3.em))
+                        BasicText(problemSentence(res, p.kind), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 22.tpx, lineHeight = 1.45.em))
                     }
                 }
                 BasicText(
                     problemSummary(res, p),
-                    style = TextStyle(color = colors.text3, fontFamily = Figtree, fontSize = 18.tpx, lineHeight = 1.35.em),
+                    style = TextStyle(color = colors.text3, fontFamily = Figtree, fontSize = 18.tpx, lineHeight = 1.45.em),
                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
-                BasicText(stringResource(if (uploads) R.string.shell_problem_note_upload else R.string.shell_problem_note), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 20.tpx, lineHeight = 1.4.em))
-                FocusRow(FocusSpacing.PILL, gap = if (compact) Compact.BUTTON_GAP else 18f, Modifier.padding(top = 6.px)) {
+                BasicText(stringResource(if (uploads) R.string.shell_problem_note_upload else R.string.shell_problem_note), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 20.tpx, lineHeight = 1.5.em))
+                FocusRow(FocusSpacing.PILL, gap = if (compact) Compact.BUTTON_GAP else 18f, Modifier.padding(top = 8.px)) {
                     PillButton(stringResource(R.string.shell_problem_report), Symbols.REPORT_ISSUE, onReport, Modifier.focusRequester(report), primary = true, compact = true,
                         glyph = Glyph.A, glyphSize = 34)
                     PillButton(stringResource(R.string.shell_problem_dismiss), Symbols.CLOSE, onDismiss, compact = true, clickCue = Cue.BACK, glyph = Glyph.B, glyphSize = 34)
@@ -131,8 +136,11 @@ fun ProblemOfferCard(problem: Problem?, reducedMotion: Boolean, onReport: () -> 
     }
 }
 
+/** The card's width: 936 stage px, a fifth wider than the toast-sized card it was, so the note never reads cramped. */
+private const val CARD_WIDTH = 936f
+
 /** The gap between the parts of the card. */
-private const val CARD_GAP = 18f
+private const val CARD_GAP = 24f
 
 /** Between the row of Report and Dismiss and the Save to Downloads pill under it (toolbar-size pills). */
 internal val PROBLEM_ROWS = FocusGap(FocusSpacing.PILL, PILL_HEIGHT_COMPACT, 32f)
