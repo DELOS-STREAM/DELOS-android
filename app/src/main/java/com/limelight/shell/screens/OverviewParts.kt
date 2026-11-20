@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -52,10 +53,12 @@ import com.limelight.shell.ui.backdropBlur
 import com.limelight.shell.ui.hsl
 import com.limelight.shell.ui.px
 import com.limelight.shell.ui.stageUnit
+import com.limelight.shell.ui.glass
 import com.limelight.shell.ui.tpx
 import dev.chrisbanes.haze.HazeState
 import java.text.NumberFormat
 import java.util.Locale
+import kotlin.math.min
 
 /** The small caps label over a value (`.eyebrow`): 15 px bold, tracked .16 em, in the accent color or dimmed. */
 @Composable
@@ -89,7 +92,7 @@ internal fun OverviewTag(icon: String?, label: String, look: TagLook = TagLook.P
     val border = if (genre) hsl(hue, 70f, 55f, .5f) else colors.line
     val content = if (genre) hsl(hue, 80f, 86f) else colors.text2
     Row(
-        Modifier.height(40.px).clip(CircleShape).background(fill).border(1.px, border, CircleShape).padding(horizontal = 16.px),
+        Modifier.height(40.px).clip(CircleShape).glass(fill).border(1.px, border, CircleShape).padding(horizontal = 16.px),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.px),
     ) {
         if (icon != null) Symbol(icon, 22.tpx, if (genre) content else colors.accent2)
@@ -98,30 +101,43 @@ internal fun OverviewTag(icon: String?, label: String, look: TagLook = TagLook.P
 }
 
 /**
- * A rating ring (`.rating`): the arc fills and the number counts up as [progress] goes from 0 to 1 (read while drawing); [value] null
- * draws the empty track with a dash. The label and [sub] stand beside it.
+ * A rating ring (`.rating`): the arc fills and the number counts up on the ring's spring ([OverviewMotion.ring]) as [millis] (the
+ * ratings' clock) runs, ring [index] of the row, read while drawing; the ring grows into place with them. [value] null draws the empty
+ * track with a dash. The label and [sub] stand beside it.
  */
 @Composable
-internal fun RatingRing(value: Double?, label: String, sub: String, color: Color, progress: () -> Float, size: Float = 104f) {
+internal fun RatingRing(
+    value: Double?, label: String, sub: String, color: Color, millis: () -> Float, index: Int, reduced: Boolean, size: Float = 104f,
+) {
     val colors = LocalDelosColors.current
     val measurer = rememberTextMeasurer()
     val k = stageUnit()
     val valueStyle = TextStyle(color = if (value == null) colors.text3 else colors.text, fontFamily = Unbounded, fontWeight = FontWeight.Bold, fontSize = (size * if (value == null) .2f else .3f).tpx)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
         Box(
-            Modifier.size(size.px).drawBehind {
-                val stroke = 8f * k
-                val radius = size * k / 2f - 8f * k
-                val topLeft = Offset(this.size.width / 2f - radius, this.size.height / 2f - radius)
-                drawCircle(Color.White.copy(alpha = .1f), radius, style = Stroke(stroke))
-                val p = progress()
-                if (value != null && p > 0f) {
-                    drawArc(color, -90f, (360f * value.toFloat() / 100f * p), false, topLeft, Size(radius * 2f, radius * 2f), style = Stroke(stroke, cap = StrokeCap.Round))
+            Modifier
+                .size(size.px)
+                .graphicsLayer {
+                    val t = millis()
+                    val s = OverviewMotion.ringScale(OverviewMotion.ring(t, index, reduced), reduced)
+                    scaleX = s
+                    scaleY = s
+                    alpha = OverviewMotion.ringAlpha(t, reduced)
                 }
-                val text = if (value == null) "\u2014" else Math.round(value * p).toString()
-                val layout = measurer.measure(text, valueStyle)
-                drawText(layout, topLeft = Offset((this.size.width - layout.size.width) / 2f, (this.size.height - layout.size.height) / 2f))
-            },
+                .drawBehind {
+                    val stroke = 8f * k
+                    val radius = size * k / 2f - 8f * k
+                    val topLeft = Offset(this.size.width / 2f - radius, this.size.height / 2f - radius)
+                    drawCircle(Color.White.copy(alpha = .1f), radius, style = Stroke(stroke))
+                    val fill = OverviewMotion.ring(millis(), index, reduced)
+                    if (value != null && fill > 0f) {
+                        val sweep = min(360f, 360f * value.toFloat() / 100f * fill)
+                        drawArc(color, -90f, sweep, false, topLeft, Size(radius * 2f, radius * 2f), style = Stroke(stroke, cap = StrokeCap.Round))
+                    }
+                    val text = if (value == null) "\u2014" else OverviewMotion.ringNumber(value, fill).toString()
+                    val layout = measurer.measure(text, valueStyle)
+                    drawText(layout, topLeft = Offset((this.size.width - layout.size.width) / 2f, (this.size.height - layout.size.height) / 2f))
+                },
         )
         Column(verticalArrangement = Arrangement.spacedBy(4.px)) {
             BasicText(label, style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 22.tpx))
@@ -143,14 +159,19 @@ private fun ageColors(rating: DetailAgeRating, colors: DelosColors): Pair<Color,
 
 /**
  * An age rating (`.age`): its badge, the organization and mark, the content descriptors under it. [rating] null: IGDB lists none
- * ([notRated] over [noRating]).
+ * ([notRated] over [noRating]). [badgeScale] is read while drawing (the badge's pop).
  */
 @Composable
-internal fun AgeRatingView(rating: DetailAgeRating?, notRated: String, noRating: String, noDescriptors: String) {
+internal fun AgeRatingView(rating: DetailAgeRating?, notRated: String, noRating: String, noDescriptors: String, badgeScale: () -> Float = { 1f }) {
     val colors = LocalDelosColors.current
+    val pop = Modifier.graphicsLayer {
+        val s = badgeScale()
+        scaleX = s
+        scaleY = s
+    }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
         if (rating == null) {
-            Box(Modifier.size(54.px).clip(RoundedCornerShape(12.px)).background(Color.White.copy(alpha = .08f)), contentAlignment = Alignment.Center) {
+            Box(pop.size(54.px).clip(RoundedCornerShape(12.px)).glass(Color.White.copy(alpha = .08f)), contentAlignment = Alignment.Center) {
                 BasicText("\u2014", style = TextStyle(color = colors.text3, fontFamily = Figtree, fontSize = 18.tpx))
             }
             Column {
@@ -162,7 +183,7 @@ internal fun AgeRatingView(rating: DetailAgeRating?, notRated: String, noRating:
         val (fill, ink) = ageColors(rating, colors)
         val esrb = rating.organization.equals("ESRB", ignoreCase = true)
         Box(
-            Modifier.height(54.px).widthIn(min = 54.px).clip(RoundedCornerShape((if (esrb) 6 else 12).px)).background(fill).padding(horizontal = 8.px),
+            pop.height(54.px).widthIn(min = 54.px).clip(RoundedCornerShape((if (esrb) 6 else 12).px)).background(fill).padding(horizontal = 8.px),
             contentAlignment = Alignment.Center,
         ) {
             BasicText(rating.rating, maxLines = 1, style = TextStyle(color = ink, fontFamily = Unbounded, fontWeight = FontWeight.Bold, fontSize = 22.tpx))
