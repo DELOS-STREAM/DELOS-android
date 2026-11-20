@@ -632,7 +632,7 @@ fun Shell(
         keys.onSearch = { if (shell.screen is Screen.Artwork) shell.onArtworkFilter?.invoke() else shell.onSettingsSearch?.invoke() }
         // Y opens the filters over a library with games (and closes them again); nothing else may react to it
         keys.canFilter = {
-            shell.screen == Screen.Home && shell.picker == null && shell.portal == null && shell.launch == null && shell.result == null && (
+            shell.screen == Screen.Home && shell.overviewGame == null && shell.picker == null && shell.portal == null && shell.launch == null && shell.result == null && (
                 shell.layer == Layer.Filters || (shell.layer == null && (library as? Library.Ready)?.apps?.isNotEmpty() == true)
             )
         }
@@ -843,11 +843,17 @@ fun Shell(
                     // The back button (no controller in use) does what B does: the same back dispatch, so a screen's own handler wins as for B
                     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
                     val goBack = remember(backDispatcher) { { backDispatcher?.onBackPressed(); Unit } }
-                    StatusBar(
-                        nav.takeIf { shell.screen.main }, pcName = pc?.name.takeIf { shell.screen.main }, pcOnline = pc?.online == true,
-                        wifi = wifi, battery = battery, clock = clock, brand = shell.screen != Screen.Start,
-                        onBack = goBack.takeIf { shell.screen.back != null },
+                    // The game overview's screenshot viewer covers the whole screen, the status bar too
+                    val barAlpha by androidx.compose.animation.core.animateFloatAsState(
+                        if (shell.overviewViewer != null) 0f else 1f, tween(Motion.FADE, easing = Motion.Ease), label = "statusBarUnderViewer",
                     )
+                    Box(Modifier.graphicsLayer { alpha = barAlpha }) {
+                        StatusBar(
+                            nav.takeIf { shell.screen.main }, pcName = pc?.name.takeIf { shell.screen.main }, pcOnline = pc?.online == true,
+                            wifi = wifi, battery = battery, clock = clock, brand = shell.screen != Screen.Start,
+                            onBack = goBack.takeIf { shell.screen.back != null },
+                        )
+                    }
                 }
             }
 
@@ -935,7 +941,8 @@ fun Shell(
             val artworkProgress = artwork.progress.value
             ArtworkProgressBar(artworkProgress ?: metadata.progress.value,
                 label = res.getString(if (artworkProgress != null) R.string.shell_progress_artwork else R.string.shell_progress_metadata))
-            val note = (library as? Library.Ready)?.takeIf { shell.screen == Screen.Home && shell.layer == null }?.let { ready ->
+            // The "Game info" hint under the focused cover takes the note's place at the bottom left
+            val note = (library as? Library.Ready)?.takeIf { shell.screen == Screen.Home && shell.layer == null && shell.overviewGame == null && !shell.homeOverviewAvailable }?.let { ready ->
                 val shown = if (metadata.filters.active) ready.apps.count { metadata.filters.matches(it, metadata.entry(ready.pc, it).data) } else ready.apps.size
                 if (shown == ready.apps.size) res.getQuantityString(R.plurals.shell_home_apps_on_pc, shown, shown, ready.pc.name)
                 else res.getQuantityString(R.plurals.shell_home_apps_filtered, ready.apps.size, shown, ready.apps.size, ready.pc.name)
@@ -1077,7 +1084,20 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
         Layer.Filters -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.X, R.string.shell_hint_reset), hint(Glyph.Y, R.string.shell_hint_close), hint(Glyph.B, R.string.shell_hint_close))
         is Layer.Dialog -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_cancel))
         null -> when (val screen = shell.screen) {
-            Screen.Home -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it, tappable = true, icon = Symbols.FILTER) }, hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)
+            Screen.Home -> when {
+                // The game overview (docs/gui/GAME_INFO.md, "Game overview") and its screenshot viewer
+                shell.overviewViewer != null -> listOfNotNull(
+                    hint(Glyph.DPAD_HORIZONTAL, R.string.overview_hint_browse),
+                    hint(Glyph.A, R.string.overview_hint_watch).takeIf { shell.overviewViewer == true },
+                    hint(Glyph.B, R.string.shell_hint_back),
+                )
+                shell.overviewGame != null -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
+                else -> listOfNotNull(
+                    hint(Glyph.DPAD_DOWN, R.string.overview_game_info).takeIf { shell.homeOverviewAvailable },
+                    hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it, tappable = true, icon = Symbols.FILTER) },
+                    hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint,
+                )
+            }
             Screen.Settings -> adjust + listOfNotNull(hint(Glyph.L1, R.string.shell_hint_previous_tab), hint(Glyph.R1, R.string.shell_hint_next_tab), hint(Glyph.Y, R.string.shell_hint_search), hint(Glyph.A, R.string.shell_hint_change), optionsHint, hint(Glyph.B, R.string.shell_hint_back))
             Screen.SettingsSearch -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             Screen.Start -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_connect), hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="overview_game_info">游戏信息</string>
+    <string name="overview_play">开始游戏</string>
+    <string name="overview_section_about">简介</string>
+    <string name="overview_section_media">截图和视频</string>
+    <string name="overview_section_details">详情</string>
+    <string name="overview_section_streaming">你的串流</string>
+    <string name="overview_section_links">链接</string>
+    <string name="overview_section_similar">相似游戏</string>
+    <string name="overview_cue_media">媒体</string>
+    <string name="overview_read_story">阅读故事</string>
+    <string name="overview_show_less">收起</string>
+    <string name="overview_critics">评论家</string>
+    <string name="overview_players">玩家</string>
+    <plurals name="overview_reviews">
+        <item quantity="other">%s 篇评测</item>
+    </plurals>
+    <plurals name="overview_ratings">
+        <item quantity="other">%s 个评分</item>
+    </plurals>
+    <plurals name="overview_ratings_few">
+        <item quantity="other">%s 个评分 · 目前较少</item>
+    </plurals>
+    <string name="overview_no_critics">暂无评论家评测</string>
+    <string name="overview_not_rated_yet">暂无评分</string>
+    <string name="overview_not_rated">未分级</string>
+    <string name="overview_no_age_rating">IGDB 上无年龄分级</string>
+    <string name="overview_no_descriptors">无描述</string>
+    <string name="overview_fact_developer">开发商</string>
+    <string name="overview_fact_publisher">发行商</string>
+    <string name="overview_fact_released">发行日期</string>
+    <string name="overview_fact_ported">移植</string>
+    <string name="overview_fact_engine">引擎</string>
+    <string name="overview_fact_series">系列</string>
+    <string name="overview_self_published">自主发行</string>
+    <string name="overview_detail_genres">类型</string>
+    <string name="overview_detail_themes">主题</string>
+    <string name="overview_detail_modes">游戏模式</string>
+    <string name="overview_detail_perspective">视角</string>
+    <string name="overview_detail_platforms">平台</string>
+    <string name="overview_detail_age">年龄分级</string>
+    <string name="overview_detail_multiplayer">多人游戏</string>
+    <string name="overview_detail_languages">语言</string>
+    <string name="overview_detail_keywords">关键词</string>
+    <plurals name="overview_languages">
+        <item quantity="other">%d 种语言</item>
+    </plurals>
+    <string name="overview_online_coop">在线合作最多 %d 人</string>
+    <string name="overview_online_max">在线最多 %d 人</string>
+    <string name="overview_couch_coop">本地合作最多 %d 人</string>
+    <string name="overview_lan_coop">局域网合作</string>
+    <string name="overview_split_screen">分屏</string>
+    <string name="overview_streaming_note">此配置文件和 PC 上</string>
+    <string name="overview_running_on">正在 %1$s 上运行</string>
+    <string name="overview_hltb">HowLongToBeat</string>
+    <string name="overview_hltb_all">HowLongToBeat · 所有风格</string>
+    <string name="overview_hltb_share">你已串流 %1$s · 占其中 %2$d %%</string>
+    <string name="overview_official_site">官方网站</string>
+    <string name="overview_in_library">已在库中</string>
+    <string name="overview_not_in_library">%1$s 不在你的库中。</string>
+    <string name="overview_screenshot">截图 %1$d</string>
+    <string name="overview_video_youtube">%1$s · YouTube</string>
+    <string name="overview_video">视频</string>
+    <string name="overview_viewer_count">/ %1$d · %2$s</string>
+    <string name="overview_hint_browse">浏览</string>
+    <string name="overview_hint_watch">观看</string>
+    <string name="overview_previous">上一个</string>
+    <string name="overview_next">下一个</string>
+    <string name="overview_loading">正在加载游戏信息…</string>
+    <string name="overview_unavailable">游戏信息暂时不可用。</string>
+    <string name="overview_credit">游戏数据来自 IGDB.com · 通关时长来自 HowLongToBeat · HDR 来自 PCGamingWiki · 封面来自你的图片</string>
+</resources>

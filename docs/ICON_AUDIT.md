@@ -426,6 +426,30 @@ The header pills. The per-app settings tab pills use the same glyphs.
 | Genre chips | see [Genres (IGDB)](#genres-igdb) | `GENRE_*` |  |
 | Theme chips | see [Themes (IGDB)](#themes-igdb) | `THEME_*` |  |
 
+### Game overview
+
+| Element | Glyph (Phosphor name) | Symbol constant | Note |
+|---|---|---|---|
+| "Game info" hint: touch / mouse | `caret-up` / `caret-down` | `EXPAND_LESS` / `EXPAND_MORE` | open more (also the section cue and Read the story) |
+| Section: About | `book-open` | `OVERVIEW_ABOUT` |  |
+| Section: Screenshots and videos | `images-square` | `OVERVIEW_MEDIA` | not `images` (the artwork library) |
+| Section: Details | `list-dashes` | `OVERVIEW_DETAILS` |  |
+| Section: Your streaming | `clock-user` | `OVERVIEW_STREAMING` | the player's own time |
+| Section: Links, and a link of another kind | `link-simple` | `OVERVIEW_LINKS` |  |
+| Section: Similar games | `grid-four` | `OVERVIEW_SIMILAR` |  |
+| Play / App settings | `play` / `gear-six` | `PLAY_ARROW` / `SETTINGS` | as Start app and App settings of the game's menu |
+| Link: opens outside the app | `arrow-square-out` | `LINK_OPEN_EXTERNAL` |  |
+| Link: official site / store / video site / wiki | `globe-simple` / `storefront` / `video-camera` / `book-bookmark` | `WEBSITE_*` |  |
+| Link: Steam | `steam-logo` | `STEAM` |  |
+| A video in the carousel and the viewer | `youtube-logo` | `VIDEO_PLAY` | it opens on YouTube |
+| Game modes: single player / with others | `user` / `users-four` | `MODE_SINGLE` / `MODE_MULTI` |  |
+| Perspective | `cube-focus` | `PERSPECTIVE` |  |
+| Platforms: PC and Linux / Mac / consoles | `desktop-tower` / `laptop` / `television-simple` | `DESKTOP_WINDOWS` / `PLATFORM_MAC` / `PLATFORM_CONSOLE` |  |
+| Multiplayer facts | `users-three` | `GROUP` |  |
+| Languages | `translate` | `LANGUAGE` | as the app's language |
+| Data credit | `info` | `INFO` |  |
+| Back (touch, mouse) / viewer: previous, next, close | `arrow-left` / `caret-left`, `caret-right`, `x` | `ARROW_BACK` / `CHEVRON_*`, `CLOSE` |  |
+
 ### Metadata and artwork
 
 | Element | Glyph (Phosphor name) | Symbol constant | Note |

@@ -29,7 +29,7 @@ Each document is a complete living specification of one area.
 |---|---|
 | [gui/START_AND_HOME.md](gui/START_AND_HOME.md) | The launcher icon, first launch, profile avatars, the start screen, home, the launch of a game, streaming time |
 | [gui/ARTWORK.md](gui/ARTWORK.md) | SteamGridDB artwork: covers, hero, logo, the artwork screen |
-| [gui/GAME_INFO.md](gui/GAME_INFO.md) | Game information and the library filters |
+| [gui/GAME_INFO.md](gui/GAME_INFO.md) | Game information, the library filters and the game overview |
 | [gui/MENUS_AND_SETTINGS.md](gui/MENUS_AND_SETTINGS.md) | The context menu, the settings rows and tabs, impact chips, the top menu pill |
 | [gui/CONTROLS_AND_TEXT.md](gui/CONTROLS_AND_TEXT.md) | Controller mapping, text input, text that does not fit |
 | [gui/MOTION_AND_COLORS.md](gui/MOTION_AND_COLORS.md) | The motion language, toasts, the problem report card, color roles |
@@ -68,6 +68,7 @@ cited section.
 | "Launching a game", "Streaming time" | [gui/START_AND_HOME.md](gui/START_AND_HOME.md) |
 | "SteamGridDB" | [gui/ARTWORK.md](gui/ARTWORK.md) |
 | "Game information and library filters" | [gui/GAME_INFO.md](gui/GAME_INFO.md) |
+| "Game overview" | [gui/GAME_INFO.md](gui/GAME_INFO.md) |
 | "Menus and settings", "Context menu", "Settings tabs", "Impact chips" | [gui/MENUS_AND_SETTINGS.md](gui/MENUS_AND_SETTINGS.md) |
 | "Controls", "Text input", "Text that does not fit" | [gui/CONTROLS_AND_TEXT.md](gui/CONTROLS_AND_TEXT.md) |
 | "Motion", "Toasts", "Problem report card", "Color roles" | [gui/MOTION_AND_COLORS.md](gui/MOTION_AND_COLORS.md) |

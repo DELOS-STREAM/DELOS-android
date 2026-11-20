@@ -51,6 +51,14 @@ data class GameMetadata(
     val steamFailedAt: Long = 0,
     /** The game's Steam store user tags, most voted first; empty when it has no Steam id or the store listed none. */
     val steamTags: List<String> = emptyList(),
+    /** The Worker's game-details JSON for [candidate] (see [GameDetails]); null before the first answer and when IGDB has no such game. */
+    val detailsJson: String? = null,
+    /** When the details were last answered (also "no such game"); 0 before that. They belong to [candidate] and are dropped with it. */
+    val detailsUpdatedAt: Long = 0,
+    /** When the details request last failed, 0 if its last request succeeded. */
+    val detailsFailedAt: Long = 0,
+    /** [detailsJson] parsed; not stored, filled by [validated] and when a fetch lands. */
+    @Transient val details: GameDetails? = null,
 )
 
 /** Why a game's information is missing or stale; the screens turn it into a sentence. */
@@ -62,6 +70,8 @@ data class GameMetadataState(
     val loading: Boolean = false,
     val resolved: Boolean = false,
     val error: MetadataProblem? = null,
+    /** The game's details ([GameMetadata.details]) are being fetched. */
+    val detailsLoading: Boolean = false,
 )
 
 enum class HdrFilter { ANY, HDR, SDR, UNKNOWN }

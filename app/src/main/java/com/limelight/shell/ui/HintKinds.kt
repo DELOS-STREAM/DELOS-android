@@ -16,7 +16,8 @@ fun Glyph.forKind(kind: InputKind): Glyph? = when (kind) {
     InputKind.KEYBOARD -> when (this) {
         Glyph.A -> Glyph.Cap(InputCap.RETURN)
         Glyph.B -> Glyph.Cap(InputCap.ESCAPE)
-        Glyph.ADJUST -> Glyph.Cap(InputCap.ARROWS)
+        Glyph.ADJUST, Glyph.DPAD_HORIZONTAL -> Glyph.Cap(InputCap.ARROWS)
+        Glyph.DPAD_DOWN -> Glyph.Cap(InputCap.ARROW_DOWN)
         else -> null
     }
 }

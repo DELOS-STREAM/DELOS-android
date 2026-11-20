@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="overview_game_info">Info del juego</string>
+    <string name="overview_play">Jugar</string>
+    <string name="overview_section_about">Acerca de</string>
+    <string name="overview_section_media">Capturas y vídeos</string>
+    <string name="overview_section_details">Detalles</string>
+    <string name="overview_section_streaming">Tu streaming</string>
+    <string name="overview_section_links">Enlaces</string>
+    <string name="overview_section_similar">Juegos similares</string>
+    <string name="overview_cue_media">Multimedia</string>
+    <string name="overview_read_story">Leer la historia</string>
+    <string name="overview_show_less">Ver menos</string>
+    <string name="overview_critics">Crítica</string>
+    <string name="overview_players">Jugadores</string>
+    <plurals name="overview_reviews">
+        <item quantity="one">%s reseña</item>
+        <item quantity="many">%s reseñas</item>
+        <item quantity="other">%s reseñas</item>
+    </plurals>
+    <plurals name="overview_ratings">
+        <item quantity="one">%s valoración</item>
+        <item quantity="many">%s valoraciones</item>
+        <item quantity="other">%s valoraciones</item>
+    </plurals>
+    <plurals name="overview_ratings_few">
+        <item quantity="one">%s valoración · aún pocas</item>
+        <item quantity="many">%s valoraciones · aún pocas</item>
+        <item quantity="other">%s valoraciones · aún pocas</item>
+    </plurals>
+    <string name="overview_no_critics">Aún no hay reseñas de la crítica</string>
+    <string name="overview_not_rated_yet">Aún sin valorar</string>
+    <string name="overview_not_rated">Sin clasificar</string>
+    <string name="overview_no_age_rating">Sin clasificación por edad en IGDB</string>
+    <string name="overview_no_descriptors">Sin descriptores</string>
+    <string name="overview_fact_developer">Desarrollador</string>
+    <string name="overview_fact_publisher">Editor</string>
+    <string name="overview_fact_released">Lanzamiento</string>
+    <string name="overview_fact_ported">Port de</string>
+    <string name="overview_fact_engine">Motor</string>
+    <string name="overview_fact_series">Serie</string>
+    <string name="overview_self_published">autoeditado</string>
+    <string name="overview_detail_genres">Géneros</string>
+    <string name="overview_detail_themes">Temas</string>
+    <string name="overview_detail_modes">Modos de juego</string>
+    <string name="overview_detail_perspective">Perspectiva</string>
+    <string name="overview_detail_platforms">Plataformas</string>
+    <string name="overview_detail_age">Clasificación por edad</string>
+    <string name="overview_detail_multiplayer">Multijugador</string>
+    <string name="overview_detail_languages">Idiomas</string>
+    <string name="overview_detail_keywords">Palabras clave</string>
+    <plurals name="overview_languages">
+        <item quantity="one">%d idioma</item>
+        <item quantity="many">%d idiomas</item>
+        <item quantity="other">%d idiomas</item>
+    </plurals>
+    <string name="overview_online_coop">Coop en línea hasta %d</string>
+    <string name="overview_online_max">En línea hasta %d</string>
+    <string name="overview_couch_coop">Coop local hasta %d</string>
+    <string name="overview_lan_coop">Coop LAN</string>
+    <string name="overview_split_screen">Pantalla dividida</string>
+    <string name="overview_streaming_note">En este perfil y PC</string>
+    <string name="overview_running_on">Ejecutándose ahora en %1$s</string>
+    <string name="overview_hltb">HowLongToBeat</string>
+    <string name="overview_hltb_all">HowLongToBeat · todos los estilos</string>
+    <string name="overview_hltb_share">Has hecho streaming %1$s · %2$d %% de eso</string>
+    <string name="overview_official_site">Sitio oficial</string>
+    <string name="overview_in_library">En la biblioteca</string>
+    <string name="overview_not_in_library">%1$s no está en tu biblioteca.</string>
+    <string name="overview_screenshot">Captura %1$d</string>
+    <string name="overview_video_youtube">%1$s · YouTube</string>
+    <string name="overview_video">Vídeo</string>
+    <string name="overview_viewer_count">/ %1$d · %2$s</string>
+    <string name="overview_hint_browse">Explorar</string>
+    <string name="overview_hint_watch">Ver</string>
+    <string name="overview_previous">Anterior</string>
+    <string name="overview_next">Siguiente</string>
+    <string name="overview_loading">Cargando info del juego…</string>
+    <string name="overview_unavailable">La info del juego no está disponible ahora.</string>
+    <string name="overview_credit">Datos de juegos de IGDB.com · duración de HowLongToBeat · HDR de PCGamingWiki · portada de tus imágenes</string>
+</resources>

@@ -25,6 +25,7 @@ import com.limelight.shell.companion.PublishCompanionOverlays
 import com.limelight.shell.data.LocalArtwork
 import com.limelight.shell.data.LocalBoxArt
 import com.limelight.shell.data.LocalGameMetadata
+import com.limelight.shell.data.LocalIgdbImages
 import com.limelight.shell.screens.appArt
 import com.limelight.shell.settings.Appearance
 import com.limelight.shell.ui.Backdrop
@@ -157,6 +158,7 @@ internal object ScreenPreviews {
         CompositionLocalProvider(
             LocalContext provides world.context, LocalDelosColors provides colors, LocalReducedMotion provides appearance.reducedMotion,
             LocalBoxArt provides world.boxArt, LocalArtwork provides world.artwork, LocalGameMetadata provides world.metadata,
+            LocalIgdbImages provides world.igdbImages,
         ) {
             // The activity's own GlobalKeys has no listener in a preview: the shell's global keys (L1 / R1, X, Y, Start, Select) reach the world's
             // here, so `adb shell input keyevent` (and a controller) can switch tabs and open the filter sheets of a previewed screen

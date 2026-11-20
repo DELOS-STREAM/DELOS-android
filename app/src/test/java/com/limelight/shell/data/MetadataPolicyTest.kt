@@ -172,4 +172,47 @@ class MetadataPolicyTest {
         val tagged = gson.fromJson("""{"candidate":{"id":1,"name":"Game"},"steamTags":["Horror",null,"Sci-fi"]}""", GameMetadata::class.java).validated()
         assertEquals(listOf("Horror", "Sci-fi"), tagged!!.steamTags)
     }
+
+    @Test fun detailsAreDueOnlyForAMatchedGameWithoutFreshDetailsOutsideTheBackoff() {
+        val now = 1_700_000_000_000L
+        val matched = GameMetadata(candidate = game(214337, "Hollow Meridian"), updatedAt = now)
+        val json = detailsFixture()
+        val answered = matched.copy(detailsJson = json, details = GameDetailsParser.parse(json), detailsUpdatedAt = now - TimeUnit.DAYS.toMillis(1))
+        assertFalse("nothing to fetch details for", detailsDue(null, now))
+        assertFalse(detailsDue(GameMetadata(updatedAt = now), now))
+        assertTrue("never asked", detailsDue(matched, now))
+        assertFalse("fresh", detailsDue(answered, now))
+        assertTrue("stale after a week", detailsDue(answered.copy(detailsUpdatedAt = now - TimeUnit.DAYS.toMillis(8)), now))
+        assertTrue("a future stamp is not trusted", detailsDue(answered.copy(detailsUpdatedAt = now + TimeUnit.DAYS.toMillis(1)), now))
+        val notFound = matched.copy(detailsUpdatedAt = now - TimeUnit.DAYS.toMillis(1))
+        assertFalse("a fresh 'no such game' is an answer", detailsDue(notFound, now))
+        assertTrue(detailsDue(notFound.copy(detailsUpdatedAt = now - TimeUnit.DAYS.toMillis(8)), now))
+        assertFalse("inside the backoff", detailsDue(matched.copy(detailsFailedAt = now - TimeUnit.MINUTES.toMillis(5)), now))
+        assertTrue("after the backoff", detailsDue(matched.copy(detailsFailedAt = now - TimeUnit.HOURS.toMillis(1)), now))
+        val otherEntry = answered.copy(candidate = game(9, "Other"))
+        assertTrue("another IGDB entry's details do not count", detailsDue(otherEntry, now))
+    }
+
+    @Test fun storedDetailsAreParsedAndDroppedWhenUnreadableOrOfAnotherEntry() {
+        val gson = Gson()
+        fun stored(candidateId: Long, json: String?) = gson.fromJson(
+            gson.toJson(GameMetadata(candidate = game(candidateId, "Hollow Meridian"), detailsJson = json, detailsUpdatedAt = 5, detailsFailedAt = 3)),
+            GameMetadata::class.java,
+        ).validated()!!
+        val kept = stored(214337, detailsFixture())
+        assertEquals("Hollow Meridian", kept.details?.name)
+        assertEquals(5L, kept.detailsUpdatedAt)
+        assertFalse("the parsed details are not written", gson.toJson(kept).contains("\"details\""))
+        val notFound = stored(214337, null)
+        assertNull(notFound.details)
+        assertEquals("'no such game' is kept as an answer", 5L, notFound.detailsUpdatedAt)
+        for (dropped in listOf(stored(9, detailsFixture()), stored(214337, "{ broken"))) {
+            assertNull(dropped.detailsJson)
+            assertNull(dropped.details)
+            assertEquals(0L, dropped.detailsUpdatedAt)
+            assertEquals(0L, dropped.detailsFailedAt)
+        }
+        assertNull(gson.fromJson("""{"detailsJson":"{}","detailsUpdatedAt":5}""", GameMetadata::class.java).validated()!!.detailsJson)
+        assertNull(gson.fromJson("""{"candidate":{"id":1,"name":"Game"}}""", GameMetadata::class.java).validated()!!.detailsJson)
+    }
 }

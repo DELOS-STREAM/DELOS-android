@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="overview_game_info">Spielinfo</string>
+    <string name="overview_play">Spielen</string>
+    <string name="overview_section_about">Über</string>
+    <string name="overview_section_media">Screenshots und Videos</string>
+    <string name="overview_section_details">Details</string>
+    <string name="overview_section_streaming">Dein Streaming</string>
+    <string name="overview_section_links">Links</string>
+    <string name="overview_section_similar">Ähnliche Spiele</string>
+    <string name="overview_cue_media">Medien</string>
+    <string name="overview_read_story">Story lesen</string>
+    <string name="overview_show_less">Weniger anzeigen</string>
+    <string name="overview_critics">Kritiker</string>
+    <string name="overview_players">Spieler</string>
+    <plurals name="overview_reviews">
+        <item quantity="one">%s Kritik</item>
+        <item quantity="other">%s Kritiken</item>
+    </plurals>
+    <plurals name="overview_ratings">
+        <item quantity="one">%s Bewertung</item>
+        <item quantity="other">%s Bewertungen</item>
+    </plurals>
+    <plurals name="overview_ratings_few">
+        <item quantity="one">%s Bewertung · bisher wenige</item>
+        <item quantity="other">%s Bewertungen · bisher wenige</item>
+    </plurals>
+    <string name="overview_no_critics">Noch keine Kritiken</string>
+    <string name="overview_not_rated_yet">Noch nicht bewertet</string>
+    <string name="overview_not_rated">Nicht eingestuft</string>
+    <string name="overview_no_age_rating">Keine Altersfreigabe auf IGDB</string>
+    <string name="overview_no_descriptors">Keine Deskriptoren</string>
+    <string name="overview_fact_developer">Entwickler</string>
+    <string name="overview_fact_publisher">Publisher</string>
+    <string name="overview_fact_released">Erschienen</string>
+    <string name="overview_fact_ported">Portiert von</string>
+    <string name="overview_fact_engine">Engine</string>
+    <string name="overview_fact_series">Reihe</string>
+    <string name="overview_self_published">Eigenvertrieb</string>
+    <string name="overview_detail_genres">Genres</string>
+    <string name="overview_detail_themes">Themen</string>
+    <string name="overview_detail_modes">Spielmodi</string>
+    <string name="overview_detail_perspective">Perspektive</string>
+    <string name="overview_detail_platforms">Plattformen</string>
+    <string name="overview_detail_age">Altersfreigabe</string>
+    <string name="overview_detail_multiplayer">Mehrspieler</string>
+    <string name="overview_detail_languages">Sprachen</string>
+    <string name="overview_detail_keywords">Schlagwörter</string>
+    <plurals name="overview_languages">
+        <item quantity="one">%d Sprache</item>
+        <item quantity="other">%d Sprachen</item>
+    </plurals>
+    <string name="overview_online_coop">Online-Koop bis %d</string>
+    <string name="overview_online_max">Online bis %d</string>
+    <string name="overview_couch_coop">Couch-Koop bis %d</string>
+    <string name="overview_lan_coop">LAN-Koop</string>
+    <string name="overview_split_screen">Splitscreen</string>
+    <string name="overview_streaming_note">Auf diesem Profil und PC</string>
+    <string name="overview_running_on">Läuft gerade auf %1$s</string>
+    <string name="overview_hltb">HowLongToBeat</string>
+    <string name="overview_hltb_all">HowLongToBeat · alle Stile</string>
+    <string name="overview_hltb_share">Du hast %1$s gestreamt · %2$d %% davon</string>
+    <string name="overview_official_site">Offizielle Website</string>
+    <string name="overview_in_library">In der Bibliothek</string>
+    <string name="overview_not_in_library">%1$s ist nicht in deiner Bibliothek.</string>
+    <string name="overview_screenshot">Screenshot %1$d</string>
+    <string name="overview_video_youtube">%1$s · YouTube</string>
+    <string name="overview_video">Video</string>
+    <string name="overview_viewer_count">/ %1$d · %2$s</string>
+    <string name="overview_hint_browse">Durchsuchen</string>
+    <string name="overview_hint_watch">Ansehen</string>
+    <string name="overview_previous">Zurück</string>
+    <string name="overview_next">Weiter</string>
+    <string name="overview_loading">Spielinfo wird geladen…</string>
+    <string name="overview_unavailable">Spielinfo ist gerade nicht verfügbar.</string>
+    <string name="overview_credit">Spieldaten von IGDB.com · Spielzeit von HowLongToBeat · HDR von PCGamingWiki · Cover aus deinen Bildern</string>
+</resources>

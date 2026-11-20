@@ -28,6 +28,8 @@ import com.limelight.shell.companion.CompanionState
 import com.limelight.shell.data.ArtworkStore
 import com.limelight.shell.data.GameMetadataStore
 import com.limelight.shell.data.LocalGameMetadata
+import com.limelight.shell.data.IgdbImageCache
+import com.limelight.shell.data.LocalIgdbImages
 import com.limelight.shell.data.BoxArtCache
 import com.limelight.shell.data.LocalArtwork
 import com.limelight.shell.data.GameLauncher
@@ -62,6 +64,7 @@ class ShellActivity : ComponentActivity() {
     private lateinit var boxArt: BoxArtCache
     private lateinit var artwork: ArtworkStore
     private lateinit var metadata: GameMetadataStore
+    private lateinit var igdbImages: IgdbImageCache
     private lateinit var profiles: ProfileStore
     private val keys = GlobalKeys()
 
@@ -113,6 +116,7 @@ class ShellActivity : ComponentActivity() {
         if (settingsAgain) shell.settingsTab = SettingsTab.DISPLAY
         DelosToast.register(this, show = { text, durationMs, kind -> shell.showToast(text, durationMs = durationMs, kind = kind) })
         metadata = GameMetadataStore(this, profiles::settings)
+        igdbImages = IgdbImageCache(this)
         val startup = StartupStore(profiles::settings)
         profiles.onSettingsChanged {
             appearance.reload()
@@ -144,7 +148,7 @@ class ShellActivity : ComponentActivity() {
                     preview()
                     com.limelight.shell.ui.ToastHost(shell.toast, shell::hideToast, shell::runToastAction, shell.toastPress)
                 }
-                else ShellRoot(appearance, feedback, keys, repo, boxArt, artwork, metadata, launcher, profiles, startup, setup, links, results, shell)
+                else ShellRoot(appearance, feedback, keys, repo, boxArt, artwork, metadata, igdbImages, launcher, profiles, startup, setup, links, results, shell)
             }
             if (simulator != null) simulator.Host(shell, appearance.appearance, screen) else screen()
         }
@@ -243,6 +247,7 @@ private fun ShellRoot(
     boxArt: BoxArtCache,
     artwork: ArtworkStore,
     metadata: GameMetadataStore,
+    igdbImages: IgdbImageCache,
     launcher: GameLauncher,
     profiles: ProfileStore,
     startup: StartupStore,
@@ -252,7 +257,9 @@ private fun ShellRoot(
     shell: ShellState,
 ) {
     ShellTheme(store, feedback) { appearance ->
-        CompositionLocalProvider(LocalBoxArt provides boxArt, LocalArtwork provides artwork, LocalGameMetadata provides metadata) {
+        CompositionLocalProvider(
+            LocalBoxArt provides boxArt, LocalArtwork provides artwork, LocalGameMetadata provides metadata, LocalIgdbImages provides igdbImages,
+        ) {
             Shell(appearance, store::update, keys, repo, launcher, profiles, startup, setup, links, results, shell)
         }
     }
