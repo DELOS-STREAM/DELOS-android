@@ -36,7 +36,11 @@
     <string name="filters_length_over_60">60+ h</string>
     <string name="filters_length_unknown">Unknown</string>
     <string name="filters_reset">Reset</string>
-    <string name="filters_done">Done</string>
+    <plurals name="filters_show">
+        <!-- The button that applies the chosen filters; %1$d: apps that match them (the quantity) -->
+        <item quantity="one">Show %1$d app</item>
+        <item quantity="other">Show %1$d apps</item>
+    </plurals>
 
     <!-- Artwork filter sheet (Y on the artwork screen) -->
     <string name="filters_art_title">Filter artwork</string>

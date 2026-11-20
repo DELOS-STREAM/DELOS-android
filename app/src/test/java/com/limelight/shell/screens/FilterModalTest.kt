@@ -50,11 +50,53 @@ class FilterModalTest {
         assertEquals("All 1 app", filterResultLine(res, 1, 1, active = false))
     }
 
-    @Test fun hintLabelShowsHowManyCriteriaNarrowTheLibrary() {
+    @Test fun hintLabelShowsHowManyValuesNarrowTheLibrary() {
         assertEquals("Filter", filterHintLabel(res, MetadataFilters()))
-        assertEquals("Filter • 1 active", filterHintLabel(res, MetadataFilters(hdr = HdrFilter.SDR)))
-        assertEquals("Filter • 3 active", filterHintLabel(res, MetadataFilters(genreId = 2, hdr = HdrFilter.HDR, length = LengthFilter.OVER_60)))
-        assertEquals("Filter • 4 active", filterHintLabel(res, MetadataFilters(2, 19, HdrFilter.HDR, LengthFilter.OVER_60)))
+        assertEquals("Filter • 1 active", filterHintLabel(res, MetadataFilters(hdr = setOf(HdrFilter.SDR))))
+        assertEquals("Filter • 3 active", filterHintLabel(res, MetadataFilters(genres = setOf(2), hdr = setOf(HdrFilter.HDR), length = setOf(LengthFilter.OVER_60))))
+        // Two genres, a theme and HDR
+        assertEquals("Filter • 4 active", filterHintLabel(res, MetadataFilters(setOf(2, 5), setOf(19), setOf(HdrFilter.HDR))))
+    }
+
+    @Test fun theConfirmPillNamesTheMatchingApps() {
+        assertEquals("Show 12 apps", filterShowLabel(res, 12))
+        assertEquals("Show 1 app", filterShowLabel(res, 1))
+        assertEquals("Show 0 apps", filterShowLabel(res, 0))
+    }
+
+    @Test fun theLabelsFollowTheRowsAndTheChipOrder() {
+        // Ids IGDB does not have, so the chips show the names given
+        val genres = listOf(GameGenre(9002, "Beta"), GameGenre(9001, "Alpha"))
+        val filters = MetadataFilters(setOf(9001, 9002), emptySet(), setOf(HdrFilter.UNKNOWN, HdrFilter.HDR), setOf(LengthFilter.OVER_60, LengthFilter.UNDER_10))
+        assertEquals(
+            listOf("Beta", "Alpha", "Native HDR", "HDR/SDR unverified", "<10 h", "60+ h"),
+            libraryFilterLabels(res, filters, genres, emptyList()),
+        )
+    }
+
+    @Test fun theDraftAppliesOnlyOnConfirmAndClosingDropsIt() {
+        var applied = MetadataFilters(genres = setOf(5))
+        var applies = 0
+        val draft = FilterDraft({ applied }) { applied = it; applies++ }
+        draft.begin()
+        assertEquals(applied, draft.value)
+        draft.edit { it.toggleGenre(12).toggleHdr(HdrFilter.HDR) }
+        // Choosing does not filter the library
+        assertEquals(MetadataFilters(genres = setOf(5)), applied)
+        // Closing (B) without confirming: the next opening starts from the applied filter
+        draft.begin()
+        assertEquals(MetadataFilters(genres = setOf(5)), draft.value)
+        draft.edit { it.toggleGenre(12).toggleHdr(HdrFilter.HDR) }
+        draft.confirm()
+        assertEquals(MetadataFilters(genres = setOf(5, 12), hdr = setOf(HdrFilter.HDR)), applied)
+        assertEquals(1, applies)
+        // Reset clears the choices, which apply on confirm too; confirming nothing new writes nothing
+        draft.reset()
+        assertEquals(MetadataFilters(genres = setOf(5, 12), hdr = setOf(HdrFilter.HDR)), applied)
+        draft.confirm()
+        assertEquals(MetadataFilters(), applied)
+        draft.confirm()
+        assertEquals(2, applies)
     }
 
     @Test fun theUnverifiedHdrOptionUsesTheBadgeLabelAndEveryOptionHasItsOwnLabel() {
@@ -62,7 +104,7 @@ class FilterModalTest {
         assertEquals(R.string.metadata_hdr_unverified, hdrFilterLabel(HdrFilter.UNKNOWN))
         assertEquals(HdrFilter.entries.size, HdrFilter.entries.map { res.getString(hdrFilterLabel(it)) }.toSet().size)
         assertEquals(LengthFilter.entries.size, LengthFilter.entries.map { res.getString(lengthFilterLabel(it)) }.toSet().size)
-        assertEquals(listOf("Any", "<10 h", "10–30 h", "30–60 h", "60+ h", "Unknown"), LengthFilter.entries.map { res.getString(lengthFilterLabel(it)) })
+        assertEquals(listOf("<10 h", "10–30 h", "30–60 h", "60+ h", "Unknown"), LengthFilter.entries.map { res.getString(lengthFilterLabel(it)) })
     }
 
     @Test fun theCompletionTimeUsesTheWebsitesRounding() {

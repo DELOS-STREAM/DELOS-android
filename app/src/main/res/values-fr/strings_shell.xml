@@ -43,6 +43,7 @@
     </plurals>
     <string name="shell_hint_library_label">BIBLIOTHÈQUE</string>
     <string name="shell_hint_select">Sélectionner</string>
+    <string name="shell_hint_apply">Appliquer</string>
     <string name="shell_hint_back">Retour</string>
     <string name="shell_hint_close">Fermer</string>
     <string name="shell_hint_cancel">Annuler</string>

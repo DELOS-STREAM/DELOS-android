@@ -57,6 +57,7 @@
 
     <!-- Button hints in the bottom bar -->
     <string name="shell_hint_select">Vybrat</string>
+    <string name="shell_hint_apply">Použít</string>
     <string name="shell_hint_back">Zpět</string>
     <string name="shell_hint_close">Zavřít</string>
     <string name="shell_hint_cancel">Zrušit</string>

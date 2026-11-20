@@ -44,6 +44,7 @@
     <string name="shell_hint_library_label">ライブラリ</string>
 
     <string name="shell_hint_select">選択</string>
+    <string name="shell_hint_apply">適用</string>
     <string name="shell_hint_back">戻る</string>
     <string name="shell_hint_close">閉じる</string>
     <string name="shell_hint_cancel">キャンセル</string>

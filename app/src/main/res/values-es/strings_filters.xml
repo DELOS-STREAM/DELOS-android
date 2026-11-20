@@ -31,7 +31,11 @@
     <string name="filters_length_over_60">60+ h</string>
     <string name="filters_length_unknown">Desconocida</string>
     <string name="filters_reset">Restablecer</string>
-    <string name="filters_done">Hecho</string>
+    <plurals name="filters_show">
+        <item quantity="one">Mostrar %1$d app</item>
+        <item quantity="many">Mostrar %1$d apps</item>
+        <item quantity="other">Mostrar %1$d apps</item>
+    </plurals>
 
     <string name="filters_art_title">Filtrar ilustraciones</string>
     <string name="filters_art_reset">Restablecer filtros</string>
