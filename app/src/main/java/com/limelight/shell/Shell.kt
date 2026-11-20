@@ -1113,7 +1113,7 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
                 )
                 shell.overviewGame != null -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
                 else -> listOfNotNull(
-                    hint(Glyph.DPAD_DOWN, R.string.overview_game_info).takeIf { shell.homeOverviewAvailable },
+                    // "Game info" is not repeated here: the hint under the focused cover (GameInfoHint) already names it
                     hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it, tappable = true, icon = Symbols.FILTER) },
                     hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint,
                 )

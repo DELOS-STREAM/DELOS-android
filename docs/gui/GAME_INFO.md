@@ -499,7 +499,7 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    | Touch | A small arrow up in the accent, bobbing up | A swipe up on the cover, or a tap on the hint |
    | Mouse | A small arrow down in the accent, bobbing; the hint is a pill that lights on hover | A click on the hint |
 
-   The hint bar names it too (`Game info` with the D-pad or ↓ cap) for a controller and a keyboard.
+   The hint bar does not repeat it: the hint under the cover is the only place that names it.
 3. A swipe up needs vertical intent (Compose's vertical touch slop, so the row's horizontal scroll and the side-menu swipe
    keep working). The cover follows the finger with resistance (`lift = max(dy, -260) × 0.55`, growing up to
    1.155) and opens past 40 px of lift; the flight starts where the finger left it.
