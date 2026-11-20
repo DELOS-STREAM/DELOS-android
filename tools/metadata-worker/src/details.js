@@ -239,9 +239,10 @@ function externalGames(list) {
 
 /**
  * Turns IGDB's array answer into the overview's flat, documented shape (README "Game details"). Every list is
- * always present (possibly empty), every missing scalar is null, so the apps parse one strict shape.
+ * always present (possibly empty), every missing scalar is null, so the apps parse one strict shape. The handler
+ * adds the optional `steam` media object before serializing.
  */
-export function normalizeDetails(rawText) {
+export function detailsObject(rawText) {
   let parsed;
   try {
     parsed = JSON.parse(rawText);
@@ -253,7 +254,7 @@ export function normalizeDetails(rawText) {
   if (!isObject(game) || !Number.isInteger(game.id)) throw new HttpError(404, "game_not_found");
   const name = text(game.name, LIMITS.name);
   if (name === null) throw new HttpError(404, "game_not_found");
-  return JSON.stringify({
+  return {
     id: game.id,
     name,
     slug: text(game.slug, LIMITS.name),
@@ -286,5 +287,9 @@ export function normalizeDetails(rawText) {
     languages: names(game.language_supports, LIMITS.languages, (support) => support && isObject(support.language) && support.language.name),
     multiplayer: multiplayer(game.multiplayer_modes),
     externalGames: externalGames(game.external_games),
-  });
+  };
+}
+
+export function normalizeDetails(rawText) {
+  return JSON.stringify(detailsObject(rawText));
 }
