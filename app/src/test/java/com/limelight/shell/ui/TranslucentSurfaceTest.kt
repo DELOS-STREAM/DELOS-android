@@ -124,7 +124,7 @@ class TranslucentSurfaceTest {
             // empty age rating and the "In library" badge become glass there; these entries go with that change
             Allowed("screens/GameOverview.kt", ".background(if (primary) colors.accent else colors.surface)", "overview: pending glass"),
             Allowed("screens/GameOverview.kt", "height(52.px).clip(CircleShape).background(Color.White.copy(alpha = .06f))", "overview: pending glass"),
-            Allowed("screens/GameOverview.kt", "height(64.px).clip(CircleShape).background(Color.White.copy(alpha = .06f))", "overview: pending glass"),
+            Allowed("screens/GameOverview.kt", "LINK_H.px).clip(CircleShape).background(Color.White.copy(alpha = .06f))", "overview: pending glass"),
             Allowed("screens/GameOverview.kt", "Color(5, 10, 20).copy(alpha = .6f)", "overview: pending glass"),
             Allowed("screens/OverviewParts.kt", "Color.White.copy(alpha = .08f)", "overview: pending glass"),
         )

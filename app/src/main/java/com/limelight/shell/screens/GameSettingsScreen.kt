@@ -291,7 +291,7 @@ fun GameSettingsScreen(screen: Screen.GameSettings, profiles: ProfileStore, appe
                     Column(
                         modifier = Modifier.fillMaxSize().focusedListBoundary(navigation).verticalScroll(scroll)
                             .padding(start = (18f + SETTING_LIST_ROOM).px, end = (18f + SETTING_LIST_ROOM).px, top = listInnerTop.px, bottom = 140.px),
-                        verticalArrangement = Arrangement.spacedBy(10.px)) {
+                        verticalArrangement = Arrangement.spacedBy(SETTING_ROWS.gap.px)) {
                         rows.forEach { spec ->
                             key(spec.key) {
                                 val current = values[spec.key] ?: spec.default

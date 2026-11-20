@@ -1,6 +1,8 @@
 package com.limelight.shell.screens
 
 import com.limelight.shell.ui.Compact
+import com.limelight.shell.ui.FocusGap
+import com.limelight.shell.ui.FocusSpacing
 
 /**
  * Home on a compact stage, laid out top-down (issue #9), stage pixels from the stage's top: the status bar, the title (or logo) box,
@@ -36,15 +38,21 @@ internal class HomeCompactLayout(
 }
 
 internal object HomeCompact {
-    /** The prototype's cover and the wide first one (three covers and two gaps), which every scale keeps the ratio of. */
+    /**
+     * The prototype's cover and the wide first one, which every scale keeps the ratio of: as wide as three covers and the two 44 px
+     * gaps they had before the focus rule widened the row's gap ([COVER]).
+     */
     const val TILE = 300f
     const val COVER_HEIGHT = 450f
-    const val COVER_GAP = 44f
-    const val WIDE = 3 * TILE + 2 * COVER_GAP
+    const val WIDE = 3 * TILE + 2 * 44f
 
-    /** The focused cover grows to this and wears a ring (5 px gap, 5 px ring) that grows with it. */
-    const val FOCUS_SCALE = 1.055f
-    const val RING = 10f
+    /**
+     * The covers wear [FocusSpacing.TILE] (focusEffects' default: 1.055 and a 10 px ring that grows with them) and stand [COVER] apart
+     * at the prototype's size. The focused wide first cover grows to the left only, so toward its neighbour it reaches no further than
+     * a 300 px one.
+     */
+    val COVER = FocusGap(FocusSpacing.TILE, TILE, 46f)
+    val FOCUS_SCALE = COVER.look.scale
 
     /** The least gaps: status bar to title, title to the info row (the same, the title is centred), info row to the focused cover's ring, ring to hint bar. */
     const val GAP_STATUS = 16f
@@ -112,16 +120,13 @@ internal object HomeCompact {
     const val SHARE_HINT = 2f
 
     /** How far the ring of a focused cover [height] high reaches above and below it. */
-    fun ringReach(height: Float): Float = height * (FOCUS_SCALE - 1f) / 2f + RING * FOCUS_SCALE
-
-    /** The least air between a focused cover's ring and the cover next to it (the user's rule: the growth, the ring and 12 px). */
-    const val FOCUS_AIR = 12f
+    fun ringReach(height: Float): Float = COVER.look.reach(height)
 
     /**
-     * The gap between two covers at [scale]: the prototype's 44 scaled with them, but never less than a focused cover's growth to one side,
-     * its ring and [FOCUS_AIR] (28 px on the smallest covers, where 44 scaled would be 22 to 26).
+     * The gap between two covers at [scale]: [COVER]'s scaled with them, but never less than the focus rule's for covers that size
+     * (their ring does not shrink with them: 39 px at 0.6, where 46 scaled would be 28).
      */
-    fun coverGap(scale: Float): Float = maxOf(COVER_GAP * scale, TILE * scale * (FOCUS_SCALE - 1f) / 2f + RING * FOCUS_SCALE + FOCUS_AIR)
+    fun coverGap(scale: Float): Float = maxOf(COVER.gap * scale, COVER.look.minGap(TILE * scale))
 
     /** The room two rows of badges took before the info row (the badges used to wrap), 6 px apart: what the comfortable cover size still keeps. */
     fun twoRowsHeight(scale: Float): Float = 2f * chipRowHeight(scale) + 6f
@@ -144,21 +149,14 @@ internal object HomeCompact {
 
     /**
      * The widest cover scale at which, next to the focused wide first cover (its left edge [Compact.SIDE] from the stage's edge, grown by
-     * [FOCUS_SCALE]), one whole cover and a third of the next one end [PEEK_EDGE] before the stage's right edge: a second game is always
-     * clearly there, in the part of the fade that is still opaque enough to read.
+     * [FOCUS_SCALE]), one whole cover and a third of the next one end [PEEK_EDGE] before the stage's right edge, counted with the
+     * prototype's gaps ([PEEK_GAP] scaled). The covers keep that size: the focus rule's wider [coverGap] takes its extra from the peek,
+     * so the next cover reaches up to about 26 px nearer the edge, still about a third of it in sight.
      */
-    fun widthScale(stageWidth: Float): Float {
-        val room = stageWidth - Compact.SIDE - PEEK_EDGE
-        // With the prototype's gap of 44 scaled; under the scale where [coverGap]'s floor is the larger one, with that floor
-        val proto = room / (WIDE * FOCUS_SCALE + 2f * COVER_GAP + TILE * 4f / 3f)
-        if (proto >= GAP_FLOOR_SCALE) return proto
-        val floorGap = TILE * (FOCUS_SCALE - 1f) / 2f
-        val floorBase = RING * FOCUS_SCALE + FOCUS_AIR
-        return (room - 2f * floorBase) / (WIDE * FOCUS_SCALE + 2f * floorGap + TILE * 4f / 3f)
-    }
+    fun widthScale(stageWidth: Float): Float = (stageWidth - Compact.SIDE - PEEK_EDGE) / (WIDE * FOCUS_SCALE + 2f * PEEK_GAP + TILE * 4f / 3f)
 
-    /** The cover scale below which [coverGap]'s floor (growth, ring and air) is larger than the prototype's gap scaled. */
-    private val GAP_FLOOR_SCALE = (RING * FOCUS_SCALE + FOCUS_AIR) / (COVER_GAP - TILE * (FOCUS_SCALE - 1f) / 2f)
+    /** The gap [widthScale] counts with: the prototype's, scaled with the covers. */
+    private const val PEEK_GAP = 44f
 
     /**
      * The layout on a stage [stageWidth] x [stageHeight] at interface scale [scale] (the bars and the texts grow with it), [safeTop] and
@@ -175,11 +173,11 @@ internal object HomeCompact {
         val titleMin = TITLE_MIN * scale
         val titleMax = maxOf(TITLE_MAX, titleMin)
         // Everything but the cover and the part of its ring that grows with it
-        val fixed = GAP_STATUS + titleMin + GAP_TITLE + info + GAP_CHIPS + GAP_HINT + 2f * RING * FOCUS_SCALE
+        val fixed = GAP_STATUS + titleMin + GAP_TITLE + info + GAP_CHIPS + GAP_HINT + 2f * ringReach(0f)
         val byHeight = (room - fixed) / FOCUS_SCALE / COVER_HEIGHT
         // The same with the logo's comfortable box and comfortable gaps, still counting the two rows the badges took before the info row (the covers keep their
         // size; the room the single row saves goes to the logo's box and the gaps): what the cover gets while that is not under the minimum
-        val comfortable = GAP_STATUS + titleMax + GAP_TITLE + maxOf(info, twoRowsHeight(scale)) + COMFORT_CHIPS + COMFORT_HINT + 2f * RING * FOCUS_SCALE
+        val comfortable = GAP_STATUS + titleMax + GAP_TITLE + maxOf(info, twoRowsHeight(scale)) + COMFORT_CHIPS + COMFORT_HINT + 2f * ringReach(0f)
         val byComfort = (room - comfortable) / FOCUS_SCALE / COVER_HEIGHT
         val byShare = stageHeight * MAX_HEIGHT_SHARE / COVER_HEIGHT
         val coverScale = minOf(byShare, widthScale(stageWidth), byComfort).coerceAtLeast(minOf(FLOOR, byHeight).coerceAtLeast(HARD_FLOOR))

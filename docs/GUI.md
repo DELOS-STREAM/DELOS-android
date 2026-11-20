@@ -91,6 +91,60 @@ Performance rules:
 `TranslucentSurfaceTest` fails on a translucent `.background(…)` (a palette surface or scrim, an alpha below `FF`, a
 `.copy(alpha = …)`) on a line without glass. Its allowlist names every exception and why; an entry that matches no
 line any more fails too.
+## Focus spacing
+
+A focused element's ring, glow and lift never touch or overlap the next focusable element. The rule holds for every
+focusable: covers, carousels, buttons, pills, chips, list rows, settings rows, menu items, the top navigation, filter
+chips, keyboard keys and the stream menu tiles.
+
+- The **reach** of a focus look is how far it extends past the element's edge at rest, toward a neighbour:
+  the scale growth at that edge plus the ring outset plus the ring band.
+  - A ring drawn inside the element's scaled layer grows with it:
+    reach = (scale − 1) · size / 2 + scale · (outset + band).
+  - A ring drawn around the scaled bounds does not grow with it: the overview's shared ring, the gliding rings and
+    plates. For these, reach = (scale − 1) · size / 2 + outset + band.
+  - The size is the longest element of the group along the axis toward the neighbour.
+- Two focusable siblings are at least **2 · reach + 8** stage pixels apart. The 8 px stay clear even while the ring
+  glides to the neighbour. The glow is a soft shadow and counts only through this clear space.
+- Gaps grow. Elements never shrink to make room. A layout that runs out of room scrolls, peeks less or shows one
+  column fewer.
+- **Dense grids** use the inner-ring variant: the letter picker of the settings search and the Full keyboard. Their
+  keys do not lift and draw the ring inside the key. The reach is then zero or negative, and the existing gaps
+  already hold the 8 px of clear space.
+- **Rows of labelled pills** (buttons, chips) are as wide as their label, so a fixed gap cannot hold the rule. Such
+  a row (`FocusRow`) widens its gap to the rule for its widest pill.
+- In code, `ui/FocusSpacing.kt` holds the looks (`FocusLook`) and the fixed groups (`FocusGap`). Each screen takes
+  its gap from a named `FocusGap` or computes it with `FocusLook.minGap`. `FocusSpacingTest` checks every group
+  against its look.
+
+Examples, in stage pixels:
+
+| Group | Element | Look | Reach | Gap |
+|---|---|---|---|---|
+| Home covers | 300 wide | 1.055, ring 5 out, band 5 | 18.8 | 46 |
+| Overview screenshots and videos | 520 wide | 1.06, ring 6 out, band 4 | 25.6 | 60 |
+| Overview similar games | 260 wide | 1.06, ring 6 out, band 4 | 17.8 | 44 |
+| Stream menu tiles | 150 wide | 1.12, ring band inside the 186 box | 18 | 44 |
+| Settings rows | up to 120 high | 1.02, plate ring band 3 | 4.2 | 18 |
+| Full keyboard keys | any | no lift, band 4 at 1 px inside | −1 | 6 |
+
+## Focus row navigation
+
+Moving one row up or down, with a controller or a keyboard, puts the focus on the first item of the new row: the
+leftmost focusable whose vertical centre lies in that row's band. It never lands on the horizontally nearest item.
+
+- Returning to the row the focus came from restores the item it left. For example, Down from the top navigation
+  returns to the cover that had the focus.
+- A row that scrolls sideways starts at its leftmost item on screen, not at its first item.
+- The media viewer's dock: Down from the video timeline goes to Play.
+- 2-D grids keep their column: the artwork picker grid, the avatar grid, the settings-search letter picker and the
+  Full keyboard.
+- The owner approved these four exceptions. Any other exception needs the owner's approval.
+- The row is found from the item the move would reach without the rule: every item in that direction whose vertical
+  centre lies within that item's height. A screen's own focus override or key handling comes first. A move never
+  leaves the open dialog, menu or side layer.
+- In code, `ui/RowFirst.kt` holds the rule, `ui/RowNavigation.kt` applies it to the shell, and
+  `OverviewNavigator` applies it to the game overview. `RowFirstTest` and `OverviewRowFirstTest` check it.
 
 ## Section finder
 
@@ -99,6 +153,7 @@ cited section.
 
 | Cited section | Document |
 |---|---|
+| "Focus spacing", "Focus row navigation" | This document |
 | "Android launcher identity", "First launch", "Profile avatars", "Start screen", "Home" | [gui/START_AND_HOME.md](gui/START_AND_HOME.md) |
 | "Launching a game", "Streaming time" | [gui/START_AND_HOME.md](gui/START_AND_HOME.md) |
 | "SteamGridDB" | [gui/ARTWORK.md](gui/ARTWORK.md) |

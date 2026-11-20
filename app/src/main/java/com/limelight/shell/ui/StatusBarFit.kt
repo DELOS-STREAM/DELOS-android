@@ -25,11 +25,16 @@ object StatusBarLayout {
     const val BACK_GAP = 24f
     val BACK_RULE = InputKindRule.WITHOUT_CONTROLLER
 
-    /** A navigation button on a compact stage (64 elsewhere), the pill's padding around the buttons and the gap between them (normal, tight). */
+    /**
+     * A navigation button on a compact stage (64 elsewhere) and the pill's padding around the buttons. A focused button grows to 1.12
+     * ([NAV_LOOK]; no ring, the transient pill glides to its scaled bounds), so the prototype's 14 px between the buttons grew to the
+     * focus rule's: [NAV] between 64 px buttons, [NAV_COMPACT] between 56 px ones, in every [StatusBarStep].
+     */
     const val NAV_BUTTON = 56f
     const val NAV_PADDING = 8f
-    const val NAV_GAP = 14f
-    const val NAV_GAP_TIGHT = 6f
+    val NAV_LOOK = FocusLook(1.12f)
+    val NAV = FocusGap(NAV_LOOK, 64f, 16f)
+    val NAV_COMPACT = FocusGap(NAV_LOOK, NAV_BUTTON, 15f)
 
     /** The gap between Wi-Fi, battery and clock and the one between the battery and its percentage (normal, tight). */
     const val STATUS_GAP = 28f
@@ -42,7 +47,10 @@ object StatusBarLayout {
         if (buttons <= 0) 0f else buttons * button + (buttons - 1) * gap + 2 * NAV_PADDING
 }
 
-/** What the compact status bar gives up, in this order, when the navigation cannot keep its air: nothing, the inner gaps, then also the battery's percentage. */
+/**
+ * What the compact status bar gives up, in this order, when the navigation cannot keep its air: nothing, the status cluster's inner gaps
+ * (the navigation's keep the focus rule's), then also the battery's percentage.
+ */
 enum class StatusBarStep(val tight: Boolean, val percent: Boolean) {
     FULL(tight = false, percent = true),
     TIGHT(tight = true, percent = true),

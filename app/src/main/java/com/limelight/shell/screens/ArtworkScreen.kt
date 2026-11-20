@@ -128,6 +128,8 @@ import com.limelight.shell.ui.Feedback
 import com.limelight.shell.ui.Figtree
 import com.limelight.shell.ui.FocusGlow
 import com.limelight.shell.ui.FocusRing
+import com.limelight.shell.ui.FocusRow
+import com.limelight.shell.ui.FocusSpacing
 import com.limelight.shell.ui.FocusTransferTarget
 import com.limelight.shell.ui.Glyph
 import com.limelight.shell.ui.HeroMotion
@@ -162,7 +164,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.limelight.shell.ui.StageShape
-import com.limelight.shell.ui.compactScale
 import com.limelight.shell.ui.cpx
 import com.limelight.shell.ui.targetPx
 import com.limelight.shell.ui.rememberAnimatedDrawable
@@ -171,6 +172,8 @@ import com.limelight.shell.ui.rememberFocusTransfer
 import com.limelight.shell.ui.rememberMarginBringIntoView
 import com.limelight.shell.ui.staggerEntrance
 import com.limelight.shell.ui.tpx
+import com.limelight.shell.ui.rowNavGrid
+import com.limelight.shell.ui.rowNavScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlin.math.roundToInt
@@ -448,12 +451,12 @@ fun ArtworkScreen(screen: Screen.Artwork) {
     // Compact: no title. The game chip and the tabs (flush right) share the first row, the filter strip and the two pills the second; the grid
     // and the info strip follow at full width, and a stage too short for a row of covers above the info strip has none
     val bottom = SettingsLayout.bottom(stage.textScale)
-    val toolbarY = if (compact) ArtworkLayout.TOOLBAR_Y else 206f
-    val gridY = if (compact) ArtworkLayout.GRID_Y else 324f
+    val toolbarY = if (compact) ArtworkLayout.TOOLBAR_Y else ArtworkLayout.WIDE_TOOLBAR_Y
+    val gridY = if (compact) ArtworkLayout.GRID_Y else ArtworkLayout.WIDE_GRID_Y
     val info = !compact || ArtworkLayout.hasInfo(contentWidth, stage.stageHeight, bottom)
     val infoY = if (compact) stage.stageHeight - bottom - ArtworkLayout.INFO_HEIGHT else stage.stageHeight - 194f
     val gridHeight = if (compact) ArtworkLayout.viewport(stage.stageHeight, bottom, info) else (infoY - 10f - gridY).coerceAtLeast(0f)
-    // The tile is what the columns leave once the room between tiles covers the focused tile's growth, its ring and 12 px (every shape)
+    // The tiles are what the columns leave of the content's width; the room between them is the focus spacing rule's (every shape)
     val art = if (compact) ArtGridLayout.compact(contentWidth, gridHeight, tab.ratio, tab.compactMin, tab.compactMax)
     else ArtGridLayout.grid(contentWidth, tab.ratio, tab.columnsFor(stage.stageWidth - 200f))
     val ready = choices as? Choices.Ready
@@ -537,13 +540,16 @@ fun ArtworkScreen(screen: Screen.Artwork) {
                     width(stringResource(filters.sort.first), FilterStripMetrics.sortStyle()),
                 )
             }
-            val label = labels[ArtToolbarLayout.label(contentWidth, stripWidth + pillChrome + filterWidth + 2 * ArtworkLayout.PILL_GAP, labels.map { width(it, pillText) })]
+            // Each Search label with the row's two gaps, which grow with the wider pill to its focus spacing
+            val searchWidths = labels.map { pillChrome + width(it, pillText) }
+            val choice = ArtToolbarLayout.label(contentWidth, stripWidth + filterWidth, searchWidths.map { it + 2 * ArtworkLayout.toolbarGap(maxOf(it, filterWidth)) })
             Row(
                 Modifier.offset(margin.px, toolbarY.px).width(contentWidth.px).height(ArtworkLayout.TOOLBAR_HEIGHT.px),
-                horizontalArrangement = Arrangement.spacedBy(ArtworkLayout.PILL_GAP.px), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(ArtworkLayout.toolbarGap(maxOf(searchWidths[choice], filterWidth)).px),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(Modifier.weight(1f).fillMaxHeight()) { strip(Modifier.fillMaxSize(), true) }
-                searchPill(label)
+                searchPill(labels[choice])
                 filterPill()
             }
         } else {
@@ -559,20 +565,23 @@ fun ArtworkScreen(screen: Screen.Artwork) {
             }
             // The tabs end exactly at the content's right edge (the Filter pill's, the info strip's), on every stage width
             TabRow(124f, 66.px, left = margin, right = stage.stageWidth - margin, centred = false, content = tabs)
-            // Toolbar: the matched game, search for another name (X), the filter sheet (Y)
+            // Toolbar: the matched game, search for another name (X), the filter sheet (Y); the pills keep their focus spacing apart
             Row(
-                Modifier.offset(margin.px, toolbarY.px).width(contentWidth.px).height(64.px),
+                Modifier.offset(margin.px, toolbarY.px).width(contentWidth.px).height(ArtworkLayout.TOOLBAR_HEIGHT.px),
                 horizontalArrangement = Arrangement.spacedBy(16.px), verticalAlignment = Alignment.CenterVertically,
             ) {
                 gameChip(Modifier.weight(1f))
-                searchPill(stringResource(R.string.artwork_search_other))
-                filterPill()
+                FocusRow(FocusSpacing.PILL, 16f) {
+                    searchPill(stringResource(R.string.artwork_search_other))
+                    filterPill()
+                }
             }
-            strip(Modifier.offset(margin.px, 276.px).width(contentWidth.px).height(44.px), false)
+            strip(Modifier.offset(margin.px, ArtworkLayout.WIDE_STRIP_Y.px).width(contentWidth.px).height(ArtworkLayout.STRIP_HEIGHT.px), false)
         }
 
         // The grid (or why there is none): from under the filter strip to above the info strip, so a taller stage shows more rows. Its box
-        // is the stage's width and the tiles are padded in by the margin: room inside the viewport for the focused tile's ring and glow
+        // is the stage's width and the tiles are padded in by the margin (less the grid's overhang, where the rule's gaps need more than the
+        // content's width): room inside the viewport for the focused tile's ring and glow
         val gridInset = if (compact) ArtworkLayout.GRID_INSET else 0f
         Box(Modifier.offset(y = (gridY + gridInset).px).width(stage.stageWidth.px).height((gridHeight - gridInset).coerceAtLeast(0f).px)) {
             when (val c = choices) {
@@ -605,9 +614,9 @@ fun ArtworkScreen(screen: Screen.Artwork) {
                                 stage, top = fadeTop, bottom = fadeBottom,
                                 topPx = { full -> if (grid.firstVisibleItemIndex == 0) grid.firstVisibleItemScrollOffset.toFloat() else full },
                                 bottomPx = { full -> full * fadeEnd },
-                            ),
-                            contentPadding = if (compact) PaddingValues(start = margin.px, end = margin.px, top = padTop.px, bottom = art.padBottom.px)
-                            else PaddingValues(start = margin.px, end = margin.px, top = 46.px, bottom = 96.px),
+                            ).rowNavGrid(),
+                            contentPadding = if (compact) PaddingValues(start = (margin - art.overhang).px, end = (margin - art.overhang).px, top = padTop.px, bottom = art.padBottom.px)
+                            else PaddingValues(start = (margin - art.overhang).px, end = (margin - art.overhang).px, top = ArtworkLayout.WIDE_GRID_PAD.px, bottom = 96.px),
                             horizontalArrangement = Arrangement.spacedBy(art.gapX.px),
                             verticalArrangement = Arrangement.spacedBy(art.gapY.px),
                         ) {
@@ -837,7 +846,7 @@ private fun FilterStrip(
 ) {
     val colors = LocalDelosColors.current
     RowGlideHost(
-        ring = FocusRing(3f, 3f), corner = 999f, focusScale = 1.05f, fill = null, glow = null,
+        ring = FocusRing(ChipFocus.LOOK.band, ChipFocus.LOOK.outset), corner = 999f, focusScale = ChipFocus.LOOK.scale, fill = null, glow = null,
         modifier = modifier,
     ) {
         val line: @Composable RowScope.() -> Unit = {
@@ -853,10 +862,13 @@ private fun FilterStrip(
             if (!filters.active) {
                 BasicText(stringResource(filters.sort.first), centred, style = FilterStripMetrics.sortStyle().copy(color = colors.text3))
             } else {
-                ArtFilterRules.chips(filters).forEach { chip ->
-                    FilterStripChip(chip.label(res), Symbols.CLOSE, centred) { onClear(chip) }
+                // The chips keep their focus spacing apart, more for a long label
+                FocusRow(ChipFocus.LOOK, 12f, centred) {
+                    ArtFilterRules.chips(filters).forEach { chip ->
+                        FilterStripChip(chip.label(res), Symbols.CLOSE, Modifier) { onClear(chip) }
+                    }
+                    FilterStripChip(stringResource(R.string.filters_art_chips_reset), Symbols.RESET, Modifier, onReset)
                 }
-                FilterStripChip(stringResource(R.string.filters_art_chips_reset), Symbols.RESET, centred, onReset)
             }
         }
         if (scrolls) {
@@ -873,9 +885,9 @@ private fun FilterStripChip(label: String, icon: String, modifier: Modifier, onC
     val colors = LocalDelosColors.current
     Row(
         modifier
-            .focusEffects(onClick = onClick, corner = 999f, focusScale = 1.05f, ring = FocusRing(3f, 3f), glow = null, glide = true)
+            .focusEffects(onClick = onClick, corner = 999f, focusScale = ChipFocus.LOOK.scale, ring = FocusRing(ChipFocus.LOOK.band, ChipFocus.LOOK.outset), glow = null, glide = true)
             .clip(CircleShape).glass(colors.surface2).border(1.px, colors.line, CircleShape)
-            .height(44.px).padding(horizontal = 20.px),
+            .height(ArtworkLayout.STRIP_HEIGHT.px).padding(horizontal = 20.px),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.px),
     ) {
         BasicText(label, style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 20.tpx))
@@ -899,7 +911,7 @@ private fun NoImages(tab: ArtTab, filters: ArtFilters, ready: Choices.Ready, gam
             val explanation = ready.total?.let { pluralStringResource(tab.has, it, match?.name?.ifEmpty { null } ?: gameName, it) } ?: stringResource(tab.unknown)
             BasicText(explanation, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 22.tpx, textAlign = TextAlign.Center), modifier = Modifier.width(minOf(820f, LocalStage.current.stageWidth - 160f).px))
             BasicText(stringResource(R.string.artwork_filtered_active, summary), style = TextStyle(color = colors.text3, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 20.tpx, textAlign = TextAlign.Center), modifier = Modifier.width(minOf(820f, LocalStage.current.stageWidth - 160f).px))
-            Row(horizontalArrangement = Arrangement.spacedBy(16.px)) {
+            FocusRow(FocusSpacing.PILL, 16f) {
                 PillButton(stringResource(R.string.filters_art_reset), Symbols.RESET, onReset, compact = true, glyph = Glyph.X)
                 PillButton(stringResource(R.string.filters_art_change), Symbols.FILTER, onChange, compact = true, clickCue = null, glyph = Glyph.Y)
             }
@@ -1039,7 +1051,8 @@ private fun FilterSheetLayer(
                 .padding(start = 40.cpx, end = 40.cpx, top = padTop.px, bottom = padBottom.px)
                 .onFocusChanged { panelFocused = it.hasFocus }
                 .focusProperties { onExit = { if (open) cancelFocusChange() } }
-                .focusGroup(),
+                .focusGroup()
+                .rowNavScope(),
             verticalArrangement = Arrangement.spacedBy(8.px),
         ) {
             val live: @Composable () -> Unit = {
@@ -1051,19 +1064,21 @@ private fun FilterSheetLayer(
                     )
                 }
             }
-            // Compact: the live count stands where the title would not fit beside the two pills, which keep the room a focused one grows into
-            Row(Modifier.fillMaxWidth().padding(bottom = 8.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy((if (compactSheet) ArtworkLayout.PILL_GAP else 24f).px)) {
+            // Compact: the live count stands where the title would not fit beside the two pills, which keep their focus spacing apart
+            Row(Modifier.fillMaxWidth().padding(bottom = 8.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.px)) {
                 if (!compactSheet) BasicText(stringResource(R.string.filters_art_title), style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 34.tpx))
                 live()
                 if (refreshing) Spinner(30f)
                 Spacer(Modifier.weight(1f))
-                val active = filters.active
-                PillButton(
-                    stringResource(R.string.filters_art_reset), Symbols.RESET, onReset,
-                    Modifier.alpha(if (active) 1f else .4f).then(if (active) Modifier else Modifier.focusProperties { canFocus = false }),
-                    compact = true, clickCue = null, glyph = Glyph.X,
-                )
-                PillButton(stringResource(R.string.filters_art_done), Symbols.CHECK, onClose, compact = true, clickCue = Cue.BACK, glyph = Glyph.Y)
+                FocusRow(FocusSpacing.PILL, 24f) {
+                    val active = filters.active
+                    PillButton(
+                        stringResource(R.string.filters_art_reset), Symbols.RESET, onReset,
+                        Modifier.alpha(if (active) 1f else .4f).then(if (active) Modifier else Modifier.focusProperties { canFocus = false }),
+                        compact = true, clickCue = null, glyph = Glyph.X,
+                    )
+                    PillButton(stringResource(R.string.filters_art_done), Symbols.CHECK, onClose, compact = true, clickCue = Cue.BACK, glyph = Glyph.Y)
+                }
             }
             // The compact sheet may be taller than the page leaves it: its options scroll, fading at an edge they continue behind. The header
             // above them is the padding, the 64 px pills and 16 px
@@ -1073,14 +1088,15 @@ private fun FilterSheetLayer(
             val k = stage.dpPerPx * LocalDensity.current.density
             val optionsIntoView = rememberMarginBringIntoView(optionsScroll, before = 24f * k, after = 40f * k, stagePx = k)
             RowGlideHost(
-                ring = FocusRing(3f, 3f), corner = 999f, focusScale = 1.05f, fill = null, glow = null,
+                ring = FocusRing(ChipFocus.LOOK.band, ChipFocus.LOOK.outset), corner = 999f, focusScale = ChipFocus.LOOK.scale, fill = null, glow = null,
                 modifier = if (compactSheet) Modifier.heightIn(max = optionsMax.px).focusRoom(horizontal = 12.px).fadeEdges(stage, optionsScroll, 16f, 32f) else Modifier,
             ) {
                 CompositionLocalProvider(LocalBringIntoViewSpec provides optionsIntoView) {
                 Column(
-                    // 12 px beside and 8 px above and below the rows: the room of a focused chip's ring inside the scrolling layer
+                    // 12 px beside and 8 px above and below the rows: the room of a focused chip's ring inside the scrolling layer. Two rows of chips
+                    // keep their focus spacing apart ([ArtworkLayout.SHEET_ROWS])
                     (if (compactSheet) Modifier.verticalScroll(optionsScroll).padding(horizontal = 12.px, vertical = 8.px) else Modifier),
-                    verticalArrangement = Arrangement.spacedBy(6.px),
+                    verticalArrangement = Arrangement.spacedBy(ArtworkLayout.SHEET_ROW_SPACING.px),
                 ) {
                     if (ArtFilterRules.hasType(kind)) {
                         SheetRow(Symbols.MOVIE, stringResource(R.string.filters_art_row_type)) {
@@ -1122,8 +1138,7 @@ private fun FilterSheetLayer(
 private fun SheetRow(icon: String, title: String, options: @Composable () -> Unit) {
     val colors = LocalDelosColors.current
     val compact = LocalStage.current.shape == StageShape.COMPACT
-    // Compact: 4 px above and below, so a focused chip (its 5 % and its ring) keeps 12 px to the chips of the next row
-    Row(Modifier.fillMaxWidth().padding(vertical = (if (compact) 4 else 2).px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy((if (compact) 20 else 30).px)) {
+    Row(Modifier.fillMaxWidth().padding(vertical = ArtworkLayout.SHEET_ROW_PAD.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy((if (compact) 20 else 30).px)) {
         Row(Modifier.width((if (compact) 310 else 270).px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy((if (compact) 14 else 18).px)) {
             Box(Modifier.size((if (compact) 44 else 52).px).clip(CircleShape).background(colors.accent.copy(alpha = .18f)), contentAlignment = Alignment.Center) {
                 Symbol(icon, 28.tpx, colors.accent2, filled = true)
@@ -1131,7 +1146,7 @@ private fun SheetRow(icon: String, title: String, options: @Composable () -> Uni
             BasicText(title, style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx))
         }
         // A row that scrolls keeps the chips' ring above and below (the fade's layer would cut it)
-        ScrollRow(gap = 14f * LocalStage.current.compactScale, ringRoom = 12f) { options() }
+        ChipRow { options() }
     }
 }
 
@@ -1230,7 +1245,8 @@ private fun Tile(
     Box(
         modifier
             .focusEffects(
-                onClick, corner = 20f, focusScale = 1.06f, ring = FocusRing(4f, 4f), glow = FocusGlow(18f, 50f, -12f), clickCue = null,
+                onClick, corner = 20f, focusScale = ArtGridLayout.LOOK.scale, ring = FocusRing(ArtGridLayout.LOOK.band, ArtGridLayout.LOOK.outset),
+                glow = FocusGlow(ArtGridLayout.GLOW_OFFSET, ArtGridLayout.GLOW_BLUR, ArtGridLayout.GLOW_SPREAD), clickCue = null,
                 onFocusChange = { if (it) onFocused() },
             )
             .fillMaxWidth()

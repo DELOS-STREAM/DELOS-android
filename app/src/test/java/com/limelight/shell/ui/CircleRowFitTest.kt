@@ -5,25 +5,34 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** A row of circle items (`CircleRowLayout`): one row, the items keep their size, the gap is 56 while they fit and 44 when not, the focus has its room. */
+/** A row of circle items (`CircleRowLayout`): one row, the items keep their size, the gap is 64 while they fit and the tight one when not, the focus has its room. */
 class CircleRowFitTest {
     private val c = CircleRowLayout
 
     /** The compact stages' heights give the circles' scale (`StageMetrics.compactScale`): the big circle is 220 times it. */
     private val stageHeights = listOf(957f, 893f, 831f, 1051f, 722f)
 
-    private fun side(stageHeight: Float) = 220f * (stageHeight / 1080f).coerceIn(Compact.MIN_SCALE, 1f)
+    private fun scale(stageHeight: Float) = (stageHeight / 1080f).coerceIn(Compact.MIN_SCALE, 1f)
+
+    private fun side(stageHeight: Float) = c.BIG_CIRCLE * scale(stageHeight)
 
     @Test
     fun aFocusedCircleKeepsItsRingOffItsNeighbourOnEveryCompactStage() {
+        // The prototype's big circle: 220 at 1.16 grows 17.6 to each side, the gliding ring 10 px beyond its scaled bounds
+        assertEquals(17.6f + 10f, c.LOOK.reach(220f), .001f)
+        assertEquals(c.BIG_CIRCLE, c.GAP.size, 0f)
+        assertEquals(63.2f, c.GAP.minGap, .001f)
+        assertTrue(c.GAP.gap >= c.GAP.minGap)
         for (height in stageHeights + 1080f) {
-            val reach = c.focusReach(side(height))
-            // The growth to one side and the ring, and 12 px of air, fit the least gap
-            assertTrue("stage height $height reach $reach", reach + c.FOCUS_AIR <= c.GAP_TIGHT + .01f)
+            val tight = c.tightGap(scale(height))
+            // The growth and the ring of both neighbours and 8 px of clear space fit the tight gap; it is never wider than the wide one
+            assertTrue("stage height $height tight $tight", tight >= c.LOOK.minGap(side(height)) - .001f)
+            assertTrue("stage height $height tight $tight", tight >= c.GAP_TIGHT && tight <= c.GAP.gap)
         }
-        // The prototype's circle: 220 at 1.16 grows 17.6 to each side, the 10 px ring with it 11.6
-        assertEquals(17.6f + 11.6f, c.focusReach(220f), .001f)
-        assertTrue(c.focusReach(220f) + c.FOCUS_AIR <= c.GAP)
+        assertEquals(50f, c.tightGap(Compact.MIN_SCALE), 0f)
+        assertEquals(64f, c.tightGap(1f), 0f)
+        // The label keeps the circle's reach and 8 px under it
+        assertEquals(27.6f + 8f, c.labelGap(220f), .001f)
     }
 
     @Test
@@ -48,7 +57,7 @@ class CircleRowFitTest {
     }
 
     @Test
-    fun thePrototypesGapWhileItFitsTheSmallerOneWhenNot() {
+    fun theWideGapWhileItFitsTheSmallerOneWhenNot() {
         assertEquals(56, c.gap(sum = 800, count = 4, room = 1000, wide = 56, tight = 40))
         assertEquals(56, c.gap(sum = 832, count = 4, room = 1000, wide = 56, tight = 40))
         assertEquals(40, c.gap(sum = 833, count = 4, room = 1000, wide = 56, tight = 40))
@@ -78,11 +87,13 @@ class CircleRowFitTest {
             val sizes = IntArray(10) { item }
             val room = (width - 96f).toInt()
             val out = IntArray(10)
-            val gap = c.gap(sizes.sum(), 10, room, 56, 44)
-            assertEquals("$width x $height scrolls with the small gap", 44, gap)
+            val wide = c.GAP.gap.toInt()
+            val tight = c.tightGap(scale(height)).toInt()
+            val gap = c.gap(sizes.sum(), 10, room, wide, tight)
+            assertEquals("$width x $height scrolls with the tight gap", tight, gap)
             val total = sizes.sum() + gap * 9
-            c.arrange(sizes, total, 56, 44, out)
-            for (i in 1 until 10) assertEquals(item + 44, out[i] - out[i - 1])
+            c.arrange(sizes, total, wide, tight, out)
+            for (i in 1 until 10) assertEquals(item + tight, out[i] - out[i - 1])
             assertTrue("no item is narrower than its circle", item >= side.toInt())
         }
     }
@@ -90,10 +101,10 @@ class CircleRowFitTest {
     @Test
     fun aRowThatScrollsShowsAPeekOfTheCutItemAtBothEnds() {
         // The compact viewports (stage widths) and item widths (the circle or its label, 176..260) of start, devices and pair-pc, 3 to 12 items
-        for (viewport in listOf(1099f, 1488f, 1191f, 1108f, 1051f, 1082f)) for (n in 3..12) for (w in listOf(176f * .9f, 200f, 220f, 260f)) {
+        for ((viewport, height) in listOf(1099f to 957f, 1488f to 893f, 1191f to 893f, 1108f to 831f, 1051f to 1051f, 1082f to 722f)) for (n in 3..12) for (w in listOf(176f * .9f, 200f, 220f, 260f)) {
             val sizes = FloatArray(n) { w }
             val limit = viewport - c.SIDE
-            val tight = c.GAP_TIGHT
+            val tight = c.tightGap(scale(height))
             if (sizes.sum() + tight * (n - 1) <= viewport - 2 * c.SIDE) continue
             val g = c.peekGap(sizes, limit, tight)
             val name = "$viewport x $n items of $w: gap $g"
@@ -127,7 +138,7 @@ class CircleRowFitTest {
         val margin = 52f
         assertEquals(1800f, 8 * cell + 7 * 32f + 2 * margin, 0f)
         // The focused edge circle's ring (its growth and ring beyond the circle) keeps the 48 px outer margin of the stage from the edge
-        val ringFromEdge = margin + (cell - diameter) / 2f - c.focusReach(diameter)
+        val ringFromEdge = margin + (cell - diameter) / 2f - c.LOOK.reach(diameter)
         assertTrue("ring ${ringFromEdge}", ringFromEdge >= 48f)
         // The scroll area has room for the circle's glow and growth on every side, and the focused circle keeps clear of the fade
         val glowReach = (diameter / 2f + c.GLOW_SPREAD + c.GLOW_BLUR) * c.FOCUS_SCALE - diameter / 2f
