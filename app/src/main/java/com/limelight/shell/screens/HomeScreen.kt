@@ -163,6 +163,7 @@ import com.limelight.shell.ui.wheelScrollsRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -181,6 +182,7 @@ import com.limelight.shell.ui.InputCap
 import com.limelight.shell.ui.InputKind
 import com.limelight.shell.ui.EaseOut
 import kotlin.math.abs
+import kotlin.math.max
 
 /** Hues and icon of an app's placeholder art, derived from its name. */
 fun appArt(pc: Pc, app: App, image: androidx.compose.ui.graphics.ImageBitmap? = null, animated: java.io.File? = null): GameArt {
@@ -374,21 +376,24 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
     val touchDemo = remember { Animatable(0f) }
     val touchKind = ControllerGlyphs.kind
     val demoPreferences = remember(profileStore) { profileStore.settings() }
-    // The first touch-mode visit lifts the focused cover once (build/play-effect-proto/swipe-cue.html): up 24 at 42 %, back, 900 ms
-    LaunchedEffect(touchKind, focusedHasOverview, overview.app == null) {
-        if (touchKind != InputKind.TOUCH || !focusedHasOverview || overview.app != null) return@LaunchedEffect
-        if (demoPreferences.getBoolean("overview_touch_lift_shown", false)) return@LaunchedEffect
-        delay(500)
-        demoPreferences.edit().putBoolean("overview_touch_lift_shown", true).apply()
-        if (reducedMotion) return@LaunchedEffect
-        try {
-            touchDemo.animateTo(0f, keyframes {
-                durationMillis = 900
-                0f at 0 using CubicBezierEasing(.16f, 1f, .3f, 1f)
-                -24f at 378 using CubicBezierEasing(.16f, 1f, .3f, 1f)
-            })
-        } finally {
-            withContext(kotlinx.coroutines.NonCancellable) { touchDemo.snapTo(0f) }
+    // The first touch-mode visit lifts the focused cover once (build/play-effect-proto/swipe-cue.html): up 24 at 42 %, back, 900 ms.
+    // The overview is watched inside the effect: as a key, its opening and closing would recompose the whole dashboard
+    LaunchedEffect(touchKind, focusedHasOverview) {
+        if (touchKind != InputKind.TOUCH || !focusedHasOverview) return@LaunchedEffect
+        snapshotFlow { overview.app == null }.collectLatest { closed ->
+            if (!closed || demoPreferences.getBoolean("overview_touch_lift_shown", false)) return@collectLatest
+            delay(500)
+            demoPreferences.edit().putBoolean("overview_touch_lift_shown", true).apply()
+            if (reducedMotion) return@collectLatest
+            try {
+                touchDemo.animateTo(0f, keyframes {
+                    durationMillis = 900
+                    0f at 0 using CubicBezierEasing(.16f, 1f, .3f, 1f)
+                    -24f at 378 using CubicBezierEasing(.16f, 1f, .3f, 1f)
+                })
+            } finally {
+                withContext(kotlinx.coroutines.NonCancellable) { touchDemo.snapTo(0f) }
+            }
         }
     }
     val openOverview: (App) -> Unit = { app ->
@@ -809,7 +814,11 @@ private fun GameInfo(
             overview.app == null -> 1f
             overview.reduced -> 0f
             overview.opening -> OverviewMotion.logoLeaving(overview.clock.value, opening = true)
-            overview.closing -> OverviewMotion.logoArriving(overview.clock.value, opening = false)
+            // From where an interrupted opening left it
+            overview.closing -> max(
+                OverviewMotion.logoArriving(overview.clock.value, opening = false),
+                OverviewMotion.logoLeaving(overview.interruptedAt, opening = true),
+            )
             else -> 0f
         }
     }

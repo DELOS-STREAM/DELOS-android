@@ -106,6 +106,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -148,6 +149,8 @@ import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.LocalFeedback
 import com.limelight.shell.ui.LocalStage
 import com.limelight.shell.ui.Motion
+import com.limelight.shell.ui.backdropBlur
+import com.limelight.shell.ui.glass
 import com.limelight.shell.ui.PlaceholderArt
 import com.limelight.shell.ui.Symbol
 import com.limelight.shell.ui.Symbols
@@ -310,10 +313,22 @@ internal fun GameOverview(
     val links = remember(details, candidate) { details?.let { OverviewModel.links(it, candidate?.steamAppIds.orEmpty()) }.orEmpty() }
     val sections = remember(details, links, media) { OverviewModel.sections(details, links, media) }
 
-    // The first two thumbnails and the first full screenshot load while the overview opens
+    // The sections below the header compose once the opening has landed (until then only the top of the first one would peek in at
+    // the bottom edge), so the flight's frames carry only the header; an overview shown again at once has them from its first frame.
+    // They fade in.
+    var sectionsReady by remember(app.id) { mutableStateOf(!controller.opening) }
+    val sectionsIn = remember(app.id) { Animatable(if (sectionsReady) 1f else 0f) }
+    LaunchedEffect(app.id) {
+        if (sectionsReady) return@LaunchedEffect
+        snapshotFlow { controller.settled }.first { it }
+        sectionsReady = true
+        sectionsIn.animateTo(1f, tween(Motion.FADE, easing = Motion.Ease))
+    }
+
+    // The first two thumbnails and the first full screenshot load once the opening has landed: no decoding during the flight
     val images = LocalIgdbImages.current
-    LaunchedEffect(media) {
-        if (media.isNotEmpty()) images.prefetch(media.take(2).map { it.thumb } + listOfNotNull(media.firstOrNull { it.kind == OverviewModel.MediaKind.SCREENSHOT }?.full))
+    LaunchedEffect(media, sectionsReady) {
+        if (sectionsReady && media.isNotEmpty()) images.prefetch(media.take(2).map { it.thumb } + listOfNotNull(media.firstOrNull { it.kind == OverviewModel.MediaKind.SCREENSHOT }?.full))
     }
 
     // Closing: the page scrolls back to its top first, then every motion reverses. The card takes the focus back as the motion
@@ -342,12 +357,14 @@ internal fun GameOverview(
         focus.alpha.animateTo(if (controller.settled) 1f else 0f, tween(200, easing = Motion.Ease))
     }
 
-    // Ratings fill and count up 380 ms after the opening began (or as soon as the details arrive later)
-    val ratings = remember(app.id) { Animatable(if (reducedMotion) 1f else 0f) }
+    // The rings fill on their springs and count up 285 ms after the opening began (or as soon as the details arrive later): this is
+    // their clock in milliseconds, read while drawing ([OverviewMotion.ring])
+    val ratings = remember(app.id) { Animatable(0f) }
     LaunchedEffect(details != null) {
-        if (details == null || ratings.value >= 1f) return@LaunchedEffect
+        if (details == null || ratings.value > 0f) return@LaunchedEffect
         snapshotFlow { controller.openMillis() >= OverviewMotion.RATINGS_DELAY }.first { it }
-        ratings.animateTo(1f, tween(OverviewMotion.COUNT_UP, easing = EaseOut))
+        val total = if (reduced) Motion.FADE else OverviewMotion.RATINGS_TOTAL
+        ratings.animateTo(total.toFloat(), tween(total, easing = LinearEasing))
     }
     // Your streaming counts up when its card is first focused
     val streaming = remember(app.id) { Animatable(if (reducedMotion) 1f else 0f) }
@@ -408,7 +425,10 @@ internal fun GameOverview(
     }
 
     val pageMotion: () -> Pair<Float, Float> = {
-        if (controller.closing) OverviewMotion.page(controller.clock.value, opening = false, reduced = controller.reduced)
+        if (controller.closing) OverviewMotion.page(
+            controller.clock.value, opening = false, reduced = controller.reduced,
+            from = OverviewMotion.PAGE_RISE * (1f - OverviewMotion.settle(controller.interruptedAt)),
+        )
         else if (controller.opening) OverviewMotion.page(controller.clock.value, opening = true, reduced = controller.reduced)
         else 0f to 1f
     }
@@ -470,18 +490,20 @@ internal fun GameOverview(
                 Box(
                     Modifier
                         .fillMaxSize()
-                        // The page fades in under the status bar (`.a-view` mask: clear to 70 px, solid from 140 px, clear again at the bottom)
-                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                        .drawWithContent {
-                            drawContent()
+                        // The page fades in under the status bar (`.a-view` mask: clear to 70 px, solid from 140 px, clear again at the
+                        // bottom). The mask needs an offscreen copy of the page: while the sections are not there yet (the opening),
+                        // nothing of the page reaches the masked bands (the header starts 150 px down), so the flight draws without it
+                        .graphicsLayer { compositingStrategy = if (sectionsReady) CompositingStrategy.Offscreen else CompositingStrategy.Auto }
+                        .drawWithCache {
                             val h = size.height
-                            drawRect(
-                                Brush.verticalGradient(
-                                    0f to Color.Transparent, 70f * k / h to Color.Transparent, 140f * k / h to Color.Black,
-                                    1f - 60f * k / h to Color.Black, 1f to Color.Transparent,
-                                ),
-                                blendMode = BlendMode.DstIn,
+                            val mask = Brush.verticalGradient(
+                                0f to Color.Transparent, 70f * k / h to Color.Transparent, 140f * k / h to Color.Black,
+                                1f - 60f * k / h to Color.Black, 1f to Color.Transparent,
                             )
+                            onDrawWithContent {
+                                drawContent()
+                                if (sectionsReady) drawRect(mask, blendMode = BlendMode.DstIn)
+                            }
                         }
                         .nestedScroll(pullConnection)
                         .verticalScroll(scroll),
@@ -503,7 +525,14 @@ internal fun GameOverview(
                                 shell.picker == null && shell.portal == null && shell.launch == null && shell.result == null,
                         )
                         // Fading out while it closes: its alpha applies to each of its parts as they draw (no offscreen copy of the page)
-                        Column(Modifier.graphicsLayer { val (dy, a) = pageMotion(); translationY = dy * k; alpha = a; compositingStrategy = CompositingStrategy.ModulateAlpha }) {
+                        if (sectionsReady) Column(
+                            Modifier.graphicsLayer {
+                                val (dy, a) = pageMotion()
+                                translationY = dy * k
+                                alpha = a * sectionsIn.value
+                                compositingStrategy = CompositingStrategy.ModulateAlpha
+                            },
+                        ) {
                             if (details == null) {
                                 DetailsStatus(entry.detailsLoading || data?.detailsUpdatedAt == 0L && data.detailsFailedAt == 0L)
                             }
@@ -649,13 +678,22 @@ private fun Header(
     fun Modifier.st(index: Int, delay: Int = OverviewMotion.HEADER_DELAY): Modifier = graphicsLayer {
         val (pageDy, pageAlpha) = pageMotion()
         val (dy, a) = when {
-            controller.closing -> OverviewMotion.leave(controller.clock.value, controller.reduced)
+            controller.closing -> OverviewMotion.leave(
+                controller.clock.value, controller.reduced,
+                from = OverviewMotion.rise(controller.interruptedAt, delay, index, controller.reduced).second,
+            )
             controller.opening -> OverviewMotion.rise(controller.clock.value, delay, index, controller.reduced)
             else -> 0f to 1f
         }
         translationY = (dy + pageDy) * k
         alpha = a * pageAlpha
         compositingStrategy = CompositingStrategy.ModulateAlpha
+    }
+    // A chip popping in ([OverviewMotion.chip]) [start] ms into the opening
+    fun Modifier.pop(start: Int): Modifier = graphicsLayer {
+        val s = OverviewMotion.chip(controller.openMillis() - start, controller.reduced)
+        scaleX = s
+        scaleY = s
     }
     Box(Modifier.fillMaxWidth().height((stage.stageHeight - 160f).px).overviewSection(HEAD)) {
         Row(Modifier.padding(start = SIDE.px, top = HEAD_TOP.px, end = SIDE.px)) {
@@ -672,15 +710,14 @@ private fun Header(
                         pose.slot = it.rootRect()
                         controller.placeCover()
                     }
+                    // The flying ring redraws every frame: in a layer of its own, so the header around it is not recorded again
+                    .graphicsLayer()
                     .drawWithCache {
                         val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                             style = android.graphics.Paint.Style.STROKE
                             strokeWidth = 4f * k
                         }
-                        val glow = android.graphics.Paint(paint).apply {
-                            strokeWidth = 8f * k
-                            maskFilter = android.graphics.BlurMaskFilter(30f * k, android.graphics.BlurMaskFilter.Blur.NORMAL)
-                        }
+                        val glow = FlightGlow(k)
                         onDrawWithContent {
                             drawContent()
                             // The card's focus ring flies with it and fades out on the way (a finger sees the card's ring too)
@@ -688,15 +725,16 @@ private fun Header(
                                 val p = pose.update(controller, size.width, size.height, pull(), k)
                                 if (p.alpha <= 0f) return@onDrawWithContent
                                 val amount = (1f - controller.flight.value).coerceIn(0f, 1f)
+                                if (amount <= 0f) return@onDrawWithContent
                                 val left = p.x + p.frameLeft * p.scale
                                 val top = p.y + p.frameTop * p.scale
                                 val right = left + p.frameWidth * p.scale
                                 val bottom = top + p.frameHeight * p.scale
                                 val corner = Motion.lerp(OverviewMotion.TO_CORNER, OverviewMotion.FROM_CORNER, amount) * k
                                 paint.color = colors.accent.copy(alpha = amount).toArgb()
-                                glow.color = colors.glow.copy(alpha = colors.glow.alpha * amount).toArgb()
-                                drawContext.canvas.nativeCanvas.drawRoundRect(left, top, right, bottom, corner, corner, glow)
-                                drawContext.canvas.nativeCanvas.drawRoundRect(left, top, right, bottom, corner, corner, paint)
+                                val canvas = drawContext.canvas.nativeCanvas
+                                glow.draw(canvas, left, top, right, bottom, colors.glow.copy(alpha = colors.glow.alpha * amount).toArgb())
+                                canvas.drawRoundRect(left, top, right, bottom, corner, corner, paint)
                             }
                         }
                     }
@@ -769,12 +807,16 @@ private fun Header(
                 val genres = remember(metadata) { topGenres(candidate?.genres.orEmpty(), metadata?.steamTags.orEmpty()) }
                 val themes = remember(metadata) { topThemes(candidate?.themes.orEmpty(), metadata?.steamTags.orEmpty()) }
                 FlowRow(Modifier.st(1), horizontalArrangement = Arrangement.spacedBy(10.px), verticalArrangement = Arrangement.spacedBy(10.px)) {
-                    genres.forEach { OverviewTag(genreIcon(it.id), genreName(res, it), TagLook.GENRE, hue) }
-                    themes.forEach { OverviewTag(themeIcon(it.id), themeName(res, it)) }
+                    // Each chip pops in as its row rises, one after another
+                    val tagsStart = OverviewMotion.HEADER_DELAY + OverviewMotion.HEADER_STAGGER
+                    var chip = 0
+                    fun next() = Modifier.pop(tagsStart + chip++ * OverviewMotion.HEADER_STAGGER)
+                    genres.forEach { Box(next()) { OverviewTag(genreIcon(it.id), genreName(res, it), TagLook.GENRE, hue) } }
+                    themes.forEach { Box(next()) { OverviewTag(themeIcon(it.id), themeName(res, it)) } }
                     when (hdr) {
-                        NativeHdr.HDR -> NativeHdrChip()
-                        NativeHdr.SDR -> Chip(Symbols.SDR, "SDR")
-                        NativeHdr.UNKNOWN -> Chip(Symbols.HDR_UNKNOWN, stringResource(R.string.metadata_hdr_unverified))
+                        NativeHdr.HDR -> Box(next()) { NativeHdrChip() }
+                        NativeHdr.SDR -> Box(next()) { Chip(Symbols.SDR, "SDR") }
+                        NativeHdr.UNKNOWN -> Box(next()) { Chip(Symbols.HDR_UNKNOWN, stringResource(R.string.metadata_hdr_unverified)) }
                         null -> Unit
                     }
                 }
@@ -785,7 +827,7 @@ private fun Header(
                         details?.criticRating, stringResource(R.string.overview_critics),
                         if (details?.criticRating == null) stringResource(R.string.overview_no_critics)
                         else pluralStringResource(R.plurals.overview_reviews, details.criticRatingCount, count.format(details.criticRatingCount)),
-                        colors.accent, ratings,
+                        colors.accent, ratings, index = 0, reduced = controller.reduced,
                     )
                     RatingRing(
                         details?.rating, stringResource(R.string.overview_players),
@@ -794,13 +836,15 @@ private fun Header(
                             details.ratingCount < OverviewModel.FEW_RATINGS -> pluralStringResource(R.plurals.overview_ratings_few, details.ratingCount, count.format(details.ratingCount))
                             else -> pluralStringResource(R.plurals.overview_ratings, details.ratingCount, count.format(details.ratingCount))
                         },
-                        colors.accent2, ratings,
+                        colors.accent2, ratings, index = 1, reduced = controller.reduced,
                     )
                     if (details != null) {
                         val country = java.util.Locale.getDefault().country
                         AgeRatingView(
                             OverviewModel.ageRatings(details.ageRatings, country).firstOrNull(),
                             stringResource(R.string.overview_not_rated), stringResource(R.string.overview_no_age_rating), stringResource(R.string.overview_no_descriptors),
+                            // Its badge pops in after the two rings, on their clock
+                            badgeScale = { OverviewMotion.chip(ratings() - 2 * OverviewMotion.RING_STAGGER, controller.reduced) },
                         )
                     }
                 }
@@ -877,13 +921,16 @@ private fun Title(controller: OverviewController, pc: Pc, app: App, hue: Float, 
             val source = controller.title?.takeIf { (it.fontSize == null) == isLogo }
             val moving = controller.opening || controller.closing
             val c = coordinates
+            val interrupted = controller.interruptedAt
             if (source != null && moving && !controller.reduced && source.fontSize == null) {
                 // A logo does not move: it fades in here while the dashboard's fades out where it is, and the other way round
-                alpha = if (controller.closing) OverviewMotion.logoLeaving(controller.clock.value, opening = false)
-                else OverviewMotion.logoArriving(controller.clock.value, opening = true)
+                alpha = if (controller.closing) {
+                    OverviewMotion.logoLeaving(controller.clock.value, opening = false) * OverviewMotion.logoArriving(interrupted, opening = true)
+                } else OverviewMotion.logoArriving(controller.clock.value, opening = true)
             } else if (source?.fontSize != null && moving && c != null && c.isAttached && !controller.reduced) {
                 val to = c.rootRect()
-                val p = OverviewMotion.title(controller.clock.value, opening = !controller.closing)
+                val p = if (controller.closing) OverviewMotion.title(controller.clock.value, opening = false, from = OverviewMotion.title(interrupted, opening = true))
+                else OverviewMotion.title(controller.clock.value, opening = true)
                 // The dashboard's name at its font size, centred on its box, grows into this one
                 val scale = source.fontSize / TITLE_SIZE
                 val dx = source.rect.left - to.left
@@ -897,7 +944,11 @@ private fun Title(controller: OverviewController, pc: Pc, app: App, hue: Float, 
                 // Nothing of its kind on the dashboard (or reduced motion): the title enters and leaves like the header's parts
                 val (pageDy, pageAlpha) = pageMotion()
                 val (dy, a) = when {
-                    controller.closing -> OverviewMotion.leave(controller.clock.value, controller.reduced)
+                    controller.closing -> OverviewMotion.leave(
+                        controller.clock.value, controller.reduced,
+                        from = if (source == null) OverviewMotion.rise(interrupted, OverviewMotion.HEADER_DELAY, 0, controller.reduced).second
+                        else Motion.progress(interrupted, 0, Motion.FADE, Motion.Ease),
+                    )
                     controller.opening && source == null -> OverviewMotion.rise(controller.clock.value, OverviewMotion.HEADER_DELAY, 0, controller.reduced)
                     controller.opening -> 0f to Motion.progress(controller.clock.value, 0, Motion.FADE, Motion.Ease)
                     else -> 0f to 1f
@@ -998,7 +1049,7 @@ private fun OverviewButton(
             Modifier
                 .height(86.px)
                 .clip(CircleShape)
-                .background(if (primary) colors.accent else colors.surface)
+                .then(if (primary) Modifier.background(colors.accent) else Modifier.glass(colors.surface))
                 .then(if (primary) Modifier else Modifier.border(1.px, colors.line, CircleShape))
                 .padding(horizontal = 54.px),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.px),
@@ -1106,6 +1157,7 @@ private fun AboutSection(
     val reduced = com.limelight.shell.ui.LocalReducedMotion.current
     val section = OverviewModel.Section.ABOUT
     val scope = rememberCoroutineScope()
+    val k = stageUnit()
     Column(Modifier.padding(horizontal = SIDE.px).overviewSection(section.name)) {
         SectionHeading(Symbols.OVERVIEW_ABOUT, stringResource(R.string.overview_section_about))
         Row(horizontalArrangement = Arrangement.spacedBy(56.px)) {
@@ -1118,15 +1170,37 @@ private fun AboutSection(
                     )
                 }
                 details.storyline?.let { story ->
-                    AnimatedVisibility(
-                        storyOpen,
-                        enter = if (reduced) fadeIn(tween(Motion.FADE)) else expandVertically(tween(600, easing = EaseOut), expandFrom = Alignment.Top),
-                        exit = if (reduced) fadeOut(tween(Motion.FADE)) else shrinkVertically(tween(600, easing = EaseOut), shrinkTowards = Alignment.Top),
+                    // While the storyline opens or closes, the edge that cuts it (its bottom: the text continues below) fades out
+                    // over up to STORY_FADE instead of a hard cut; the mask needs an offscreen copy only while it is cut
+                    val storyFull = remember { IntArray(1) }
+                    var storyCut by remember { mutableStateOf(false) }
+                    Column(
+                        Modifier
+                            .onSizeChanged { storyCut = it.height > 0 && storyFull[0] - it.height > 1 }
+                            .graphicsLayer { compositingStrategy = if (storyCut) CompositingStrategy.Offscreen else CompositingStrategy.Auto }
+                            .drawWithContent {
+                                drawContent()
+                                val hidden = storyFull[0] - size.height
+                                if (storyCut && hidden > 1f) {
+                                    val fade = min(hidden, STORY_FADE * k)
+                                    val top = size.height - fade
+                                    drawRect(
+                                        Brush.verticalGradient(0f to Color.Black, 1f to Color.Transparent, startY = top, endY = size.height),
+                                        topLeft = Offset(0f, top), size = Size(size.width, fade), blendMode = BlendMode.DstIn,
+                                    )
+                                }
+                            },
                     ) {
-                        BasicText(
-                            story, Modifier.padding(top = 22.px),
-                            style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 25.tpx, lineHeight = 1.5.em),
-                        )
+                        AnimatedVisibility(
+                            storyOpen,
+                            enter = if (reduced) fadeIn(tween(Motion.FADE)) else expandVertically(tween(600, easing = EaseOut), expandFrom = Alignment.Top),
+                            exit = if (reduced) fadeOut(tween(Motion.FADE)) else shrinkVertically(tween(600, easing = EaseOut), shrinkTowards = Alignment.Top),
+                        ) {
+                            BasicText(
+                                story, Modifier.onSizeChanged { storyFull[0] = it.height }.padding(top = 22.px),
+                                style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 25.tpx, lineHeight = 1.5.em),
+                            )
+                        }
                     }
                     val turn by animateFloatAsState(if (storyOpen) 180f else 0f, tween(500, easing = com.limelight.shell.ui.EaseSpring), label = "storyCaret")
                     var focused by remember { mutableStateOf(false) }
@@ -1138,7 +1212,7 @@ private fun AboutSection(
                                 // The page settles on the button again once the text has opened or closed
                                 scope.launch { delay(620); onFocused("story") }
                             }, ring = RingStyle(), corner = 999f, focusScale = 1.06f, onFocusChange = { focused = it })
-                            .height(52.px).clip(CircleShape).background(Color.White.copy(alpha = .06f)).border(1.px, colors.line, CircleShape)
+                            .height(52.px).clip(CircleShape).glass(Color.White.copy(alpha = .06f)).border(1.px, colors.line, CircleShape)
                             .padding(horizontal = 22.px),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.px),
                     ) {
@@ -1432,7 +1506,7 @@ private fun LinksSection(
                     Modifier
                         .part("link$index", section, parts, onFocused, onHover, onClick = { onOpen(link.url) }, ring = RingStyle(), corner = 999f,
                             focusScale = 1.05f, group = "links", locked = true, onFocusChange = { focused = it })
-                        .height(64.px).clip(CircleShape).background(Color.White.copy(alpha = .06f)).border(1.px, colors.line, CircleShape)
+                        .height(64.px).clip(CircleShape).glass(Color.White.copy(alpha = .06f)).border(1.px, colors.line, CircleShape)
                         .padding(horizontal = 24.px),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.px),
                 ) {
@@ -1487,20 +1561,24 @@ private fun SimilarSection(
                         .clip(RoundedCornerShape(SIMILAR_CORNER.px))
                         .background(colors.surface2),
                 ) {
-                    if (owned != null) coverArt(owned, Modifier.fillMaxSize())
-                    else {
-                        val image by rememberIgdbImage(game.coverImageId?.let { IgdbImageUrls.image(it, IgdbImageSize.COVER_BIG) }, (SIMILAR_W * 1.06f * k).toInt())
-                        val bitmap = image
-                        if (bitmap != null) Image(bitmap, game.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    // The picture is the blur source of the "In library" badge over it
+                    val art = remember { HazeState() }
+                    Box(Modifier.matchParentSize().hazeSource(art)) {
+                        if (owned != null) coverArt(owned, Modifier.fillMaxSize())
                         else {
-                            val hue = ((game.name.hashCode() and 0x7fffffff) % 360).toFloat()
-                            PlaceholderArt(hue, (hue + 35f) % 360f, Symbols.SPORTS_ESPORTS, Modifier.fillMaxSize(), glyphSize = 286f, title = game.name, titleSize = 26f, titleInset = 20f, titleBottom = 20f, titleFit = true)
+                            val image by rememberIgdbImage(game.coverImageId?.let { IgdbImageUrls.image(it, IgdbImageSize.COVER_BIG) }, (SIMILAR_W * 1.06f * k).toInt())
+                            val bitmap = image
+                            if (bitmap != null) Image(bitmap, game.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                            else {
+                                val hue = ((game.name.hashCode() and 0x7fffffff) % 360).toFloat()
+                                PlaceholderArt(hue, (hue + 35f) % 360f, Symbols.SPORTS_ESPORTS, Modifier.fillMaxSize(), glyphSize = 286f, title = game.name, titleSize = 26f, titleInset = 20f, titleBottom = 20f, titleFit = true)
+                            }
                         }
                     }
                     if (owned != null) {
                         BasicText(
                             stringResource(R.string.overview_in_library),
-                            Modifier.padding(12.px).clip(CircleShape).background(Color(5, 10, 20).copy(alpha = .6f)).padding(horizontal = 10.px, vertical = 4.px),
+                            Modifier.padding(12.px).clip(CircleShape).backdropBlur(art, 16f, Color(5, 10, 20).copy(alpha = .6f)).padding(horizontal = 10.px, vertical = 4.px),
                             style = TextStyle(color = colors.accent, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 15.tpx),
                         )
                     }
@@ -1602,6 +1680,52 @@ private class CoverPose {
     }
 }
 
+/**
+ * The glow of the flying focus ring (an 8 px stroke blurred 30 px, [k] pixels per stage pixel), blurred once into a small nine-slice
+ * picture and stretched to the frame on every frame: a blur filter on a shape that changes every frame would be rasterized again on
+ * every one. Its corner is the header's (the card's is 2.6 px smaller, invisible under the blur).
+ */
+private class FlightGlow(k: Float) {
+    /** Room outside and inside the stroke for the blur, the corner, and the corner slice that holds the corner and both rooms. */
+    private val room = kotlin.math.ceil(2f * 30f * k + 4f * k).toInt()
+    private val corner = OverviewMotion.TO_CORNER * k
+    private val slice = 2 * room + kotlin.math.ceil(corner).toInt()
+    private val side = 2 * slice + 1
+    private val bitmap = android.graphics.Bitmap.createBitmap(side, side, android.graphics.Bitmap.Config.ALPHA_8).also {
+        android.graphics.Canvas(it).drawRoundRect(
+            room.toFloat(), room.toFloat(), (side - room).toFloat(), (side - room).toFloat(), corner, corner,
+            android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                style = android.graphics.Paint.Style.STROKE
+                strokeWidth = 8f * k
+                maskFilter = android.graphics.BlurMaskFilter(30f * k, android.graphics.BlurMaskFilter.Blur.NORMAL)
+            },
+        )
+    }
+    private val paint = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG)
+    private val src = android.graphics.Rect()
+    private val dst = android.graphics.RectF()
+    private val cuts = intArrayOf(0, slice, slice + 1, side)
+    private val xs = FloatArray(4)
+    private val ys = FloatArray(4)
+
+    /** The glow around the frame [left]..[bottom] (the stroke's centre line) in [color]. */
+    fun draw(canvas: android.graphics.Canvas, left: Float, top: Float, right: Float, bottom: Float, color: Int) {
+        paint.color = color
+        val l = left - room
+        val t = top - room
+        val r = right + room
+        val b = bottom + room
+        // A frame narrower than both corner slices would need them overlapping: none of the covers' frames is
+        xs[0] = l; xs[1] = l + slice; xs[2] = max(l + slice, r - slice); xs[3] = r
+        ys[0] = t; ys[1] = t + slice; ys[2] = max(t + slice, b - slice); ys[3] = b
+        for (i in 0 until 3) for (j in 0 until 3) {
+            src.set(cuts[i], cuts[j], cuts[i + 1], cuts[j + 1])
+            dst.set(xs[i], ys[j], xs[i + 1], ys[j + 1])
+            canvas.drawBitmap(bitmap, src, dst, paint)
+        }
+    }
+}
+
 /** A rounded frame at a place inside the cover (its own pixels): the clip of the cover in flight. */
 private class FrameShape(private val left: Float, private val top: Float, private val width: Float, private val height: Float, private val corner: Float) : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
@@ -1660,7 +1784,11 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, sho
             Crossfade(Triple(image, sourceKey, showsShot || mirror == null), animationSpec = tween(800, easing = Motion.Ease), label = "overviewBackdrop") { (bitmap, key, sharp) ->
                 if (bitmap != null) {
                     val deep by produceState(HeroBitmaps.cached(key, bitmap, deepBlur, area), key, bitmap, deepBlur) {
-                        if (value == null) value = withContext(Dispatchers.Default) { runCatching { HeroBitmaps.render(key, bitmap, deepBlur, area) }.getOrNull() }
+                        if (value != null) return@produceState
+                        // Rendered once the opening has landed: the deep layer is clear at the page's top, and blurring the hero
+                        // would take the processor from the flight's frames
+                        snapshotFlow { controller.settled }.first { it }
+                        value = withContext(Dispatchers.Default) { runCatching { HeroBitmaps.render(key, bitmap, deepBlur, area) }.getOrNull() }
                     }
                     Box(Modifier.fillMaxSize()) {
                         // A screenshot covers the dashboard's background: its own sharp picture over the theme color, under the deep one
@@ -1700,6 +1828,9 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, sho
 /** The backdrop's left shade starts under the top bar at [SHADE_TOP] and is whole from [SHADE_SOLID] down (stage pixels). */
 private const val SHADE_TOP = 140f
 private const val SHADE_SOLID = 260f
+
+/** How far up the storyline's cut edge fades out while it opens or closes (stage pixels, about two of its lines). */
+private const val STORY_FADE = 72f
 
 /** The deepest blur further down the page: 60 % of the former 40 px maximum, never below the dashboard's own blur. */
 private const val DEEP_BLUR = 24

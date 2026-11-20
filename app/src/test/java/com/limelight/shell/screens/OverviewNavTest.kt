@@ -1,6 +1,7 @@
 package com.limelight.shell.screens
 
 import androidx.compose.ui.geometry.Rect
+import com.limelight.shell.ui.Motion
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -153,44 +154,120 @@ class OverviewNavTest {
     @Test fun `the other covers lift away one after another and reduced motion only fades them`() {
         fun cover(millis: Float, distance: Int, reduced: Boolean) =
             OverviewMotion.homeCover(OverviewMotion.homeAway(millis, distance, reduced), distance, reduced)
-        // 100 ms in, the neighbour has begun to lift; the cover four away waits for its 180 ms
+        // 100 ms in, the neighbour has begun to lift; the cover four away waits for its 136 ms
         val near = cover(100f, 1, reduced = false)
         val far = cover(100f, 4, reduced = false)
         assertTrue(near.first < 0f)
         assertEquals(0f, far.first, 0f)
         assertEquals(1f, far.third, 0f)
+        // Landed on the settle spring: within about 1 % of the way, invisible
         val done = cover(OverviewMotion.homeTotal(4, false).toFloat(), 4, reduced = false)
-        assertEquals(-(160f + 4 * 30f), done.first, 1e-3f)
-        assertEquals(.92f, done.second, 1e-4f)
-        assertEquals(0f, done.third, 1e-4f)
+        assertEquals(-(160f + 4 * 30f), done.first, 3.5f)
+        assertEquals(.92f, done.second, 1e-3f)
+        assertEquals(0f, done.third, 0f)
         val reduced = cover(OverviewMotion.HOME_OUT.toFloat(), 4, reduced = true)
         assertEquals(0f, reduced.first, 0f)
         assertEquals(1f, reduced.second, 0f)
         assertEquals(0f, reduced.third, 1e-4f)
+        // Opacity never overshoots, however far the spring swings
+        for (t in 0..1200 step 8) {
+            val a = cover(t.toFloat(), 2, reduced = false).third
+            assertTrue(a in 0f..1f)
+        }
     }
 
     @Test fun `closing brings the dashboard back with the cover, from where the opening left it, without a jump`() {
-        // Fully away: every part comes back together, ease-in-out, and is home when the flight back ends
+        // Fully away: every part comes back together on the closing flight's spring and has landed when the flight back ends
         assertEquals(1f, OverviewMotion.homeBack(0f, 1f, reduced = false), 0f)
-        assertEquals(.5f, OverviewMotion.homeBack(OverviewMotion.FLIGHT_OUT / 2f, 1f, reduced = false), 1e-3f)
-        assertEquals(0f, OverviewMotion.homeBack(OverviewMotion.FLIGHT_OUT.toFloat(), 1f, reduced = false), 0f)
-        // Ease-in-out: the last 10 % of the time covers only a little of the way (the parts settle, they do not slam in)
-        assertTrue(OverviewMotion.homeBack(OverviewMotion.FLIGHT_OUT * .9f, 1f, reduced = false) < .03f)
-        // A closing that interrupts the opening never pushes a part further away first
+        assertEquals(0f, OverviewMotion.homeBack(OverviewMotion.FLIGHT_OUT.toFloat(), 1f, reduced = false), .002f)
+        // It settles: a 1.5 % swing past home at most, and the dashboard's covers stay opaque
+        val deepest = (0..OverviewMotion.FLIGHT_OUT step 4).minOf { OverviewMotion.homeBack(it.toFloat(), 1f, reduced = false) }
+        assertTrue(deepest < 0f && deepest > -.016f)
+        assertEquals(1f, OverviewMotion.homeCover(deepest, 1, reduced = false).third, 0f)
+        // A closing that interrupts the opening starts where the parts are, and never pushes them further away first
         assertEquals(.3f, OverviewMotion.homeBack(0f, .3f, reduced = false), 0f)
-        var last = 1f
-        for (t in 0..OverviewMotion.FLIGHT_OUT step 16) {
-            val away = OverviewMotion.homeBack(t.toFloat(), .3f, reduced = false)
-            assertTrue(away <= last)
-            last = away
-        }
+        assertTrue((0..OverviewMotion.FLIGHT_OUT step 8).all { OverviewMotion.homeBack(it.toFloat(), .3f, reduced = false) <= .3f })
+    }
+
+    @Test fun `springs overshoot once by the agreed amounts`() {
+        fun peak(response: Float, damping: Float) = (0..2000).maxOf { OverviewMotion.spring(it.toFloat(), response, damping) } - 1f
+        assertEquals(0f, OverviewMotion.spring(0f, .42f, .72f), 0f)
+        // Open flight about 3.8 %, close flight 1.5 %, the settle spring 2 %
+        assertEquals(.038f, peak(OverviewMotion.FLIGHT_OPEN_RESPONSE, OverviewMotion.FLIGHT_OPEN_DAMPING), .002f)
+        assertEquals(.015f, peak(OverviewMotion.FLIGHT_CLOSE_RESPONSE, OverviewMotion.FLIGHT_CLOSE_DAMPING), .002f)
+        assertEquals(.02f, peak(OverviewMotion.SETTLE_RESPONSE, OverviewMotion.SETTLE_DAMPING), .002f)
+        // The flight's spring matches the closed form: stiffness (2π / response)²
+        assertEquals(223.8f, OverviewMotion.stiffness(OverviewMotion.FLIGHT_OPEN_RESPONSE), .1f)
+        assertEquals(304.6f, OverviewMotion.stiffness(OverviewMotion.FLIGHT_CLOSE_RESPONSE), .1f)
+    }
+
+    @Test fun `past its end the cover grows about the slot and never uncovers it`() {
+        val card = r(150f, 520f, 316.5f, 474.75f)
+        val slot = r(150f, 150f, 340f, 510f)
+        val over = OverviewMotion.cover(1.038f, card, slot, 30f)
+        assertEquals(340f * 1.038f, over.rect.width, 1e-2f)
+        assertEquals(510f * 1.038f, over.rect.height, 1e-2f)
+        assertEquals(340f / 2f, over.rect.center.x, 1e-3f)
+        assertEquals(510f / 2f, over.rect.center.y, 1e-3f)
+        assertEquals(OverviewMotion.TO_CORNER, over.corner, 0f)
+        // Back past the card: it grows about the card's place
+        val start = OverviewMotion.cover(0f, card, slot, 30f).rect
+        val under = OverviewMotion.cover(-.015f, card, slot, 30f).rect
+        assertEquals(start.center.x, under.center.x, 1e-3f)
+        assertEquals(start.width * 1.015f, under.width, 1e-2f)
+    }
+
+    @Test fun `a closing that interrupts the opening leaves from where the parts are`() {
+        // The page 50 px below its place sinks from there
+        assertEquals(50f, OverviewMotion.page(0f, opening = false, reduced = false, from = 50f).first, 0f)
+        assertEquals(OverviewMotion.PAGE_RISE, OverviewMotion.page(OverviewMotion.PAGE_OUT.toFloat(), opening = false, reduced = false, from = 50f).first, 1e-4f)
+        // The flying name turns back from where it was and lands on the dashboard's
+        assertEquals(.4f, OverviewMotion.title(0f, opening = false, from = .4f), 0f)
+        assertEquals(0f, OverviewMotion.title(OverviewMotion.FLIGHT_OUT.toFloat(), opening = false, from = .4f), .002f)
+        // A part only half faded in fades out from there
+        assertEquals(.5f, OverviewMotion.leave(0f, reduced = false, from = .5f).second, 0f)
+        assertEquals(0f, OverviewMotion.leave(OverviewMotion.LEAVE.toFloat(), reduced = false, from = .5f).second, 0f)
+    }
+
+    @Test fun `the rings overshoot at most 6 percent once, 90 ms apart, and never show more than 100`() {
+        val fills = (0..OverviewMotion.RATINGS_TOTAL).map { OverviewMotion.ring(it.toFloat(), 0, reduced = false) }
+        val top = fills.max()
+        assertTrue(top > 1.05f && top <= 1f + OverviewMotion.RING_OVERSHOOT)
+        // From its peak it comes back without passing the target again: one bounce
+        val peakAt = fills.indexOf(top)
+        assertTrue(fills.drop(peakAt).zipWithNext().all { (a, b) -> b <= a + 1e-6f })
+        assertTrue(fills.drop(peakAt).all { it >= 1f })
+        assertEquals(1f, fills.last(), .002f)
+        // The second ring starts 90 ms later
+        assertEquals(0f, OverviewMotion.ring(OverviewMotion.RING_STAGGER.toFloat(), 1, reduced = false), 0f)
+        assertTrue(OverviewMotion.ring(OverviewMotion.RING_STAGGER + 50f, 1, reduced = false) > 0f)
+        // A 98 rating overshoots the arc but its number stops at 100
+        assertEquals(100L, OverviewMotion.ringNumber(98.0, top))
+        assertEquals(98L, OverviewMotion.ringNumber(98.0, 1f))
+        // The ring grows into place with its arc, from 0.92
+        assertEquals(OverviewMotion.RING_FROM_SCALE, OverviewMotion.ringScale(0f, reduced = false), 0f)
+        // Reduced motion: full at once, a short fade, no growth
+        assertEquals(1f, OverviewMotion.ring(0f, 0, reduced = true), 0f)
+        assertEquals(1f, OverviewMotion.ringScale(1f, reduced = true), 0f)
+        assertEquals(0f, OverviewMotion.ringAlpha(0f, reduced = true), 0f)
+        assertEquals(1f, OverviewMotion.ringAlpha(Motion.FADE.toFloat(), reduced = true), 1e-4f)
+    }
+
+    @Test fun `chips pop in from 0·9 with a small overshoot`() {
+        assertEquals(OverviewMotion.CHIP_FROM_SCALE, OverviewMotion.chip(0f, reduced = false), 0f)
+        val top = (0..1000).maxOf { OverviewMotion.chip(it.toFloat(), reduced = false) }
+        assertTrue(top > 1f && top < 1.006f)
+        assertEquals(1f, OverviewMotion.chip(1000f, reduced = false), 1e-3f)
+        assertEquals(1f, OverviewMotion.chip(0f, reduced = true), 0f)
+        assertEquals(1f, OverviewMotion.chip(Float.MAX_VALUE, reduced = false), 0f)
     }
 
     @Test fun `a logo crossfades in place, out over the first 40 percent of the flight and in over the last half`() {
         val f = OverviewMotion.FLIGHT_IN.toFloat()
         assertEquals(1f, OverviewMotion.logoLeaving(0f, opening = true), 0f)
         assertEquals(0f, OverviewMotion.logoLeaving(f * .4f, opening = true), 1e-4f)
-        assertEquals(0f, OverviewMotion.logoArriving(f * .5f, opening = true), 1e-4f)
+        // 585 ms is odd: the fade in starts at the whole millisecond
+        assertEquals(0f, OverviewMotion.logoArriving((f * .5f).toInt().toFloat(), opening = true), 1e-4f)
         assertEquals(1f, OverviewMotion.logoArriving(f, opening = true), 1e-4f)
         // Closing: the header's logo leaves over the first 40 % of the flight back, the dashboard's arrives over its last half
         val b = OverviewMotion.FLIGHT_OUT.toFloat()
@@ -214,13 +291,21 @@ class OverviewNavTest {
         assertEquals(seen[3], seen[4])
     }
 
-    @Test fun `the header's parts rise 46 ms apart after their delay`() {
-        val (before, hidden) = OverviewMotion.rise(OverviewMotion.HEADER_DELAY.toFloat(), OverviewMotion.HEADER_DELAY, 1, reduced = false)
+    @Test fun `the header's parts rise 36 ms apart after their delay and land with a settle`() {
+        val start = OverviewMotion.HEADER_DELAY + OverviewMotion.HEADER_STAGGER
+        val (before, hidden) = OverviewMotion.rise(start.toFloat(), OverviewMotion.HEADER_DELAY, 1, reduced = false)
         assertEquals(18f, before, 1e-4f)
         assertEquals(0f, hidden, 1e-4f)
-        val (after, shown) = OverviewMotion.rise(OverviewMotion.HEADER_DELAY + 46f + 420f, OverviewMotion.HEADER_DELAY, 1, reduced = false)
-        assertEquals(0f, after, 1e-4f)
-        assertEquals(1f, shown, 1e-4f)
+        val (after, shown) = OverviewMotion.rise(start + OverviewMotion.SETTLE.toFloat(), OverviewMotion.HEADER_DELAY, 1, reduced = false)
+        assertEquals(0f, after, .25f)
+        assertEquals(1f, shown, 0f)
+        // It passes its place by a fraction of a pixel and comes back; its opacity never passes 1
+        val swing = (0..600).minOf { OverviewMotion.rise(start + it.toFloat(), OverviewMotion.HEADER_DELAY, 1, reduced = false).first }
+        assertTrue(swing < 0f && swing > -.4f)
+        // Reduced motion: no rise, a short fade
+        val (still, faded) = OverviewMotion.rise(start + Motion.FADE.toFloat(), OverviewMotion.HEADER_DELAY, 1, reduced = true)
+        assertEquals(0f, still, 0f)
+        assertEquals(1f, faded, 1e-4f)
     }
 
     @Test fun `a cover dragged up follows with resistance and opens past the threshold`() {

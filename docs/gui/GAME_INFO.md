@@ -509,41 +509,63 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    overview's first layout knows the header's slot; then the flight takes over from it, at its place. The motion runs on
    a clock that advances at most 33 ms per frame (`SteadyFrameClock`): the overview's first frames are its heaviest, and
    on the frame clock itself they used to swallow most of the motion (the cover landed in the first frame that moved).
-   A slow frame now holds the motion back instead of skipping it:
-   - the other covers lift away one after another: 160 px + 30 px per cover of distance up, to 0.92, fading, 620 ms
-     ease-out each, 45 ms apart by distance;
-   - the info row rises 90 px out and fades;
+   A slow frame now holds the motion back instead of skipping it. Springs (owner, 2026-11-20) are given as a response
+   (the period of the undamped oscillation) and a damping ratio, the same numbers on every platform (stiffness =
+   (2π / response)²); everything that lands does so with one small, gentle settle, never a second bounce, and opacity,
+   corners and crossfades never overshoot:
+   - the other covers lift away one after another: 160 px + 30 px per cover of distance up, to 0.92, fading, on the
+     settle spring (response 0.45 s, damping 0.78: 2 % overshoot) 34 ms apart by distance (the home clock runs 465 ms
+     plus the stagger);
+   - the info row rises 90 px out and fades, on the same spring;
    - the cover flies from the card's on-screen rectangle (with its focus scale or its dragged position) into the
-     340 × 510 slot of the header: 780 ms `cubic-bezier(.2,.9,.25,1)`, through a midpoint 30 px above the straight line
-     and 4 % larger, the corner going from 27.4 to 30 px. Only its frame changes shape (the wide first card's turns
-     portrait): the pictures in it keep their proportions, cropped to the frame, and the card as the row drew it (its own
-     art, a wide card's too, the current frame of its animation, its badge) crossfades into the header's cover over the
-     first 60 % of the way;
-   - the name flies from the dashboard's name to the header's (720 ms); a SteamGridDB logo does not fly: the dashboard's
-     fades out where it is over the first 40 % of the flight and the header's fades in at its own place over the last
-     50 % (and the other way round on closing); when the dashboard showed the other kind, the header's title rises in
-     like its other parts;
-   - the page rises from 120 px below (780 ms), the header's parts rise 18 px, 46 ms apart, after 260 ms (the cue
-     after 500 ms);
-   - the backdrop's own layers fade in over 900 ms; the rings fill and count up after 380 ms (1.3 s, ease-out-quart).
+     340 × 510 slot of the header on a spring of response 0.42 s, damping 0.72 (a 3.8 % overshoot, its peak 303 ms
+     in), through a midpoint 30 px above the straight line and 4 % larger, the corner going from 27.4 to 30 px. Past the
+     slot the frame stays centred on it and grows by the overshoot, so the slot is never uncovered; the corner and the
+     crossfade are clamped. Only its frame changes shape (the wide first card's turns portrait): the pictures in it keep
+     their proportions, cropped to the frame, and the card as the row drew it (its own art, a wide card's too, the current
+     frame of its animation, its badge) crossfades into the header's cover over the first 60 % of the way; the card's
+     focus ring flies with it and fades;
+   - the name flies from the dashboard's name to the header's on the settle spring; a SteamGridDB logo does not fly: the
+     dashboard's fades out where it is over the first 40 % of the flight and the header's fades in at its own place over
+     the last 50 % (the flight counts as 585 ms opening, 480 ms closing); when the dashboard showed the other kind, the
+     header's title rises in like its other parts;
+   - the page rises from 120 px below on the settle spring, the header's parts rise 18 px on it, 36 ms apart, after
+     195 ms (the cue after 375 ms); each tag and the HDR badge pops in from 0.9 (response 0.4 s, damping 0.7) as its row
+     rises, 36 ms apart;
+   - the backdrop's own layers fade in over 675 ms;
+   - 285 ms in (or when the details arrive later) the critics' and players' rings fill on a spring of response 0.7 s,
+     damping 0.6, 90 ms apart, the number counting with the arc and the ring growing from 0.92 with it. The arc passes
+     its score once, softly capped at 6 % (it would swing 9.5 %), and comes back from its peak without passing the score
+     again; the number never shows more than 100. The age rating's badge pops in from 0.9 after the second ring (90 ms
+     later, response 0.4 s, damping 0.7).
+
+   The opening counts as over (the ring appears, the sections below compose) after 1005 ms: the cue's 375 ms plus five
+   36 ms steps plus 450 ms of its settle.
 5. Nothing delays a control: Play has the focus from the first frame and the page takes input while it enters. The
    gold ring appears once the opening is over, for every input: a finger's first tap only focuses (focus first), so
-   the focused part shows its ring and its focus growth after a tap too.
+   the focused part shows its ring and its focus growth after a tap too. The sections below the header compose once
+   the opening is over and fade in (280 ms): during the flight only the top of the first one would peek in at the
+   bottom edge, and Down reaches them from then on.
 6. **Closing** (B, Esc, Back, Up from the header, the round back button, or pulling the page down 150 px at its top):
-   a close during the opening waits for it; the card takes the focus again and the hint bar shows the dashboard's hints,
-   the page scrolls to its top (420 ms), then everything reverses: the cover flies back into its card (640 ms
-   ease-in-out), the page sinks 120 px and fades (560 ms), the header's parts leave first (240 ms). The dashboard comes
-   back with the cover, as on the iPad: the other covers and the info row return together, 640 ms ease-in-out from
-   where the opening left them, and arrive with the card (no stagger, no jump at the end). The page leaves composition
-   one frame after the motion's last one.
-7. **Reduced motion** keeps the fades and drops every transform: the cover and the title fade in place, nothing lifts,
-   rises, drifts or bobs, the ring jumps.
+   the card takes the focus again and the hint bar shows the dashboard's hints, the page scrolls to its top (420 ms),
+   then everything reverses: the cover flies back into its card on a spring of response 0.36 s, damping 0.80 (1.5 %
+   overshoot, growing about the card's place), the page sinks 120 px and fades (420 ms ease-in-out), the header's parts
+   leave first (180 ms). The dashboard comes back with the cover, as on the iPad: the other covers and the info row
+   return together on the cover's closing spring and land with it. A close during the opening interrupts it: the
+   cover's spring turns back from its current position and velocity (when the page did not have to scroll first), and
+   every other part (the dashboard's covers, the page, the header's parts, the name, the logos) leaves from where the
+   opening left it, so nothing jumps. The page leaves composition one frame after the motion's last one.
+7. **Reduced motion** keeps short fades and drops every spring and transform: the cover and the title fade in place
+   (280 ms), nothing lifts, rises, drifts, pops or bobs, the rings are full at once and fade in (280 ms), the focus ring
+   jumps.
 8. App settings opens the per-app settings; when they close the overview is there again without the flight.
 
 ### 9.2 Layout (1920 × 1080 stage)
 
 1. The page has 150 px sides. It fades in under the status bar (clear to 70 px, solid from 140 px) and out at the
-   bottom 60 px. The backdrop darkens only under the page's text: towards the bottom, and at the left under the header
+   bottom 60 px once the opening is over (until then nothing of the page reaches those bands, and the page draws
+   without the offscreen copy the fade needs). The backdrop darkens only under the page's text: towards the bottom, and
+   at the left under the header
    from below the top bar (from 140 px, whole from 260 px). Nothing darkens the top bar, the brand or the PC: no band,
    no vignette.
 2. **Header**, one screen minus 160 px high, 150 px from the top: the 340 × 510 cover (30 px corner, deep shadow)
@@ -557,7 +579,9 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    At the header's bottom a cue names the sections below ("About · Media · Details · Similar games") with a bobbing
    caret.
 3. **Sections**, 70 px apart, each with a 30 px Unbounded heading and its icon:
-   - **About**: the summary (28 px) with the storyline expanding in place under it (600 ms) and a "Read the story" /
+   - **About**: the summary (28 px) with the storyline expanding in place under it (600 ms; while it opens or closes,
+     the edge that cuts it, where the text continues, fades out over up to 72 px instead of a hard cut; scrolled, the
+     page's own edge fades apply) and a "Read the story" /
      "Show less" button; a 560 px glass facts card (developer, publisher with "self-published", release date,
      ported by, engine, series);
    - **Screenshots and videos** with its count: a full-width carousel of 520 × 292 thumbnails, videos first; each

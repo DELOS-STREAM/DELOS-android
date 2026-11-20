@@ -107,11 +107,47 @@ internal class OverviewController(private val scope: CoroutineScope) {
     var reduced = false
         private set
 
+    /** Milliseconds into the opening when a closing interrupted it ([Float.MAX_VALUE]: the opening had finished); read while drawing. */
+    var interruptedAt = Float.MAX_VALUE
+        private set
+
     private var job: Job? = null
 
     /** A motion of the overview, on its own [SteadyFrameClock] over the composition's frame clock. */
     private fun motion(block: suspend CoroutineScope.() -> Unit): Job =
-        scope.launch(SteadyFrameClock(checkNotNull(scope.coroutineContext[MonotonicFrameClock])), block = block)
+        scope.launch(SteadyFrameClock(realClock()), block = block)
+
+    private fun realClock(): MonotonicFrameClock = checkNotNull(scope.coroutineContext[MonotonicFrameClock])
+
+    /**
+     * Debug builds: the pacing of the real frames while [label] runs, logged under `OverviewMotion` when it is cancelled (frames,
+     * median, 90th percentile and longest interval, frames that missed a 60 Hz vsync). Null in a release build.
+     */
+    private fun CoroutineScope.logFrames(label: String): Job? {
+        if (!com.limelight.BuildConfig.DEBUG) return null
+        val clock = realClock()
+        return launch(clock) {
+            val deltas = FloatArray(512)
+            var n = 0
+            var last = 0L
+            try {
+                while (true) clock.withFrameNanos { t ->
+                    if (last != 0L && n < deltas.size) deltas[n++] = (t - last) / 1e6f
+                    last = t
+                }
+            } finally {
+                if (n > 0) {
+                    val d = deltas.copyOf(n).apply { sort() }
+                    android.util.Log.d(
+                        "OverviewMotion",
+                        "$label frames=${n + 1} ms=%.0f p50=%.1f p90=%.1f max=%.1f missed=%d".format(
+                            d.sum(), d[n / 2], d[(n * 9) / 10], d[n - 1], d.count { it > 25f },
+                        ),
+                    )
+                }
+            }
+        }
+    }
 
     /** The overview is up and nothing moves: the focus ring shows. */
     val settled: Boolean get() = app != null && !opening && !leaving
@@ -145,6 +181,7 @@ internal class OverviewController(private val scope: CoroutineScope) {
         closing = false
         opening = !instant
         coverPlaced = instant
+        interruptedAt = Float.MAX_VALUE
         job = motion {
             if (instant) {
                 clock.snapTo(openTotal(reduced).toFloat())
@@ -152,11 +189,13 @@ internal class OverviewController(private val scope: CoroutineScope) {
                 return@motion
             }
             clock.snapTo(0f)
+            val log = logFrames("open")
             launch { home.animateTo(homeTotal.toFloat(), tween(max(1, homeTotal - home.value.toInt()), easing = LinearEasing)) }
             val cover = launch { flight.animateTo(1f, if (reduced) tween(Motion.FADE) else OverviewMotion.FlightOpen) }
             val total = openTotal(reduced)
             clock.animateTo(total.toFloat(), tween(total, easing = LinearEasing))
             cover.join()
+            log?.cancel()
             opening = false
         }
     }
@@ -170,16 +209,24 @@ internal class OverviewController(private val scope: CoroutineScope) {
         leaving = true
         val opened = job
         job = motion {
-            // Interruptible: the opening stops where it is and the cover's spring turns back from its current position and velocity
+            // Interruptible: the opening stops where it is; the cover's spring turns back from its current position and velocity, the
+            // other parts leave from where the opening left them ([interruptedAt])
+            val velocity = flight.velocity
+            if (opening) interruptedAt = clock.value
             opened?.cancel()
             opening = false
+            val before = System.nanoTime()
             prepare()
+            // The page had to scroll back to its top first: the cover stood still meanwhile
+            val turn = if (System.nanoTime() - before < SteadyFrameClock.MAX_STEP_NANOS) velocity else 0f
             clock.snapTo(0f)
             closing = true
             coroutineScope {
-                launch { flight.animateTo(0f, if (reduced) tween(Motion.FADE) else OverviewMotion.FlightClose) }
+                val log = logFrames("close")
+                launch { flight.animateTo(0f, if (reduced) tween(Motion.FADE) else OverviewMotion.FlightClose, initialVelocity = turn) }
                 val total = closeTotal(reduced)
                 clock.animateTo(total.toFloat(), tween(total, easing = LinearEasing))
+                log?.cancel()
             }
             // The last frame of the motion is drawn first; taking the whole page out of composition (the heaviest frame of the
             // closing) happens in the next one, when nothing moves any more
@@ -194,7 +241,9 @@ internal class OverviewController(private val scope: CoroutineScope) {
     fun openMillis(): Float = if (closing) Float.MAX_VALUE else clock.value
 
     companion object {
-        fun openTotal(reduced: Boolean): Int = if (reduced) max(Motion.FADE, OverviewMotion.CUE_DELAY + Motion.FADE) else OverviewMotion.OPEN_TOTAL
+        /** Reduced motion: the cue's fade (the last part to enter) has ended. */
+        fun openTotal(reduced: Boolean): Int =
+            if (reduced) OverviewMotion.CUE_DELAY + 5 * OverviewMotion.HEADER_STAGGER + Motion.FADE else OverviewMotion.OPEN_TOTAL
 
         fun closeTotal(reduced: Boolean): Int = if (reduced) Motion.FADE else maxOf(OverviewMotion.FLIGHT_OUT, OverviewMotion.PAGE_OUT, OverviewMotion.BACKDROP_OUT)
     }
