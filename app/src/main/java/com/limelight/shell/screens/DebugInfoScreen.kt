@@ -653,7 +653,7 @@ private fun DetailsPanel(row: DebugRow?, modifier: Modifier) {
                 if (event.type == KeyEventType.KeyDown) scope.launch { scroll.animateScrollBy(direction * 130f * k) }
                 true
             } else false
-        }.focusEffects(onClick = {}, corner = 34f, focusScale = 1f, clickCue = null, pressScale = 1f)
+        }.focusEffects(onClick = {}, corner = 34f, focusScale = 1f, clickCue = null, press = false)
             .clip(shape).glass(colors.surface).border(1.px, colors.line, shape).verticalScroll(scroll).padding(44.px),
         verticalArrangement = Arrangement.spacedBy(18.px),
     ) {

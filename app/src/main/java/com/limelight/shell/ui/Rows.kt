@@ -375,16 +375,14 @@ private fun RowResetButton(override: RowOverride, focused: Boolean) {
     val reset by rememberUpdatedState(override.onReset)
     val tint = colors.accent3
     val label = stringResource(R.string.row_reset_to_profile)
+    val resetGlyph = Glyph.X.forKind(ControllerGlyphs.kind)
     Row(
         Modifier.graphicsLayer { alpha = shown; (.9f + .1f * pop).let { if (reduced) 1f else it }.let { scaleX = it; scaleY = it } }
+            .then(if (visible) Modifier.pointerTap(999f) { reset() } else Modifier)
             .clip(CircleShape).background(tint.copy(alpha = .22f)).border(1.px, tint.copy(alpha = .5f), CircleShape)
-            .then(
-                if (visible) Modifier.pointerInput(Unit) { detectTapGestures(onTap = { reset() }) }
-                    .semantics { role = Role.Button; onClick(label) { reset(); true } }
-                else Modifier
-            )
-            // A keyboard has no X key: the pill is then the icon and the word, its ends even
-            .then(if (override.touch) Modifier.size(52.px) else Modifier.height(46.px).padding(start = 16.px, end = (if (ControllerGlyphs.kind == InputKind.CONTROLLER) 8 else 16).px)),
+            .then(if (visible) Modifier.semantics { role = Role.Button; onClick(label) { reset(); true } } else Modifier)
+            // X's glyph for the input (O on a keyboard); without one (touch, the pointer) the pill is the icon and the word, its ends even
+            .then(if (override.touch) Modifier.size(52.px) else Modifier.height(46.px).padding(start = 16.px, end = (if (resetGlyph != null) 8 else 16).px)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (override.touch) Arrangement.Center else Arrangement.spacedBy(10.px),
     ) {
@@ -392,7 +390,7 @@ private fun RowResetButton(override: RowOverride, focused: Boolean) {
         else {
             Symbol(Symbols.RESET, 24.tpx, tint)
             BasicText(stringResource(R.string.row_reset), style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 19.tpx))
-            if (ControllerGlyphs.kind == InputKind.CONTROLLER) GlyphButton(Glyph.X, 30)
+            resetGlyph?.let { GlyphButton(it, 30) }
         }
     }
 }

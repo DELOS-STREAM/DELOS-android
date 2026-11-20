@@ -23,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.limelight.shell.ui.ControllerGlyphs
+import com.limelight.shell.ui.InputKinds
 import com.limelight.shell.companion.CompanionHost
 import com.limelight.shell.companion.CompanionState
 import com.limelight.shell.data.ArtworkStore
@@ -169,11 +170,22 @@ class ShellActivity : ComponentActivity() {
     }
 
     // Activity's public key dispatcher must still run after the shell's global controller keys. Every event first tells the input kind
-    // what was used (ControllerGlyphs: the hints follow the last input)
+    // what was used (ControllerGlyphs: the hints follow the last input); a hardware keyboard's keys then act as the pad's buttons
+    // (GlobalKeys.keyboardButton), except while a button is being recorded
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         ControllerGlyphs.key(event)
-        return keys.dispatch(event) || super.dispatchKeyEvent(event)
+        val shellEvent = if (keys.capture == null) keyboardAsPad(event) else event
+        return keys.dispatch(shellEvent) || super.dispatchKeyEvent(shellEvent)
+    }
+
+    /** A hardware keyboard's key as the pad button it stands for ([GlobalKeys.keyboardButton]); any other event as it is. */
+    private fun keyboardAsPad(event: KeyEvent): KeyEvent {
+        if (InputKinds.fromPad(event.source) || !InputKinds.isKeyboard(event.device)) return event
+        val typing = currentFocus?.onCheckIsTextEditor() == true
+        val modified = event.isCtrlPressed || event.isAltPressed || event.isMetaPressed
+        val button = GlobalKeys.keyboardButton(event.keyCode, typing, modified) ?: return event
+        return KeyEvent(event.downTime, event.eventTime, event.action, button, event.repeatCount, 0, event.deviceId, event.scanCode, event.flags, event.source)
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {

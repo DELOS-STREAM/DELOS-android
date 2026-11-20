@@ -483,7 +483,6 @@ class StreamMenuLayoutTest {
         assertEquals(190f, m.GEO_STIFFNESS, 0f)
         assertEquals(.8f, m.GEO_DAMPING, 0f)
         assertEquals(c.POPOVER_HIDDEN_SCALE, m.POP_FROM_SCALE, 0f)
-        assertEquals(c.PRESS_SCALE, m.PRESS_SCALE, 0f)
         assertEquals(c.FOCUS_SCALE, 1.12f, 0f)
     }
 }

@@ -70,7 +70,7 @@ cited section.
 | "Game information and library filters" | [gui/GAME_INFO.md](gui/GAME_INFO.md) |
 | "Game overview" | [gui/GAME_INFO.md](gui/GAME_INFO.md) |
 | "Menus and settings", "Context menu", "Settings tabs", "Impact chips" | [gui/MENUS_AND_SETTINGS.md](gui/MENUS_AND_SETTINGS.md) |
-| "Controls", "Text input", "Text that does not fit" | [gui/CONTROLS_AND_TEXT.md](gui/CONTROLS_AND_TEXT.md) |
+| "Controls", "Text input", "Text that does not fit", "Keyboard and pointer" | [gui/CONTROLS_AND_TEXT.md](gui/CONTROLS_AND_TEXT.md) |
 | "Motion", "Toasts", "Problem report card", "Color roles" | [gui/MOTION_AND_COLORS.md](gui/MOTION_AND_COLORS.md) |
 | "Stream", "Stream menu", "Stream menu preview", "Context menu preview" | [gui/STREAM_MENU.md](gui/STREAM_MENU.md) |
 | "Full keyboard", "Full keyboard preview" | [gui/FULL_KEYBOARD.md](gui/FULL_KEYBOARD.md) |

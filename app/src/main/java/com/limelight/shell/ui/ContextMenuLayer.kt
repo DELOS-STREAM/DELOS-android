@@ -429,8 +429,7 @@ private fun Header(menu: ContextMenu, parent: MenuItem?, submenu: Boolean, onBac
             if (submenu) {
                 // Touch only (B goes back on a controller): never focusable
                 Box(
-                    Modifier.size(52.px).clip(CircleShape).background(Color.White.copy(alpha = .10f))
-                        .pointerInput(Unit) { detectTapGestures { onBack() } },
+                    Modifier.size(52.px).pointerTap(999f) { onBack() }.clip(CircleShape).background(Color.White.copy(alpha = .10f)),
                     contentAlignment = Alignment.Center,
                 ) { Symbol(Symbols.CHEVRON_LEFT, 28.tpx, colors.text) }
             } else if (header != null) {

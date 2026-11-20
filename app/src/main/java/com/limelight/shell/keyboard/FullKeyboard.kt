@@ -79,7 +79,7 @@ import com.limelight.shell.ui.Motion
 import com.limelight.shell.ui.StageMetrics
 import com.limelight.shell.ui.Symbol
 import com.limelight.shell.ui.Symbols
-import com.limelight.shell.ui.animateFocusScale
+import com.limelight.shell.ui.animatePressScale
 import com.limelight.shell.ui.glideTarget
 import com.limelight.shell.ui.px
 import com.limelight.shell.ui.stageUnit
@@ -266,7 +266,7 @@ private fun KeyRows(state: FullKeyboardState, metrics: KeyboardMetrics, palette:
     // The ring squeezes with the key under it
     val focus = state.focus
     val focusedPressed = state.focusVisible && focus != null && KeyGrid.standard.key(focus).code in state.pressed
-    val ringScale = animateFocusScale(focused = false, pressed = focusedPressed, focusScale = 1f, label = "keyRingScale")
+    val ringScale = animatePressScale(focusedPressed, label = "keyRingScale")
     // At the edge of the keyboard the ring bumps against it and returns (the chevron nudge of the choices)
     val nudge = remember { Animatable(0f) }
     LaunchedEffect(state.nudgeCount) {
@@ -356,7 +356,7 @@ private fun KeyCap(key: KeyDef, pos: KeyPos, state: FullKeyboardState, metrics: 
     }
     val fill by animateColorAsState(fillTarget, tween(Motion.FADE, easing = Motion.Ease), label = "keyFill")
     val content by animateColorAsState(contentTarget, tween(Motion.FADE, easing = Motion.Ease), label = "keyContent")
-    val scale = animateFocusScale(focused = false, pressed = pressed, focusScale = 1f, label = "keyScale")
+    val scale = animatePressScale(pressed, label = "keyScale")
     val shape = RoundedCornerShape(KEY_CORNER.px)
     val fontSize = metrics.fontSize
     Box(

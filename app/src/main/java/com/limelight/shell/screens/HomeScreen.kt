@@ -148,6 +148,8 @@ import com.limelight.shell.ui.px
 import com.limelight.shell.ui.topGenres
 import com.limelight.shell.ui.topThemes
 import com.limelight.shell.ui.tpx
+import com.limelight.shell.ui.PointerFocus
+import com.limelight.shell.ui.wheelScrollsRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -307,8 +309,8 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
     val onTileFocused: (Int, App) -> Unit = remember(pc.uuid, scope) {
         { index, app ->
             shell.homeGame = homeKey(pc, app)
-            // Keep the focused tile at the left edge
-            scope.launch {
+            // Keep the focused tile at the left edge; a cover the pointer focused stays where it is (the wheel scrolls the row then)
+            if (PointerFocus.followsFocus) scope.launch {
                 val info = rowState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
                 if (info == null) rowState.scrollToItem(index) else scroll(rowState, info.offset.toFloat(), reducedMotion)
             }
@@ -453,6 +455,8 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                 state = rowState,
                 modifier = Modifier
                     .fillMaxSize()
+                    // A mouse's plain wheel scrolls the row too (a trackpad's sideways swipe already does)
+                    .wheelScrollsRow(rowState)
                     // The scroll area reaches down to the stage's bottom edge: the focused cover's glow (about 110 px under a 450 px cover) is never cut
                     .padding(top = (if (home != null) home.coverTop - COMPACT_ROW_PAD else HomeStandard.rowTop(uiScale)).px)
                     .graphicsLayer {

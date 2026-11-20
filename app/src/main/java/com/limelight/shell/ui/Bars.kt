@@ -63,8 +63,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.rememberUpdatedState
 import com.limelight.R
@@ -149,9 +147,9 @@ private fun StatusBarBack(onBack: (() -> Unit)?) {
     val c = StatusBarLayout
     InputKindVisibility(c.BACK_RULE, visible = onBack != null, after = c.BACK_GAP.px) {
         Box(
-            Modifier.size(c.BACK_SIZE.px).clip(CircleShape).glass(colors.surface).border(1.px, colors.line, CircleShape)
-                .semantics { contentDescription = label; role = Role.Button; onClick { back[0]?.invoke(); true } }
-                .pointerInput(Unit) { detectTapGestures { back[0]?.invoke() } },
+            Modifier.size(c.BACK_SIZE.px).pointerTap(999f) { back[0]?.invoke() }
+                .clip(CircleShape).glass(colors.surface).border(1.px, colors.line, CircleShape)
+                .semantics { contentDescription = label; role = Role.Button; onClick { back[0]?.invoke(); true } },
             contentAlignment = Alignment.Center,
         ) {
             Symbol(Symbols.ARROW_BACK, c.BACK_ARROW.tpx, colors.text)
@@ -458,15 +456,22 @@ private fun NavButtonView(button: NavButton, requester: FocusRequester, wrapLeft
 
 /**
  * A complete cap of the keyboard and mouse library in the shared font (`Symbols.MAC_*`): what a keyboard or a mouse does instead of a
- * pad's button. [symbols] are the caps drawn side by side (the arrows are two keys).
+ * pad's button (the keys of [com.limelight.shell.GlobalKeys.keyboardButton]). [symbols] are the caps drawn side by side (the arrows are
+ * two keys).
  */
 enum class InputCap(val symbols: List<String>) {
     RETURN(listOf(Symbols.MAC_RETURN)),
     SPACE(listOf(Symbols.MAC_SPACE)),
     ESCAPE(listOf(Symbols.MAC_ESCAPE)),
+    TAB(listOf(Symbols.MAC_TAB)),
+    LETTER_F(listOf(Symbols.MAC_LETTER_F)),
+    LETTER_O(listOf(Symbols.MAC_LETTER_O)),
+    LEFT_BRACKET(listOf(Symbols.MAC_LEFT_BRACKET)),
+    RIGHT_BRACKET(listOf(Symbols.MAC_RIGHT_BRACKET)),
     ARROWS(listOf(Symbols.MAC_ARROW_LEFT, Symbols.MAC_ARROW_RIGHT)),
     ARROW_DOWN(listOf(Symbols.MAC_ARROW_DOWN)),
     CLICK(listOf(Symbols.MAC_MOUSE_CLICK_LEFT)),
+    SECONDARY_CLICK(listOf(Symbols.MAC_MOUSE_CLICK_RIGHT)),
 }
 
 /**
@@ -512,6 +517,9 @@ sealed interface Glyph {
 
         /** The primary action for a mouse or a trackpad: the mouse's left click. */
         val CLICK = Cap(InputCap.CLICK)
+
+        /** The context menu for a mouse or a trackpad: the right click (a trackpad's two-finger click). */
+        val SECONDARY_CLICK = Cap(InputCap.SECONDARY_CLICK)
     }
 }
 
@@ -634,11 +642,11 @@ private fun HintCell(hint: Hint, detail: HintDetail, onTap: ((Hint) -> Unit)?) {
             // A button, and it looks like one: the glass pill with its symbol (the filter's funnel) and label
             Row(
                 Modifier
+                    .pointerTap(999f, key = hint) { tap?.invoke(hint) }
                     .clip(CircleShape)
                     .glass(colors.surface)
                     .border(1.px, colors.line, CircleShape)
                     .semantics(mergeDescendants = true) { role = Role.Button; onClick { tap?.invoke(hint); true } }
-                    .pointerInput(hint) { detectTapGestures { tap?.invoke(hint) } }
                     .height(52.px)
                     .padding(start = (if (hint.icon != null) 18 else 24).px, end = 24.px),
                 verticalAlignment = Alignment.CenterVertically,

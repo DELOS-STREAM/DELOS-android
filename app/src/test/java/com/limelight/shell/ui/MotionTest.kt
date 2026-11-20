@@ -73,13 +73,13 @@ class MotionTest {
     }
 
     @Test
-    fun aPressSqueezesBelowTheFocusScaleUnlessItIsTurnedOff() {
-        assertEquals(1.12f, Motion.scaleTarget(focused = true, pressed = false, focusScale = 1.12f, pressScale = .97f), 0f)
-        assertEquals(.97f, Motion.scaleTarget(focused = true, pressed = true, focusScale = 1.12f, pressScale = .97f), 0f)
-        assertEquals(.97f, Motion.scaleTarget(focused = false, pressed = true, focusScale = 1.12f, pressScale = .97f), 0f)
-        assertEquals(1f, Motion.scaleTarget(focused = false, pressed = false, focusScale = 1.12f, pressScale = .97f), 0f)
-        // pressScale 1 leaves the focus scale alone (the element has a press feedback of its own)
-        assertEquals(1.06f, Motion.scaleTarget(focused = true, pressed = true, focusScale = 1.06f, pressScale = 1f), 0f)
+    fun aPressDropsTheFocusLiftSoThePressedElementSitsBelowEveryFocusScale() {
+        assertEquals(1.12f, Motion.scaleTarget(focused = true, pressed = false, focusScale = 1.12f), 0f)
+        assertEquals(1f, Motion.scaleTarget(focused = true, pressed = true, focusScale = 1.12f), 0f)
+        assertEquals(1f, Motion.scaleTarget(focused = false, pressed = true, focusScale = 1.12f), 0f)
+        assertEquals(1f, Motion.scaleTarget(focused = false, pressed = false, focusScale = 1.12f), 0f)
+        // With the shared squeeze: a pressed focused element stands at PRESS_SCALE of its size at rest
+        assertEquals(.96f, Motion.scaleTarget(focused = true, pressed = true, focusScale = 1.12f) * Motion.PRESS_SCALE, 1e-6f)
         assertTrue(Motion.PRESS_SCALE < 1f)
     }
 

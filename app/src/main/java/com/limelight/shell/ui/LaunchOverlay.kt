@@ -21,7 +21,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.shape.CircleShape
@@ -195,12 +194,12 @@ fun LaunchCancelButton(onCancel: () -> Unit, modifier: Modifier = Modifier) {
     val label = stringResource(R.string.common_cancel)
     Row(
         modifier
+            .pointerTap(999f, key = onCancel) { onCancel() }
             .clip(CircleShape)
             .background(colors.surface)
             .border(1.px, colors.line, CircleShape)
             .height(64.px)
             .semantics(mergeDescendants = true) { role = Role.Button; onClick { onCancel(); true } }
-            .pointerInput(onCancel) { detectTapGestures { onCancel() } }
             .padding(horizontal = 28.px),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.px),

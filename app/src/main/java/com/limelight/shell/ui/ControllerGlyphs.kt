@@ -259,9 +259,10 @@ object ControllerGlyphs {
         InputKinds.pointer(event.actionMasked, event.getToolType(0), source)?.let(::note)
     }
 
-    /** The player used [input] on purpose: the hints show it from now on. */
+    /** The player used [input] on purpose: the hints show it from now on, and the pointer owns the scrolling while it is the input ([PointerFocus]). */
     fun note(input: InputKind) {
         state.used(input)
+        PointerFocus.used(input)
         evaluate()
     }
 
