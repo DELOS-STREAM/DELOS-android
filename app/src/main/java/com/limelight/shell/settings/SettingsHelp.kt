@@ -74,7 +74,8 @@ object SettingsHelp {
             }.orEmpty()
             key == "frame_pacing" && values["pref_low_latency_frame_balance"] == true && values[key] != "fast-vsync" ->
                 res.getString(R.string.help_note_lfr_balanced)
-            key == "frame_pacing" && values[key] == "fast-vsync" -> res.getString(R.string.help_note_fast_vsync_lfr)
+            key == "frame_pacing" && values["pref_low_latency_frame_balance"] == true && values[key] == "fast-vsync" ->
+                res.getString(R.string.help_note_fast_vsync_lfr)
             key in setOf("checkbox_async_decode", "checkbox_ultra_low_latency", "pref_low_latency_frame_balance") && pyro ->
                 res.getString(R.string.help_note_not_with_pyrowave)
             key == "list_pyrowave_chroma" && !pyro -> res.getString(R.string.help_note_needs_pyrowave)
