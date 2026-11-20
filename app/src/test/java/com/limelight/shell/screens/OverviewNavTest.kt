@@ -135,7 +135,10 @@ class OverviewNavTest {
         assertEquals(980f * 1.055f / (450f * 1.055f), OverviewMotion.cover(0f, wide, slot, 30f).rect.let { it.width / it.height }, 1e-4f)
         assertEquals(340f / 510f, OverviewMotion.cover(1f, wide, slot, 30f).rect.let { it.width / it.height }, 1e-4f)
         assertEquals(1f, OverviewMotion.cardShown(0f), 0f)
-        assertEquals(0f, OverviewMotion.cardShown(.6f), 0f)
+        // Wide artwork remains intact until the middle of the flight, with a continuous mid-flight handover.
+        assertEquals(1f, OverviewMotion.cardShown(.3f), 1e-4f)
+        assertEquals(.5f, OverviewMotion.cardShown(.5f), 1e-4f)
+        assertEquals(0f, OverviewMotion.cardShown(.7f), 1e-4f)
     }
 
     @Test fun `closing reverses the flight and the page`() {

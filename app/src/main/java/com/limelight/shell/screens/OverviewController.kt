@@ -47,10 +47,12 @@ internal class OverviewController(private val scope: CoroutineScope) {
         private set
 
     /** Milliseconds since the opening or the closing began. */
-    val clock = Animatable(0f)
+    var clock = Animatable(0f)
+        private set
 
     /** The dashboard's covers lifting away, in milliseconds of their own timeline; it runs back to 0 while the overview closes. */
-    val home = Animatable(0f)
+    var home = Animatable(0f)
+        private set
 
     /** The card's rectangle on screen when the overview opened (root pixels, with its focus scale or where a finger dragged it). */
     var from: Rect? = null
@@ -74,6 +76,9 @@ internal class OverviewController(private val scope: CoroutineScope) {
      */
     fun open(app: App, from: Rect?, title: TitleSource?, homeTotal: Int, reduced: Boolean, instant: Boolean = false) {
         if (this.app != null) return
+        // Reset before publishing the session: a reopened page must never draw the previous closing clock.
+        clock = Animatable(if (instant) openTotal(reduced).toFloat() else 0f)
+        home = Animatable(if (instant) homeTotal.toFloat() else 0f)
         this.app = app
         this.from = from
         this.title = title
@@ -110,7 +115,7 @@ internal class OverviewController(private val scope: CoroutineScope) {
             clock.snapTo(0f)
             closing = true
             coroutineScope {
-                launch { home.animateTo(0f, tween(max(1, home.value.toInt()), easing = LinearEasing)) }
+                launch { home.animateTo(0f, tween(if (reduced) Motion.FADE else minOf(OverviewMotion.HOME_OUT, home.value.toInt()).coerceAtLeast(1), easing = LinearEasing)) }
                 val total = closeTotal(reduced)
                 clock.animateTo(total.toFloat(), tween(total, easing = LinearEasing))
             }

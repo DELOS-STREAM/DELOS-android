@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="overview_game_info">Info del juego</string>
+    <string name="overview_swipe_up_game_info">Deslizar hacia arriba para ver info del juego</string>
     <string name="overview_play">Jugar</string>
     <string name="overview_section_about">Acerca de</string>
     <string name="overview_section_media">Capturas y vídeos</string>

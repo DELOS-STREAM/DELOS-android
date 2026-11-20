@@ -227,8 +227,8 @@ internal object OverviewMotion {
     /** The one scale at which a picture of [w] × [h] fills a frame of [frameW] × [frameH], cropped (`object-fit: cover`). */
     fun fillScale(frameW: Float, frameH: Float, w: Float, h: Float): Float = max(frameW / w, frameH / h)
 
-    /** How much of the row's own card shows over the header's cover at [progress] of the flight: all of it at the card, none from 60 %. */
-    fun cardShown(progress: Float): Float = 1f - (progress / .6f).coerceIn(0f, 1f)
+    /** The retained dashboard art crossfades into portrait art around the midpoint of the same aspect-filled frame. */
+    fun cardShown(progress: Float): Float = 1f - ((progress - .3f) / .4f).coerceIn(0f, 1f)
 
     /** How far the cover has flown at [millis] after the opening began ([opening]) or the closing began. */
     fun flight(millis: Float, opening: Boolean): Float =

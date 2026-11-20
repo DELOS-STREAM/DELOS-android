@@ -311,6 +311,12 @@ class ShellState(initial: Screen) {
     /** The overview's viewer is open: null when it is not, else what the hint bar names for the item shown. */
     var overviewViewer by mutableStateOf<OverviewViewerHints?>(null)
 
+    /** Actual fullscreen viewer overlay visibility, independent of its media/hint model updates. */
+    var overviewViewerControlsVisible by mutableStateOf(true)
+
+    /** Early input observation, before global shortcuts consume a key/controller/motion event. */
+    var overviewViewerInput: (() -> Unit)? = null
+
     /** The PC whose games the shell shows (null before a PC is chosen); the companion screen shows it (docs/DUAL_SCREEN.md). */
     var pcName by mutableStateOf<String?>(null)
 

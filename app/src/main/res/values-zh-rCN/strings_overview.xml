@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="overview_game_info">游戏信息</string>
+    <string name="overview_swipe_up_game_info">向上轻扫查看游戏信息</string>
     <string name="overview_play">开始游戏</string>
     <string name="overview_section_about">简介</string>
     <string name="overview_section_media">截图和视频</string>

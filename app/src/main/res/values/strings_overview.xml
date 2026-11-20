@@ -3,6 +3,8 @@
     <!-- The game overview below the dashboard (docs/gui/GAME_INFO.md, "Game overview"). IGDB texts (summary, storyline, genres of Details, keywords) stay English data -->
     <!-- Under the focused cover and in the hint bar: Down (or a swipe up, a click) opens the overview -->
     <string name="overview_game_info">Game info</string>
+    <!-- Touch-only cue inside the focused cover. Allow two lines; swipe up opens game info. -->
+    <string name="overview_swipe_up_game_info">Swipe up for game info</string>
     <!-- The header's main button: starts or resumes the game -->
     <string name="overview_play">Play</string>
     <!-- Section headings -->
