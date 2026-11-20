@@ -1,5 +1,10 @@
 package com.limelight.shell.screens
 
+import com.limelight.shell.ui.FocusGap
+import com.limelight.shell.ui.FocusLook
+import com.limelight.shell.ui.FocusRing
+import com.limelight.shell.ui.FocusSpacing
+import com.limelight.shell.ui.SETTING_ROWS
 import java.text.Normalizer
 import java.util.Locale
 
@@ -99,11 +104,38 @@ internal object LetterPicker {
 
     const val COMPACT_ROWS = 2
     const val COMPACT_KEY = 64
-
-    /** Between two compact keys (and to the Delete / Clear circles): the focused key's growth (64 × 0.06), its ring (8) and 12 px; the circles' 8 %. */
     const val COMPACT_GAP = 26
 
-    /** The faded ends of the compact picker's scrolling layer, and its room above and below the keys for a focused key's ring (10.4 px). */
+    /**
+     * The keys are a dense grid (docs/GUI.md, "Focus spacing"): a focused key neither grows nor glows, and its accent ring lies inside its
+     * edge, so nothing of its look reaches a neighbour and the gaps need only [FocusSpacing.CLEAR].
+     */
+    val KEY_RING = FocusRing(width = 4f, gap = -4f)
+    val KEY_LOOK = FocusLook(1f, outset = KEY_RING.gap, band = KEY_RING.width)
+
+    /** Between two keys, across and down; the compact keys' rows and the compact Space key too. */
+    val KEYS = FocusGap(KEY_LOOK, KEY.toFloat(), GAP.toFloat())
+    val COMPACT_KEYS = FocusGap(KEY_LOOK, COMPACT_KEY.toFloat(), COMPACT_GAP.toFloat())
+
+    /** The search field ([com.limelight.shell.ui.TextFieldPill], 84 px high): 1.05 and a 4 px band 4 px outside, inside its scaled layer. */
+    private val FIELD_LOOK = FocusLook(1.05f, outset = 4f, band = 4f)
+    private const val FIELD_HEIGHT = 84f
+
+    /** Under the field to the keys: 18 + 16 px on the 16:9 stage, the room of the field's growth and ring on the compact one. */
+    val FIELD_TO_KEYS = FocusGap(FIELD_LOOK, FIELD_HEIGHT, 34f)
+    val COMPACT_FIELD_TO_KEYS = FocusGap(FIELD_LOOK, FIELD_HEIGHT, 29f)
+
+    /** From the last row of keys down to the 76 px Space / Delete / Clear pills (16:9). */
+    val KEYS_TO_PILLS = FocusGap(FocusSpacing.PILL, 76f, 32f)
+
+    /** Between the pills (side by side; [com.limelight.shell.ui.FocusRow] widens it for a long label), and between the compact Delete / Clear circles. */
+    const val PILL_GAP = 14f
+    val COMPACT_CIRCLES = FocusGap(FocusSpacing.PILL, COMPACT_KEY.toFloat(), 31f)
+
+    /** From the compact keys down to the first result row (a [SETTING_ROWS] row): 10 px and the list's own 14 px at its top. */
+    val COMPACT_KEYS_TO_RESULTS = FocusGap(SETTING_ROWS.look, SETTING_ROWS.size, 24f)
+
+    /** The faded ends of the compact picker's scrolling layer, and its room above and below the keys (the layer never ends on a key). */
     const val COMPACT_EDGE = 24f
     const val COMPACT_RING_ROOM = 12f
 

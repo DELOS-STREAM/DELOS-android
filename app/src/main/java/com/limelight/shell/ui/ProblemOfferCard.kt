@@ -101,7 +101,7 @@ fun ProblemOfferCard(problem: Problem?, reducedMotion: Boolean, onReport: () -> 
             val res = textResources()
             Column(
                 Modifier.width((if (compact) minOf(780f, stage.stageWidth - 2f * 48f) else 780f).px).clip(shape).glass(colors.surface).border(1.px, colors.line, shape).padding((if (compact) 32 else 36).px).focusGroup(),
-                verticalArrangement = Arrangement.spacedBy(18.px),
+                verticalArrangement = Arrangement.spacedBy(CARD_GAP.px),
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(22.px), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(84.px).clip(CircleShape).background(colors.accent), contentAlignment = Alignment.Center) {
@@ -118,13 +118,21 @@ fun ProblemOfferCard(problem: Problem?, reducedMotion: Boolean, onReport: () -> 
                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
                 BasicText(stringResource(if (uploads) R.string.shell_problem_note_upload else R.string.shell_problem_note), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 20.tpx, lineHeight = 1.4.em))
-                Row(Modifier.padding(top = 6.px), horizontalArrangement = Arrangement.spacedBy((if (compact) Compact.BUTTON_GAP else 18f).px)) {
+                FocusRow(FocusSpacing.PILL, gap = if (compact) Compact.BUTTON_GAP else 18f, Modifier.padding(top = 6.px)) {
                     PillButton(stringResource(R.string.shell_problem_report), Symbols.REPORT_ISSUE, onReport, Modifier.focusRequester(report), primary = true, compact = true,
                         glyph = Glyph.A, glyphSize = 34)
                     PillButton(stringResource(R.string.shell_problem_dismiss), Symbols.CLOSE, onDismiss, compact = true, clickCue = Cue.BACK, glyph = Glyph.B, glyphSize = 34)
                 }
-                if (uploads) PillButton(stringResource(R.string.report_save_downloads), Symbols.DOWNLOAD, onSaveToDownloads, compact = true)
+                if (uploads) PillButton(
+                    stringResource(R.string.report_save_downloads), Symbols.DOWNLOAD, onSaveToDownloads, Modifier.padding(top = (PROBLEM_ROWS.gap - CARD_GAP).px), compact = true,
+                )
             }
         }
     }
 }
+
+/** The gap between the parts of the card. */
+private const val CARD_GAP = 18f
+
+/** Between the row of Report and Dismiss and the Save to Downloads pill under it (toolbar-size pills). */
+internal val PROBLEM_ROWS = FocusGap(FocusSpacing.PILL, PILL_HEIGHT_COMPACT, 32f)

@@ -172,7 +172,7 @@ private val LightScrim = Color(4, 8, 16).copy(alpha = .26f)
 @Composable
 internal fun Modifier.focusTrap(active: Boolean): Modifier {
     val current by rememberUpdatedState(active)
-    return focusProperties { onExit = { if (current) cancelFocusChange() } }.focusGroup()
+    return focusProperties { onExit = { if (current) cancelFocusChange() } }.focusGroup().rowNavScope()
 }
 
 /**
@@ -273,7 +273,7 @@ fun <K : Any> ColumnScope.SideMenuScroll(navigation: FocusedListNavigation<K>, c
                     .focusedListBoundary(navigation)
                     .verticalScroll(sideScroll)
                     .padding(horizontal = (14f + GLOW_SIDE).px, vertical = (18f + GLOW_VERTICAL).px),
-                verticalArrangement = Arrangement.spacedBy(10.px),
+                verticalArrangement = Arrangement.spacedBy(SETTING_ROWS.gap.px),
                 content = content,
             )
         }

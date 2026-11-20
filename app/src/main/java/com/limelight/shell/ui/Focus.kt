@@ -108,7 +108,7 @@ data class FocusGlow(val offsetY: Float = 30f, val blur: Float = 80f, val spread
  * scale, a ring, an accent glow and optionally a sweep of light. Makes the element focusable (always,
  * also in touch mode); A, Enter, D-pad center and taps activate it. The focused element registers with
  * the [com.limelight.shell.FocusTracker], with its [contextMenu] and whether it is [adjustable] with
- * left/right.
+ * left/right. Every element is also a source and a target of the row-first Up / Down ([RowNav]).
  *
  * Every activation drops its focus lift and squeezes it ([pressLook]: pressed, it stands at [Motion.PRESS_SCALE] of its size at rest,
  * the glow blurred out to [Motion.PRESS_GLOW]); a tap
@@ -307,6 +307,8 @@ fun Modifier.focusEffects(
             if (it.type == KeyEventType.KeyUp) activate(false)
             true
         }
+        // Up and Down that reach the shell's root go to the first element of the next row (RowNav); a caller's focusProperties win
+        .rowNavItem(requester)
         // Always focusable, also in touch mode: `clickable` would only be focusable after a key press,
         // but a console UI always shows the focus (and the game background that goes with it)
         .focusRequester(requester)

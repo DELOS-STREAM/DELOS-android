@@ -1,6 +1,7 @@
 package com.limelight.shell.screens
 
 import com.limelight.shell.ui.StageMetrics
+import com.limelight.shell.ui.FocusSpacing
 import com.limelight.shell.ui.StageShape
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -69,12 +70,13 @@ class FamilyLayoutTest {
     }
 
     /**
-     * The stages under about 950 px high cannot hold a 210 px dock and three whole rows (the 893 px ones are 15 px short in Settings): the
-     * dock's height is the user's request, so the list shows fewer whole rows with the next one fading over the dock.
+     * The stages under about 950 px high cannot hold a 210 px dock and three whole rows 18 px apart (the rows' focus spacing; the 893 px ones
+     * are 37, 9 and 19 px short in Settings, per game and Debug info): the dock's height is the user's request, so the list shows fewer whole
+     * rows with the next one fading over the dock.
      */
     @Test fun theShortStagesKeepTheDockAt210AndShowWhatRowsFit() {
         val rowsAt = { stage: StageMetrics -> listings().map { rows(stage, it) } }
-        assertEquals(listOf(2, 3, 2), rowsAt(compact[1]))
+        assertEquals(listOf(2, 2, 2), rowsAt(compact[1]))
         assertEquals(listOf(2, 2, 2), rowsAt(compact[3]))
         assertEquals(listOf(1, 1, 1), rowsAt(micro).map { 1 })
         assertTrue(rowsAt(micro).all { it >= 1 })
@@ -221,88 +223,119 @@ class FamilyLayoutTest {
         compact.flatMap { stage -> kinds.map { Triple("${name(stage)} ${it.name}", stage, compactGrid(stage, it)) } } +
             wide.flatMap { stage -> kinds.map { Triple("${name(stage)} ${it.name}", stage, wideGrid(stage, it)) } }
 
-    @Test fun theRoomBetweenTilesCoversTheFocusedTilesGrowthItsRingAndTwelvePixels() {
+    @Test fun theRoomBetweenTilesIsTheFocusSpacingRulesOnBothAxes() {
         grids().forEach { (name, _, grid) ->
-            val needX = grid.tileWidth * (ArtGridLayout.FOCUS_SCALE - 1f) + ArtGridLayout.RING + ArtGridLayout.CLEARANCE
-            val needY = grid.tileHeight * (ArtGridLayout.FOCUS_SCALE - 1f) + ArtGridLayout.RING + ArtGridLayout.CLEARANCE
+            val needX = ArtGridLayout.LOOK.minGap(grid.tileWidth)
+            val needY = ArtGridLayout.LOOK.minGap(grid.tileHeight)
             assertTrue("$name gap ${grid.gapX} of $needX", grid.gapX >= needX - .01f)
             assertTrue("$name row gap ${grid.gapY} of $needY", grid.gapY >= needY - .01f)
             assertTrue("$name gaps of 28 px at least", grid.gapX >= ArtGridLayout.MIN_GAP - .01f && grid.gapY >= ArtGridLayout.MIN_GAP - .01f)
-            // So the focused tile's ring keeps 12 px to its neighbours on every side
-            assertTrue("$name ring ${grid.ringX}", grid.ringX + ArtGridLayout.CLEARANCE <= grid.gapX + .01f)
-            assertTrue("$name ring ${grid.ringY}", grid.ringY + ArtGridLayout.CLEARANCE <= grid.gapY + .01f)
+            // So the focused tile's ring keeps 8 px clear of a focused neighbour's on every side
+            assertTrue("$name ring ${grid.ringX}", 2f * grid.ringX + FocusSpacing.CLEAR <= grid.gapX + .01f)
+            assertTrue("$name ring ${grid.ringY}", 2f * grid.ringY + FocusSpacing.CLEAR <= grid.gapY + .01f)
         }
     }
 
-    @Test fun theTilesAndTheirGapsFillTheContentWidthAndKeepTheirShape() {
+    @Test fun theTilesAndTheirGapsFillTheContentWidthAndKeepTheOuterMargin() {
         grids().forEach { (name, stage, grid) ->
             val width = stage.stageWidth - 2f * SettingsLayout.margin(stage)
-            assertEquals("$name fills", width, grid.columns * grid.tileWidth + (grid.columns - 1) * grid.gapX, .01f)
+            assertEquals("$name fills", width + 2f * grid.overhang, grid.columns * grid.tileWidth + (grid.columns - 1) * grid.gapX, .01f)
+            // Layout rule 2: the outer margin stays 48 px or more
+            assertTrue("$name margin", SettingsLayout.margin(stage) - grid.overhang >= SettingsLayout.COMPACT_MARGIN - .01f)
         }
+        // The compact margin has nothing to give: the compact grids fill the content's width exactly
+        compact.forEach { stage -> kinds.forEach { assertEquals(0f, compactGrid(stage, it).overhang, .01f) } }
         compact.forEach { stage -> kinds.forEach { assertEquals(it.ratio, compactGrid(stage, it).let { g -> g.tileWidth / g.tileHeight }, .0001f) } }
     }
 
-    @Test fun theFirstRowsRingEndsTwentyFourPixelsUnderTheFilterStrip() {
+    @Test fun theFirstRowKeepsItsFocusSpacingUnderTheToolbarAndTheFilterStrip() {
         compact.forEach { stage ->
             kinds.forEach { kind ->
                 val grid = compactGrid(stage, kind)
-                assertEquals("${name(stage)} ${kind.name}", ArtGridLayout.BLOCK_GAP, grid.padTop - grid.ringY, .001f)
+                assertTrue("${name(stage)} ${kind.name}", grid.padTop - grid.ringY >= ArtGridLayout.BLOCK_GAP - .001f)
+                assertTrue("${name(stage)} ${kind.name} under the tile's spacing", grid.padTop >= ArtGridLayout.LOOK.minGap(grid.tileHeight) - .001f)
+                assertTrue("${name(stage)} ${kind.name} under the pills' spacing", grid.padTop >= FocusSpacing.PILL.minGap(ArtworkLayout.TOOLBAR_HEIGHT) - .001f)
             }
         }
-        // Not compact: the grid starts at 324, 4 px under the strip's bottom edge (320), and pads its first row by 46 px
-        wide.forEach { stage -> kinds.forEach { kind -> assertTrue(46f + 4f - wideGrid(stage, kind).ringY >= ArtGridLayout.BLOCK_GAP) } }
+        // Not compact: the strip keeps the pills' spacing under the toolbar; the grid starts 4 px under the strip and pads its first row by 46 px
+        assertTrue(ArtworkLayout.WIDE_STRIP_GAP.gap >= ArtworkLayout.WIDE_STRIP_GAP.minGap)
+        val stripToRow = ArtworkLayout.WIDE_GRID_Y + ArtworkLayout.WIDE_GRID_PAD - (ArtworkLayout.WIDE_STRIP_Y + ArtworkLayout.STRIP_HEIGHT)
+        wide.forEach { stage ->
+            kinds.forEach { kind ->
+                val grid = wideGrid(stage, kind)
+                assertTrue(stripToRow - grid.ringY >= ArtGridLayout.BLOCK_GAP)
+                assertTrue("${name(stage)} ${kind.name}", stripToRow >= ArtGridLayout.LOOK.minGap(grid.tileHeight))
+            }
+        }
     }
 
     @Test fun theFocusedTilesGlowEndsInsideTheGridsViewport() {
         grids().forEach { (name, stage, grid) ->
             // The grid's box is the stage's width and the tiles are padded in by the margin, so nothing but the screen's own edge is there to
-            // cut the glow: the widest compact tiles (the backgrounds) send the last 2 px of its blur past the 48 px margin
-            assertTrue("$name glow ${grid.glowSide} at the side", grid.glowSide <= SettingsLayout.margin(stage) + 2.5f)
+            // cut the glow: the widest compact tiles (the backgrounds, two of them on a row) send the last 8 px of its blur past the 48 px margin
+            assertTrue("$name glow ${grid.glowSide} at the side", grid.glowSide <= SettingsLayout.margin(stage) - grid.overhang + 8f)
             assertTrue("$name glow under the last row", grid.glowBottom <= grid.padBottom)
             // The compact viewport starts 8 px under the toolbar: the first row's glow still ends inside it
             assertTrue("$name glow above the first row", grid.glowTop <= grid.padTop - ArtworkLayout.GRID_INSET)
         }
-        wide.forEach { stage -> kinds.forEach { kind -> assertTrue(wideGrid(stage, kind).let { it.glowTop <= 46f && it.glowBottom <= 96f }) } }
+        wide.forEach { stage -> kinds.forEach { kind -> assertTrue(wideGrid(stage, kind).let { it.glowTop <= ArtworkLayout.WIDE_GRID_PAD && it.glowBottom <= 96f }) } }
     }
 
     /**
      * The covers are 190 to 210 px wide where the stage's height holds a focused row of them whole (the room left over goes into the gaps):
-     * the 957 and 1051 px stages. The shorter ones (893: 173 and 158 px, 831: 145, 722: 141) take smaller ones, never under 72 % of 190, because
-     * a row of 190 px covers (285 px tall) with its ring, glow and the next row's peek would not show whole over the info strip.
+     * the 957 and 1051 px stages, and the 1488 x 893 one, which gives up its info strip for them. The shorter ones take smaller ones (1191 x 893:
+     * 190, 722: 169), never under 72 % of 190 and never under the size they had before the focus spacing rule.
      */
     @Test fun theCompactCoversAreAboutTwoHundredWideWhereTheStageIsTallEnough() {
         listOf(compact[0], compact[4]).forEach { stage ->
             val grid = compactGrid(stage, kinds[0])
             assertTrue("${name(stage)} cover ${grid.tileWidth}", grid.tileWidth in ArtworkLayout.COVER_MIN..ArtworkLayout.COVER_MAX + .01f)
             assertEquals("${name(stage)} columns", 4, grid.columns)
-            // The gaps take what the cap leaves: more than the rule needs, the rows' own clearance under it
+            // The gaps take what the cap leaves: more than the rule needs, the rows' own spacing under it
             assertTrue("${name(stage)} gap ${grid.gapX}", grid.gapX >= 38f)
         }
-        // The 893 px stages take 7 and 6 columns (173 and 158 px): a 205 px row would not show whole above the info strip
-        assertEquals(7, compactGrid(compact[1], kinds[0]).columns)
-        assertEquals(6, compactGrid(compact[2], kinds[0]).columns)
+        // The 893 px stages: five columns each (210 px with no info strip, 190 px over it)
+        assertEquals(5, compactGrid(compact[1], kinds[0]).columns)
+        assertEquals(5, compactGrid(compact[2], kinds[0]).columns)
         compact.forEach { stage ->
             kinds.forEach { kind -> assertTrue("${name(stage)} ${kind.name}", compactGrid(stage, kind).tileWidth >= kind.compactMin * ArtGridLayout.SHORT_SHARE - .01f) }
             assertTrue("${name(stage)} never over the cap", compactGrid(stage, kinds[0]).tileWidth <= ArtworkLayout.COVER_MAX + .01f)
         }
     }
 
+    /** The rule's gaps never make a compact tile smaller: 1191 x 893 took 6, 4, 3 and 5 columns of 158, 248, 338 and 194 px before them. */
+    @Test fun theCompactGridTakesAColumnFewerRatherThanSmallerTiles() {
+        val expected = listOf(5 to 189.9f, 3 to 335.0f, 2 to 519.4f, 4 to 244.0f)
+        kinds.forEachIndexed { i, kind ->
+            val grid = compactGrid(compact[2], kind)
+            assertEquals(kind.name, expected[i].first, grid.columns)
+            assertEquals(kind.name, expected[i].second, grid.tileWidth, .1f)
+        }
+    }
+
+    /**
+     * A focused row shows whole with its ring on every compact stage; with its glow or a peek of the next row under it everywhere but under
+     * the Pocket Micro's covers, whose five columns (the rule's gaps leave no room for six) are too tall for it.
+     */
     @Test fun aFocusedRowShowsWholeWithAPeekOfTheNextOnEveryCompactStage() {
         compact.forEach { stage ->
             val width = stage.stageWidth - 2f * SettingsLayout.margin(stage)
             val viewport = ArtworkLayout.viewport(stage.stageHeight, bottom, ArtworkLayout.hasInfo(width, stage.stageHeight, bottom))
             kinds.forEach { kind ->
                 val grid = compactGrid(stage, kind)
-                assertTrue("${name(stage)} ${kind.name} needs ${grid.rowRoom} of $viewport", grid.rowRoom <= viewport)
-                assertTrue(grid.rowRoom >= grid.padTop + grid.tileHeight + grid.gapY + ArtGridLayout.PEEK)
+                assertTrue("${name(stage)} ${kind.name} ring", grid.padTop + grid.tileHeight + grid.ringY <= viewport)
+                if (stage != micro || kind != kinds[0]) assertTrue("${name(stage)} ${kind.name} needs ${grid.rowRoom} of $viewport", grid.rowRoom <= viewport)
+                assertTrue(grid.rowRoom >= grid.padTop + grid.tileHeight + grid.gapY + ArtGridLayout.PEEK - .01f)
             }
         }
     }
 
-    @Test fun onlyTheShortestStageHasNoRoomForTheInfoStrip() {
+    /** The larger covers leave the 1488 x 893 and 1108 x 831 stages no room for the info strip, besides the Pocket Micro. */
+    @Test fun onlyTheShortStagesHaveNoRoomForTheInfoStrip() {
+        val without = setOf(compact[1], compact[3], micro)
         compact.forEach { stage ->
             val width = stage.stageWidth - 2f * SettingsLayout.margin(stage)
-            assertEquals(name(stage), stage != micro, ArtworkLayout.hasInfo(width, stage.stageHeight, bottom))
+            assertEquals(name(stage), stage !in without, ArtworkLayout.hasInfo(width, stage.stageHeight, bottom))
         }
     }
 
@@ -311,22 +344,28 @@ class FamilyLayoutTest {
         val short = ArtGridLayout.compact(986f, 330f, 2f / 3f, ArtworkLayout.COVER_MIN, ArtworkLayout.COVER_MAX)
         assertTrue(normal.tileWidth <= ArtworkLayout.COVER_MAX + .01f)
         assertTrue(short.columns > normal.columns)
-        assertTrue(short.rowRoom <= 330f)
+        assertTrue(short.padTop + short.tileHeight + short.ringY <= 330f)
         // Nothing under 72 % of the kind's least width, however short the viewport is
         val shortest = ArtGridLayout.compact(986f, 100f, 2f / 3f, ArtworkLayout.COVER_MIN, ArtworkLayout.COVER_MAX)
         assertTrue(shortest.tileWidth >= ArtworkLayout.COVER_MIN * ArtGridLayout.SHORT_SHARE - .01f)
     }
 
-    @Test fun sixteenByNineKeepsItsColumnsWithSmallerTilesAndTheRulesGaps() {
+    @Test fun sixteenByNineKeepsItsColumnsAndTilesWithTheRulesGaps() {
         val expected = listOf(7 to 203.8f, 4 to 373.2f, 3 to 506.4f, 5 to 293.9f)
         kinds.forEachIndexed { i, kind ->
             val grid = wideGrid(standard, kind)
             assertEquals(kind.name, expected[i].first, grid.columns)
             assertEquals(kind.name, expected[i].second, grid.tileWidth, .1f)
         }
-        // Before: 24 px everywhere, which left the focused cover's ring 9 px from its neighbours and 6 px from the next row
-        assertEquals(32.2f, wideGrid(standard, kinds[0]).gapX, .1f)
-        assertEquals(38.3f, wideGrid(standard, kinds[0]).gapY, .1f)
+        // Before: 32.2 and 38.3, which left a focused cover's ring short of a focused neighbour's by 5 px. The 150 px margin gives the 15 px
+        assertEquals(37.2f, wideGrid(standard, kinds[0]).gapX, .1f)
+        assertEquals(43.3f, wideGrid(standard, kinds[0]).gapY, .1f)
+        assertEquals(14.9f, wideGrid(standard, kinds[0]).overhang, .1f)
+    }
+
+    @Test fun theArtworkToolbarAndSheetKeepTheFocusSpacing() {
+        assertTrue(ArtworkLayout.SHEET_ROWS.gap >= ArtworkLayout.SHEET_ROWS.minGap)
+        listOf(150f, 250f, 400f).forEach { assertEquals(FocusSpacing.PILL.minGap(it), ArtworkLayout.toolbarGap(it), .001f) }
     }
 
     // The Artwork toolbar

@@ -62,9 +62,14 @@ internal object ContextMenuLayout {
     const val FALLBACK_Y = 300f
 
     const val ROW_HEIGHT = 64f
-    const val ROW_GAP = 4f
     const val ROW_RADIUS = 28f
     const val ROW_RING = 3f
+
+    /** A focused row: it does not grow, and the plate draws its [ROW_RING] inside the row's edge. */
+    val ROW_LOOK = FocusLook(1f, outset = -ROW_RING, band = ROW_RING, ringScales = false)
+
+    /** Between two rows: nothing of a focused row's look reaches past its edge, so the clear space alone. */
+    val ROWS = FocusGap(ROW_LOOK, ROW_HEIGHT, 8f)
 }
 
 /**

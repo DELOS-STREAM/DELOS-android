@@ -269,11 +269,11 @@ private fun OptionsCard(popup: RowPopup.Options, list: Float, active: Boolean, o
     // The current option is in view from the first frame (a long list is scrolled to it)
     LaunchedEffect(Unit) {
         withFrameNanos { }
-        scroll.scrollTo((popup.selected.coerceAtLeast(0) * (P.OPTION + P.GAP) * k).roundToInt())
+        scroll.scrollTo((popup.selected.coerceAtLeast(0) * (P.OPTION + P.OPTIONS.gap) * k).roundToInt())
     }
     Column(Modifier.fillMaxSize().focusTrap(active).padding(vertical = P.PAD.px), verticalArrangement = Arrangement.spacedBy(P.GAP.px)) {
         CardTitle(popup.title)
-        Column(Modifier.fillMaxWidth().height(list.px).verticalScroll(scroll).padding(horizontal = 12.px, vertical = P.LIST_ROOM.px), verticalArrangement = Arrangement.spacedBy(P.GAP.px)) {
+        Column(Modifier.fillMaxWidth().height(list.px).verticalScroll(scroll).padding(horizontal = 12.px, vertical = P.LIST_ROOM.px), verticalArrangement = Arrangement.spacedBy(P.OPTIONS.gap.px)) {
             popup.options.forEachIndexed { i, label ->
                 OptionRow(label, current = i == popup.selected, requester = if (i == popup.selected.coerceAtLeast(0)) first else null) {
                     popup.onPick(i)
@@ -301,7 +301,7 @@ private fun OptionRow(label: String, current: Boolean, requester: FocusRequester
             .fillMaxWidth()
             .height(P.OPTION.px)
             .focusEffects(
-                onClick = onClick, corner = 28f, focusScale = 1f, ring = FocusRing(3f, 0f), glow = null, clickCue = Cue.SELECT,
+                onClick = onClick, corner = 28f, focusScale = P.OPTION_LOOK.scale, ring = P.OPTION_RING, glow = null, clickCue = Cue.SELECT,
                 onFocusChange = { focused = it }, focusRequester = requester,
             )
             .clip(RoundedCornerShape(28.px))

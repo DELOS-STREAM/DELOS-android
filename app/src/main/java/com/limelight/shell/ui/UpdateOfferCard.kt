@@ -134,7 +134,7 @@ fun UpdateOfferCard(
                     }
                 }
                 if (primary != UpdateCardPrimary.NONE || s is UpdateState.Failed) {
-                    Row(Modifier.padding(top = 6.px), horizontalArrangement = Arrangement.spacedBy((if (compact) Compact.BUTTON_GAP else 18f).px)) {
+                    FocusRow(FocusSpacing.PILL, gap = if (compact) Compact.BUTTON_GAP else 18f, Modifier.padding(top = 6.px)) {
                         when (primary) {
                             UpdateCardPrimary.UPDATE -> PillButton(res.getString(R.string.update_card_update), Symbols.DOWNLOAD, onUpdate, Modifier.focusRequester(first), primary = true, compact = true, glyph = Glyph.A, glyphSize = 34)
                             UpdateCardPrimary.ALLOW -> PillButton(res.getString(R.string.update_card_allow), Symbols.SETTINGS, onAllow, Modifier.focusRequester(first), primary = true, compact = true, glyph = Glyph.A, glyphSize = 34)

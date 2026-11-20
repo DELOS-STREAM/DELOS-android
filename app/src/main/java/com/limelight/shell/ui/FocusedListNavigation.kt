@@ -93,7 +93,8 @@ fun <K : Any> Modifier.focusedListRow(navigation: FocusedListNavigation<K>, key:
                 left = navigation.neighbour(key, -1)
                 right = navigation.neighbour(key, 1)
             } else {
-                up = if (navigation.deliberateUpExit) FocusRequester.Default else navigation.neighbour(key, -1)
+                // During the deliberate exit Up is left unset, so the row-first target (RowNav) applies
+                if (!navigation.deliberateUpExit) up = navigation.neighbour(key, -1)
                 down = navigation.neighbour(key, 1)
             }
         }
@@ -114,7 +115,7 @@ fun <K : Any> Modifier.focusedListRow(navigation: FocusedListNavigation<K>, key:
                     FocusedListMove.EXIT_UP -> {
                         navigation.deliberateUpExit = true
                         try {
-                            focusManager.moveFocus(FocusDirection.Up)
+                            RowNav.moveFocus(focusManager, down = false)
                         } finally {
                             navigation.deliberateUpExit = false
                         }

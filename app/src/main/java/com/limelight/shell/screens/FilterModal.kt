@@ -86,7 +86,10 @@ import com.limelight.shell.ui.EaseOut
 import com.limelight.shell.ui.dialogEnter
 import com.limelight.shell.ui.dialogExit
 import com.limelight.shell.ui.Figtree
+import com.limelight.shell.ui.FocusLook
 import com.limelight.shell.ui.FocusRing
+import com.limelight.shell.ui.FocusRow
+import com.limelight.shell.ui.FocusSpacing
 import com.limelight.shell.ui.InitialFocus
 import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.LocalStage
@@ -95,7 +98,6 @@ import com.limelight.shell.ui.LocalFeedback
 import com.limelight.shell.ui.PillButton
 import com.limelight.shell.ui.RowGlideHost
 import com.limelight.shell.ui.ScrollRow
-import com.limelight.shell.ui.compactScale
 import com.limelight.shell.ui.Symbol
 import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.genreIcon
@@ -111,6 +113,7 @@ import com.limelight.shell.ui.px
 import com.limelight.shell.ui.StageShape
 import com.limelight.shell.ui.cpx
 import com.limelight.shell.ui.tpx
+import com.limelight.shell.ui.rowNavScope
 import dev.chrisbanes.haze.HazeState
 
 private fun countGames(games: List<GameMetadata?>, entries: (GameMetadata) -> List<GameGenre>): Map<Int, Int> {
@@ -289,7 +292,8 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft,
             .padding(horizontal = 40.cpx).padding(top = 44.cpx, bottom = 44.px)
             .onFocusChanged { panelFocused = it.hasFocus }
             .focusProperties { onExit = { if (open) cancelFocusChange() } }
-            .focusGroup(),
+            .focusGroup()
+            .rowNavScope(),
     ) {
         Row(Modifier.fillMaxWidth().padding(start = 12.px, end = 12.px, bottom = 26.cpx), verticalAlignment = Alignment.CenterVertically) {
             BasicText(stringResource(R.string.filters_title), style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 40.tpx))
@@ -309,7 +313,7 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft,
         CompositionLocalProvider(LocalBringIntoViewSpec provides bringIntoView) {
         // Share the cursor across the chip rows without changing spatial D-pad navigation.
         RowGlideHost(
-            ring = FocusRing(3f, 3f), corner = 999f, focusScale = 1.05f,
+            ring = FocusRing(ChipFocus.LOOK.band, ChipFocus.LOOK.outset), corner = 999f, focusScale = ChipFocus.LOOK.scale,
             fill = null, glow = null,
             // The edges fade only while chips continue behind them, so the ring of a chip in the first or the last row is not dimmed
             modifier = Modifier.weight(1f, fill = false).fadeEdges(stage, chipScroll, 20f, 40f),
@@ -321,7 +325,7 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft,
             verticalArrangement = Arrangement.spacedBy(34.cpx),
         ) {
             FilterSection(Symbols.GENRE_UNKNOWN, stringResource(R.string.filters_section_genre)) {
-                ScrollRow(gap = 14f * stage.compactScale, ringRoom = 12f) {
+                ChipRow {
                     FilterChip(
                         stringResource(R.string.filters_all), filters.genres.isEmpty(), { draft.edit { it.copy(genres = emptySet()) } },
                         Modifier.focusRequester(genreRequester(null)), count = apps.size, onConfirm = onConfirm,
@@ -340,7 +344,7 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft,
             // Without any theme in the library there is nothing to choose (a theme that was chosen stays visible)
             if (themes.isNotEmpty() || filters.themes.isNotEmpty()) {
                 FilterSection(Symbols.THEMES, stringResource(R.string.filters_section_theme)) {
-                    ScrollRow(gap = 14f * stage.compactScale, ringRoom = 12f) {
+                    ChipRow {
                         FilterChip(
                             stringResource(R.string.filters_all), filters.themes.isEmpty(), { draft.edit { it.copy(themes = emptySet()) } },
                             count = apps.size, onConfirm = onConfirm,
@@ -358,7 +362,7 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft,
                 FilterDivider()
             }
             FilterSection(Symbols.HDR_ON, stringResource(R.string.filters_section_hdr)) {
-                ScrollRow(gap = 14f * stage.compactScale, ringRoom = 12f) {
+                ChipRow {
                     FilterChip(stringResource(R.string.filters_hdr_any), filters.hdr.isEmpty(), { draft.edit { it.copy(hdr = emptySet()) } }, onConfirm = onConfirm)
                     HdrFilter.entries.forEach { option ->
                         FilterChip(
@@ -372,7 +376,7 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft,
             FilterSection(Symbols.COMPLETION_TIME, stringResource(R.string.filters_section_duration)) {
                 // The last row: one press down reaches the pill that applies the choices, wherever the cursor is in the row
                 val down = Modifier.focusProperties { this.down = confirmRequester }
-                ScrollRow(gap = 14f * stage.compactScale, ringRoom = 12f) {
+                ChipRow {
                     FilterChip(stringResource(R.string.filters_length_any), filters.length.isEmpty(), { draft.edit { it.copy(length = emptySet()) } }, down, onConfirm = onConfirm)
                     LengthFilter.entries.forEach { option ->
                         FilterChip(
@@ -384,12 +388,8 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft,
         }
         }
         }
-        Row(
-            Modifier.fillMaxWidth().padding(top = 30.cpx, start = 12.px, end = 12.px),
-            // Compact: the room a focused pill grows into (half its 8 %, its ring and 12 px), as on the Artwork toolbar
-            horizontalArrangement = Arrangement.spacedBy((if (stage.shape == StageShape.COMPACT) ArtworkLayout.PILL_GAP else 24f).px, Alignment.End),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        // The pills keep their focus spacing apart, more for a long label
+        Box(Modifier.fillMaxWidth().padding(top = 30.cpx, start = 12.px, end = 12.px), contentAlignment = Alignment.CenterEnd) { FocusRow(FocusSpacing.PILL, 24f) {
             val active = filters.active
             PillButton(
                 stringResource(R.string.filters_reset), Symbols.RESET, { draft.reset() },
@@ -401,7 +401,7 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft,
                 filterShowLabel(res, matching), Symbols.CHECK, onConfirm, Modifier.focusRequester(confirmRequester),
                 primary = true, clickCue = null, compact = stage.shape == StageShape.COMPACT,
             )
-        }
+        } }
     }
 }
 
@@ -423,6 +423,23 @@ private fun FilterSection(icon: String, title: String, content: @Composable () -
 @Composable
 private fun FilterDivider() {
     Box(Modifier.fillMaxWidth().height(1.px).background(LocalDelosColors.current.line))
+}
+
+/** The filter chips' focus ([FilterChip], the Artwork strip's chips): 1.05 and a 3 px band 3 px outside, the gliding plate of their [RowGlideHost] drawn around the scaled chip. */
+internal object ChipFocus {
+    val LOOK = FocusLook(scale = 1.05f, outset = 3f, band = 3f, ringScales = false)
+
+    /** A [FilterChip]'s least height. */
+    const val HEIGHT = 60f
+}
+
+/**
+ * A row of [FilterChip]s that scrolls when they need more room than it has (keeping their ring's room above and below while it does). The
+ * gap between the chips grows with the widest of them to their focus spacing, so a focused chip never reaches its neighbour.
+ */
+@Composable
+internal fun ChipRow(content: @Composable () -> Unit) {
+    ScrollRow(gap = 0f, ringRoom = 12f) { FocusRow(ChipFocus.LOOK, 14f, content = content) }
 }
 
 /**
@@ -451,12 +468,12 @@ internal fun FilterChip(
                 true
             })
             .focusEffects(
-                onClick = onClick, corner = 999f, focusScale = 1.05f, ring = FocusRing(3f, 3f), glow = null,
+                onClick = onClick, corner = 999f, focusScale = ChipFocus.LOOK.scale, ring = FocusRing(ChipFocus.LOOK.band, ChipFocus.LOOK.outset), glow = null,
                 onFocusChange = { focused = it }, glide = true,
             )
             .clip(CircleShape)
             .then(if (selected) Modifier.background(colors.accent) else Modifier.glass(colors.surface).border(1.px, colors.line, CircleShape))
-            .heightIn(min = 60.px)
+            .heightIn(min = ChipFocus.HEIGHT.px)
             .padding(horizontal = 30.cpx, vertical = 12.cpx),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.px),
