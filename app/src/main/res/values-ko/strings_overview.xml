@@ -72,6 +72,7 @@
     <string name="overview_hint_unmute">음소거 해제</string>
     <string name="overview_video_back">10초 뒤로</string>
     <string name="overview_video_forward">10초 앞으로</string>
+    <string name="overview_video_volume">볼륨</string>
     <string name="overview_video_unavailable">이 동영상을 재생할 수 없습니다</string>
     <string name="overview_video_blocked">소유자가 다른 앱에서의 재생을 허용하지 않습니다.</string>
     <string name="overview_video_failed">YouTube에서 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요.</string>

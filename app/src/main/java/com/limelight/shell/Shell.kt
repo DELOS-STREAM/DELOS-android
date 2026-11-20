@@ -1150,17 +1150,28 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
             Screen.Home -> {
                 val viewer = shell.overviewViewer
                 when {
-                    // The game overview (docs/gui/GAME_INFO.md, "Game overview") and its viewer: a video that plays seeks, plays or pauses,
-                    // mutes, and the shoulders browse; a screenshot browses with Left and Right
-                    viewer?.video == true -> listOf(
-                        hint(Glyph.DPAD_HORIZONTAL, R.string.overview_hint_seek),
-                        hint(Glyph.A, if (viewer.playing) R.string.overview_hint_pause else R.string.overview_hint_play),
-                        hint(Glyph.Y, if (viewer.muted) R.string.overview_hint_unmute else R.string.overview_hint_mute),
-                        hint(Glyph.L1, R.string.overview_previous),
-                        hint(Glyph.R1, R.string.overview_next),
-                        hint(Glyph.B, R.string.shell_hint_back),
-                    )
-                    viewer != null -> listOf(hint(Glyph.DPAD_HORIZONTAL, R.string.overview_hint_browse), hint(Glyph.B, R.string.shell_hint_back))
+                    // The game overview (docs/gui/GAME_INFO.md, "Game overview") and its viewer's dock: L1 and R1 browse, on a video
+                    // Left/Right seek on the timeline (or change the volume on its slider), A plays or pauses there and on play (else
+                    // selects the focused button), Y mutes; on a screenshot Left/Right only walk previous, next and close
+                    viewer != null -> {
+                        val browse = Hint(Glyph.L1, res.getString(R.string.overview_hint_browse), pair = Glyph.R1)
+                        val back = hint(Glyph.B, R.string.shell_hint_back)
+                        if (!viewer.video) listOf(hint(Glyph.A, R.string.shell_hint_select), browse, back)
+                        else listOfNotNull(
+                            when (viewer.target) {
+                                ViewerHintTarget.SEEK -> hint(Glyph.DPAD_HORIZONTAL, R.string.overview_hint_seek)
+                                ViewerHintTarget.VOLUME -> hint(Glyph.DPAD_HORIZONTAL, R.string.overview_video_volume)
+                                else -> null
+                            },
+                            when (viewer.target) {
+                                ViewerHintTarget.SEEK, ViewerHintTarget.PLAY -> hint(Glyph.A, if (viewer.playing) R.string.overview_hint_pause else R.string.overview_hint_play)
+                                else -> hint(Glyph.A, R.string.shell_hint_select)
+                            },
+                            hint(Glyph.Y, if (viewer.muted) R.string.overview_hint_unmute else R.string.overview_hint_mute),
+                            browse,
+                            back,
+                        )
+                    }
                     shell.overviewGame != null -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
                     else -> listOfNotNull(
                         // "Game info" is not repeated here: the hint under the focused cover (GameInfoHint) already names it

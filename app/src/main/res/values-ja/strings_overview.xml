@@ -72,6 +72,7 @@
     <string name="overview_hint_unmute">ミュート解除</string>
     <string name="overview_video_back">10秒戻る</string>
     <string name="overview_video_forward">10秒進む</string>
+    <string name="overview_video_volume">音量</string>
     <string name="overview_video_unavailable">この動画は再生できません</string>
     <string name="overview_video_blocked">所有者が他のアプリでの再生を許可していません。</string>
     <string name="overview_video_failed">YouTube で読み込めませんでした。接続を確認して、もう一度お試しください。</string>

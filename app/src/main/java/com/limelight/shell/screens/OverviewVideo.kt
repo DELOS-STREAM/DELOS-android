@@ -3,6 +3,7 @@ package com.limelight.shell.screens
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
+import android.os.SystemClock
 import android.os.Looper
 import android.webkit.JavascriptInterface
 import android.webkit.RenderProcessGoneDetail
@@ -11,48 +12,32 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.limelight.R
 import com.limelight.shell.data.YouTubeEmbeds
-import com.limelight.shell.ui.Cue
 import com.limelight.shell.ui.Figtree
-import com.limelight.shell.ui.LocalDelosColors
-import com.limelight.shell.ui.LocalFeedback
 import com.limelight.shell.ui.Symbol
 import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.Unbounded
-import com.limelight.shell.ui.hoverLook
-import com.limelight.shell.ui.pressLook
 import com.limelight.shell.ui.px
-import com.limelight.shell.ui.rememberPressPulse
 import com.limelight.shell.ui.tpx
 import java.util.Locale
 import org.json.JSONObject
@@ -75,25 +60,35 @@ internal fun videoTime(seconds: Float): String {
 
 /**
  * The page of the in-app player: YouTube's IFrame player API in privacy-enhanced mode (youtube-nocookie.com), inline, without YouTube's
- * own controls (the viewer's bar drives it), related videos only from the same channel, no annotations. [origin] is the app's identity
+ * own controls (the viewer's dock drives it), related videos only from the same channel, no annotations. [origin] is the app's identity
  * (`https://<application id>`), the page's base URL and so the Referer YouTube requires of embedding apps. The page reports to
- * `DelosPlayer.post`: `status` every 500 ms and on every change, `error` with the player's code (-1: the API did not load). Null for
- * an id that is no YouTube id.
+ * `DelosPlayer.post`: `ready` (with `glass`: whether it can blur behind an element), `status` every 500 ms and on every change (with
+ * the loaded fraction and the volume), `error` with the player's code (-1: the API did not load). Null for an id that is no YouTube id.
+ *
+ * The dock's glass over the video lives in this page: `glass(on, rects, blur)` places one element per rectangle (`[x, y, w, h, corner]`
+ * in device pixels) with a real backdrop blur of `blur` device pixels over the player and fades them in (420 ms) or out (240 ms) by their own opacity. A blur in
+ * the app's views cannot sample the web view's video.
  */
 internal fun youTubePlayerHtml(videoId: String, origin: String): String? {
     if (!VIDEO_ID.matches(videoId)) return null
     return """
         <!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-        <style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#p{position:absolute;inset:0;width:100%;height:100%}</style></head>
+        <style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#p{position:absolute;inset:0;width:100%;height:100%}
+        .g{position:absolute;pointer-events:none;opacity:0;background:rgba(10,16,32,.2);transition:opacity .24s cubic-bezier(.5,0,.75,0)}
+        .g.on{opacity:1;transition:opacity .42s cubic-bezier(.16,1,.3,1)}</style></head>
         <body><div id="p"></div><script>
-        var player,ready=false;
+        var player,ready=false,panes=[];
         function post(o){DelosPlayer.post(JSON.stringify(o));}
-        function status(){if(!ready||!player.getPlayerState)return;post({type:'status',state:player.getPlayerState(),time:player.getCurrentTime()||0,duration:player.getDuration()||0,muted:player.isMuted()});}
+        function status(){if(!ready||!player.getPlayerState)return;post({type:'status',state:player.getPlayerState(),time:player.getCurrentTime()||0,duration:player.getDuration()||0,muted:player.isMuted(),loaded:player.getVideoLoadedFraction()||0,volume:player.getVolume()});}
         function setPlaybackAllowed(allowed,wanted){if(!ready)return;if(allowed&&wanted)player.playVideo();else player.pauseVideo();}
+        function glass(on,rects,blur){var d=window.devicePixelRatio||1,f='blur('+blur/d+'px) saturate(1.8) brightness(.86)';
+          while(panes.length<rects.length){var e=document.createElement('div');e.className='g';document.body.appendChild(e);panes.push(e);}
+          panes.forEach(function(e,i){var r=rects[i];if(r){e.style.left=r[0]/d+'px';e.style.top=r[1]/d+'px';e.style.width=r[2]/d+'px';e.style.height=r[3]/d+'px';e.style.borderRadius=r[4]/d+'px';e.style.backdropFilter=f;e.style.webkitBackdropFilter=f;}
+            e.classList.toggle('on',on&&!!r);});}
         function onYouTubeIframeAPIReady(){
           player=new YT.Player('p',{host:'https://www.youtube-nocookie.com',videoId:'$videoId',
             playerVars:{playsinline:1,rel:0,controls:0,fs:0,disablekb:1,iv_load_policy:3,autoplay:0,enablejsapi:1,origin:'$origin'},
-            events:{onReady:function(){ready=true;post({type:'ready'});status();setInterval(status,500);},
+            events:{onReady:function(){ready=true;post({type:'ready',glass:CSS.supports('backdrop-filter','blur(1px)')||CSS.supports('-webkit-backdrop-filter','blur(1px)')});status();setInterval(status,500);},
                     onStateChange:function(){status();},
                     onError:function(e){post({type:'error',code:e.data});}}});
         }
@@ -104,7 +99,7 @@ internal fun youTubePlayerHtml(videoId: String, origin: String): String? {
 /**
  * One video of the viewer in the in-app player: what the player reports ([receive]) and the commands of the controls and the keys,
  * sent to it through the IFrame API. [started]: it has played, so the web view shows instead of the thumbnail. [error] is the player's
- * error code (-1: it did not load); the viewer then shows why instead of the player.
+ * error code (-1: it did not load); the viewer then shows why instead of the player. [loaded] is the buffered fraction, [volume] 0–100.
  */
 @Stable
 internal class OverviewVideoPlayer(val videoId: String) {
@@ -118,17 +113,30 @@ internal class OverviewVideoPlayer(val videoId: String) {
         private set
     var duration by mutableFloatStateOf(0f)
         private set
+    var loaded by mutableFloatStateOf(0f)
+        private set
+    var volume by mutableIntStateOf(100)
+        private set
     var error by mutableStateOf<Int?>(null)
+        private set
+
+    /** The page can blur behind the dock's glass (CSS `backdrop-filter`); until it says so, and if it cannot, the dock is tinted darker over the video. */
+    var glassSupported by mutableStateOf(false)
         private set
 
     /** The page has reported at least once. */
     var heard = false
         private set
-    private var ended = false
+    var ended by mutableStateOf(false)
+        private set
     internal var web: WebView? = null
     private var active = false
     private var wantsPlayback = true
     private var released = false
+
+    /** When the slider last set the volume: a report older than the change does not move the slider back. */
+    private var volumeSetAt = 0L
+    private var glassScript: String? = null
 
     /** Backgrounding revokes autoplay too, including an iframe whose onReady arrives later. */
     fun setActive(value: Boolean) {
@@ -181,6 +189,27 @@ internal class OverviewVideoPlayer(val videoId: String) {
         run(if (muted) "player.mute()" else "player.unMute()")
     }
 
+    /** Sets the volume (0–100); any volume above 0 turns the sound on. */
+    fun changeVolume(value: Int) {
+        val v = value.coerceIn(0, 100)
+        volume = v
+        volumeSetAt = SystemClock.uptimeMillis()
+        if (v > 0 && muted) muted = false
+        run("player.setVolume($v);" + if (v > 0) "player.unMute()" else "")
+    }
+
+    /**
+     * The dock's glass in the page: [rects] (`x, y, w, h, corner` in the web view's pixels) shown when [on]. Sent again once the page is
+     * ready, so a call made while it loads is not lost.
+     */
+    fun glass(on: Boolean, rects: List<FloatArray>, blur: Float) {
+        val list = rects.joinToString(",", "[", "]") { r -> r.joinToString(",", "[", "]") { it.toInt().toString() } }
+        val script = "if(window.glass){glass($on,$list,${blur.toInt()})}"
+        if (script == glassScript) return
+        glassScript = script
+        web?.evaluateJavascript(script, null)
+    }
+
     private fun run(js: String) {
         web?.evaluateJavascript("if(window.player&&player.getPlayerState){$js}", null)
     }
@@ -199,7 +228,11 @@ internal class OverviewVideoPlayer(val videoId: String) {
         val json = runCatching { JSONObject(message) }.getOrNull() ?: return
         heard = true
         when (json.optString("type")) {
-            "ready" -> applyPlayback()
+            "ready" -> {
+                glassSupported = json.optBoolean("glass", false)
+                glassScript?.let { web?.evaluateJavascript(it, null) }
+                applyPlayback()
+            }
             "error" -> fail(json.optInt("code", -1))
             "status" -> {
                 // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
@@ -211,6 +244,8 @@ internal class OverviewVideoPlayer(val videoId: String) {
                 time = json.optDouble("time", 0.0).toFloat()
                 duration = json.optDouble("duration", 0.0).toFloat()
                 muted = json.optBoolean("muted", muted)
+                loaded = json.optDouble("loaded", 0.0).toFloat().coerceIn(0f, 1f)
+                if (SystemClock.uptimeMillis() - volumeSetAt > 1_500L) volume = json.optInt("volume", volume).coerceIn(0, 100)
             }
         }
     }
@@ -252,75 +287,6 @@ internal fun playerView(context: Context, player: OverviewVideoPlayer): WebView 
 private class PlayerBridge(private val onMessage: (String) -> Unit) {
     @JavascriptInterface
     fun post(message: String) = onMessage(message)
-}
-
-/** The viewer's overlay transport controls: seeking, playback, elapsed time, duration and mute. */
-@Composable
-internal fun VideoControls(player: OverviewVideoPlayer, modifier: Modifier) {
-    val colors = LocalDelosColors.current
-    val feedback = LocalFeedback.current
-    val time = TextStyle(color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 20.tpx, fontFeatureSettings = "tnum")
-    Row(
-        modifier.overviewGlass(null, 36f).padding(horizontal = 14.px),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.px),
-    ) {
-        ControlButton(Symbols.PLAYER_BACK, stringResource(R.string.overview_video_back)) {
-            feedback.play(Cue.MOVE)
-            player.seekBy(-10)
-        }
-        ControlButton(
-            if (player.playing) Symbols.PLAYER_PAUSE else Symbols.PLAYER_PLAY,
-            stringResource(if (player.playing) R.string.overview_hint_pause else R.string.overview_hint_play),
-            accent = true,
-        ) {
-            feedback.play(Cue.SELECT)
-            player.togglePlay()
-        }
-        ControlButton(Symbols.PLAYER_FORWARD, stringResource(R.string.overview_video_forward)) {
-            feedback.play(Cue.MOVE)
-            player.seekBy(10)
-        }
-        BasicText(videoTime(player.time), Modifier.padding(start = 8.px), style = time)
-        val fraction = if (player.duration > 0f) (player.time / player.duration).coerceIn(0f, 1f) else 0f
-        Box(
-            Modifier
-                .weight(1f)
-                .height(40.px)
-                .pointerInput(player) { detectTapGestures { offset -> if (size.width > 0) player.seekTo(offset.x / size.width) } },
-            contentAlignment = Alignment.CenterStart,
-        ) {
-            Box(Modifier.fillMaxWidth().height(6.px).clip(RoundedCornerShape(3.px)).background(Color.White.copy(alpha = .18f)))
-            Box(Modifier.fillMaxWidth(fraction).height(6.px).clip(RoundedCornerShape(3.px)).background(colors.accent))
-        }
-        BasicText(videoTime(player.duration), style = time)
-        ControlButton(
-            if (player.muted) Symbols.PLAYER_MUTED else Symbols.PLAYER_SOUND,
-            stringResource(if (player.muted) R.string.overview_hint_unmute else R.string.overview_hint_mute),
-        ) {
-            feedback.play(Cue.SELECT)
-            player.toggleMute()
-        }
-    }
-}
-
-/** A round button of the control bar; [accent]: the filled play or pause button. */
-@Composable
-private fun ControlButton(icon: String, description: String, accent: Boolean = false, onClick: () -> Unit) {
-    val colors = LocalDelosColors.current
-    val press = rememberPressPulse()
-    val size = if (accent) 56f else 50f
-    Box(
-        Modifier
-            .size(size.px)
-            .hoverLook(999f, press)
-            .pressLook(press)
-            .clip(CircleShape)
-            .then(if (accent) Modifier.background(colors.accent) else Modifier)
-            .semantics { contentDescription = description }
-            .pointerInput(onClick) { detectTapGestures { press.afterSqueeze(onClick) } },
-        contentAlignment = Alignment.Center,
-    ) { Symbol(icon, (if (accent) 28f else 26f).tpx, if (accent) Color.White else colors.text, filled = true) }
 }
 
 /** Instead of a video the player cannot play: the thumbnail dimmed, why, and nothing to press (videos never leave the app). */

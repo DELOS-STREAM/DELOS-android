@@ -6,6 +6,7 @@ import android.os.Build
 import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
+import android.view.PointerIcon
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -45,17 +46,27 @@ private const val TAG = "OverviewPlayer"
  * any ancestor around it: a web view drawn inside the shell's Compose tree played the sound but showed a black picture. [content] (all
  * the viewer draws above the video: the thumbnail until it plays, the DELOS overlay, the hint bar) is composed over it in the same
  * window, as part of the viewer's composition. The window never takes the focus, so keys and Back stay with the shell; a touch or a
- * mouse in it tells [ControllerGlyphs] and [onPointer], as the shell's window does. It is in place only while the app is resumed:
+ * mouse in it tells [ControllerGlyphs] and [onPointer], as the shell's window does; while [pointerHidden] (the dock hidden) the mouse pointer
+ * is hidden over it. It is in place only while the app is resumed:
  * pausing removes it (and pauses the video), resuming puts it back; leaving composition removes it and destroys the web view.
  */
 @Composable
-internal fun OverviewPlayerWindow(player: OverviewVideoPlayer, bounds: IntRect, onPointer: () -> Unit, content: @Composable () -> Unit) {
+internal fun OverviewPlayerWindow(
+    player: OverviewVideoPlayer,
+    bounds: IntRect,
+    pointerHidden: Boolean,
+    onPointer: () -> Unit,
+    content: @Composable () -> Unit,
+) {
     val anchor = LocalView.current
     val parent = rememberCompositionContext()
     val currentContent by rememberUpdatedState(content)
     val currentPointer by rememberUpdatedState(onPointer)
     val window = remember(anchor, player) { PlayerWindow(anchor, player, parent, { currentPointer() }) { currentContent() } }
-    SideEffect { window.place(bounds) }
+    SideEffect {
+        window.place(bounds)
+        window.pointerHidden = pointerHidden
+    }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, window) {
         fun resumed(value: Boolean) {
@@ -122,6 +133,10 @@ private class PlayerWindow(
     private var shown = false
     private var destroyed = false
 
+    var pointerHidden: Boolean
+        get() = root.pointerHidden
+        set(value) { root.pointerHidden = value }
+
     fun place(bounds: IntRect) {
         if (params.x == bounds.left && params.y == bounds.top && params.width == bounds.width && params.height == bounds.height) return
         params.x = bounds.left
@@ -177,8 +192,22 @@ private fun layerName(type: Int): String = when (type) {
     else -> type.toString()
 }
 
-/** The window's root: a touch or a mouse in the player's window counts as input there, as [com.limelight.shell.ShellActivity] counts it in its own. */
+/**
+ * The window's root: a touch or a mouse in the player's window counts as input there, as [com.limelight.shell.ShellActivity] counts it in its
+ * own. While [pointerHidden] no child (the web view's own pointer included) shows the mouse pointer.
+ */
 private class PlayerWindowRoot(context: Context, private val onPointer: () -> Unit) : FrameLayout(context) {
+    var pointerHidden = false
+        set(value) {
+            if (field == value) return
+            field = value
+            // Setting the icon makes a pointer resting over the window take the change without moving
+            pointerIcon = if (value) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_NULL) else null
+        }
+
+    override fun onResolvePointerIcon(event: MotionEvent, pointerIndex: Int): PointerIcon? =
+        if (pointerHidden) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_NULL) else super.onResolvePointerIcon(event, pointerIndex)
+
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         ControllerGlyphs.touch(event)
         onPointer()

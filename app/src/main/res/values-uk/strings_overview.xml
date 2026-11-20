@@ -84,6 +84,7 @@
     <string name="overview_hint_unmute">Увімкнути звук</string>
     <string name="overview_video_back">Назад на 10 секунд</string>
     <string name="overview_video_forward">Вперед на 10 секунд</string>
+    <string name="overview_video_volume">Гучність</string>
     <string name="overview_video_unavailable">Це відео неможливо відтворити</string>
     <string name="overview_video_blocked">Його власник не дозволяє відтворювати його в інших застосунках.</string>
     <string name="overview_video_failed">YouTube не зміг його завантажити. Перевір з\'єднання і спробуй ще раз.</string>

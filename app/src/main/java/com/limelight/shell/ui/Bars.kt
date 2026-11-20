@@ -525,10 +525,18 @@ sealed interface Glyph {
 /**
  * [shortLabel] is the label a cramped (compact) bar uses before it drops the label altogether. [tappable]: a finger, a mouse or a
  * keyboard can press it in the bar (the library's Filter): while no controller is the input it is a glyphless pill that runs the bar's
- * `onTap`; a controller has the button itself, and the hint stays a hint (`Hint.tappable` of DELOS for Apple).
+ * `onTap`; a controller has the button itself, and the hint stays a hint (`Hint.tappable` of DELOS for Apple). [pair]: a second button
+ * drawn right after [glyph] for the opposite direction of the same action (L1 and R1: Browse).
  */
 @Immutable
-data class Hint(val glyph: Glyph, val label: String, val shortLabel: String? = null, val tappable: Boolean = false, val icon: String? = null)
+data class Hint(
+    val glyph: Glyph,
+    val label: String,
+    val shortLabel: String? = null,
+    val tappable: Boolean = false,
+    val icon: String? = null,
+    val pair: Glyph? = null,
+)
 
 /** The bottom bar: an optional note on the left, the button hints on the right; [onTap] runs a [Hint.tappable] hint's pill. */
 @Composable
@@ -657,7 +665,10 @@ private fun HintCell(hint: Hint, detail: HintDetail, onTap: ((Hint) -> Unit)?) {
             }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
-                GlyphButton(hint.glyph)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.px)) {
+                    GlyphButton(hint.glyph)
+                    hint.pair?.let { GlyphButton(it) }
+                }
                 if (detail != HintDetail.BARE) BasicText(
                     label, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 21.tpx), maxLines = 1,
                 )

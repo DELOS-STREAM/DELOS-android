@@ -103,6 +103,7 @@
     <string name="overview_hint_unmute">Sound on</string>
     <string name="overview_video_back">Back 10 seconds</string>
     <string name="overview_video_forward">Forward 10 seconds</string>
+    <string name="overview_video_volume">Volume</string>
     <!-- A video the YouTube player cannot play: the title, then why -->
     <string name="overview_video_unavailable">This video can\'t be played</string>
     <string name="overview_video_blocked">Its owner doesn\'t allow playing it in other apps.</string>

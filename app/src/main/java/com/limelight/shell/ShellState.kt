@@ -499,11 +499,14 @@ class ShellState(initial: Screen) {
 val LocalShell = staticCompositionLocalOf<ShellState> { error("ShellState not provided") }
 
 /**
- * What the hint bar shows for the overview's viewer: on a [video] the player can play, Left/Right seek, A plays or pauses ([playing]),
- * Y mutes or turns the sound on ([muted]), L1/R1 browse; on a screenshot (or a video that cannot play) Left/Right browse.
+ * What the hint bar shows for the overview's viewer: L1/R1 browse; on a [video] the player can play, Y mutes or turns the sound on
+ * ([muted]), and the focused stop of the dock ([target]) decides what Left/Right (seek 10 s, volume) and A (play or pause, select) do.
  */
 @androidx.compose.runtime.Immutable
-data class OverviewViewerHints(val video: Boolean, val playing: Boolean = false, val muted: Boolean = false)
+data class OverviewViewerHints(val video: Boolean, val playing: Boolean = false, val muted: Boolean = false, val target: ViewerHintTarget = ViewerHintTarget.SEEK)
+
+/** The kind of stop the viewer dock's focus is on, for its hints. */
+enum class ViewerHintTarget { SEEK, PLAY, VOLUME, BUTTON }
 
 val LocalFocusTracker = staticCompositionLocalOf<FocusTracker> { error("FocusTracker not provided") }
 

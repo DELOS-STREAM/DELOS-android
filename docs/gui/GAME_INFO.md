@@ -603,47 +603,83 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
 
 ### 9.4 Screenshot and video viewer
 
-1. It zooms out of the thumbnail (560 ms) and back into it (440 ms), or fades when the thumbnail is scrolled away.
-2. A screenshot is as large as fits 280 × 300 px inside the stage, 16:9; the thumbnail stays until the full picture
+Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, its `NOTES.md`); `OverviewViewer.kt`,
+`OverviewDock.kt`.
+
+1. It zooms out of the thumbnail (560 ms) and back into it (440 ms), or fades when the thumbnail is scrolled away. The
+   picture fills the stage (a screenshot keeps its aspect ratio, letterboxed); the thumbnail stays until the full picture
    (`screenshot_huge`, `1080p` on a 4:3 stage) is decoded. The page behind is blurred (40 px, a dark tint).
-3. Left and Right browse: the new picture slides in 160 px from the side of the key while the old one leaves 90 px
-   the other way; at the ends the picture nudges. L1 and R1 (keyboard `[` `]`) browse too, also on a video. B closes.
-   The hint bar shows Browse and Back.
-4. A filmstrip of the items sits 112 px above the bottom, the current one larger with the accent ring; the count and
-   the item's name sit top left. A mouse gets round previous and next buttons; a mouse and a finger get a close
-   button. A finger swipes sideways to browse and down to close.
+2. **The dock:** a tall glass dock 64 px from the sides and 28 px above the hint bar (corner 46 px, padding 24/44/30 px):
+   a tint of 0.20 over a real 40 px backdrop blur, a top highlight and a hairline. On a video its first row is the
+   timeline: the elapsed time, the seek bar (10 px; buffered in white, played in gold; 16 px with its knob when focused,
+   dragged or hovered) and the remaining time. The second row has the count and the title left ("3 / 11 · Launch
+   Trailer"), the transport exactly in the middle (equal weights either side: previous 76 px, back 10 s 92, play/pause
+   124 in gold, forward 10 s 92, next 76, 26 px apart) and the sound right (mute 72 px, which shows the volume level, and
+   a 170 px volume slider). On a screenshot the timeline and the sound go and the transport is previous, a page indicator
+   (a dot per item, videos as rings, the current one a 40 px gold bar) and next. A glass close button (76 px) sits top
+   right. Previous and next are dimmed at the ends.
+3. **Icons are centred by their ink:** `CenteredGlyph` measures each glyph once (drawn into a bitmap) and places its ink
+   bounds' centre on the button's centre; the play triangle uses its ink centroid instead (the usual optical nudge to
+   the right). The ±10 s arrows (`arrow-counter-clockwise`, `arrow-clockwise`) carry a "10" centred the same way.
+4. **Showing and hiding:** the dock, close and the shades rise (dock 30 px, close 14 px down) in 420 ms ease-out and
+   fall away in 240 ms; each glass part fades by its own opacity. They hide after 3 s without input while a video plays
+   or a screenshot shows; a paused, loading or ended video and a dragged slider hold them; any key, touch or pointer
+   movement brings them back. The hint bar and the status bar hide with them, and so does the mouse pointer (over the
+   shell and the player's window). Nothing of DELOS stays on a playing video (YouTube's terms).
+5. **Controller and keyboard:** a gold ring glides between the stops by a spring (about 560 ms, slight overshoot). On a
+   video the focus starts on the timeline: Left and Right seek 10 s, A plays or pauses (from the start once it has
+   ended); Down reaches play, Left and Right walk the transport on to mute and the volume slider (Left/Right change the
+   volume there by 10); Up returns to the timeline and from there to close. On a screenshot the focus starts on next;
+   Left and Right walk previous and next, Up reaches close. Left/Right never browse: L1 and R1 (keyboard `[` `]`)
+   browse screenshots and videos alike; the new picture slides in 160 px from the side of the key while the old one
+   leaves 90 px the other way. A selects the focused button, Y mutes (keyboard F or M), B closes (Esc); Return is A,
+   Space plays or pauses anywhere. The focus returns to its first stop whenever the item changes or the dock hides, so a
+   key on the hidden dock acts at once (Left/Right seek, A plays or pauses). Down from the timeline lands on play, not on
+   the row's first button: an owner-approved exception to the row-first focus rule. The hint bar shows Seek 10 s (or
+   Volume), Play or Pause (or Select), Mute or Sound on, L1 R1 Browse and Back; on a screenshot Select, L1 R1 Browse and
+   Back.
+6. **Seek feedback** (borrowed from variant B): a glass wedge of a ring around the picture's centre, on the side of the
+   seek, flashes gold with the seek glyph and the running total: repeated seeks one way within 900 ms count 10, 20, 30…
+7. **Touch:** a tap toggles the dock, a double tap in the left or right third seeks 10 s (with the flash), a swipe
+   sideways browses and a swipe down closes; the seek bar and the volume slider take taps and drags. Decision for
+   YouTube's own surface: while the dock is hidden over a playing video, the viewer's touch layer is not there, so a tap
+   reaches the player (an ad's Skip, its links) and the same touch brings the dock back; with the dock up, taps belong
+   to the dock. A tap that brings the dock back never hides it again.
+8. **Mouse:** moving shows the dock; a click on the picture plays or pauses; hovering the seek bar shows the time under
+   the pointer; buttons light up under it.
+9. **Reduced motion:** fades stay; the rises, the focus scale, the ring's glide, the slides and the flash's nudge go.
 
 **Videos** (`OverviewVideo.kt`, `YouTubeEmbeds.kt`). Trailers play only inside the app; nothing opens a browser or the
 YouTube app.
 
-1. A video is as large as fits 280 × 440 px inside the stage, 16:9, 70 px above the middle (1137 × 640 at 1080p), so
-   its control bar fits under it: a glass bar 72 px tall, 22 px below the video, as wide as it, with back 10 s,
-   play/pause, forward 10 s, the time, a progress track (a tap or click seeks there), the length and the sound. Nothing
-   of DELOS lies on the player (YouTube's terms).
+1. A video fills the stage under the dock. The dock's glass over it is drawn by the player's page itself: one element
+   per glass part with CSS `backdrop-filter: blur(40px) saturate(1.8) brightness(.86)` over a 0.20 tint, placed and
+   faded through `glass(on, rects)` (a blur in the app's views cannot sample the web view's video). Until the video
+   plays, the dock blurs the thumbnail in Compose; a page without `backdrop-filter` gets a flat 0.45 tint instead. The
+   page also reports the loaded fraction (the buffered bar) and the volume, which the slider sets.
 2. Once the viewer has settled on a video, YouTube's IFrame player loads in a web view on the picture: privacy-enhanced
-   host `youtube-nocookie.com`, inline, autoplay, YouTube's own controls off (`controls=0`; the DELOS bar drives it
+   host `youtube-nocookie.com`, inline, autoplay, YouTube's own controls off (`controls=0`; the DELOS dock drives it
    through the IFrame API), related videos only from the same channel (`rel=0`), no annotations, no full-screen button.
-   The page's base URL is `https://<application id>`, which sets the Referer YouTube requires of embedding apps. The
-   thumbnail stays until the video plays. The web view never takes the focus; a finger or a mouse may use YouTube's own
-   surface (an ad's Skip), but every navigation away from the page and every new window is refused. Ads are not blocked.
+   The page's base URL is `https://<application id>`, which sets the Referer YouTube requires of embedding apps. Until
+   the video reports playing, its still fills the stage like the video (cropped, `maxresdefault`, else `hqdefault`),
+   blurred 16 px, in the shell and in the player's window alike; it then crossfades to the sharp video. The web view
+   never takes the focus; every navigation away from the page and every new window is refused. Ads are not blocked.
    Browsing away or closing removes the player; the app going to the background pauses it.
    The web view lives in a window of its own over the app's (`OverviewPlayerWindow.kt`: an application panel, hardware
-   accelerated, that never takes the focus, so keys and Back stay with the shell), with the thumbnail, the DELOS overlay
+   accelerated, that never takes the focus, so keys and Back stay with the shell), with the thumbnail, the DELOS dock
    and the hint bar composed over it in that window; drawn inside the shell's Compose layers, a trailer played its sound
    over a black picture. The app going to the background removes that window and coming back puts it back. When a video
    starts, logcat tag `OverviewPlayer` (and the diagnostic log) gets `Playback started: webView.isHardwareAccelerated=…,
    layerType=…, windowType=…, windowHardwareAccelerated=…, window=W×H`; `true`, `NONE`, `1000` (application panel) and
    `true` are the expected values.
-3. Keys on a video: Left and Right seek 10 s, A plays or pauses (from the start once it has ended), Y mutes or turns
-   the sound on (keyboard F or M), L1 and R1 browse, B closes. The hint bar shows Seek 10 s, Play or Pause, Mute or
-   Sound on, Previous, Next and Back.
+3. The keys are those of the dock (item 5 above).
 4. Videos YouTube will not embed are left out of the carousel: when the details arrive, YouTube's oEmbed endpoint is
    asked once per video id and process (401: the owner disabled embedding; 400, 403, 404: invalid, private or
    removed); a failed check keeps the video. The player's errors 100, 101 and 150 drop a video the same way. The open
    viewer keeps its items until it closes.
 5. A video that still cannot play shows its thumbnail dimmed with "This video can't be played" and why (its owner does
    not allow other apps, or YouTube could not load it, also when the player has not answered within 15 s), without any
-   button; Left and Right browse then.
+   button; L1 and R1 browse then.
 
 ### 9.5 Data and caching
 
