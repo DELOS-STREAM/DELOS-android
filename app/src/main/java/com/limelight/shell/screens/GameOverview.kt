@@ -337,9 +337,9 @@ internal fun GameOverview(
     val viewerMedia = remember(viewer != null) { media }
     fun carouselIndex(index: Int): Int = viewerMedia.getOrNull(index)?.let { media.indexOf(it) } ?: -1
 
-    // The ring shows once the overview has settled, never for a finger
-    LaunchedEffect(controller.settled, kind) {
-        focus.alpha.animateTo(if (controller.settled && kind != InputKind.TOUCH) 1f else 0f, tween(200, easing = Motion.Ease))
+    // The ring shows once the overview has settled, for a finger too: a first tap only focuses (focus first), and the ring shows it did
+    LaunchedEffect(controller.settled) {
+        focus.alpha.animateTo(if (controller.settled) 1f else 0f, tween(200, easing = Motion.Ease))
     }
 
     // Ratings fill and count up 380 ms after the opening began (or as soon as the details arrive later)
@@ -644,7 +644,8 @@ private fun Header(
     val metadata = LocalGameMetadata.current.entry(pc, app).data
     val key = homeKey(pc, app)
     val hue = HeroBitmaps.hue(key) ?: art.hue2
-    // A staggered part of the header (`.st`): it rises in after the page has begun to move, and fades out first when it closes
+    // A staggered part of the header (`.st`): it rises in after the page has begun to move, and fades out first when it closes. Its alpha
+    // applies to each of its parts as they draw: an offscreen copy would be cut to the part's box (Play's halo reaches beyond it)
     fun Modifier.st(index: Int, delay: Int = OverviewMotion.HEADER_DELAY): Modifier = graphicsLayer {
         val (pageDy, pageAlpha) = pageMotion()
         val (dy, a) = when {
@@ -654,6 +655,7 @@ private fun Header(
         }
         translationY = (dy + pageDy) * k
         alpha = a * pageAlpha
+        compositingStrategy = CompositingStrategy.ModulateAlpha
     }
     Box(Modifier.fillMaxWidth().height((stage.stageHeight - 160f).px).overviewSection(HEAD)) {
         Row(Modifier.padding(start = SIDE.px, top = HEAD_TOP.px, end = SIDE.px)) {
@@ -664,8 +666,12 @@ private fun Header(
             Box(
                 Modifier
                     .size(COVER_W.px, COVER_H.px)
-                    // Where the slot is on screen: it does not move while the cover flies (the page is at its top, nothing lays out)
-                    .onGloballyPositioned { pose.slot = it.rootRect() }
+                    // Where the slot is on screen: it does not move while the cover flies (the page is at its top, nothing lays out).
+                    // Known, the flight takes over from the dashboard's card
+                    .onGloballyPositioned {
+                        pose.slot = it.rootRect()
+                        controller.placeCover()
+                    }
                     .drawWithCache {
                         val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                             style = android.graphics.Paint.Style.STROKE
@@ -677,8 +683,10 @@ private fun Header(
                         }
                         onDrawWithContent {
                             drawContent()
-                            if ((controller.opening || controller.closing) && ControllerGlyphs.kind != InputKind.TOUCH) {
+                            // The card's focus ring flies with it and fades out on the way (a finger sees the card's ring too)
+                            if (controller.opening || controller.closing) {
                                 val p = pose.update(controller, size.width, size.height, pull(), k)
+                                if (p.alpha <= 0f) return@onDrawWithContent
                                 val amount = (1f - controller.flight.value).coerceIn(0f, 1f)
                                 val left = p.x + p.frameLeft * p.scale
                                 val top = p.y + p.frameTop * p.scale
@@ -850,8 +858,8 @@ private fun Header(
 /**
  * The title: the game's logo when it has one, exactly the dashboard's (the user's SteamGridDB choice, else the default logo, its
  * animation playing over it), else its name in 68 px Unbounded in the game's colors; while the logo lookup is pending, the logo's room.
- * It flies from the dashboard's title when that was the same kind ([OverviewController.title]): the logo from the logo, the name from the
- * name; otherwise it rises like the header's parts.
+ * The name flies from the dashboard's name ([OverviewController.title]); a logo crossfades with the dashboard's logo, each at its own
+ * place ([OverviewMotion.logoArriving]); otherwise it rises like the header's parts.
  */
 @Composable
 private fun Title(controller: OverviewController, pc: Pc, app: App, hue: Float, pageMotion: () -> Pair<Float, Float>) {
@@ -869,13 +877,17 @@ private fun Title(controller: OverviewController, pc: Pc, app: App, hue: Float, 
             val source = controller.title?.takeIf { (it.fontSize == null) == isLogo }
             val moving = controller.opening || controller.closing
             val c = coordinates
-            if (source != null && moving && c != null && c.isAttached && !controller.reduced) {
+            if (source != null && moving && !controller.reduced && source.fontSize == null) {
+                // A logo does not move: it fades in here while the dashboard's fades out where it is, and the other way round
+                alpha = if (controller.closing) OverviewMotion.logoLeaving(controller.clock.value, opening = false)
+                else OverviewMotion.logoArriving(controller.clock.value, opening = true)
+            } else if (source?.fontSize != null && moving && c != null && c.isAttached && !controller.reduced) {
                 val to = c.rootRect()
                 val p = OverviewMotion.title(controller.clock.value, opening = !controller.closing)
-                // The dashboard's logo box and this one have the same proportions: one scale maps the logo in one onto the other
-                val scale = source.fontSize?.let { it / TITLE_SIZE } ?: (source.rect.height / to.height)
+                // The dashboard's name at its font size, centred on its box, grows into this one
+                val scale = source.fontSize / TITLE_SIZE
                 val dx = source.rect.left - to.left
-                val dy = source.rect.top - to.top + if (source.fontSize != null) (source.rect.height - to.height * scale) / 2f else 0f
+                val dy = source.rect.top - to.top + (source.rect.height - to.height * scale) / 2f
                 translationX = dx * (1f - p)
                 translationY = dy * (1f - p)
                 val s = Motion.lerp(scale, 1f, p)
@@ -940,7 +952,7 @@ internal fun Bob(down: Boolean, content: @Composable () -> Unit) {
     }) { content() }
 }
 
-/** A header button (`.btn`): 76 px pill, Play in the accent. */
+/** A header button (`.btn`): 86 px pill with 54 px at its sides, Play in the accent. */
 @Composable
 private fun OverviewButton(
     id: String, icon: String, label: String, primary: Boolean, requester: FocusRequester, onClick: () -> Unit,
@@ -950,7 +962,7 @@ private fun OverviewButton(
     LaunchedEffect(id) { register(id) }
     var focused by remember { mutableStateOf(false) }
     val pulse = rememberPressPulse()
-    val scale = animateFocusScale(focused, pulse.pressed, if (ControllerGlyphs.kind == InputKind.TOUCH) 1f else 1.06f)
+    val scale = animateFocusScale(focused, pulse.pressed, 1.06f)
     val reduced = com.limelight.shell.ui.LocalReducedMotion.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val window = LocalWindowInfo.current
@@ -960,12 +972,12 @@ private fun OverviewButton(
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    val effectShown = primary && focused && effectActive && ControllerGlyphs.kind != InputKind.TOUCH
+    val effectShown = primary && focused && effectActive
     Box(
         Modifier
             .hoverFocus(requester, onHover)
             .focusEffects(
-                // A finger sees no focus look (focus first still applies): no ring, no growth
+                // The growth and the shared ring are drawn below, for every input (a finger's first tap only focuses: focus first)
                 onClick = onClick, corner = 999f, focusScale = 1f, press = false, pressPulse = pulse,
                 ring = null, glow = null, focusRequester = requester,
                 onFocusChange = { focused = it; if (it) onFocused(id) }, onTouchTap = { it },
@@ -984,11 +996,11 @@ private fun OverviewButton(
         if (primary) PlayEffect(effectShown, effectShown && foreground && window.isWindowFocused, reduced)
         Row(
             Modifier
-                .height(76.px)
+                .height(86.px)
                 .clip(CircleShape)
                 .background(if (primary) colors.accent else colors.surface)
                 .then(if (primary) Modifier else Modifier.border(1.px, colors.line, CircleShape))
-                .padding(horizontal = 38.px),
+                .padding(horizontal = 54.px),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.px),
         ) {
             val ink = if (primary) colors.onAccent else colors.text
@@ -1018,8 +1030,9 @@ private fun BoxScope.PlayEffect(shown: Boolean, running: Boolean, reduced: Boole
             phase.snapTo(0f)
         }
     }
-    // The halo: recorded once, faded by its layer's alpha
-    Box(Modifier.matchParentSize().graphicsLayer { alpha = fade }.drawWithCache {
+    // The halo: recorded once, faded by its layer's alpha. The alpha modulates the paint (ModulateAlpha): an offscreen layer would be cut
+    // to the pill's rectangle, and the halo, which reaches out beyond it, showed square corners until it had faded in
+    Box(Modifier.matchParentSize().graphicsLayer { alpha = fade; compositingStrategy = CompositingStrategy.ModulateAlpha }.drawWithCache {
         fun halo(spread: Float, blur: Float, alpha: Float) = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
             color = accent.copy(alpha = alpha).toArgb()
             maskFilter = android.graphics.BlurMaskFilter(blur, android.graphics.BlurMaskFilter.Blur.NORMAL)
@@ -1034,7 +1047,7 @@ private fun BoxScope.PlayEffect(shown: Boolean, running: Boolean, reduced: Boole
         }
     })
     if (reduced) return
-    Box(Modifier.matchParentSize().graphicsLayer { alpha = fade }.drawWithCache {
+    Box(Modifier.matchParentSize().graphicsLayer { alpha = fade; compositingStrategy = CompositingStrategy.ModulateAlpha }.drawWithCache {
         val band = 4f * k
         val inset = 9f * k // the band's centre line, between -11 and -7
         val cx = size.width / 2f
@@ -1076,7 +1089,7 @@ private fun Modifier.part(
     return this
         .hoverFocus(requester, onHover)
         .focusEffects(
-            onClick = onClick, corner = corner, focusScale = if (ControllerGlyphs.kind == InputKind.TOUCH) 1f else focusScale, ring = null, glow = null, focusRequester = requester,
+            onClick = onClick, corner = corner, focusScale = focusScale, ring = null, glow = null, focusRequester = requester,
             onFocusChange = { onFocusChange(it); if (it) onFocused(id) }, onTouchTap = { it },
         )
         .overviewTarget(id, requester, section.name, group, locked, ring)
@@ -1533,8 +1546,11 @@ private class CoverPose {
         private set
     private var rest: Shape? = null
 
-    /** The cover's slot on screen (root pixels), measured when it is placed. */
-    var slot: Rect? = null
+    /**
+     * The cover's slot on screen (root pixels), measured when it is placed. State: the layer that drew the overview's first frame before
+     * the slot was known draws again with it.
+     */
+    var slot by mutableStateOf<Rect?>(null)
 
     /** The pose of a cover of [w] × [h] in its [slot], pulled down [pulled] pixels by a finger at the top of the page. */
     fun update(controller: OverviewController, w: Float, h: Float, pulled: Float, k: Float): CoverPose {
@@ -1574,6 +1590,9 @@ private class CoverPose {
             card = OverviewMotion.cardShown(p)
             shape = FrameShape(frameLeft, frameTop, frameWidth, frameHeight, f.corner * k * r / s)
             return this
+        } else if (moving && from != null) {
+            // The slot is not known yet (the overview's first layout): the card on the dashboard stays until the flight can start from it
+            alpha = 0f
         } else {
             // Pulled down by a finger at the top, the cover shrinks a little
             scale = 1f - min(pulled / k, 300f) / 2400f
@@ -1609,7 +1628,6 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, sho
     val sourceKey = if (showsShot) "overview/$shot" else "overview/${hero?.id}"
     val bg = colors.bg
     val shadeBottom = remember(bg) { Brush.verticalGradient(0f to Color.Transparent, .42f to Color.Transparent, 1f to bg) }
-    val shadeLeft = remember(bg) { Brush.horizontalGradient(0f to bg, .38f to Color.Transparent) }
     val depth = { BackdropDepth.at(scroll() / k, reduced) }
     val enter = {
         when {
@@ -1663,14 +1681,25 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, sho
                 }
             }
         }
-        Box(Modifier.fillMaxSize().drawBehind {
-            val a = depth().shade
-            drawRect(shadeBottom, alpha = a)
-            drawRect(shadeLeft, alpha = a)
-            drawRect(Brush.radialGradient(.55f to Color.Transparent, 1f to Color(4, 8, 16).copy(alpha = .62f), center = Offset(size.width / 2f, size.height * .4f), radius = size.width * .6f))
+        // The shades under the page's text: the bottom one, and the left one under the header, which only begins below the top bar
+        // (the bar, the brand and the PC keep the backdrop as it is: no band and no vignette behind them, owner 2026-11-20)
+        Box(Modifier.fillMaxSize().drawWithCache {
+            val left = android.graphics.LinearGradient(0f, 0f, size.width * .38f, 0f, bg.toArgb(), 0, android.graphics.Shader.TileMode.CLAMP)
+            val below = android.graphics.LinearGradient(0f, SHADE_TOP * k, 0f, SHADE_SOLID * k, 0, android.graphics.Color.BLACK, android.graphics.Shader.TileMode.CLAMP)
+            val paint = android.graphics.Paint().apply { shader = android.graphics.ComposeShader(left, below, android.graphics.PorterDuff.Mode.DST_IN) }
+            onDrawBehind {
+                val a = depth().shade
+                drawRect(shadeBottom, alpha = a)
+                paint.alpha = (a * 255f).roundToInt()
+                drawContext.canvas.nativeCanvas.drawRect(0f, 0f, size.width, size.height, paint)
+            }
         })
     }
 }
+
+/** The backdrop's left shade starts under the top bar at [SHADE_TOP] and is whole from [SHADE_SOLID] down (stage pixels). */
+private const val SHADE_TOP = 140f
+private const val SHADE_SOLID = 260f
 
 /** The deepest blur further down the page: 60 % of the former 40 px maximum, never below the dashboard's own blur. */
 private const val DEEP_BLUR = 24
