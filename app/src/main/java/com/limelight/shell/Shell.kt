@@ -150,6 +150,7 @@ import com.limelight.diag.ReportOutcomeText
 import com.limelight.diag.ReportUploader
 import com.limelight.shell.ui.LocalImeAvoidance
 import com.limelight.shell.ui.rememberImeAvoidance
+import com.limelight.shell.ui.secondaryClickOutside
 import com.limelight.shell.data.LocalArtwork
 import com.limelight.shell.data.downloadAll
 import com.limelight.shell.data.BundledArtwork
@@ -770,7 +771,15 @@ fun Shell(
                 .sideMenuSwipe(
                     canOpen = ::sideSwipeOpens, isOpen = ::sideSwipeCloses,
                     onStart = ::startSideDrag, onMove = { _, travel -> moveSideDrag(travel) }, onEnd = ::endSideDrag,
-                ),
+                )
+                // A right click beside the items of an open layer (a menu, the side menu, a popup) closes it, as B does; one on an item
+                // is the item's (focusEffects: its Options)
+                .secondaryClickOutside {
+                    if (shell.layer != null || shell.picker != null) {
+                        feedback.play(Cue.BACK)
+                        shell.back()
+                    }
+                },
         ) {
             // The blur source re-records the whole screen every frame, so it is only active while an overlay
             // is shown (and while it fades out)

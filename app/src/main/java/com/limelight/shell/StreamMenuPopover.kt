@@ -432,7 +432,7 @@ private fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier
             .size(L.POPOVER_HEAD_HEIGHT.px)
-            .focusEffects(onBack, corner = 999f, focusScale = 1.06f, ring = null, glow = null, pressScale = 1f, clickCue = Cue.BACK, onFocusChange = { focused = it })
+            .focusEffects(onBack, corner = 999f, focusScale = 1.06f, ring = null, glow = null, clickCue = Cue.BACK, onFocusChange = { focused = it })
             .drawBehind {
                 drawCircle(fill)
                 if (ring > 0f) {
@@ -523,7 +523,7 @@ internal fun MenuRow(
             }
             .focusEffects(
                 onClick = { if (enabled) activate() else feedback.play(Cue.ERROR) },
-                corner = L.ROW_RADIUS, focusScale = 1f, ring = null, glow = null, pressScale = 1f,
+                corner = L.ROW_RADIUS, focusScale = 1f, ring = null, glow = null,
                 glide = true,
                 clickCue = if (enabled && value !is RowValue.Info) (if (value is RowValue.Action) Cue.OPEN else Cue.SELECT) else null,
                 adjustable = adjust != null && enabled,
@@ -688,7 +688,7 @@ internal fun PopoverPills(labels: List<String>, first: FocusRequester, command: 
                         .staggerEntrance()
                         .focusEffects(
                             { onSelect(i) }, corner = 999f, focusScale = 1f, ring = null, glow = null,
-                            pressScale = 1f, glide = true,
+                            glide = true,
                             onFocusChange = {
                                 if (it) help((if (command) "Command: " else "Keys: ") + label)
                             },

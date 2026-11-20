@@ -83,7 +83,6 @@ import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.LocalReducedMotion
 import com.limelight.shell.ui.Motion
 import com.limelight.shell.ui.animateFocusScale
-import com.limelight.shell.ui.rememberPressPulse
 import com.limelight.shell.ui.LocalStage
 import com.limelight.shell.ui.Symbol
 import com.limelight.shell.ui.Unbounded
@@ -441,9 +440,9 @@ private fun TileCell(
     val index = spec.item.ordinal
     val on = spec.on == true
     val dim = popOpen && !focused
-    val press = rememberPressPulse()
 
-    val scale by animateFocusScale(focused, press.pressed, L.FOCUS_SCALE, L.PRESS_SCALE, "tileScale")
+    // The press is focusEffects' (Motion.PRESS_SCALE of this scale)
+    val scale by animateFocusScale(focused, false, L.FOCUS_SCALE, label = "tileScale")
     val iconScale by animateFloatAsState(if (focused) L.ICON_FOCUS_SCALE else 1f, if (rm) snap() else tween(Motion.FOCUS, easing = EaseSpring), label = "iconScale")
     val labelShift by animateFloatAsState(if (focused) L.LABEL_FOCUS_SHIFT else 0f, if (rm) snap() else tween(Motion.FOCUS, easing = EaseSpring), label = "labelShift")
     val focusFill by animateFloatAsState(if (focused) 1f else 0f, tween(Motion.FADE, easing = Motion.Ease), label = "focusFill")
@@ -466,11 +465,8 @@ private fun TileCell(
             }
             .focusRequester(requester)
             .focusEffects(
-                {
-                    press.fire()
-                    if (!popOpen || spec.opensPage) spec.onClick()
-                },
-                corner = g.tileRadius, focusScale = 1f, ring = null, glow = null, pressScale = 1f,
+                { if (!popOpen || spec.opensPage) spec.onClick() },
+                corner = g.tileRadius, focusScale = 1f, ring = null, glow = null,
                 onFocusChange = { onFocused(spec.item, it) },
             ),
         contentAlignment = Alignment.Center,

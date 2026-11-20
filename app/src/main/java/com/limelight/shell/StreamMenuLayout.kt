@@ -163,7 +163,6 @@ internal object StreamMenuLayout {
     const val TILES_LEFT = (STAGE_WIDTH - TILES_WIDTH) / 2f
     const val FOCUS_SCALE = 1.12f
     const val ICON_FOCUS_SCALE = 1.04f
-    const val PRESS_SCALE = .97f
 
     /** The gold ring around the focused tile: a 186 box (the tile at 1.12 is 168, plus 9 on each side). */
     const val RING = 186f

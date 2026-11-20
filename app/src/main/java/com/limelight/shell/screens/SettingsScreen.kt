@@ -100,11 +100,8 @@ import com.limelight.shell.ui.Cue
 import com.limelight.shell.ui.AutoScrollingHelp
 import com.limelight.shell.ui.Figtree
 import com.limelight.shell.ui.FocusTransferTarget
-import com.limelight.shell.ui.animateFocusScale
 import com.limelight.shell.ui.rememberFocusTransfer
-import com.limelight.shell.ui.rememberPressPulse
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.input.pointer.pointerInput
+import com.limelight.shell.ui.pointerTap
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
@@ -439,8 +436,6 @@ internal fun TabPill(icon: String, label: String, selected: Boolean, modifier: M
     val colors = LocalDelosColors.current
     val reduced = LocalReducedMotion.current
     val feedback = LocalFeedback.current
-    val pulse = rememberPressPulse()
-    val scale by animateFocusScale(focused = false, pressed = pulse.pressed, focusScale = 1f)
     // Inside a SelectionPillHost the selected tab's accent pill is the host's, gliding between the tabs
     val hosted = LocalSelectionPill.current != null
     val fade = if (reduced) snap<Color>() else tween(Motion.FADE, easing = Motion.Ease)
@@ -454,16 +449,9 @@ internal fun TabPill(icon: String, label: String, selected: Boolean, modifier: M
         if (selected && size.width > 0) requester.bringIntoView(androidx.compose.ui.geometry.Rect(-spare, 0f, size.width + spare, size.height.toFloat()))
     }
     Row(modifier.selectionPillTarget(selected).bringIntoViewRequester(requester).onSizeChanged { size = it }
-        .graphicsLayer { scaleX = scale; scaleY = scale }
+        .pointerTap(999f, cue = Cue.SELECT) { currentClick() }
         .clip(CircleShape)
         .then(if (selected && !hosted) Modifier.background(colors.accent) else Modifier)
-        .pointerInput(Unit) {
-            detectTapGestures(onTap = {
-                feedback.play(Cue.SELECT)
-                pulse.fire()
-                currentClick()
-            })
-        }
         .semantics {
             role = Role.Tab
             this.selected = selected

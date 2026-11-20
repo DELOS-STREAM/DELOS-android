@@ -301,7 +301,7 @@ private fun OptionRow(label: String, current: Boolean, requester: FocusRequester
             .fillMaxWidth()
             .height(P.OPTION.px)
             .focusEffects(
-                onClick = onClick, corner = 28f, focusScale = 1f, ring = FocusRing(3f, 0f), glow = null, pressScale = 1f, clickCue = Cue.SELECT,
+                onClick = onClick, corner = 28f, focusScale = 1f, ring = FocusRing(3f, 0f), glow = null, clickCue = Cue.SELECT,
                 onFocusChange = { focused = it }, focusRequester = requester,
             )
             .clip(RoundedCornerShape(28.px))
@@ -432,11 +432,11 @@ private fun ValueCard(popup: RowPopup.Value, active: Boolean, hook: CloseHook, o
                 .padding(horizontal = P.VALUE_SIDE.px)
                 .fillMaxWidth()
                 .height(P.VALUE_FIELD.px)
+                .then(if (!editing) Modifier.pointerTap(999f, cue = Cue.OPEN) { editing = true } else Modifier)
                 .clip(shape)
                 .background(colors.surface2)
                 .border((if (editing) 2 else 1).px, line, shape)
-                .semantics { role = Role.Button; contentDescription = enterValue; onClick { editing = true; true } }
-                .pointerInput(editing) { if (!editing) detectTapGestures { feedback.play(Cue.OPEN); editing = true } },
+                .semantics { role = Role.Button; contentDescription = enterValue; onClick { editing = true; true } },
             contentAlignment = Alignment.Center,
         ) {
             if (editing) {
@@ -485,9 +485,13 @@ private fun StepButton(
     val colors = LocalDelosColors.current
     var pressed by remember { mutableStateOf(false) }
     val fill by animateColorAsState(Color.White.copy(alpha = if (pressed) .22f else .10f), tween(Motion.PRESS, easing = Motion.Ease), label = "stepFill")
+    // The shared hover and press looks; the step itself runs at the press (a hold repeats), so it is not deferred
+    val pulse = rememberPressPulse()
     Box(
         Modifier
             .size(P.VALUE_BUTTON.px)
+            .hoverLook(999f)
+            .pressLook(pulse)
             .alpha(if (enabled) 1f else .35f)
             .clip(CircleShape)
             .background(fill)

@@ -43,6 +43,10 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
@@ -106,6 +110,10 @@ data class FocusGlow(val offsetY: Float = 30f, val blur: Float = 80f, val spread
  * the [com.limelight.shell.FocusTracker], with its [contextMenu] and whether it is [adjustable] with
  * left/right.
  *
+ * Every activation squeezes it ([pressLook], [Motion.PRESS_SCALE] of its focus scale, the glow blurred out to [Motion.PRESS_GLOW]); a tap
+ * or a click squeezes from the finger's down and acts once the squeeze has landed. The pointer focuses it by moving over it and opens
+ * its Options with a right click, both without scrolling it into view ([PointerFocus], docs/GUI.md, "Keyboard and pointer").
+ *
  * Sizes are in stage pixels (see [px]).
  */
 fun Modifier.focusEffects(
@@ -127,10 +135,10 @@ fun Modifier.focusEffects(
      * For what a caller draws itself (a cover's colors, a label, a pulse); [onFocusChange] stays the focus itself (sounds, hero, info).
      */
     onLookChange: ((Boolean) -> Unit)? = null,
-    /** What a press squeezes the element to for a moment ([Motion.PRESS_SCALE]); 1 for an element that has no press feedback of its own kind. */
-    pressScale: Float = Motion.PRESS_SCALE,
     /** How long the focus spring of the scale takes ([Motion.FOCUS]). */
     focusMillis: Int = Motion.FOCUS,
+    /** False for a focus target that does nothing when activated (a text panel that scrolls): no press. */
+    press: Boolean = true,
     /** Share the surrounding list's moving plate instead of drawing a separate ring and glow. */
     glide: Boolean = false,
     /** The element's focus requester when its caller needs it too (a part of the element that takes its own taps); otherwise its own. */
@@ -156,8 +164,9 @@ fun Modifier.focusEffects(
     val look = focused || tracker.holds(requester)
     val currentLookChange by rememberUpdatedState(onLookChange)
     LaunchedEffect(look) { currentLookChange?.invoke(look) }
+    // The press squeezes the element around its focus scale (Motion.PRESS_SCALE of whatever it has): pressLook below
     val pulse = rememberPressPulse()
-    val scale by animateFocusScale(look, pulse.pressed, focusScale, pressScale, focusMillis = if (plate != null) Motion.ROW_FOCUS else focusMillis)
+    val scale by animateFocusScale(look, false, focusScale, focusMillis = if (plate != null) Motion.ROW_FOCUS else focusMillis)
     // Hosted rows never draw an independent ring or glow.
     val ringAlpha by animateFloatAsState(
         if (look) 1f else 0f, tween(if (look) 140 else 110, easing = EaseOut), label = "focusRing",
@@ -170,6 +179,11 @@ fun Modifier.focusEffects(
         val shadow = Shadow(radius = glow.blur.px, color = colors.glow, spread = glow.spread.px, offset = DpOffset(0.dp, glow.offsetY.px))
         remember(shadows, shape, shadow) { shadows.createDropShadowPainter(shape, shadow) }
     }
+    // The glow of a press: the same shadow blurred Motion.PRESS_GLOW times as much, cross-faded in by the squeeze (never re-blurred per frame)
+    val pressGlowPainter = if (glowPainter == null || glow == null) null else {
+        val shadow = Shadow(radius = (glow.blur * Motion.PRESS_GLOW).px, color = colors.glow, spread = glow.spread.px, offset = DpOffset(0.dp, glow.offsetY.px))
+        remember(shadows, shape, shadow) { shadows.createDropShadowPainter(shape, shadow) }
+    }
     val sweepPos = remember { Animatable(0f) }
     LaunchedEffect(look) {
         if (look && sweep) {
@@ -179,10 +193,11 @@ fun Modifier.focusEffects(
     }
     val interaction = remember { MutableInteractionSource() }
     val position = remember { arrayOfNulls<LayoutCoordinates>(1) }
-    val activate = {
+    // A key or the pad activates at once; a tap or a click squeezes first and acts once the squeeze has landed
+    val activate = { pointer: Boolean ->
         clickCue?.let(feedback::play)
         pulse.fire()
-        onClick()
+        if (pointer) pulse.afterSqueeze(onClick) else onClick()
     }
     val currentActivate by rememberUpdatedState(activate)
     val currentAdjust by rememberUpdatedState(controllerAdjust)
@@ -192,12 +207,28 @@ fun Modifier.focusEffects(
     val currentMenu by rememberUpdatedState(contextMenu)
     val menuScope = rememberCoroutineScope()
 
+    /** The pointer moved the focus here: where the element is (no focus scroller follows the pointer, PointerFocus), with a rarer cue. */
+    fun pointerFocus() {
+        if (focused) return
+        if (!PointerFocus.cue(android.os.SystemClock.uptimeMillis())) feedback.silenceNextFocus()
+        runCatching { requester.requestFocus() }
+    }
+
+    /** A right click or a two-finger click: the focus comes here and the element's Options run (its context menu), as Start does. */
+    fun secondaryClick() {
+        pointerFocus()
+        currentOptions?.let { return it() }
+        val menu = currentMenu ?: return
+        currentOpener?.invoke(menu, position[0]?.takeIf { it.isAttached }?.boundsInRoot())
+    }
+
     // The animated values (scale, glow and ring alpha) are only read while drawing, never while composing:
     // a focus change would otherwise rebuild both affected elements on every frame of the animation
     this
         .then(if (plate != null) Modifier.rowGlideTarget(look) else Modifier)
         // The focused element is drawn above its neighbours, so its ring and scale are never covered
         .zIndex(if (look) 1f else 0f)
+        .then(if (press) Modifier.pressLook(pulse, origin) else Modifier)
         .graphicsLayer {
             scaleX = scale
             scaleY = scale
@@ -210,7 +241,8 @@ fun Modifier.focusEffects(
                 val a = ringAlpha
                 if (a > 0f) {
                     val inner = (size.minDimension / 2f + glow.spread * k).coerceAtLeast(1f)
-                    val outer = inner + glow.blur * k
+                    // A press blurs the glow out to Motion.PRESS_GLOW times its reach
+                    val outer = inner + glow.blur * k * Motion.lerp(1f, Motion.PRESS_GLOW, pulse.amount)
                     val c = colors.glow
                     drawCircle(
                         Brush.radialGradient(
@@ -228,7 +260,11 @@ fun Modifier.focusEffects(
             // its opacity follows the focus: a shadow whose own alpha is animated is blurred again, in software, on every frame
             else if (glowPainter != null) Modifier.drawBehind {
                 val a = ringAlpha
-                if (a > 0f) with(glowPainter) { draw(size, alpha = a) }
+                val p = pulse.amount
+                if (a > 0f) {
+                    if (p < 1f) with(glowPainter) { draw(size, alpha = a * (1f - p)) }
+                    if (p > 0f && pressGlowPainter != null) with(pressGlowPainter) { draw(size, alpha = a * p) }
+                }
             } else Modifier
         )
         .drawWithContent {
@@ -251,7 +287,7 @@ fun Modifier.focusEffects(
                         position[0],
                         contextMenu,
                         adjustable,
-                        activate = { currentActivate() },
+                        activate = { currentActivate(false) },
                         adjust = if (controllerAdjust == null) null else { direction, repeatCount ->
                             currentAdjust?.invoke(direction, repeatCount)
                         },
@@ -264,13 +300,33 @@ fun Modifier.focusEffects(
         .onKeyEvent {
             // Handled on both edges so Android does not synthesize a fallback key (A → D-pad center)
             if (it.key !in ACTIVATE_KEYS) return@onKeyEvent false
-            if (it.type == KeyEventType.KeyUp) activate()
+            if (it.type == KeyEventType.KeyUp) activate(false)
             true
         }
         // Always focusable, also in touch mode: `clickable` would only be focusable after a key press,
         // but a console UI always shows the focus (and the game background that goes with it)
         .focusRequester(requester)
         .focusable(interactionSource = interaction)
+        // The pointer (docs/GUI.md, "Keyboard and pointer"): moving over the element focuses it where it is, a right click (a trackpad's two-finger
+        // click) also opens its Options. Watched before the taps, so a secondary click is taken here and never activates
+        .pointerInput(requester) {
+            awaitPointerEventScope {
+                while (true) {
+                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                    val change = event.changes.firstOrNull() ?: continue
+                    when (event.type) {
+                        PointerEventType.Enter, PointerEventType.Move -> if (!change.pressed && PointerFocus.hovers(change.type)) {
+                            val at = position[0]?.takeIf { it.isAttached }?.localToRoot(change.position) ?: continue
+                            if (PointerFocus.moved(at.x, at.y)) pointerFocus()
+                        }
+                        PointerEventType.Press -> if (event.buttons.isSecondaryPressed && !event.buttons.isPrimaryPressed) {
+                            change.consume()
+                            secondaryClick()
+                        }
+                    }
+                }
+            }
+        }
         .pointerInput(requester) {
             detectTapGestures(onLongPress = {
                 // Touch: a long press opens the element's context menu, as Start does (the tap's own handling is not reached after it)
@@ -303,12 +359,12 @@ fun Modifier.focusEffects(
                 val wasFocused = focused
                 requester.requestFocus()
                 // The latest lambdas: this gesture handler outlives the composition it was created in
-                if (currentTouchTap?.invoke(wasFocused) != false) currentActivate()
+                if (currentTouchTap?.invoke(wasFocused) != false) currentActivate(true)
             })
         }
         .semantics {
             role = Role.Button
-            onClick { activate(); true }
+            onClick { activate(false); true }
         }
 }
 

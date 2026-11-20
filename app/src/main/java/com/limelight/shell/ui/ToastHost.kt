@@ -279,6 +279,8 @@ private fun ToastCard(
         Row(
             Modifier
                 .height(IntrinsicSize.Min)
+                // A toast with an action is a button for the pointer: the shared hover look (its press is the toast's own, Y's too)
+                .then(if (action != null) Modifier.hoverLook(CARD_RADIUS * m.pxPerU / m.pxPerStage) else Modifier)
                 .graphicsLayer {
                     val age = ageOf()
                     alpha = if (age < 0f) 0f else opacity(age)
