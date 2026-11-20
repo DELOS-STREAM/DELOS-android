@@ -157,6 +157,17 @@ internal object OverviewMotion {
     val Flight = CubicBezierEasing(.2f, .9f, .25f, 1f)
     val InOut = CubicBezierEasing(.65f, 0f, .35f, 1f)
 
+    /**
+     * The cover's flight springs (owner, 2026-11-20): open response 0.55 s, damping 0.86; close response 0.45 s, damping 0.90.
+     * Stiffness = (2π / response)²: 130.5 and 195.0. The frame rect, its corner and the art crossfade all read this one progress.
+     */
+    const val FLIGHT_OPEN_DAMPING = .86f
+    const val FLIGHT_OPEN_STIFFNESS = 130.5f
+    const val FLIGHT_CLOSE_DAMPING = .9f
+    const val FLIGHT_CLOSE_STIFFNESS = 195f
+    val FlightOpen = androidx.compose.animation.core.spring<Float>(FLIGHT_OPEN_DAMPING, FLIGHT_OPEN_STIFFNESS, visibilityThreshold = .0005f)
+    val FlightClose = androidx.compose.animation.core.spring<Float>(FLIGHT_CLOSE_DAMPING, FLIGHT_CLOSE_STIFFNESS, visibilityThreshold = .0005f)
+
     const val FLIGHT_IN = 780
     const val FLIGHT_OUT = 640
     const val TITLE_IN = 720
@@ -221,18 +232,15 @@ internal object OverviewMotion {
             w = Motion.lerp(mw, to.width, f)
             h = Motion.lerp(mh, to.height, f)
         }
-        return Frame(Rect(x, y, x + w, y + h), Motion.lerp(FROM_CORNER, TO_CORNER, progress))
+        // A spring may pass its target a little: the frame may, its corner never does
+        return Frame(Rect(x, y, x + w, y + h), Motion.lerp(FROM_CORNER, TO_CORNER, progress.coerceIn(0f, 1f)))
     }
 
     /** The one scale at which a picture of [w] × [h] fills a frame of [frameW] × [frameH], cropped (`object-fit: cover`). */
     fun fillScale(frameW: Float, frameH: Float, w: Float, h: Float): Float = max(frameW / w, frameH / h)
 
-    /** How much of the row's own card shows over the header's cover at [progress] of the flight: all of it at the card, none from 60 %. */
-    fun cardShown(progress: Float): Float = 1f - (progress / .6f).coerceIn(0f, 1f)
-
-    /** How far the cover has flown at [millis] after the opening began ([opening]) or the closing began. */
-    fun flight(millis: Float, opening: Boolean): Float =
-        if (opening) Motion.progress(millis, 0, FLIGHT_IN, Flight) else 1f - Motion.progress(millis, 0, FLIGHT_OUT, InOut)
+    /** The retained dashboard art crossfades into portrait art around the midpoint of the same aspect-filled frame. */
+    fun cardShown(progress: Float): Float = 1f - ((progress - .3f) / .4f).coerceIn(0f, 1f)
 
     /** How far the title has flown (1: at its place in the header). */
     fun title(millis: Float, opening: Boolean): Float =

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="overview_game_info">Про гру</string>
+    <string name="overview_swipe_up_game_info">Проведи вгору для інформації про гру</string>
     <string name="overview_play">Грати</string>
     <string name="overview_section_about">Про гру</string>
     <string name="overview_section_media">Знімки та відео</string>

@@ -135,14 +135,13 @@ class OverviewNavTest {
         assertEquals(980f * 1.055f / (450f * 1.055f), OverviewMotion.cover(0f, wide, slot, 30f).rect.let { it.width / it.height }, 1e-4f)
         assertEquals(340f / 510f, OverviewMotion.cover(1f, wide, slot, 30f).rect.let { it.width / it.height }, 1e-4f)
         assertEquals(1f, OverviewMotion.cardShown(0f), 0f)
-        assertEquals(0f, OverviewMotion.cardShown(.6f), 0f)
+        // Wide artwork remains intact until the middle of the flight, with a continuous mid-flight handover.
+        assertEquals(1f, OverviewMotion.cardShown(.3f), 1e-4f)
+        assertEquals(.5f, OverviewMotion.cardShown(.5f), 1e-4f)
+        assertEquals(0f, OverviewMotion.cardShown(.7f), 1e-4f)
     }
 
     @Test fun `closing reverses the flight and the page`() {
-        assertEquals(1f, OverviewMotion.flight(0f, opening = false), 1e-4f)
-        assertEquals(0f, OverviewMotion.flight(OverviewMotion.FLIGHT_OUT.toFloat(), opening = false), 1e-4f)
-        assertEquals(0f, OverviewMotion.flight(0f, opening = true), 1e-4f)
-        assertEquals(1f, OverviewMotion.flight(OverviewMotion.FLIGHT_IN.toFloat(), opening = true), 1e-4f)
         val (rise, alpha) = OverviewMotion.page(0f, opening = true, reduced = false)
         assertEquals(OverviewMotion.PAGE_RISE, rise, 1e-4f)
         assertEquals(1f, alpha, 0f)
@@ -194,13 +193,11 @@ class OverviewNavTest {
         assertEquals(1f, OverviewMotion.countUp(380f, 380, reduced = true), 0f)
     }
 
-    @Test fun `the viewer's picture fits 16 by 9 a little above the middle`() {
+    @Test fun `the viewer's picture owns the whole stage, edge to edge`() {
         val fit = viewerFit(1920f, 1080f)
-        assertEquals(780f, fit.height, 1e-3f)
-        assertEquals(780f * 16f / 9f, fit.width, 1e-3f)
-        assertEquals(140f, fit.top, 1e-3f)
-        val tall = viewerFit(1920f, 1440f)
-        assertEquals(1640f, tall.width, 1e-3f)
-        assertEquals(1640f * 9f / 16f, tall.height, 1e-3f)
+        assertEquals(0f, fit.left, 0f)
+        assertEquals(0f, fit.top, 0f)
+        assertEquals(1920f, fit.width, 0f)
+        assertEquals(1080f, fit.height, 0f)
     }
 }

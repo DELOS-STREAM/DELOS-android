@@ -37,8 +37,9 @@ internal data class RingStyle(val pad: Float = 6f, val corner: Float = 999f)
 /** A focusable part of the overview: its focus requester, where it is, its row ([NavTarget.group]) and its section. */
 internal class OverviewTarget(
     val id: String, val requester: FocusRequester, val group: String?, val locked: Boolean, val ring: RingStyle, val section: String,
+    val visualMotion: () -> Float,
 ) {
-    var coordinates: LayoutCoordinates? = null
+    var coordinates by mutableStateOf<LayoutCoordinates?>(null)
 }
 
 /**
@@ -99,6 +100,7 @@ internal class OverviewFocus(private val scope: CoroutineScope) {
         val h = host ?: return null
         val c = target.coordinates ?: return null
         if (!h.isAttached || !c.isAttached) return null
+        target.visualMotion() // Observe the same focus/press clock that transforms the body.
         val r = h.localBoundingBoxOf(c, clipBounds = false)
         val pad = target.ring.pad * k
         val rect = Rect(r.left - pad, r.top - pad, r.right + pad, r.bottom + pad)
@@ -164,13 +166,15 @@ internal class OverviewFocus(private val scope: CoroutineScope) {
 
 internal val LocalOverviewFocus = staticCompositionLocalOf<OverviewFocus?> { null }
 
-/** Registers a focusable part of the overview (before its `focusEffects`, so its bounds are the layout's, not the focus scale's). */
+/** Registers inside the visual transform: navigation and the ring share the rendered target bounds. */
 @Composable
 internal fun Modifier.overviewTarget(
     id: String, requester: FocusRequester, section: String, group: String? = null, locked: Boolean = false, ring: RingStyle = RingStyle(),
+    visualMotion: () -> Float = { 0f },
 ): Modifier {
     val focus = LocalOverviewFocus.current ?: return this
-    val target = remember(focus, id) { OverviewTarget(id, requester, group, locked, ring, section) }
+    val motion by androidx.compose.runtime.rememberUpdatedState(visualMotion)
+    val target = remember(focus, id) { OverviewTarget(id, requester, group, locked, ring, section) { motion() } }
     DisposableEffect(focus, id) {
         focus.targets[id] = target
         onDispose {

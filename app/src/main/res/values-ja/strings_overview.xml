@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="overview_game_info">ゲーム情報</string>
+    <string name="overview_swipe_up_game_info">上にスワイプしてゲーム情報</string>
     <string name="overview_play">プレイ</string>
     <string name="overview_section_about">概要</string>
     <string name="overview_section_media">スクリーンショットと動画</string>

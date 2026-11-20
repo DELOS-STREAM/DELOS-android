@@ -47,10 +47,19 @@ internal class OverviewController(private val scope: CoroutineScope) {
         private set
 
     /** Milliseconds since the opening or the closing began. */
-    val clock = Animatable(0f)
+    var clock = Animatable(0f)
+        private set
+
+    /**
+     * How far the cover has flown (0: the card on the dashboard, 1: the header's slot), driven by a spring ([OverviewMotion.FlightOpen],
+     * [OverviewMotion.FlightClose]) rather than [clock]: a close during the opening reverses it from its current position and velocity.
+     */
+    var flight = Animatable(0f)
+        private set
 
     /** The dashboard's covers lifting away, in milliseconds of their own timeline; it runs back to 0 while the overview closes. */
-    val home = Animatable(0f)
+    var home = Animatable(0f)
+        private set
 
     /** The card's rectangle on screen when the overview opened (root pixels, with its focus scale or where a finger dragged it). */
     var from: Rect? = null
@@ -74,6 +83,10 @@ internal class OverviewController(private val scope: CoroutineScope) {
      */
     fun open(app: App, from: Rect?, title: TitleSource?, homeTotal: Int, reduced: Boolean, instant: Boolean = false) {
         if (this.app != null) return
+        // Reset before publishing the session: a reopened page must never draw the previous closing clock.
+        clock = Animatable(if (instant) openTotal(reduced).toFloat() else 0f)
+        home = Animatable(if (instant) homeTotal.toFloat() else 0f)
+        flight = Animatable(if (instant) 1f else 0f)
         this.app = app
         this.from = from
         this.title = title
@@ -89,8 +102,10 @@ internal class OverviewController(private val scope: CoroutineScope) {
             }
             clock.snapTo(0f)
             launch { home.animateTo(homeTotal.toFloat(), tween(max(1, homeTotal - home.value.toInt()), easing = LinearEasing)) }
+            val cover = launch { flight.animateTo(1f, if (reduced) tween(Motion.FADE) else OverviewMotion.FlightOpen) }
             val total = openTotal(reduced)
             clock.animateTo(total.toFloat(), tween(total, easing = LinearEasing))
+            cover.join()
             opening = false
         }
     }
@@ -104,13 +119,15 @@ internal class OverviewController(private val scope: CoroutineScope) {
         leaving = true
         val opened = job
         job = scope.launch {
-            opened?.join()
+            // Interruptible: the opening stops where it is and the cover's spring turns back from its current position and velocity
+            opened?.cancel()
             opening = false
             prepare()
             clock.snapTo(0f)
             closing = true
             coroutineScope {
-                launch { home.animateTo(0f, tween(max(1, home.value.toInt()), easing = LinearEasing)) }
+                launch { flight.animateTo(0f, if (reduced) tween(Motion.FADE) else OverviewMotion.FlightClose) }
+                launch { home.animateTo(0f, tween(if (reduced) Motion.FADE else minOf(OverviewMotion.HOME_OUT, home.value.toInt()).coerceAtLeast(1), easing = LinearEasing)) }
                 val total = closeTotal(reduced)
                 clock.animateTo(total.toFloat(), tween(total, easing = LinearEasing))
             }

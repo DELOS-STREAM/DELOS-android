@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="overview_game_info">Info o hře</string>
+    <string name="overview_swipe_up_game_info">Přejeď nahoru pro info o hře</string>
     <string name="overview_play">Hrát</string>
     <string name="overview_section_about">O hře</string>
     <string name="overview_section_media">Snímky a videa</string>

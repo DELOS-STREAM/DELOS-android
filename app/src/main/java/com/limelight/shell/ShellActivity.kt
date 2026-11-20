@@ -68,6 +68,8 @@ class ShellActivity : ComponentActivity() {
     private lateinit var igdbImages: IgdbImageCache
     private lateinit var profiles: ProfileStore
     private val keys = GlobalKeys()
+    /** The shell, for the input hooks that must see an event before anything consumes it (null until created). */
+    private var shellState: ShellState? = null
 
     /** The second panel of a dual-screen device (docs/DUAL_SCREEN.md): shown from `onResume` to `onStop` while a companion display exists. */
     private var companion: CompanionHost? = null
@@ -114,6 +116,7 @@ class ShellActivity : ComponentActivity() {
         repo = PcRepository(this, profiles::settings)
         val settingsAgain = intent.getBooleanExtra(ShellPlacement.EXTRA_RESTORE_SETTINGS, false) && profiles.profiles.value.all.isNotEmpty()
         val shell = ShellState(if (profiles.profiles.value.all.isEmpty()) Screen.Boot() else if (settingsAgain) Screen.Settings else Screen.Start)
+        shellState = shell
         if (settingsAgain) shell.settingsTab = SettingsTab.DISPLAY
         DelosToast.register(this, show = { text, durationMs, kind -> shell.showToast(text, durationMs = durationMs, kind = kind) })
         metadata = GameMetadataStore(this, profiles::settings)
@@ -175,6 +178,8 @@ class ShellActivity : ComponentActivity() {
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         ControllerGlyphs.key(event)
+        // Any key shows the fullscreen viewer's overlay again, before a global shortcut may consume it
+        shellState?.overviewViewerInput?.invoke()
         val shellEvent = if (keys.capture == null) keyboardAsPad(event) else event
         return keys.dispatch(shellEvent) || super.dispatchKeyEvent(shellEvent)
     }
@@ -182,6 +187,8 @@ class ShellActivity : ComponentActivity() {
     /** A hardware keyboard's key as the pad button it stands for ([GlobalKeys.keyboardButton]); any other event as it is. */
     private fun keyboardAsPad(event: KeyEvent): KeyEvent {
         if (InputKinds.fromPad(event.source) || !InputKinds.isKeyboard(event.device)) return event
+        // In the filter, Return applies (FilterChip's own Return handler) where A toggles a chip: it must reach Compose as Return
+        if (shellState?.layer == Layer.Filters && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER)) return event
         val typing = currentFocus?.onCheckIsTextEditor() == true
         val modified = event.isCtrlPressed || event.isAltPressed || event.isMetaPressed
         val button = GlobalKeys.keyboardButton(event.keyCode, typing, modified) ?: return event
@@ -190,11 +197,13 @@ class ShellActivity : ComponentActivity() {
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         ControllerGlyphs.touch(event)
+        shellState?.overviewViewerInput?.invoke()
         return super.dispatchTouchEvent(event)
     }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
         ControllerGlyphs.motion(event)
+        shellState?.overviewViewerInput?.invoke()
         return super.dispatchGenericMotionEvent(event)
     }
 

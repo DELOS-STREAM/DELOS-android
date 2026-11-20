@@ -1088,9 +1088,15 @@ private fun ShellHints(shell: ShellState, library: Library, pcs: List<Pc>, track
         val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint).adaptedTo(ControllerGlyphs.kind)
         com.limelight.shell.companion.PublishCompanionContext(hintEntries, library, pcs)
         // A tap on the Filter pill (no controller in use) does what Y does: opens the library's filters
-        ZoomedBar(uiScale) {
-            HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null,
-                onTap = { if (keys.canFilter()) keys.onFilter?.invoke() })
+        val viewerHintsAlpha by androidx.compose.animation.core.animateFloatAsState(
+            if (shell.overviewViewer != null && !shell.overviewViewerControlsVisible) 0f else 1f,
+            tween(Motion.FADE, easing = Motion.Ease), label = "viewerHints",
+        )
+        Box(Modifier.graphicsLayer { alpha = viewerHintsAlpha }) {
+            ZoomedBar(uiScale) {
+                HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null,
+                    onTap = { if (keys.canFilter()) keys.onFilter?.invoke() })
+            }
         }
     }
 }
