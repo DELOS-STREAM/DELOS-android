@@ -7,8 +7,8 @@ d6c39b9135017ab76a42e364569f18622e6e3df691ac2d1d9d36ee4a02eb2e13  app/src/main/j
 ed39b86eee0868d911516c4034e8395af31aaa7bfb8ac7e4415846b59ee28d1f  app/src/main/jni/moonlight-core/opus/x86/libopus.a
 7d8214860fdab5a8bf0d15125a2ae7baf80169dc4e6ee1ffa2633bb2e7de7a8b  app/src/main/jni/moonlight-core/opus/x86_64/libopus.a
 723c2843a782299a5473cbbe9ad44b685fe0994d17a4b7dc75e4644ae695e962  app/src/main/res/font/figtree.ttf
-4616e725b7affa949f0a5c4d99f2606ad58336f8cf6736a3fa7fe9047683d228  app/src/main/res/font/phosphor_fill.ttf
-578799423b926bc0b29bd74165cb082b93af7668f347194d67670e4d5e4384d8  app/src/main/res/font/phosphor_regular.ttf
+da1b27a46e6a622cfc23c13696bb6cd94f687bfc97fdb590268cb56e6efa3876  app/src/main/res/font/phosphor_fill.ttf
+6d7f64ee4af231bd407ec0ff1ead565ce4887d91ededdb90734401a987da30ad  app/src/main/res/font/phosphor_regular.ttf
 af82d541d5007a370b0fd6e05d573ae7214fb0b5c1ece3327c17ebd971bf19d1  app/src/main/res/font/unbounded.ttf
 86bae9cbe479da868cf6618c91ccb54bdb235b6f637cd7eb59120f8b16893063  app/src/main/res/raw/ui_back.wav
 f1f61cb7b44c6a890d523028c1496fdfe612bd6f9fca9cc0df1ae2ac7555ae16  app/src/main/res/raw/ui_error.wav
