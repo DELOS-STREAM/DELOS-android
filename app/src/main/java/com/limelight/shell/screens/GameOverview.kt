@@ -8,6 +8,8 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -248,6 +250,8 @@ internal fun GameOverview(
     playtime: Playtime,
     resumes: Int,
     reducedMotion: Boolean,
+    /** The dashboard hero's blur (Appearance): the overview's deepening starts there and never ends sharper. */
+    dashboardBlur: Int,
     onPlay: () -> Unit,
     onSettings: () -> Unit,
     onJump: (App) -> Unit,
@@ -459,7 +463,7 @@ internal fun GameOverview(
             },
     ) {
         Box(Modifier.fillMaxSize().hazeSource(viewerHaze, zIndex = 1f)) {
-            OverviewBackdrop(controller, shell.hero, backdropShot, scroll::value, reducedMotion, pageHaze)
+            OverviewBackdrop(controller, shell.hero, backdropShot, scroll::value, reducedMotion, pageHaze, maxOf(DEEP_BLUR, dashboardBlur))
             CompositionLocalProvider(LocalOverviewFocus provides focus, LocalBackdropHaze provides pageHaze, LocalBringIntoViewSpec provides OverviewNoAutoScroll) {
                 Box(
                     Modifier
@@ -480,17 +484,13 @@ internal fun GameOverview(
                         .nestedScroll(pullConnection)
                         .verticalScroll(scroll),
                 ) {
+                    // The ring draws in a layer of its own over the page: its glide and the carousels scrolling under it redraw
+                    // only that layer, never re-record the whole page
+                    Box(Modifier.fillMaxWidth().graphicsLayer { translationY = pull * .45f }) {
                     Column(
                         Modifier
                             .fillMaxWidth()
-                            .onGloballyPositioned { focus.host = it }
-                            .graphicsLayer { translationY = pull * .45f }
-                            .drawWithContent {
-                                drawContent()
-                                // The carousels scroll under the ring: reading their state redraws it with them
-                                track.firstVisibleItemScrollOffset; similarRow.firstVisibleItemScrollOffset
-                                with(focus) { drawRing(colors, k) }
-                            },
+                            .onGloballyPositioned { focus.host = it },
                     ) {
                         Header(
                             controller, pc, app, details, data?.hdr?.support, data?.completion?.seconds, candidate,
@@ -535,6 +535,12 @@ internal fun GameOverview(
                             }
                             Spacer(Modifier.height((220f + OverviewScroll.END_PAD).px))
                         }
+                    }
+                    Spacer(Modifier.matchParentSize().graphicsLayer().drawBehind {
+                        // The carousels scroll under the ring: reading their state redraws it with them
+                        track.firstVisibleItemScrollOffset; similarRow.firstVisibleItemScrollOffset
+                        with(focus) { drawRing(colors, k) }
+                    })
                     }
                 }
             }
@@ -681,7 +687,7 @@ private fun Header(
                             drawContent()
                             if ((controller.opening || controller.closing) && ControllerGlyphs.kind != InputKind.TOUCH) {
                                 val p = pose.update(controller, size.width, size.height, pull(), k)
-                                val amount = (1f - OverviewMotion.flight(controller.clock.value, !controller.closing)).coerceIn(0f, 1f)
+                                val amount = (1f - controller.flight.value).coerceIn(0f, 1f)
                                 val left = p.x + p.frameLeft * p.scale
                                 val top = p.y + p.frameTop * p.scale
                                 val right = left + p.frameWidth * p.scale
@@ -953,7 +959,6 @@ private fun OverviewButton(
     var focused by remember { mutableStateOf(false) }
     val pulse = rememberPressPulse()
     val scale = animateFocusScale(focused, pulse.pressed, if (ControllerGlyphs.kind == InputKind.TOUCH) 1f else 1.06f)
-    val phase = remember { Animatable(0f) }
     val reduced = com.limelight.shell.ui.LocalReducedMotion.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val window = LocalWindowInfo.current
@@ -963,14 +968,8 @@ private fun OverviewButton(
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    LaunchedEffect(primary, focused, effectActive, foreground, window.isWindowFocused, reduced) {
-        if (!primary || !focused || !effectActive || !foreground || !window.isWindowFocused || reduced) return@LaunchedEffect
-        while (true) {
-            phase.snapTo(0f)
-            phase.animateTo(1f, tween(5800, easing = LinearEasing))
-        }
-    }
-    Row(
+    val effectShown = primary && focused && effectActive && ControllerGlyphs.kind != InputKind.TOUCH
+    Box(
         Modifier
             .hoverFocus(requester, onHover)
             .focusEffects(
@@ -979,67 +978,99 @@ private fun OverviewButton(
                 ring = null, glow = null, focusRequester = requester,
                 onFocusChange = { focused = it; if (it) onFocused(id) }, onTouchTap = { it },
             )
-            // Measure inside the one focus/press transform, so the shared ring follows its actual silhouette.
+            // One focus/press transform for the body, the effect and the measured ring bounds
             .pressInput(pulse)
             .graphicsLayer {
                 val s = scale.value * PointerLook.scale(0f, pulse.amount)
                 scaleX = s
                 scaleY = s
             }
-            .overviewTarget(id, requester, HEAD, group = "buttons", locked = true, ring = RingStyle(0f, 999f),
-                visualMotion = { scale.value + pulse.amount })
-            .playSweep(primary && focused && effectActive && foreground && window.isWindowFocused, reduced, phase::value)
-            .height(76.px)
-            .clip(CircleShape)
-            .background(if (primary) colors.accent else colors.surface)
-            .then(if (primary) Modifier else Modifier.border(1.px, colors.line, CircleShape))
-            .padding(horizontal = 38.px),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.px),
+            // The shared ring's 4 px band sits 2..6 px outside the pill (b.html `inset: -6px`), with the capsule's own radius
+            .overviewTarget(id, requester, HEAD, group = "buttons", locked = true, ring = RingStyle(2f, 999f),
+                visualMotion = { scale.value + pulse.amount }),
     ) {
-        val ink = if (primary) colors.onAccent else colors.text
-        Symbol(icon, 32.tpx, ink, filled = focused)
-        BasicText(label, maxLines = 1, style = TextStyle(color = ink, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 26.tpx))
+        if (primary) PlayEffect(effectShown, effectShown && foreground && window.isWindowFocused, reduced)
+        Row(
+            Modifier
+                .height(76.px)
+                .clip(CircleShape)
+                .background(if (primary) colors.accent else colors.surface)
+                .then(if (primary) Modifier else Modifier.border(1.px, colors.line, CircleShape))
+                .padding(horizontal = 38.px),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.px),
+        ) {
+            val ink = if (primary) colors.onAccent else colors.text
+            Symbol(icon, 32.tpx, ink, filled = focused)
+            BasicText(label, maxLines = 1, style = TextStyle(color = ink, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 26.tpx))
+        }
     }
 }
 
-/** A cached fixed capsule and shader; only the sweep's matrix changes while drawing. */
+/**
+ * Play's signature "living gold sweep" (build/play-effect-proto/b.html): a static gold halo under the pill
+ * (`box-shadow: 0 0 26px 3px #f6b73c44, 0 0 56px 4px #f6b73c1c` at -12 px) and, outside the shared focus ring, a 4 px band
+ * at -11..-7 px whose conic highlight turns once every [PLAY_SWEEP_MS]. Only the band's own layer redraws per frame
+ * (a cached shader whose matrix turns); the pill, its text and the ring never rotate. Reduced motion keeps only the halo.
+ */
 @Composable
-private fun Modifier.playSweep(active: Boolean, reduced: Boolean, phase: () -> Float): Modifier {
-    val colors = LocalDelosColors.current
+private fun BoxScope.PlayEffect(shown: Boolean, running: Boolean, reduced: Boolean) {
     val k = stageUnit()
-    return drawWithCache {
-        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            style = android.graphics.Paint.Style.STROKE
-            strokeWidth = 3f * k
-        }
-        val shader = android.graphics.SweepGradient(
-            size.width / 2f, size.height / 2f,
-            intArrayOf(Color.Transparent.toArgb(), Color.Transparent.toArgb(), colors.accent.toArgb(), Color.White.copy(alpha = .85f).toArgb(), Color.Transparent.toArgb()),
-            floatArrayOf(0f, .62f, .82f, .9f, 1f),
-        )
-        val matrix = android.graphics.Matrix()
-        val glow = android.graphics.Paint(paint).apply {
-            color = colors.glow.toArgb()
-            strokeWidth = 6f * k
-            maskFilter = android.graphics.BlurMaskFilter(22f * k, android.graphics.BlurMaskFilter.Blur.NORMAL)
-        }
-        onDrawWithContent {
-            drawContent()
-            if (active) {
-                val inset = 2f * k
-                val radius = (size.height - inset * 2f) / 2f
-                val canvas = drawContext.canvas.nativeCanvas
-                canvas.drawRoundRect(inset, inset, size.width - inset, size.height - inset, radius, radius, glow)
-                if (!reduced) {
-                    matrix.setRotate(phase() * 360f, size.width / 2f, size.height / 2f)
-                    shader.setLocalMatrix(matrix)
-                    paint.shader = shader
-                    canvas.drawRoundRect(inset, inset, size.width - inset, size.height - inset, radius, radius, paint)
-                }
-            }
+    val accent = LocalDelosColors.current.accent
+    val fade by animateFloatAsState(if (shown) 1f else 0f, if (reduced) snap() else tween(280, easing = Motion.Ease), label = "playFx")
+    if (fade <= 0f && !shown) return
+    val phase = remember { Animatable(0f) }
+    LaunchedEffect(running, reduced) {
+        if (!running || reduced) return@LaunchedEffect
+        while (true) {
+            phase.animateTo(1f, tween(PLAY_SWEEP_MS, easing = LinearEasing))
+            phase.snapTo(0f)
         }
     }
+    // The halo: recorded once, faded by its layer's alpha
+    Box(Modifier.matchParentSize().graphicsLayer { alpha = fade }.drawWithCache {
+        fun halo(spread: Float, blur: Float, alpha: Float) = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = accent.copy(alpha = alpha).toArgb()
+            maskFilter = android.graphics.BlurMaskFilter(blur, android.graphics.BlurMaskFilter.Blur.NORMAL)
+        } to spread
+        val layers = listOf(halo((12f + 3f) * k, 13f * k, .27f), halo((12f + 4f) * k, 28f * k, .11f))
+        onDrawBehind {
+            val canvas = drawContext.canvas.nativeCanvas
+            for ((paint, spread) in layers) {
+                val r = size.height / 2f + spread
+                canvas.drawRoundRect(-spread, -spread, size.width + spread, size.height + spread, r, r, paint)
+            }
+        }
+    })
+    if (reduced) return
+    Box(Modifier.matchParentSize().graphicsLayer { alpha = fade }.drawWithCache {
+        val band = 4f * k
+        val inset = 9f * k // the band's centre line, between -11 and -7
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        // conic-gradient(transparent 0–120°, accent/.27 190°, pale gold 235°, accent/.67 257°, transparent 290°)
+        val shader = android.graphics.SweepGradient(
+            cx, cy,
+            intArrayOf(0, 0, accent.copy(alpha = .27f).toArgb(), androidx.compose.ui.graphics.lerp(accent, Color.White, .65f).toArgb(),
+                accent.copy(alpha = .67f).toArgb(), 0, 0),
+            floatArrayOf(0f, 120f / 360f, 190f / 360f, 235f / 360f, 257f / 360f, 290f / 360f, 1f),
+        )
+        val matrix = android.graphics.Matrix()
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            style = android.graphics.Paint.Style.STROKE
+            strokeWidth = band
+            this.shader = shader
+        }
+        val r = size.height / 2f + inset
+        onDrawBehind {
+            // CSS conic 0° is up, Android's sweep starts at 3 o'clock
+            matrix.setRotate(phase.value * 360f - 90f, cx, cy)
+            shader.setLocalMatrix(matrix)
+            drawContext.canvas.nativeCanvas.drawRoundRect(-inset, -inset, size.width + inset, size.height + inset, r, r, paint)
+        }
+    })
 }
+
+private const val PLAY_SWEEP_MS = 5800
 
 /** A focusable part of a section: registers, scales on focus and reports it. */
 @Composable
@@ -1530,7 +1561,7 @@ private class CoverPose {
                 else -> 1f
             }
         } else if (moving && from != null && to != null && to.width > 0f && w > 0f) {
-            val p = OverviewMotion.flight(controller.clock.value, opening = !controller.closing)
+            val p = controller.flight.value
             val f = OverviewMotion.cover(p, from, to, OverviewMotion.ARC * k)
             // Screen pixels in the cover's own (1 unless something above the page scales it)
             val r = w / to.width
@@ -1569,7 +1600,7 @@ private class FrameShape(private val left: Float, private val top: Float, privat
  * focused screenshot crossfades in instead, sharp and deep. It is the blur source of the page's glass ([haze]).
  */
 @Composable
-private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, shot: String?, scroll: () -> Int, reduced: Boolean, haze: HazeState) {
+private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, shot: String?, scroll: () -> Int, reduced: Boolean, haze: HazeState, deepBlur: Int) {
     val colors = LocalDelosColors.current
     val k = stageUnit()
     val stage = LocalStage.current
@@ -1614,8 +1645,8 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, sho
         ) {
             Crossfade(Triple(image, sourceKey, showsShot || mirror == null), animationSpec = tween(800, easing = Motion.Ease), label = "overviewBackdrop") { (bitmap, key, sharp) ->
                 if (bitmap != null) {
-                    val deep by produceState(HeroBitmaps.cached(key, bitmap, DEEP_BLUR, area), key, bitmap) {
-                        if (value == null) value = withContext(Dispatchers.Default) { runCatching { HeroBitmaps.render(key, bitmap, DEEP_BLUR, area) }.getOrNull() }
+                    val deep by produceState(HeroBitmaps.cached(key, bitmap, deepBlur, area), key, bitmap, deepBlur) {
+                        if (value == null) value = withContext(Dispatchers.Default) { runCatching { HeroBitmaps.render(key, bitmap, deepBlur, area) }.getOrNull() }
                     }
                     Box(Modifier.fillMaxSize()) {
                         // A screenshot covers the dashboard's background: its own sharp picture over the theme color, under the deep one
@@ -1645,7 +1676,7 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, sho
     }
 }
 
-/** Overview-only deepening: 60% of the former 40px maximum; the dashboard mirror remains unchanged. */
+/** The deepest blur further down the page: 60 % of the former 40 px maximum, never below the dashboard's own blur. */
 private const val DEEP_BLUR = 24
 private val DeepFilter = ColorFilter.colorMatrix(ColorMatrix().apply {
     setToSaturation(1.35f)

@@ -9,19 +9,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OverviewVideoTest {
-    @Test fun `a video sits lower than a screenshot with room for its bar above the filmstrip`() {
-        val video = viewerVideoFit(1920f, 1080f)
-        assertEquals(640f, video.height, 1e-3f)
-        assertEquals(640f * 16f / 9f, video.width, 1e-3f)
-        assertEquals(150f, video.top, 1e-3f)
-        assertEquals(1920f / 2f, video.center.x, 1e-3f)
-        // The control bar ends above the filmstrip (54 px tall, 112 px above the bottom, 1.18 for the current one)
-        val barBottom = video.bottom + VIDEO_BAR_GAP + VIDEO_BAR_HEIGHT
-        assertTrue(barBottom < 1080f - 112f - 54f * 1.18f)
-        val tall = viewerVideoFit(1920f, 1440f)
-        assertEquals(1640f, tall.width, 1e-3f)
-    }
-
     @Test fun `times read m ss and h mm ss`() {
         assertEquals("0:00", videoTime(0f))
         assertEquals("0:09", videoTime(9.9f))

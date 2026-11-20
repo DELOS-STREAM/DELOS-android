@@ -58,6 +58,7 @@ import com.limelight.shell.LocalShell
 import com.limelight.shell.OverviewViewerHints
 import com.limelight.shell.data.rememberIgdbImage
 import com.limelight.shell.ui.ControllerGlyphs
+import com.limelight.shell.ui.Cue
 import com.limelight.shell.ui.EaseOut
 import com.limelight.shell.ui.Figtree
 import com.limelight.shell.ui.InputKind
@@ -301,8 +302,11 @@ internal fun OverviewViewer(
                     onDragCancel = { drag = Offset.Zero },
                 ) { change, amount -> change.consume(); drag += amount; controls.onInput() }
             })
-        if (controls.controlsVisible && !request.closing) {
-            Box(Modifier.fillMaxSize().graphicsLayer { alpha = ui.value }) {
+        // The DELOS overlay (count and title, transport, buttons) fades out after 3 s without input and back on any input
+        val overlayShown = controls.controlsVisible && !request.closing
+        val overlay by animateFloatAsState(if (overlayShown) 1f else 0f, tween(if (reduced) 0 else Motion.FADE, easing = Motion.Ease), label = "viewerOverlay")
+        if (overlayShown || overlay > 0f) {
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = ui.value * overlay }) {
                 Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
                     0f to Color.Black.copy(alpha = .65f), .2f to Color.Transparent,
                     .7f to Color.Transparent, 1f to Color.Black.copy(alpha = .8f),

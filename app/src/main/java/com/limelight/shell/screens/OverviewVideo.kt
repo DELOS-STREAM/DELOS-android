@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
@@ -71,9 +70,6 @@ private const val LOAD_TIMEOUT_MS = 15_000L
 
 /** A YouTube video id as IGDB stores it; anything else is never put into the player's page. */
 private val VIDEO_ID = Regex("[A-Za-z0-9_-]{6,20}")
-
-/** The native player owns the full viewport; its iframe preserves the video's natural aspect ratio. */
-internal fun viewerVideoFit(width: Float, height: Float): Rect = Rect(0f, 0f, width, height)
 
 /** [seconds] as `m:ss`, or `h:mm:ss` from an hour on. */
 internal fun videoTime(seconds: Float): String {

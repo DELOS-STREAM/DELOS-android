@@ -19,6 +19,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.keyframes
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Spacer
@@ -375,15 +378,19 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
     val touchDemo = remember { Animatable(0f) }
     val touchKind = ControllerGlyphs.kind
     val demoPreferences = remember(profileStore) { profileStore.settings() }
+    // The first touch-mode visit lifts the focused cover once (build/play-effect-proto/swipe-cue.html): up 24 at 42 %, back, 900 ms
     LaunchedEffect(touchKind, focusedHasOverview, overview.app == null) {
         if (touchKind != InputKind.TOUCH || !focusedHasOverview || overview.app != null) return@LaunchedEffect
         if (demoPreferences.getBoolean("overview_touch_lift_shown", false)) return@LaunchedEffect
+        delay(500)
         demoPreferences.edit().putBoolean("overview_touch_lift_shown", true).apply()
         if (reducedMotion) return@LaunchedEffect
-        delay(500)
         try {
-            touchDemo.animateTo(-24f, tween(420, easing = EaseOut))
-            touchDemo.animateTo(0f, tween(620, easing = OverviewMotion.InOut))
+            touchDemo.animateTo(0f, keyframes {
+                durationMillis = 900
+                0f at 0 using CubicBezierEasing(.16f, 1f, .3f, 1f)
+                -24f at 378 using CubicBezierEasing(.16f, 1f, .3f, 1f)
+            })
         } finally {
             withContext(kotlinx.coroutines.NonCancellable) { touchDemo.snapTo(0f) }
         }
@@ -629,6 +636,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
             GameOverview(
                 overview, pc, shown, library.apps, cover, appArt(pc, shown), cardLayer,
                 playtime = rememberPlaytime(profileStore, pc.uuid, shown.id, resumes), resumes = resumes, reducedMotion = appearance.reducedMotion,
+                dashboardBlur = appearance.heroBlur,
                 onPlay = {
                     // As A on the card: another game running on the PC offers the choices (quit it, go back to it) first
                     if (running != null && running.id != shown.id) {
@@ -1011,28 +1019,49 @@ private fun GameInfoHint(visible: Boolean, lift: () -> Float, onOpen: () -> Unit
     }
 }
 
-/** Two upward chevrons rise and fade, without a clock when hidden or motion is reduced. */
+/**
+ * A finger under two stacked upward chevrons (build/play-effect-proto/swipe-cue.html): each chevron rises 5 → -7 px and fades
+ * .25 → 1 → .25 over 1.8 s ease-in-out, the upper one .18 s later. Drawn in one canvas whose clock runs only while it shows;
+ * reduced motion keeps it still (the upper chevron at .6).
+ */
 @Composable
 private fun SwipeUpCue(visible: Boolean) {
     val reduced = com.limelight.shell.ui.LocalReducedMotion.current
     val k = LocalStage.current.dpPerPx * LocalDensity.current.density
-    val phase = remember { Animatable(0f) }
+    val accent = LocalDelosColors.current.accent
+    val clock = remember { Animatable(0f) }
     LaunchedEffect(visible, reduced) {
-        phase.snapTo(0f)
+        clock.snapTo(0f)
         if (!visible || reduced) return@LaunchedEffect
         while (true) {
-            phase.animateTo(1f, tween(2200, easing = androidx.compose.animation.core.LinearEasing))
-            phase.snapTo(0f)
+            clock.animateTo(SWIPE_CUE_MS.toFloat(), tween(SWIPE_CUE_MS, easing = androidx.compose.animation.core.LinearEasing))
+            clock.snapTo(0f)
         }
     }
-    Column(Modifier.graphicsLayer {
-        val p = phase.value
-        translationY = if (reduced) 0f else -10f * k * p
-        alpha = if (reduced) 1f else (1f - abs(p * 2f - 1f)) * .65f + .35f
-    }, verticalArrangement = Arrangement.spacedBy((-12).px)) {
-        repeat(2) { Symbol(Symbols.EXPAND_LESS, 22.tpx, Color.White, filled = true) }
+    val rise = remember { CubicBezierEasing(.42f, 0f, .58f, 1f) }
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy((-4).px)) {
+        Spacer(Modifier.size(26.px, 30.px).drawBehind {
+            val stroke = 3f * k
+            val arm = 9f * k
+            for (i in 0..1) {
+                // 45 % of the cycle up, the rest back down (CSS keyframes 0 / 45 / 100 % with ease-in-out per segment)
+                val t = ((clock.value - i * 180f) / SWIPE_CUE_MS).let { it - kotlin.math.floor(it) }
+                val p = if (reduced) .5f else if (t < .45f) rise.transform(t / .45f) else 1f - rise.transform((t - .45f) / .55f)
+                val alpha = if (reduced) (if (i == 1) .6f else 1f) else .25f + .75f * p
+                val dy = if (reduced) 0f else Motion.lerp(5f, -7f, p) * k
+                val cy = (if (i == 0) 20f else 8f) * k + dy
+                val cx = size.width / 2f
+                val color = accent.copy(alpha = alpha)
+                val tip = Offset(cx, cy - arm / 2f)
+                drawLine(color, Offset(cx - arm, cy + arm / 2f), tip, stroke, androidx.compose.ui.graphics.StrokeCap.Round)
+                drawLine(color, tip, Offset(cx + arm, cy + arm / 2f), stroke, androidx.compose.ui.graphics.StrokeCap.Round)
+            }
+        })
+        Symbol(Symbols.TOUCH_APP, 24.tpx, Color.White, filled = true)
     }
 }
+
+private const val SWIPE_CUE_MS = 1800
 
 /** Both artwork logos and confirmed text fallbacks share the same selection entrance. */
 @Composable
