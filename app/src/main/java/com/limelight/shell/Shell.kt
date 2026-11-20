@@ -75,7 +75,6 @@ import com.limelight.shell.data.PcRepository
 import com.limelight.shell.data.PcSetup
 import com.limelight.shell.data.ProfileStore
 import com.limelight.shell.data.LocalGameMetadata
-import com.limelight.shell.data.MetadataFilters
 import com.limelight.shell.screens.HomeScreen
 import com.limelight.shell.screens.openMetadataMenu
 import com.limelight.shell.screens.BootScreen
@@ -102,6 +101,8 @@ import com.limelight.shell.ui.EaseOut
 import com.limelight.shell.ui.Feedback
 import com.limelight.shell.ui.Glyph
 import com.limelight.shell.ui.Hint
+import com.limelight.shell.ui.InputCap
+import com.limelight.shell.ui.InputKind
 import com.limelight.shell.ui.HintBar
 import com.limelight.shell.ui.ControllerGlyphs
 import com.limelight.shell.ui.adaptedTo
@@ -159,6 +160,7 @@ import com.limelight.shell.ui.ArtworkProgressBar
 import com.limelight.shell.screens.ArtworkScreen
 import com.limelight.shell.screens.DebugInfoScreen
 import com.limelight.shell.screens.OscPreviewScreen
+import com.limelight.shell.screens.FilterDraft
 import com.limelight.shell.screens.FilterModalLayer
 import com.limelight.shell.screens.filterHintLabel
 import dev.chrisbanes.haze.hazeSource
@@ -501,6 +503,8 @@ fun Shell(
     val clock by rememberClock(appearance.clock)
     val library by repo.library.collectAsStateWithLifecycle()
     val metadata = LocalGameMetadata.current
+    // The library filter's choices while it is open: applied only on confirm, dropped when it closes without
+    val filterDraft = remember(metadata) { FilterDraft({ metadata.filters }, metadata::updateFilters) }
     val openMetadata: (Pc, App) -> Unit = remember(scope, shell, tracker, metadata) {
         { selectedPc, app -> openMetadataMenu(res, scope, shell, tracker, metadata, selectedPc, app) }
     }
@@ -590,14 +594,20 @@ fun Shell(
         }
     }
 
+    fun confirmFilters() {
+        if (shell.layer != Layer.Filters) return
+        feedback.play(Cue.BACK)
+        filterDraft.confirm()
+        shell.closeLayer()
+    }
+
     fun toggleFilters() {
         when (shell.layer) {
-            Layer.Filters -> {
-                feedback.play(Cue.BACK)
-                shell.closeLayer()
-            }
+            // Y in the open filter applies its choices, as its "Show N apps" pill does
+            Layer.Filters -> confirmFilters()
             null -> {
                 feedback.play(Cue.OPEN)
+                filterDraft.begin()
                 shell.openLayer(Layer.Filters, tracker)
             }
             else -> Unit
@@ -644,9 +654,9 @@ fun Shell(
                 KeyEvent.KEYCODE_BUTTON_SELECT -> if (shell.screen.sideMenu) toggleSide()
                 KeyEvent.KEYCODE_BUTTON_START -> toggleContext()
                 KeyEvent.KEYCODE_BUTTON_X -> if (shell.layer == Layer.Filters) {
-                    if (metadata.filters.active) {
+                    if (filterDraft.value.active) {
                         feedback.play(Cue.SELECT)
-                        metadata.updateFilters(MetadataFilters())
+                        filterDraft.reset()
                     }
                 } else if (shell.screen is Screen.Artwork && shell.layer == null && shell.onArtworkSearch != null) shell.onArtworkSearch?.invoke()
                 else if (shell.screen is Screen.GameSettings && shell.layer == null && shell.onGameReset != null) shell.onGameReset?.invoke()
@@ -901,10 +911,7 @@ fun Shell(
                     shell.closeLayer()
                 }
 
-                FilterModalLayer(shell.layer == Layer.Filters, library as? Library.Ready, haze, appearance.reducedMotion) {
-                    feedback.play(Cue.BACK)
-                    shell.closeLayer()
-                }
+                FilterModalLayer(shell.layer == Layer.Filters, library as? Library.Ready, filterDraft, haze, appearance.reducedMotion) { confirmFilters() }
 
                 // The popup of a settings row (touch, issue #92): over every layer, the side menu's rows open it too
                 RowPickerLayer(shell.picker, haze) { shell.closePicker() }
@@ -1074,7 +1081,11 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
     return when (shell.layer) {
         is Layer.Context -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, if (shell.menuPath.isEmpty()) R.string.shell_hint_close else R.string.shell_hint_back))
         Layer.Side -> adjust + listOf(hint(Glyph.A, R.string.shell_hint_change), hint(Glyph.B, R.string.shell_hint_close))
-        Layer.Filters -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.X, R.string.shell_hint_reset), hint(Glyph.Y, R.string.shell_hint_close), hint(Glyph.B, R.string.shell_hint_close))
+        // Space toggles a chip and Return applies the choices (FilterChip), so the keyboard's hints name those keys
+        Layer.Filters -> if (ControllerGlyphs.kind == InputKind.KEYBOARD) listOf(
+            Hint(Glyph.Cap(InputCap.SPACE), res.getString(R.string.shell_hint_select)), Hint(Glyph.Cap(InputCap.RETURN), res.getString(R.string.shell_hint_apply)),
+            hint(Glyph.B, R.string.shell_hint_close),
+        ) else listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.X, R.string.shell_hint_reset), hint(Glyph.Y, R.string.shell_hint_apply), hint(Glyph.B, R.string.shell_hint_close))
         is Layer.Dialog -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_cancel))
         null -> when (val screen = shell.screen) {
             Screen.Home -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it, tappable = true, icon = Symbols.FILTER) }, hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)

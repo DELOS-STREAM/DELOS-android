@@ -56,6 +56,11 @@ class HintKindsTest {
         assertEquals(Glyph.Cap(InputCap.ESCAPE), Glyph.B.forKind(InputKind.KEYBOARD))
     }
 
+    @Test fun `a hint written for the keyboard keeps its key`() {
+        val filter = listOf(Hint(Glyph.Cap(InputCap.SPACE), "Select"), Hint(Glyph.Cap(InputCap.RETURN), "Apply"), Hint(Glyph.B, "Close"))
+        assertEquals(listOf(Glyph.Cap(InputCap.SPACE), Glyph.Cap(InputCap.RETURN), Glyph.Cap(InputCap.ESCAPE)), filter.adaptedTo(InputKind.KEYBOARD).map { it.glyph })
+    }
+
     @Test fun `the adapted primary action ranks first in a cramped bar`() {
         assertEquals(0, hintRank(Glyph.TAP))
         assertEquals(0, hintRank(Glyph.CLICK))

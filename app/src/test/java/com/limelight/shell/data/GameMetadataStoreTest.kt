@@ -159,12 +159,20 @@ class GameMetadataStoreTest {
         }
     }
 
-    @Test fun genreAndThemeFiltersSurviveARestart() {
-        val filters = MetadataFilters(genreId = 12, themeId = 19, hdr = HdrFilter.HDR, length = LengthFilter.OVER_60)
+    @Test fun everyChosenValueSurvivesARestart() {
+        val filters = MetadataFilters(genres = setOf(12, 5), themes = setOf(19), hdr = setOf(HdrFilter.HDR, HdrFilter.UNKNOWN), length = setOf(LengthFilter.OVER_60))
         newStore(FakeProviders()).updateFilters(filters)
         assertEquals(filters, newStore(FakeProviders()).filters)
-        newStore(FakeProviders()).updateFilters(MetadataFilters(genreId = 12))
-        assertEquals(MetadataFilters(genreId = 12), newStore(FakeProviders()).filters)
+        newStore(FakeProviders()).updateFilters(MetadataFilters(genres = setOf(12)))
+        assertEquals(MetadataFilters(genres = setOf(12)), newStore(FakeProviders()).filters)
+        newStore(FakeProviders()).updateFilters(MetadataFilters())
+        assertEquals(MetadataFilters(), newStore(FakeProviders()).filters)
+    }
+
+    @Test fun aFilterKeptWithOneValuePerRowIsReadAsThoseValues() {
+        prefs.edit().putInt("metadata_filter_genre", 12).putInt("metadata_filter_theme", 19)
+            .putString("metadata_filter_hdr", "SDR").putString("metadata_filter_length", "ANY").commit()
+        assertEquals(MetadataFilters(genres = setOf(12), themes = setOf(19), hdr = setOf(HdrFilter.SDR)), newStore(FakeProviders()).filters)
     }
 
     @Test fun genreAndThemeListsFollowTheCachedRecordsAndIgnoreOlderSchemas() = runBlocking {
@@ -812,8 +820,8 @@ class GameMetadataStoreTest {
         assertEquals(7L, data.candidate?.id)
         assertEquals(NativeHdr.UNKNOWN, data.hdr.support)
         assertTrue(data.candidate!!.genres.isEmpty())
-        assertTrue(MetadataFilters(hdr = HdrFilter.UNKNOWN).matches(game, data))
-        assertFalse(MetadataFilters(hdr = HdrFilter.SDR).matches(game, data))
+        assertTrue(MetadataFilters(hdr = setOf(HdrFilter.UNKNOWN)).matches(game, data))
+        assertFalse(MetadataFilters(hdr = setOf(HdrFilter.SDR)).matches(game, data))
         assertEquals(0, providers.searchCalls.get())
     }
 

@@ -7,7 +7,7 @@ package com.limelight.shell.ui
  * - touch: only the primary action (A) stays, with the tap symbol: every other action has a control on the screen;
  * - pointer (mouse, trackpad): the same, with the mouse symbol;
  * - keyboard: Enter for the primary action, Esc for back, the arrows for the adjust cue; the buttons with no key (tabs, menu buttons, X,
- *   Y) are dropped.
+ *   Y) are dropped. A hint that already names a key ([Glyph.Cap], written for the keyboard) stays.
  */
 fun Glyph.forKind(kind: InputKind): Glyph? = when (kind) {
     InputKind.CONTROLLER -> this
@@ -17,6 +17,7 @@ fun Glyph.forKind(kind: InputKind): Glyph? = when (kind) {
         Glyph.A -> Glyph.Cap(InputCap.RETURN)
         Glyph.B -> Glyph.Cap(InputCap.ESCAPE)
         Glyph.ADJUST -> Glyph.Cap(InputCap.ARROWS)
+        is Glyph.Cap -> this
         else -> null
     }
 }

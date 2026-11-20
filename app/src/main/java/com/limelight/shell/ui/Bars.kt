@@ -462,6 +462,7 @@ private fun NavButtonView(button: NavButton, requester: FocusRequester, wrapLeft
  */
 enum class InputCap(val symbols: List<String>) {
     RETURN(listOf(Symbols.MAC_RETURN)),
+    SPACE(listOf(Symbols.MAC_SPACE)),
     ESCAPE(listOf(Symbols.MAC_ESCAPE)),
     ARROWS(listOf(Symbols.MAC_ARROW_LEFT, Symbols.MAC_ARROW_RIGHT)),
     CLICK(listOf(Symbols.MAC_MOUSE_CLICK_LEFT)),

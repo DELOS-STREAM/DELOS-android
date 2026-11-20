@@ -66,13 +66,15 @@ class GameMetadataStore internal constructor(
 
     fun reloadFilters() { filterState = readFilters() }
 
+    /** Applies and keeps the filter; each row is a comma-separated list (genre and theme ids, HDR and length names). */
     fun updateFilters(value: MetadataFilters) {
         filterState = value
         settings().edit()
-            .putInt(KEY_GENRE, value.genreId ?: 0)
-            .putInt(KEY_THEME, value.themeId ?: 0)
-            .putString(KEY_HDR, value.hdr.name)
-            .putString(KEY_LENGTH, value.length.name)
+            .putString(KEY_GENRES, value.genres.sorted().joinToString(","))
+            .putString(KEY_THEMES, value.themes.sorted().joinToString(","))
+            .putString(KEY_HDR, value.hdr.sorted().joinToString(",") { it.name })
+            .putString(KEY_LENGTH, value.length.sorted().joinToString(",") { it.name })
+            .remove(KEY_OLD_GENRE).remove(KEY_OLD_THEME)
             .apply()
     }
 
@@ -385,11 +387,15 @@ class GameMetadataStore internal constructor(
 
     private fun readFilters(): MetadataFilters {
         val prefs = settings()
+        fun list(key: String) = prefs.getString(key, null).orEmpty().split(',').filter { it.isNotEmpty() }
+        // A filter kept before a row could hold several values: one genre or theme id in an int (HDR and length kept one name)
+        fun ids(key: String, old: String) = if (prefs.contains(key)) list(key).mapNotNull { it.toIntOrNull() }.toSet()
+            else setOfNotNull(prefs.getInt(old, 0).takeIf { it > 0 })
         return MetadataFilters(
-            prefs.getInt(KEY_GENRE, 0).takeIf { it > 0 },
-            prefs.getInt(KEY_THEME, 0).takeIf { it > 0 },
-            runCatching { HdrFilter.valueOf(prefs.getString(KEY_HDR, null).orEmpty()) }.getOrDefault(HdrFilter.ANY),
-            runCatching { LengthFilter.valueOf(prefs.getString(KEY_LENGTH, null).orEmpty()) }.getOrDefault(LengthFilter.ANY),
+            ids(KEY_GENRES, KEY_OLD_GENRE),
+            ids(KEY_THEMES, KEY_OLD_THEME),
+            list(KEY_HDR).mapNotNull { name -> HdrFilter.entries.firstOrNull { it.name == name } }.toSet(),
+            list(KEY_LENGTH).mapNotNull { name -> LengthFilter.entries.firstOrNull { it.name == name } }.toSet(),
         )
     }
 
@@ -400,8 +406,10 @@ class GameMetadataStore internal constructor(
     private companion object {
         const val CACHE_SCHEMA = 6
         const val LIBRARY_CONCURRENCY = 2
-        const val KEY_GENRE = "metadata_filter_genre"
-        const val KEY_THEME = "metadata_filter_theme"
+        const val KEY_GENRES = "metadata_filter_genres"
+        const val KEY_THEMES = "metadata_filter_themes"
+        const val KEY_OLD_GENRE = "metadata_filter_genre"
+        const val KEY_OLD_THEME = "metadata_filter_theme"
         const val KEY_HDR = "metadata_filter_hdr"
         const val KEY_LENGTH = "metadata_filter_length"
     }

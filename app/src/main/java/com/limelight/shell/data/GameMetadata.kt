@@ -64,36 +64,48 @@ data class GameMetadataState(
     val error: MetadataProblem? = null,
 )
 
-enum class HdrFilter { ANY, HDR, SDR, UNKNOWN }
-enum class LengthFilter { ANY, UNDER_10, FROM_10_TO_30, FROM_30_TO_60, OVER_60, UNKNOWN }
+enum class HdrFilter { HDR, SDR, UNKNOWN }
+enum class LengthFilter { UNDER_10, FROM_10_TO_30, FROM_30_TO_60, OVER_60, UNKNOWN }
 
+/**
+ * The library filter: each row (genres, themes, HDR support, length) keeps the values chosen in it. A game matches a row with any of
+ * its values (an empty row matches every game) and the filter when it matches every row.
+ */
 @Immutable
 data class MetadataFilters(
-    val genreId: Int? = null,
-    val themeId: Int? = null,
-    val hdr: HdrFilter = HdrFilter.ANY,
-    val length: LengthFilter = LengthFilter.ANY,
+    val genres: Set<Int> = emptySet(),
+    val themes: Set<Int> = emptySet(),
+    val hdr: Set<HdrFilter> = emptySet(),
+    val length: Set<LengthFilter> = emptySet(),
 ) {
     val active: Boolean get() = activeCount > 0
 
-    /** How many of the four criteria narrow the library. */
-    val activeCount: Int get() = listOf(genreId != null, themeId != null, hdr != HdrFilter.ANY, length != LengthFilter.ANY).count { it }
+    /** How many values narrow the library, over all rows (two genres and HDR: 3). */
+    val activeCount: Int get() = genres.size + themes.size + hdr.size + length.size
+
+    fun toggleGenre(id: Int) = copy(genres = genres.toggle(id))
+    fun toggleTheme(id: Int) = copy(themes = themes.toggle(id))
+    fun toggleHdr(value: HdrFilter) = copy(hdr = hdr.toggle(value))
+    fun toggleLength(value: LengthFilter) = copy(length = length.toggle(value))
 
     fun matches(app: App, metadata: GameMetadata?): Boolean {
         if (BundledArtwork.kind(app) != null) return !active
         // Any of the game's genres and themes counts, not only the main ones the home screen shows
-        if (genreId != null && metadata?.candidate?.genres?.none { it.id == genreId } != false) return false
-        if (themeId != null && metadata?.candidate?.themes?.none { it.id == themeId } != false) return false
+        if (genres.isNotEmpty() && metadata?.candidate?.genres?.none { it.id in genres } != false) return false
+        if (themes.isNotEmpty() && metadata?.candidate?.themes?.none { it.id in themes } != false) return false
         val support = metadata?.hdr?.support ?: NativeHdr.UNKNOWN
-        if (hdr != HdrFilter.ANY && support.name != hdr.name) return false
+        if (hdr.isNotEmpty() && hdr.none { it.name == support.name }) return false
         val seconds = metadata?.completion?.seconds?.takeIf { it > 0 }
-        return when (length) {
-            LengthFilter.ANY -> true
-            LengthFilter.UNKNOWN -> seconds == null
-            LengthFilter.UNDER_10 -> seconds != null && seconds < 10 * 3600L
-            LengthFilter.FROM_10_TO_30 -> seconds != null && seconds >= 10 * 3600L && seconds < 30 * 3600L
-            LengthFilter.FROM_30_TO_60 -> seconds != null && seconds >= 30 * 3600L && seconds < 60 * 3600L
-            LengthFilter.OVER_60 -> seconds != null && seconds >= 60 * 3600L
-        }
+        return length.isEmpty() || length.any { it.matches(seconds) }
     }
+
+    private fun LengthFilter.matches(seconds: Long?): Boolean = when (this) {
+        LengthFilter.UNKNOWN -> seconds == null
+        LengthFilter.UNDER_10 -> seconds != null && seconds < 10 * 3600L
+        LengthFilter.FROM_10_TO_30 -> seconds != null && seconds >= 10 * 3600L && seconds < 30 * 3600L
+        LengthFilter.FROM_30_TO_60 -> seconds != null && seconds >= 30 * 3600L && seconds < 60 * 3600L
+        LengthFilter.OVER_60 -> seconds != null && seconds >= 60 * 3600L
+    }
+
+    private fun <T> Set<T>.toggle(value: T): Set<T> = if (value in this) this - value else this + value
 }
