@@ -48,7 +48,8 @@ Glyph names are Phosphor 2.1.2 (Regular, with the Fill twin used on focus).
 | `clock-countdown` | HLTB chip, HowLongToBeat provider row, Duration filter | completion time |
 | `sparkle` | HDR setting, native HDR chip, HDR filter chip and section, metadata badge | HDR |
 | `game-controller` | Controls tab, button-capture dialog, Debug controllers, Player avatar, and a game's placeholder tile and candidate lists | a controller; a game without artwork has nothing but its controller to show |
-| `play` | Start game, right menu button hint on the AYN (a physical button printed with that triangle) | the hint copies the hardware |
+| `play` | Start game, play a video in the overview's viewer, right menu button hint on the AYN (a physical button printed with that triangle) | starting playback; the hint copies the hardware |
+| `speaker-high` | Play audio on the PC, the sound of a video in the overview's viewer | sound on |
 | `list` / `square` / `copy` | menu button hints | hardware glyphs, not features |
 | `pencil-simple` | Rename (devices, profile, dialog field) | rename |
 | `trash` | Delete profile, Remove from Delos, undo toast default | remove |
@@ -441,7 +442,11 @@ The header pills. The per-app settings tab pills use the same glyphs.
 | Link: opens outside the app | `arrow-square-out` | `LINK_OPEN_EXTERNAL` |  |
 | Link: official site / store / video site / wiki | `globe-simple` / `storefront` / `video-camera` / `book-bookmark` | `WEBSITE_*` |  |
 | Link: Steam | `steam-logo` | `STEAM` |  |
-| A video in the carousel and the viewer | `youtube-logo` | `VIDEO_PLAY` | it opens on YouTube |
+| A video in the carousel and the viewer | `youtube-logo` | `VIDEO_PLAY` | a YouTube video, played in the app |
+| Video player: play / pause | `play` / `pause` | `PLAYER_PLAY` / `PLAYER_PAUSE` | repeat: `play` is Start game's |
+| Video player: back / forward 10 s | `rewind-circle` / `fast-forward-circle` | `PLAYER_BACK` / `PLAYER_FORWARD` | not `fast-forward` (Skip) |
+| Video player: sound / muted | `speaker-high` / `speaker-slash` | `PLAYER_SOUND` / `PLAYER_MUTED` | repeat: `speaker-high` is Play audio on the PC's |
+| A video that cannot play | `warning` | `WARNING` |  |
 | Game modes: single player / with others | `user` / `users-four` | `MODE_SINGLE` / `MODE_MULTI` |  |
 | Perspective | `cube-focus` | `PERSPECTIVE` |  |
 | Platforms: PC and Linux / Mac / consoles | `desktop-tower` / `laptop` / `television-simple` | `DESKTOP_WINDOWS` / `PLATFORM_MAC` / `PLATFORM_CONSOLE` |  |

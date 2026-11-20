@@ -51,6 +51,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -118,6 +119,7 @@ import com.limelight.shell.data.NativeHdr
 import com.limelight.shell.data.Pc
 import com.limelight.shell.data.Playtime
 import com.limelight.shell.data.PlaytimeFormat
+import com.limelight.shell.data.YouTubeEmbeds
 import com.limelight.shell.data.matchKey
 import com.limelight.shell.data.rememberIgdbImage
 import com.limelight.shell.ui.ControllerGlyphs
@@ -242,7 +244,10 @@ internal fun GameOverview(
     val reduced by rememberUpdatedState(reducedMotion)
 
     val screenshotSize = if (stage.stageHeight > 1200f) IgdbImageSize.HD_1080 else IgdbImageSize.SCREENSHOT_HUGE
-    val media = remember(details, screenshotSize) { details?.let { OverviewModel.media(it, screenshotSize) }.orEmpty() }
+    // Videos play only in the app: one YouTube will not embed is left out (YouTubeEmbeds), the moment that is known
+    val allMedia = remember(details, screenshotSize) { details?.let { OverviewModel.media(it, screenshotSize) }.orEmpty() }
+    LaunchedEffect(allMedia) { YouTubeEmbeds.check(allMedia.filter { it.kind == OverviewModel.MediaKind.VIDEO }.map { it.id }) }
+    val media by remember(allMedia) { derivedStateOf { allMedia.filter { it.kind != OverviewModel.MediaKind.VIDEO || YouTubeEmbeds.playable(it.id) } } }
     val links = remember(details, candidate) { details?.let { OverviewModel.links(it, candidate?.steamAppIds.orEmpty()) }.orEmpty() }
     val sections = remember(details, links, media) { OverviewModel.sections(details, links, media) }
 
@@ -268,9 +273,9 @@ internal fun GameOverview(
     BackHandler(enabled = controller.app != null) {
         if (viewer != null) viewer = viewer?.copy(closing = true) else currentClose()
     }
-    LaunchedEffect(viewer != null, viewer?.index) {
-        shell.overviewViewer = viewer?.let { media.getOrNull(it.index)?.kind == OverviewModel.MediaKind.VIDEO }
-    }
+    // The viewer keeps the items it opened with, so its indices hold while a video drops out of the carousel; these map them back
+    val viewerMedia = remember(viewer != null) { media }
+    fun carouselIndex(index: Int): Int = viewerMedia.getOrNull(index)?.let { media.indexOf(it) } ?: -1
 
     // The ring shows once the overview has settled, never for a finger
     LaunchedEffect(controller.settled, kind) {
@@ -460,18 +465,15 @@ internal fun GameOverview(
         }
         viewer?.let { request ->
             OverviewViewer(
-                media, request, viewerHaze, reducedMotion,
-                thumbRect = { index -> thumbRect(focus, index, root) },
+                viewerMedia, request, viewerHaze, reducedMotion,
+                thumbRect = { index -> carouselIndex(index).takeIf { it >= 0 }?.let { thumbRect(focus, it, root) } },
                 onIndex = { index ->
                     viewer = request.copy(index = index)
-                    backdropShot = media.getOrNull(index)?.thumb
-                    scope.launch { track.animateScrollToItem(index) }
-                },
-                onWatch = { videoId ->
-                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(IgdbImageUrls.youtubeWatch(videoId))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    backdropShot = viewerMedia.getOrNull(index)?.thumb
+                    carouselIndex(index).takeIf { it >= 0 }?.let { scope.launch { track.animateScrollToItem(it) } }
                 },
                 onClosed = {
-                    val index = viewer?.index ?: request.index
+                    val index = carouselIndex(viewer?.index ?: request.index).coerceAtLeast(0)
                     viewer = null
                     focus.targets["shot$index"]?.requester?.let { runCatching { it.requestFocus() } }
                 },

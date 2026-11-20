@@ -1104,19 +1104,27 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
         ) else listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.X, R.string.shell_hint_reset), hint(Glyph.Y, R.string.shell_hint_apply), hint(Glyph.B, R.string.shell_hint_close))
         is Layer.Dialog -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_cancel))
         null -> when (val screen = shell.screen) {
-            Screen.Home -> when {
-                // The game overview (docs/gui/GAME_INFO.md, "Game overview") and its screenshot viewer
-                shell.overviewViewer != null -> listOfNotNull(
-                    hint(Glyph.DPAD_HORIZONTAL, R.string.overview_hint_browse),
-                    hint(Glyph.A, R.string.overview_hint_watch).takeIf { shell.overviewViewer == true },
-                    hint(Glyph.B, R.string.shell_hint_back),
-                )
-                shell.overviewGame != null -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
-                else -> listOfNotNull(
-                    // "Game info" is not repeated here: the hint under the focused cover (GameInfoHint) already names it
-                    hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it, tappable = true, icon = Symbols.FILTER) },
-                    hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint,
-                )
+            Screen.Home -> {
+                val viewer = shell.overviewViewer
+                when {
+                    // The game overview (docs/gui/GAME_INFO.md, "Game overview") and its viewer: a video that plays seeks, plays or pauses,
+                    // mutes, and the shoulders browse; a screenshot browses with Left and Right
+                    viewer?.video == true -> listOf(
+                        hint(Glyph.DPAD_HORIZONTAL, R.string.overview_hint_seek),
+                        hint(Glyph.A, if (viewer.playing) R.string.overview_hint_pause else R.string.overview_hint_play),
+                        hint(Glyph.Y, if (viewer.muted) R.string.overview_hint_unmute else R.string.overview_hint_mute),
+                        hint(Glyph.L1, R.string.overview_previous),
+                        hint(Glyph.R1, R.string.overview_next),
+                        hint(Glyph.B, R.string.shell_hint_back),
+                    )
+                    viewer != null -> listOf(hint(Glyph.DPAD_HORIZONTAL, R.string.overview_hint_browse), hint(Glyph.B, R.string.shell_hint_back))
+                    shell.overviewGame != null -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
+                    else -> listOfNotNull(
+                        // "Game info" is not repeated here: the hint under the focused cover (GameInfoHint) already names it
+                        hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it, tappable = true, icon = Symbols.FILTER) },
+                        hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint,
+                    )
+                }
             }
             Screen.Settings -> adjust + listOfNotNull(hint(Glyph.L1, R.string.shell_hint_previous_tab), hint(Glyph.R1, R.string.shell_hint_next_tab), hint(Glyph.Y, R.string.shell_hint_search), hint(Glyph.A, R.string.shell_hint_change), optionsHint, hint(Glyph.B, R.string.shell_hint_back))
             Screen.SettingsSearch -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))

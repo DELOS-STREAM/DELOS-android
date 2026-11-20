@@ -76,7 +76,16 @@
     <string name="overview_video">Video</string>
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">Procházet</string>
-    <string name="overview_hint_watch">Přehrát</string>
+    <string name="overview_hint_seek">Posun o 10 s</string>
+    <string name="overview_hint_play">Přehrát</string>
+    <string name="overview_hint_pause">Pozastavit</string>
+    <string name="overview_hint_mute">Ztlumit</string>
+    <string name="overview_hint_unmute">Zapnout zvuk</string>
+    <string name="overview_video_back">O 10 sekund zpět</string>
+    <string name="overview_video_forward">O 10 sekund vpřed</string>
+    <string name="overview_video_unavailable">Video nejde přehrát</string>
+    <string name="overview_video_blocked">Jeho vlastník nepovoluje přehrávání v jiných aplikacích.</string>
+    <string name="overview_video_failed">YouTube ho nenačetl. Zkontroluj připojení a zkus to znovu.</string>
     <string name="overview_previous">Předchozí</string>
     <string name="overview_next">Další</string>
     <string name="overview_loading">Načítám info o hře…</string>

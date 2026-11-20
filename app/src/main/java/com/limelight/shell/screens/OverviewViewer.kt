@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -54,6 +55,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import com.limelight.R
+import com.limelight.shell.LocalShell
+import com.limelight.shell.OverviewViewerHints
 import com.limelight.shell.data.rememberIgdbImage
 import com.limelight.shell.ui.ControllerGlyphs
 import com.limelight.shell.ui.Cue
@@ -93,9 +96,11 @@ internal fun viewerFit(width: Float, height: Float): Rect {
 }
 
 /**
- * The full-screen screenshot viewer (the prototype's `Viewer`): it zooms out of the thumbnail and back into it (or fades when the
- * thumbnail is scrolled away), crossfades with parallax between items, shows a filmstrip and the count, and blurs the page behind it
- * for real ([haze]). Left and right browse (a nudge at the ends), A on a video opens YouTube, a finger swipes sideways or down.
+ * The full-screen viewer of screenshots and videos (the prototype's `Viewer`): it zooms out of the thumbnail and back into it (or fades
+ * when the thumbnail is scrolled away), crossfades with parallax between items, shows a filmstrip and the count, and blurs the page
+ * behind it for real ([haze]). Left and right browse (a nudge at the ends), L1 and R1 too, a finger swipes sideways or down. A video
+ * plays here, in YouTube's player ([OverviewVideoView]) with the DELOS controls under it ([VideoControls]): Left and Right seek 10 s,
+ * A plays or pauses, Y mutes; one the player cannot play says why ([VideoError]).
  */
 @Composable
 internal fun OverviewViewer(
@@ -105,7 +110,6 @@ internal fun OverviewViewer(
     reduced: Boolean,
     thumbRect: (Int) -> Rect?,
     onIndex: (Int) -> Unit,
-    onWatch: (String) -> Unit,
     onClosed: () -> Unit,
     onCloseRequest: () -> Unit,
 ) {
@@ -115,6 +119,8 @@ internal fun OverviewViewer(
     val k = stageUnit()
     val scope = rememberCoroutineScope()
     val fit = remember(stage.stageWidth, stage.stageHeight) { viewerFit(stage.stageWidth, stage.stageHeight) }
+    val videoFit = remember(stage.stageWidth, stage.stageHeight) { viewerVideoFit(stage.stageWidth, stage.stageHeight) }
+    val shell = LocalShell.current
     val kind = ControllerGlyphs.kind
     var root by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
@@ -131,12 +137,15 @@ internal fun OverviewViewer(
     val change = remember { Animatable(1f) }
     val nudge = remember { Animatable(0f) }
     var drag by remember { mutableStateOf(Offset.Zero) }
+    // The opening zoom has ended: a video's player may load
+    var opened by remember { mutableStateOf(false) }
     val currentRequest by rememberUpdatedState(request)
 
     LaunchedEffect(Unit) {
         launch { scrim.animateTo(1f, tween(Motion.SCRIM, easing = Motion.Ease)) }
         launch { kotlinx.coroutines.delay(if (reduced) 0 else 300); ui.animateTo(1f, tween(300, easing = Motion.Ease)) }
         zoom.animateTo(1f, if (fading) tween(Motion.FADE, easing = Motion.Ease) else tween(560, easing = OverviewMotion.Flight))
+        opened = true
     }
     // Browsing: the new picture slides in from the side of the key, the old one leaves the other way
     LaunchedEffect(request.index) {
@@ -176,6 +185,26 @@ internal fun OverviewViewer(
         onIndex(index)
     }
 
+    /** A video sits lower than a screenshot, above its control bar. */
+    fun rectOf(index: Int): Rect = if (media.getOrNull(index)?.kind == OverviewModel.MediaKind.VIDEO) videoFit else fit
+
+    // The video shown, in the player once the viewer has settled on it; null on a screenshot
+    val player = remember(shown) { media.getOrNull(shown)?.takeIf { it.kind == OverviewModel.MediaKind.VIDEO }?.let { OverviewVideoPlayer(it.id) } }
+    val video = player?.takeIf { it.error == null }
+    val settled = opened && leaving == null && !request.closing
+    val hints = OverviewViewerHints(video = video != null, playing = video?.playing == true, muted = video?.muted == true)
+    LaunchedEffect(hints) { shell.overviewViewer = hints }
+    // L1 and R1 browse, on a video too (where Left and Right seek)
+    DisposableEffect(shell) {
+        val shoulder: (Int) -> Unit = { step -> go(shown + step) }
+        val previous = shell.onShoulder
+        shell.onShoulder = shoulder
+        onDispose {
+            if (shell.onShoulder === shoulder) shell.onShoulder = previous
+            shell.overviewViewer = null
+        }
+    }
+
     val requester = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { requester.requestFocus() } }
 
@@ -188,9 +217,22 @@ internal fun OverviewViewer(
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onKeyEvent event.key in VIEWER_KEYS
                 when (event.key) {
-                    Key.DirectionLeft -> go(shown - 1)
-                    Key.DirectionRight -> go(shown + 1)
-                    Key.ButtonA, Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> media.getOrNull(shown)?.takeIf { it.kind == OverviewModel.MediaKind.VIDEO }?.let { onWatch(it.id) }
+                    Key.DirectionLeft -> if (video != null) {
+                        feedback.play(Cue.MOVE)
+                        video.seekBy(-10)
+                    } else go(shown - 1)
+                    Key.DirectionRight -> if (video != null) {
+                        feedback.play(Cue.MOVE)
+                        video.seekBy(10)
+                    } else go(shown + 1)
+                    Key.ButtonA, Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> video?.let {
+                        feedback.play(Cue.SELECT)
+                        it.togglePlay()
+                    }
+                    Key.ButtonY, Key.M -> video?.let {
+                        feedback.play(Cue.SELECT)
+                        it.toggleMute()
+                    }
                     Key.DirectionUp, Key.DirectionDown -> Unit
                     else -> return@onKeyEvent false
                 }
@@ -225,10 +267,11 @@ internal fun OverviewViewer(
         listOfNotNull(leaving, shown).forEach { index ->
             val item = media.getOrNull(index) ?: return@forEach
             val isLeaving = index == leaving
+            val rect = rectOf(index)
             Box(
                 Modifier
-                    .offset(fit.left.px, fit.top.px)
-                    .size(fit.width.px, fit.height.px)
+                    .offset(rect.left.px, rect.top.px)
+                    .size(rect.width.px, rect.height.px)
                     .graphicsLayer {
                         transformOrigin = TransformOrigin(0f, 0f)
                         val c = change.value
@@ -266,10 +309,10 @@ internal fun OverviewViewer(
                                 scaleY = s
                             }
                         } else if (z < 1f) {
-                            val fx = fit.left * k
-                            val fy = fit.top * k
-                            val sx = from.width / (fit.width * k)
-                            val sy = from.height / (fit.height * k)
+                            val fx = rect.left * k
+                            val fy = rect.top * k
+                            val sx = from.width / (rect.width * k)
+                            val sy = from.height / (rect.height * k)
                             translationX = (from.left - fx) * (1f - z)
                             translationY = (from.top - fy) * (1f - z)
                             scaleX = Motion.lerp(sx, 1f, z)
@@ -307,6 +350,27 @@ internal fun OverviewViewer(
                     )
                 }
             }
+        }
+
+        // The video's player on its picture once the viewer has settled, or why it cannot play; it follows a finger pulling down
+        val rect = rectOf(shown)
+        val onVideo = Modifier
+            .offset(rect.left.px, rect.top.px)
+            .size(rect.width.px, rect.height.px)
+            .graphicsLayer {
+                val d = drag
+                if (abs(d.y) > abs(d.x) && d.y > 0f) {
+                    translationY = d.y
+                    val s = 1f - min(d.y / k, 400f) / 1600f
+                    scaleX = s
+                    scaleY = s
+                } else translationX = d.x * .6f
+                shape = RoundedCornerShape(18f * k)
+                clip = true
+            }
+        if (settled && player != null) {
+            val error = player.error
+            if (error == null) OverviewVideoView(player, onVideo) else VideoError(error, onVideo)
         }
 
         // The count, the filmstrip and the pointer's controls
@@ -348,6 +412,10 @@ internal fun OverviewViewer(
                     ) { thumb?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) } }
                 }
             }
+            if (video != null && !request.closing) {
+                val bar = videoFit
+                VideoControls(video, Modifier.offset(bar.left.px, (bar.bottom + VIDEO_BAR_GAP).px).size(bar.width.px, VIDEO_BAR_HEIGHT.px))
+            }
             if (kind == InputKind.POINTER) {
                 ViewerButton(Symbols.CHEVRON_LEFT, stringResource(R.string.overview_previous), Modifier.align(Alignment.CenterStart).padding(start = 40.px)) { go(shown - 1) }
                 ViewerButton(Symbols.CHEVRON_RIGHT, stringResource(R.string.overview_next), Modifier.align(Alignment.CenterEnd).padding(end = 40.px)) { go(shown + 1) }
@@ -359,7 +427,10 @@ internal fun OverviewViewer(
     }
 }
 
-private val VIEWER_KEYS = setOf(Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown, Key.ButtonA, Key.Enter, Key.NumPadEnter, Key.DirectionCenter)
+private val VIEWER_KEYS = setOf(
+    Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown, Key.ButtonA, Key.Enter, Key.NumPadEnter, Key.DirectionCenter,
+    Key.ButtonY, Key.M,
+)
 
 /** A round glass button of the viewer (previous, next, close). */
 @Composable
