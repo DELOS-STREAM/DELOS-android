@@ -505,7 +505,11 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
 3. A swipe up needs vertical intent (Compose's vertical touch slop, so the row's horizontal scroll and the side-menu swipe
    keep working). The cover follows the finger with resistance (`lift = max(dy, -260) × 0.55`, growing up to
    1.155) and opens past 40 px of lift; the flight starts where the finger left it.
-4. **Opening** (`OverviewMotion`, all transforms and opacity, read while drawing):
+4. **Opening** (`OverviewMotion`, all transforms and opacity, read while drawing). The card stays in its row until the
+   overview's first layout knows the header's slot; then the flight takes over from it, at its place. The motion runs on
+   a clock that advances at most 33 ms per frame (`SteadyFrameClock`): the overview's first frames are its heaviest, and
+   on the frame clock itself they used to swallow most of the motion (the cover landed in the first frame that moved).
+   A slow frame now holds the motion back instead of skipping it:
    - the other covers lift away one after another: 160 px + 30 px per cover of distance up, to 0.92, fading, 620 ms
      ease-out each, 45 ms apart by distance;
    - the info row rises 90 px out and fades;
@@ -515,19 +519,23 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
      portrait): the pictures in it keep their proportions, cropped to the frame, and the card as the row drew it (its own
      art, a wide card's too, the current frame of its animation, its badge) crossfades into the header's cover over the
      first 60 % of the way;
-   - the title flies from the dashboard's title to the header's (720 ms): the SteamGridDB logo from the logo (one scale,
-     the two logo boxes have the same proportions), the name from the name; when the dashboard showed the other kind,
-     the header's title rises in like its other parts;
+   - the name flies from the dashboard's name to the header's (720 ms); a SteamGridDB logo does not fly: the dashboard's
+     fades out where it is over the first 40 % of the flight and the header's fades in at its own place over the last
+     50 % (and the other way round on closing); when the dashboard showed the other kind, the header's title rises in
+     like its other parts;
    - the page rises from 120 px below (780 ms), the header's parts rise 18 px, 46 ms apart, after 260 ms (the cue
      after 500 ms);
    - the backdrop's own layers fade in over 900 ms; the rings fill and count up after 380 ms (1.3 s, ease-out-quart).
 5. Nothing delays a control: Play has the focus from the first frame and the page takes input while it enters. The
-   gold ring appears once the opening is over.
+   gold ring appears once the opening is over, for every input: a finger's first tap only focuses (focus first), so
+   the focused part shows its ring and its focus growth after a tap too.
 6. **Closing** (B, Esc, Back, Up from the header, the round back button, or pulling the page down 150 px at its top):
    a close during the opening waits for it; the card takes the focus again and the hint bar shows the dashboard's hints,
    the page scrolls to its top (420 ms), then everything reverses: the cover flies back into its card (640 ms
-   ease-in-out), the page sinks 120 px and fades (560 ms), the other covers come back in the reverse order, the header's
-   parts leave first (240 ms). The page leaves composition one frame after the motion's last one.
+   ease-in-out), the page sinks 120 px and fades (560 ms), the header's parts leave first (240 ms). The dashboard comes
+   back with the cover, as on the iPad: the other covers and the info row return together, 640 ms ease-in-out from
+   where the opening left them, and arrive with the card (no stagger, no jump at the end). The page leaves composition
+   one frame after the motion's last one.
 7. **Reduced motion** keeps the fades and drops every transform: the cover and the title fade in place, nothing lifts,
    rises, drifts or bobs, the ring jumps.
 8. App settings opens the per-app settings; when they close the overview is there again without the flight.
@@ -535,13 +543,16 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
 ### 9.2 Layout (1920 × 1080 stage)
 
 1. The page has 150 px sides. It fades in under the status bar (clear to 70 px, solid from 140 px) and out at the
-   bottom 60 px.
+   bottom 60 px. The backdrop darkens only under the page's text: towards the bottom, and at the left under the header
+   from below the top bar (from 140 px, whole from 260 px). Nothing darkens the top bar, the brand or the PC: no band,
+   no vignette.
 2. **Header**, one screen minus 160 px high, 150 px from the top: the 340 × 510 cover (30 px corner, deep shadow)
    and, 72 px beside it, 24 px apart: the year and developers (15 px tracked accent eyebrow); the title: the game's logo
    when it has one (the dashboard's: the user's SteamGridDB choice, else the default logo, its animation playing; up to
    700 × 140 px), else the name (68 px Unbounded, up to 1150 px wide, balanced lines, the game's color gradient); the
    genre and theme tags (two each, as on the dashboard) and the HDR badge; the critics' and players' rings (104 px) with
-   the age rating of the device's region; **Play** and **App settings** (76 px pills); the streaming time, last streamed
+   the age rating of the device's region; **Play** and **App settings** (86 px pills, 54 px at their sides); the
+   streaming time, last streamed
    and HowLongToBeat.
    At the header's bottom a cue names the sections below ("About · Media · Details · Similar games") with a bobbing
    caret.
@@ -582,7 +593,8 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    element comes into view with 160 px around it; the header scrolls to the top. The carousel keeps 150 px beside the
    focused item.
 4. One gold ring glides between the elements (560 ms, slight overshoot) in the page's coordinates, so it scrolls with
-   the page and rides along with a scrolling carousel. It is hidden for touch.
+   the page and rides along with a scrolling carousel. A finger sees it and the focused part's growth too: its first
+   tap only focuses, and the ring shows that it did.
 5. Touch: focus first (a tap on an element that is not focused only focuses it), drag to scroll, pull down at the top
    to close. Mouse: hovering focuses without scrolling, the wheel scrolls, a click activates.
 6. Activating: Play starts or resumes the game (with another game running, the game's menu offers the choices);

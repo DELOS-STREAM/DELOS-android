@@ -243,6 +243,25 @@ internal object OverviewMotion {
     fun title(millis: Float, opening: Boolean): Float =
         if (opening) Motion.progress(millis, 0, TITLE_IN, Flight) else 1f - Motion.progress(millis, 0, TITLE_OUT, InOut)
 
+    /**
+     * A logo does not fly (owner, 2026-11-20): the one the motion leaves (the dashboard's on opening, the header's on closing) fades out
+     * where it is over the first [LOGO_OUT] of the flight, the one it goes to fades in at its own place over the last [LOGO_IN].
+     */
+    const val LOGO_OUT = .4f
+    const val LOGO_IN = .5f
+
+    /** The opacity of the logo the motion leaves, [millis] into it. */
+    fun logoLeaving(millis: Float, opening: Boolean): Float =
+        1f - Motion.progress(millis, 0, (flightMillis(opening) * LOGO_OUT).toInt(), Motion.Ease)
+
+    /** The opacity of the logo the motion goes to, [millis] into it. */
+    fun logoArriving(millis: Float, opening: Boolean): Float {
+        val d = flightMillis(opening)
+        return Motion.progress(millis, (d * (1f - LOGO_IN)).toInt(), (d * LOGO_IN).toInt(), Motion.Ease)
+    }
+
+    private fun flightMillis(opening: Boolean) = if (opening) FLIGHT_IN else FLIGHT_OUT
+
     /** The page's rise: how far below its place it is, in stage pixels, and its opacity. */
     fun page(millis: Float, opening: Boolean, reduced: Boolean): Pair<Float, Float> = when {
         opening -> (if (reduced) 0f else PAGE_RISE * (1f - Motion.progress(millis, 0, FLIGHT_IN, Flight))) to 1f
@@ -252,18 +271,26 @@ internal object OverviewMotion {
         }
     }
 
-    /** A covers' lift away from the dashboard at [millis] of the home clock, [distance] covers from the focused one: (rise, scale, opacity). */
-    fun homeCover(millis: Float, distance: Int, reduced: Boolean): Triple<Float, Float, Float> {
-        val p = Motion.progress(millis, if (reduced) 0 else distance * HOME_STAGGER, HOME_OUT, EaseOut)
-        if (reduced) return Triple(0f, 1f, 1f - p)
-        return Triple(-(160f + distance * 30f) * p, Motion.lerp(1f, .92f, p), 1f - p)
+    /** How far a part of the dashboard has gone away at [millis] of the home clock, [distance] covers from the focused one (the info row: 0). */
+    fun homeAway(millis: Float, distance: Int, reduced: Boolean): Float =
+        Motion.progress(millis, if (reduced) 0 else distance * HOME_STAGGER, HOME_OUT, EaseOut)
+
+    /**
+     * How far a part of the dashboard is still away [millis] into the closing, from [away] (where the opening left it): every part comes
+     * back together, with the cover's flight, ease-in-out over [FLIGHT_OUT] (the iPad's choreography). It only ever comes closer, so a
+     * closing that interrupts the opening turns the parts back from where they are, and it arrives at the same time as the cover.
+     */
+    fun homeBack(millis: Float, away: Float, reduced: Boolean): Float =
+        min(away, 1f - Motion.progress(millis, 0, if (reduced) Motion.FADE else FLIGHT_OUT, InOut))
+
+    /** A cover [away] from the dashboard ([homeAway], [homeBack]), [distance] covers from the focused one: (rise, scale, opacity). */
+    fun homeCover(away: Float, distance: Int, reduced: Boolean): Triple<Float, Float, Float> {
+        if (reduced) return Triple(0f, 1f, 1f - away)
+        return Triple(-(160f + distance * 30f) * away, Motion.lerp(1f, .92f, away), 1f - away)
     }
 
-    /** The info row's rise out of the dashboard. */
-    fun homeInfo(millis: Float, reduced: Boolean): Pair<Float, Float> {
-        val p = Motion.progress(millis, 0, HOME_OUT, EaseOut)
-        return (if (reduced) 0f else -90f * p) to 1f - p
-    }
+    /** The info row [away] from the dashboard: its rise and its opacity. */
+    fun homeInfo(away: Float, reduced: Boolean): Pair<Float, Float> = (if (reduced) 0f else -90f * away) to 1f - away
 
     /** The home clock's length: the farthest cover has lifted away. */
     fun homeTotal(maxDistance: Int, reduced: Boolean): Int = HOME_OUT + if (reduced) 0 else max(0, maxDistance) * HOME_STAGGER

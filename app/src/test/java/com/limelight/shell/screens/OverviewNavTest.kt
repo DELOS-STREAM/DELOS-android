@@ -151,20 +151,67 @@ class OverviewNavTest {
     }
 
     @Test fun `the other covers lift away one after another and reduced motion only fades them`() {
+        fun cover(millis: Float, distance: Int, reduced: Boolean) =
+            OverviewMotion.homeCover(OverviewMotion.homeAway(millis, distance, reduced), distance, reduced)
         // 100 ms in, the neighbour has begun to lift; the cover four away waits for its 180 ms
-        val near = OverviewMotion.homeCover(100f, 1, reduced = false)
-        val far = OverviewMotion.homeCover(100f, 4, reduced = false)
+        val near = cover(100f, 1, reduced = false)
+        val far = cover(100f, 4, reduced = false)
         assertTrue(near.first < 0f)
         assertEquals(0f, far.first, 0f)
         assertEquals(1f, far.third, 0f)
-        val done = OverviewMotion.homeCover(OverviewMotion.homeTotal(4, false).toFloat(), 4, reduced = false)
+        val done = cover(OverviewMotion.homeTotal(4, false).toFloat(), 4, reduced = false)
         assertEquals(-(160f + 4 * 30f), done.first, 1e-3f)
         assertEquals(.92f, done.second, 1e-4f)
         assertEquals(0f, done.third, 1e-4f)
-        val reduced = OverviewMotion.homeCover(OverviewMotion.HOME_OUT.toFloat(), 4, reduced = true)
+        val reduced = cover(OverviewMotion.HOME_OUT.toFloat(), 4, reduced = true)
         assertEquals(0f, reduced.first, 0f)
         assertEquals(1f, reduced.second, 0f)
         assertEquals(0f, reduced.third, 1e-4f)
+    }
+
+    @Test fun `closing brings the dashboard back with the cover, from where the opening left it, without a jump`() {
+        // Fully away: every part comes back together, ease-in-out, and is home when the flight back ends
+        assertEquals(1f, OverviewMotion.homeBack(0f, 1f, reduced = false), 0f)
+        assertEquals(.5f, OverviewMotion.homeBack(OverviewMotion.FLIGHT_OUT / 2f, 1f, reduced = false), 1e-3f)
+        assertEquals(0f, OverviewMotion.homeBack(OverviewMotion.FLIGHT_OUT.toFloat(), 1f, reduced = false), 0f)
+        // Ease-in-out: the last 10 % of the time covers only a little of the way (the parts settle, they do not slam in)
+        assertTrue(OverviewMotion.homeBack(OverviewMotion.FLIGHT_OUT * .9f, 1f, reduced = false) < .03f)
+        // A closing that interrupts the opening never pushes a part further away first
+        assertEquals(.3f, OverviewMotion.homeBack(0f, .3f, reduced = false), 0f)
+        var last = 1f
+        for (t in 0..OverviewMotion.FLIGHT_OUT step 16) {
+            val away = OverviewMotion.homeBack(t.toFloat(), .3f, reduced = false)
+            assertTrue(away <= last)
+            last = away
+        }
+    }
+
+    @Test fun `a logo crossfades in place, out over the first 40 percent of the flight and in over the last half`() {
+        val f = OverviewMotion.FLIGHT_IN.toFloat()
+        assertEquals(1f, OverviewMotion.logoLeaving(0f, opening = true), 0f)
+        assertEquals(0f, OverviewMotion.logoLeaving(f * .4f, opening = true), 1e-4f)
+        assertEquals(0f, OverviewMotion.logoArriving(f * .5f, opening = true), 1e-4f)
+        assertEquals(1f, OverviewMotion.logoArriving(f, opening = true), 1e-4f)
+        // Closing: the header's logo leaves over the first 40 % of the flight back, the dashboard's arrives over its last half
+        val b = OverviewMotion.FLIGHT_OUT.toFloat()
+        assertEquals(0f, OverviewMotion.logoLeaving(b * .4f, opening = false), 1e-4f)
+        assertEquals(0f, OverviewMotion.logoArriving(b * .5f, opening = false), 1e-4f)
+        assertEquals(1f, OverviewMotion.logoArriving(b, opening = false), 1e-4f)
+    }
+
+    @Test fun `the overview's clock never skips more than a step, however long a frame took`() {
+        val frames = ArrayDeque(listOf(1_000_000_000L, 1_000_000_000L, 1_600_000_000L, 1_616_666_666L, 1_616_666_666L))
+        val real = object : androidx.compose.runtime.MonotonicFrameClock {
+            override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R = onFrame(frames.removeFirst())
+        }
+        val clock = SteadyFrameClock(real)
+        val seen = kotlinx.coroutines.runBlocking { List(5) { clock.withFrameNanos { it } } }
+        // The first frame is the start; two awaiters of one frame see one time; a 600 ms frame counts as one step
+        assertEquals(1_000_000_000L, seen[0])
+        assertEquals(seen[0], seen[1])
+        assertEquals(seen[1] + SteadyFrameClock.MAX_STEP_NANOS, seen[2])
+        assertEquals(seen[2] + 16_666_666L, seen[3])
+        assertEquals(seen[3], seen[4])
     }
 
     @Test fun `the header's parts rise 46 ms apart after their delay`() {

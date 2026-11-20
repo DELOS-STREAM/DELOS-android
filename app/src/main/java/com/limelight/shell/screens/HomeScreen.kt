@@ -574,8 +574,10 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                             .graphicsLayer {
                                 // The other covers lift away one after another as the overview opens; the focused one is the cover that flies
                                 if (overview.app != null) {
-                                    if (isFocused) alpha = 0f else {
-                                        val (dy, scale, a) = OverviewMotion.homeCover(overview.home.value, abs(i - focusedIndex), reducedMotion)
+                                    // The card hides once the overview's cover has taken its place (OverviewController.coverPlaced)
+                                    if (isFocused) alpha = if (overview.coverPlaced) 0f else 1f else {
+                                        val distance = abs(i - focusedIndex)
+                                        val (dy, scale, a) = OverviewMotion.homeCover(overview.homeAway(distance), distance, reducedMotion)
                                         translationY = dy * k
                                         scaleX = scale
                                         scaleY = scale
@@ -799,11 +801,21 @@ private fun GameInfo(
     modifier: Modifier, reducedMotion: Boolean, matchGameColors: Boolean, overview: OverviewController, titleProbe: TitleProbe,
 ) {
     val k = LocalStage.current.dpPerPx * LocalDensity.current.density
-    // While the game overview is open the title is the one in its header (it flew there) and the info row has risen away
+    // While the game overview is open the title is the one in its header and the info row has gone away. A text title flies there
+    // (the overview's Title); a logo fades out here while the header's fades in at its own place, and back (OverviewMotion.logoLeaving)
     val titleShown = Modifier.graphicsLayer { alpha = if (overview.app != null) 0f else 1f }
+    val logoShown = Modifier.graphicsLayer {
+        alpha = when {
+            overview.app == null -> 1f
+            overview.reduced -> 0f
+            overview.opening -> OverviewMotion.logoLeaving(overview.clock.value, opening = true)
+            overview.closing -> OverviewMotion.logoArriving(overview.clock.value, opening = false)
+            else -> 0f
+        }
+    }
     val infoRise = Modifier.graphicsLayer {
         if (overview.app != null) {
-            val (dy, a) = OverviewMotion.homeInfo(overview.home.value, reducedMotion)
+            val (dy, a) = OverviewMotion.homeInfo(overview.homeAway(0), reducedMotion)
             translationY = dy * k
             alpha = a
         }
@@ -823,12 +835,12 @@ private fun GameInfo(
         val logo by rememberArtworkResult(LocalArtwork.current, pc, app, ArtKind.LOGO)
         val logoImage = logo.image
         // The SteamGridDB logo stands in for the icon and the name
-        if (logoImage != null) Box(Modifier.height(titleBox.px).then(titleShown).padding(vertical = logoPad.px), contentAlignment = Alignment.CenterStart) {
+        if (logoImage != null) Box(Modifier.height(titleBox.px).then(logoShown).padding(vertical = logoPad.px), contentAlignment = Alignment.CenterStart) {
             Box(Modifier.gameTitleEntrance(homeKey(pc, app), logoImage, reducedMotion)) {
                 Image(
                     logoImage, contentDescription = app.name, contentScale = ContentScale.Fit, alignment = Alignment.CenterStart,
                     modifier = Modifier.height(logoHeight.px).widthIn(max = logoWidth.px).onGloballyPositioned {
-                        // The overview's header logo flies from here
+                        // The overview's header logo takes over from here (crossfading) only when it is a logo too
                         titleProbe.coordinates = it
                         titleProbe.fontSize = null
                     },
