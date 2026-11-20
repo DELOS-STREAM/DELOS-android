@@ -35,6 +35,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 ### Fixed
 - Game overview keeps the game's hero while browsing screenshots and videos, without media-background prefetch or full-screen image swaps. Its text dim layers use 30 % less opacity; hero scroll blur and the full-screen viewer's blurred still are unchanged ([#114](https://github.com/DELOS-STREAM/DELOS-android/issues/114)).
 
+### Fixed
+- Wrapped game-info tags, age badges and links keep their group gap vertically too; filter and artwork rows retain the required focus clearance without shrinking controls ([#111](https://github.com/DELOS-STREAM/DELOS-android/issues/111)).
+
 ## [1.2.0] - 2026-11-17
 _Touch everywhere, the last input decides the hints, new controller glyphs, Guide and Back for the stream menu, anchored on-screen controls; the project moves to the DELOS-STREAM organization._
 

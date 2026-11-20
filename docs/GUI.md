@@ -113,6 +113,9 @@ chips, keyboard keys and the stream menu tiles.
   already hold the 8 px of clear space.
 - **Rows of labelled pills** (buttons, chips) are as wide as their label, so a fixed gap cannot hold the rule. Such
   a row (`FocusRow`) widens its gap to the rule for its widest pill.
+- **Wrapped rows** use their group's named horizontal gap vertically too, including overview tags, badges and links.
+  Filter rows count their heading and focus padding as part of the physical vertical clearance; the artwork sheet
+  splits one shared chip gap around each divider. Larger gaps reduce the scroll viewport, never the controls.
 - In code, `ui/FocusSpacing.kt` holds the looks (`FocusLook`) and the fixed groups (`FocusGap`). Each screen takes
   its gap from a named `FocusGap` or computes it with `FocusLook.minGap`. `FocusSpacingTest` checks every group
   against its look.

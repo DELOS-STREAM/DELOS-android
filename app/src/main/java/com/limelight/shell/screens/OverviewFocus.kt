@@ -46,6 +46,10 @@ internal object OverviewGaps {
     val BUTTONS = FocusLook(scale = 1.06f, outset = 7f, band = 4f)
     const val BUTTONS_GAP = 20f
 
+    /** Static labels inside a focusable group: use the same clear gap between wrapped rows. */
+    const val TAG_GAP = 10f
+    const val BADGE_GAP = 28f
+
     /** The summary (ring 14 px out, no growth) above the "Read the story" button and beside the facts card. */
     val ABOUT = FocusGap(FocusSpacing.overview(1f, 14f), size = 0f, gap = 44f)
 
@@ -67,7 +71,7 @@ internal object OverviewGaps {
     const val LINK_H = 64f
     const val LINK_SCALE = 1.05f
     val LINKS_ACROSS = FocusGap(FocusSpacing.overview(LINK_SCALE, 6f), size = 400f, gap = 48f)
-    val LINKS_DOWN = FocusGap(FocusSpacing.overview(LINK_SCALE, 6f), size = LINK_H, gap = 32f)
+    val LINKS_DOWN = FocusGap(FocusSpacing.overview(LINK_SCALE, 6f), size = LINK_H, gap = LINKS_ACROSS.gap)
 }
 
 /** A focusable part of the overview: its focus requester, where it is, its row ([NavTarget.group]) and its section. */

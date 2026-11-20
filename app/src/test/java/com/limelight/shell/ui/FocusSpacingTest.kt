@@ -6,6 +6,8 @@ import com.limelight.shell.screens.ArtGridLayout
 import com.limelight.shell.screens.ArtworkLayout
 import com.limelight.shell.screens.CREATE_PROFILE
 import com.limelight.shell.screens.HomeCompact
+import com.limelight.shell.screens.ChipFocus
+import com.limelight.shell.screens.LibraryFilterLayout
 import com.limelight.shell.screens.LetterPicker
 import com.limelight.shell.screens.OverviewGaps
 import org.junit.Assert.assertEquals
@@ -39,6 +41,7 @@ class FocusSpacingTest {
         "search circles, compact" to LetterPicker.COMPACT_CIRCLES,
         "keys to results, compact" to LetterPicker.COMPACT_KEYS_TO_RESULTS,
         "artwork sheet rows" to ArtworkLayout.SHEET_ROWS,
+        "artwork sheet header" to ArtworkLayout.SHEET_HEADER,
         "artwork toolbar to strip" to ArtworkLayout.WIDE_STRIP_GAP,
         "overview about" to OverviewGaps.ABOUT,
         "overview media" to OverviewGaps.MEDIA,
@@ -86,6 +89,22 @@ class FocusSpacingTest {
             assertTrue("pill toolbar gap at $tile", ArtworkLayout.toolbarGap(tile) >= FocusSpacing.PILL.minGap(tile) - EPSILON)
             tile += 10f
         }
+    }
+
+    @Test
+    fun wrappedRowsKeepTheirFocusClearanceVertically() {
+        val links = OverviewGaps.LINKS_DOWN
+        assertTrue(links.gap >= links.look.minGap(OverviewGaps.LINK_H) - EPSILON)
+        assertTrue(ArtworkLayout.SHEET_ROWS.gap >= ChipFocus.BASE_GAP)
+        assertTrue(ArtworkLayout.SHEET_ROWS.gap >= ChipFocus.LOOK.minGap(ChipFocus.HEIGHT) - EPSILON)
+        for (scale in listOf(.65f, .82f, 1f)) {
+            val clearance = (LibraryFilterLayout.SECTION_GAP + LibraryFilterLayout.HEADING_HEIGHT + LibraryFilterLayout.HEADING_GAP) * scale + 2f * ChipFocus.ROW_ROOM
+            assertTrue("library rows at $scale", clearance >= ChipFocus.BASE_GAP)
+            assertTrue("library focus at $scale", clearance >= ChipFocus.LOOK.minGap(ChipFocus.HEIGHT) - EPSILON)
+        }
+        // Tags and age badges are labels inside a focusable group, not independently growing controls.
+        assertTrue(OverviewGaps.TAG_GAP >= FocusSpacing.CLEAR)
+        assertTrue(OverviewGaps.BADGE_GAP >= FocusSpacing.CLEAR)
     }
 
     private companion object {
