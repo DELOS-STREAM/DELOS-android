@@ -125,6 +125,53 @@ class GameMetadataStore internal constructor(
         ensure(pc, app, force, batch = null)
     }
 
+    /**
+     * Fetches the matched game's overview details ([GameMetadata.details]) when [detailsDue]; a record not matched yet is looked up
+     * first. [force] only ignores a failure's backoff: fresh details (or a fresh "no such game") are never asked for again. A failure
+     * keeps the earlier details and is remembered in [GameMetadata.detailsFailedAt].
+     */
+    suspend fun ensureDetails(pc: Pc, app: App, force: Boolean = false) {
+        if (BundledArtwork.kind(app) != null) return
+        val loaded = lock(pc, app).withLock { loadLocked(pc, app) }
+        if (loaded.data?.candidate == null) ensure(pc, app)
+        lock(pc, app).withLock {
+            val key = key(pc, app)
+            val previous = loadLocked(pc, app)
+            val data = previous.data ?: return
+            val candidate = data.candidate ?: return
+            val now = clock()
+            // An explicit request ignores only the failure backoff
+            if (!detailsDue(if (force) data.copy(detailsFailedAt = 0) else data, now)) return
+            if (!providers.proxyAvailable) return
+            publish(key, previous.copy(detailsLoading = true))
+            try {
+                val json = network.withPermit { blocking { providers.details(candidate.id) } }
+                val details = json?.let { GameDetailsParser.parse(it) ?: throw IgdbMetadataException("IGDB returned invalid game details") }
+                if (details != null && details.id != candidate.id) throw IgdbMetadataException("IGDB returned another game's details")
+                currentCoroutineContext().ensureActive()
+                val answered = data.copy(detailsJson = json, details = details, detailsUpdatedAt = clock(), detailsFailedAt = 0)
+                withContext(io) { write(pc, app, answered) }
+                publish(key, previous.copy(data = answered))
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // A cancelled call can surface as an I/O error; that is not a provider failure.
+                currentCoroutineContext().ensureActive()
+                val failed = data.copy(detailsFailedAt = clock())
+                try {
+                    withContext(io) { write(pc, app, failed) }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    // The in-memory state below still suppresses retries for this session.
+                }
+                publish(key, previous.copy(data = failed))
+            } finally {
+                clearDetailsLoading(key)
+            }
+        }
+    }
+
     private suspend fun ensure(pc: Pc, app: App, force: Boolean, batch: ProgressBatch?): Boolean {
         if (BundledArtwork.kind(app) != null) return false
         lock(pc, app).withLock {
@@ -288,6 +335,9 @@ class GameMetadataStore internal constructor(
             candidate, hdr, completion, if (failed) 0 else clock(), manual,
             igdbFailedAt = 0, pcgwFailedAt = hdrFailedAt, hltbFailedAt = completionFailedAt,
             steamFailedAt = steamFailedAt, steamTags = steamTags,
+            // The details belong to the IGDB entry and refresh on their own schedule (ensureDetails)
+            detailsJson = carried?.detailsJson, detailsUpdatedAt = carried?.detailsUpdatedAt ?: 0,
+            detailsFailedAt = carried?.detailsFailedAt ?: 0, details = carried?.details,
         )
         withContext(io) { write(pc, app, data) }
         publish(key(pc, app), GameMetadataState(data = data, resolved = true, error = errorFor(data)))
@@ -344,6 +394,11 @@ class GameMetadataStore internal constructor(
     private fun publishProgress() {
         val batch = progressBatches.maxByOrNull { it.total }
         progress.value = if (batch == null || batch.total == 0) null else ArtworkProgress(batch.done, batch.total)
+    }
+
+    private suspend fun clearDetailsLoading(key: String) = withContext(NonCancellable + main) {
+        val current = states[key]
+        if (current?.detailsLoading == true) states[key] = current.copy(detailsLoading = false)
     }
 
     private suspend fun clearLoading(key: String) = withContext(NonCancellable + main) {
@@ -404,7 +459,7 @@ class GameMetadataStore internal constructor(
     private data class CachedMetadata(val schema: Int, val data: GameMetadata)
 
     private companion object {
-        const val CACHE_SCHEMA = 6
+        const val CACHE_SCHEMA = 7
         const val LIBRARY_CONCURRENCY = 2
         const val KEY_GENRES = "metadata_filter_genres"
         const val KEY_THEMES = "metadata_filter_themes"

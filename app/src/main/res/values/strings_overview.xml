@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The game overview below the dashboard (docs/gui/GAME_INFO.md, "Game overview"). IGDB texts (summary, storyline, genres of Details, keywords) stay English data -->
+    <!-- Under the focused cover and in the hint bar: Down (or a swipe up, a click) opens the overview -->
+    <string name="overview_game_info">Game info</string>
+    <!-- The header's main button: starts or resumes the game -->
+    <string name="overview_play">Play</string>
+    <!-- Section headings -->
+    <string name="overview_section_about">About</string>
+    <string name="overview_section_media">Screenshots and videos</string>
+    <string name="overview_section_details">Details</string>
+    <string name="overview_section_streaming">Your streaming</string>
+    <string name="overview_section_links">Links</string>
+    <string name="overview_section_similar">Similar games</string>
+    <!-- The short name of the screenshots section in the cue under the header ("About · Media · Details · Similar games") -->
+    <string name="overview_cue_media">Media</string>
+    <!-- The storyline expands in place -->
+    <string name="overview_read_story">Read the story</string>
+    <string name="overview_show_less">Show less</string>
+    <!-- The two rating rings: critics (IGDB aggregated rating) and players (IGDB users) -->
+    <string name="overview_critics">Critics</string>
+    <string name="overview_players">Players</string>
+    <plurals name="overview_reviews">
+        <!-- %s: the number of critic reviews, formatted -->
+        <item quantity="one">%s review</item>
+        <item quantity="other">%s reviews</item>
+    </plurals>
+    <plurals name="overview_ratings">
+        <!-- %s: the number of player ratings, formatted -->
+        <item quantity="one">%s rating</item>
+        <item quantity="other">%s ratings</item>
+    </plurals>
+    <plurals name="overview_ratings_few">
+        <!-- %s: the number of player ratings (fewer than 50), formatted -->
+        <item quantity="one">%s rating · few so far</item>
+        <item quantity="other">%s ratings · few so far</item>
+    </plurals>
+    <string name="overview_no_critics">No critic reviews yet</string>
+    <string name="overview_not_rated_yet">Not rated yet</string>
+    <!-- Age rating: IGDB lists none -->
+    <string name="overview_not_rated">Not rated</string>
+    <string name="overview_no_age_rating">No age rating on IGDB</string>
+    <string name="overview_no_descriptors">No descriptors</string>
+    <!-- The facts card of About -->
+    <string name="overview_fact_developer">Developer</string>
+    <string name="overview_fact_publisher">Publisher</string>
+    <string name="overview_fact_released">Released</string>
+    <string name="overview_fact_ported">Ported by</string>
+    <string name="overview_fact_engine">Engine</string>
+    <string name="overview_fact_series">Series</string>
+    <!-- After the publisher when it is the developer -->
+    <string name="overview_self_published">self-published</string>
+    <!-- The labels of the Details card -->
+    <string name="overview_detail_genres">Genres</string>
+    <string name="overview_detail_themes">Themes</string>
+    <string name="overview_detail_modes">Game modes</string>
+    <string name="overview_detail_perspective">Perspective</string>
+    <string name="overview_detail_platforms">Platforms</string>
+    <string name="overview_detail_age">Age rating</string>
+    <string name="overview_detail_multiplayer">Multiplayer</string>
+    <string name="overview_detail_languages">Languages</string>
+    <string name="overview_detail_keywords">Keywords</string>
+    <plurals name="overview_languages">
+        <item quantity="one">%d language</item>
+        <item quantity="other">%d languages</item>
+    </plurals>
+    <!-- Multiplayer facts, joined with " · " -->
+    <string name="overview_online_coop">Online co-op up to %d</string>
+    <string name="overview_online_max">Online up to %d</string>
+    <string name="overview_couch_coop">Couch co-op up to %d</string>
+    <string name="overview_lan_coop">LAN co-op</string>
+    <string name="overview_split_screen">Split screen</string>
+    <!-- Your streaming -->
+    <string name="overview_streaming_note">On this profile and PC</string>
+    <!-- %1$s: the PC's name -->
+    <string name="overview_running_on">Running on %1$s now</string>
+    <!-- The eyebrows over HowLongToBeat's time; the UI upper-cases them -->
+    <string name="overview_hltb">HowLongToBeat</string>
+    <string name="overview_hltb_all">HowLongToBeat · all styles</string>
+    <!-- %1$s: the streaming time ("20.4 hours"), %2$d: the share of HowLongToBeat's time in percent -->
+    <string name="overview_hltb_share">You streamed %1$s · %2$d %% of it</string>
+    <!-- Links -->
+    <string name="overview_official_site">Official site</string>
+    <!-- A similar game the user owns -->
+    <string name="overview_in_library">In library</string>
+    <!-- %1$s: a similar game's name -->
+    <string name="overview_not_in_library">%1$s is not in your library.</string>
+    <!-- The screenshot viewer: "Screenshot 3" and a video's name -->
+    <string name="overview_screenshot">Screenshot %1$d</string>
+    <!-- %1$s: the video's name -->
+    <string name="overview_video_youtube">%1$s · YouTube</string>
+    <string name="overview_video">Video</string>
+    <!-- %1$d: how many items, %2$s: the item's name; the item's own number is shown big before this text -->
+    <string name="overview_viewer_count">/ %1$d · %2$s</string>
+    <string name="overview_hint_browse">Browse</string>
+    <string name="overview_hint_watch">Watch</string>
+    <string name="overview_previous">Previous</string>
+    <string name="overview_next">Next</string>
+    <!-- While the IGDB details load, and when they cannot be loaded -->
+    <string name="overview_loading">Loading game info…</string>
+    <string name="overview_unavailable">Game info is not available right now.</string>
+    <!-- The data credit at the end of the page -->
+    <string name="overview_credit">Game data from IGDB.com · time to beat from HowLongToBeat · HDR from PCGamingWiki · cover from your artwork</string>
+</resources>

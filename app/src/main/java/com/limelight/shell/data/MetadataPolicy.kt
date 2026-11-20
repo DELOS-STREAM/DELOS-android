@@ -34,6 +34,17 @@ internal fun refreshDue(data: GameMetadata?, now: Long): Boolean {
     return failures.isEmpty() || failures.any { !isBackedOff(it, now) }
 }
 
+/**
+ * Whether the matched game's overview details should be fetched: an unmatched record has none to fetch, an answer (even "no such
+ * game") is kept for [METADATA_MAX_AGE], details of another IGDB entry never count, and a failure waits for its backoff.
+ */
+internal fun detailsDue(data: GameMetadata?, now: Long): Boolean {
+    val candidate = data?.candidate ?: return false
+    val sameGame = data.detailsJson == null || data.details?.id == candidate.id
+    if (sameGame && isFresh(data.detailsUpdatedAt, METADATA_MAX_AGE, now)) return false
+    return !isBackedOff(data.detailsFailedAt, now)
+}
+
 private fun <T : Any> nullable(value: T?): T? = value
 
 /**
@@ -57,9 +68,15 @@ internal fun GameMetadata.validated(): GameMetadata? {
     val checkedCompletion = nullable(completion)?.takeIf {
         nullable(it.name) != null && nullable(it.url) != null
     }
+    // Details belong to the matched IGDB entry: unreadable ones or another entry's are dropped, so they are fetched again
+    val rawDetails = nullable(detailsJson)
+    val parsedDetails = rawDetails?.let(GameDetailsParser::parse)?.takeIf { it.id == checkedCandidate?.id }
+    val keepDetails = checkedCandidate != null && (rawDetails == null || parsedDetails != null)
     return copy(
         candidate = checkedCandidate, hdr = checkedHdr, completion = checkedCompletion,
         steamTags = nullable(steamTags)?.mapNotNull { nullable(it) }.orEmpty(),
+        detailsJson = rawDetails.takeIf { keepDetails }, details = parsedDetails.takeIf { keepDetails },
+        detailsUpdatedAt = if (keepDetails) detailsUpdatedAt else 0, detailsFailedAt = if (keepDetails) detailsFailedAt else 0,
     )
 }
 

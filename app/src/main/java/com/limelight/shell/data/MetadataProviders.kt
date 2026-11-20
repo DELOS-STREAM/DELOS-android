@@ -13,6 +13,8 @@ internal interface MetadataProviders {
     fun completion(candidate: MetadataCandidate): CompletionTime?
     /** The candidate's Steam store user tags, most voted first, from its first Steam app id; the store only asks for candidates that have one. */
     fun steamTags(candidate: MetadataCandidate): List<String>
+    /** The Worker's game-details JSON for IGDB game [id] (checked to parse), null when IGDB has no such game. */
+    fun details(id: Long): String?
 }
 
 /** IGDB, PCGamingWiki and the Steam store tags through the Delos metadata Worker (the build's non-secret URL), HowLongToBeat directly. */
@@ -34,6 +36,7 @@ internal class HttpMetadataProviders : MetadataProviders {
     override fun game(id: Long) = igdb.game(id)
     override fun hdr(candidate: MetadataCandidate) = pcgw.lookup(candidate.steamAppIds, candidate.name)
     override fun completion(candidate: MetadataCandidate) = hltb.lookup(candidate.name, candidate.steamAppIds)
+    override fun details(id: Long) = igdb.details(id)
     override fun steamTags(candidate: MetadataCandidate): List<String> =
         candidate.steamAppIds.firstOrNull()?.takeIf { it in 1..SteamTagsClient.MAX_APP_ID }?.let(steam::tags).orEmpty()
 }

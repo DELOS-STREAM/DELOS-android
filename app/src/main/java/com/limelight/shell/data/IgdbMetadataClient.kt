@@ -38,6 +38,31 @@ class IgdbMetadataClient internal constructor(
         return games("id" to id.toString()).firstOrNull()
     }
 
+    /**
+     * The Worker's game-details object for [id] (`GET <base>/v1/igdb/game-details?id=`) as raw JSON, checked to be readable by
+     * [GameDetailsParser] and to describe [id]; null when IGDB has no such game (404 `game_not_found`). Any other answer fails.
+     */
+    fun details(id: Long): String? {
+        require(id > 0) { "IGDB game ID must be positive" }
+        val url = MetadataProxy.url(baseUrl, "v1/igdb/game-details", "id" to id.toString())
+            ?: throw IgdbMetadataException("IGDB metadata service is not configured")
+        pacer.await()
+        val request = Request.Builder().url(url).header("Accept", "application/json").get().build() // l10n-ignore
+        http.newCall(request).execute().use { response ->
+            if (response.code == 404 && isGameNotFound(response.body.string())) return null
+            if (!response.isSuccessful) throw IgdbMetadataException("IGDB HTTP ${response.code}")
+            val body = response.body.string()
+            if (GameDetailsParser.parse(body)?.id != id) throw IgdbMetadataException("IGDB returned invalid game details")
+            return body
+        }
+    }
+
+    private fun isGameNotFound(body: String): Boolean = try {
+        JsonParser.parseString(body).asJsonObject.get("error")?.asString == "game_not_found"
+    } catch (_: RuntimeException) {
+        false
+    }
+
     // Keep editions as independent IDs/names; do not filter version_parent or substitute its metadata.
     private fun games(parameter: Pair<String, String>): List<MetadataCandidate> {
         val url = MetadataProxy.url(baseUrl, "v1/igdb/games", parameter)

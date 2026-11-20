@@ -5,7 +5,7 @@
 The home screen shows facts and tags about the focused game in one row of badges, and the **Filter library** modal
 narrows the library by genre, theme, HDR support and duration. This document specifies the badge row, the genre and
 theme pills and their sources, the HDR/SDR badges, the filter modal, metadata matching, caching, the progress pill,
-the metadata providers and the build configuration of the metadata Worker.
+the metadata providers, the build configuration of the metadata Worker and the **game overview** below the dashboard.
 
 ## Scope
 
@@ -19,6 +19,7 @@ the metadata providers and the build configuration of the metadata Worker.
 | The metadata progress pill | App options and Settings → About: [MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md) |
 | IGDB, PCGamingWiki, HowLongToBeat and Steam tag lookups | Worker deployment and secret handling: [tools/metadata-worker/README.md](../../tools/metadata-worker/README.md) |
 | `DELOS_METADATA_URL`, credentials, privacy | Design principles and the index of GUI documents: [GUI.md](../GUI.md) |
+| The game overview (variant A · Descent of issue [#107](https://github.com/DELOS-STREAM/DELOS-android/issues/107)) | The cover row it opens from: [START_AND_HOME.md](START_AND_HOME.md), "Home" |
 
 ## 1. Information row
 
@@ -476,6 +477,130 @@ Page lookup:
 |---|---|---|
 | The metadata Worker | The game names the app looks up and the client IP address (Cloudflare's request metadata) | No query text, only a short hash on failures |
 | HowLongToBeat | The device's IP and game names; it has no credentials and is still queried directly from the device | |
+| IGDB's image server (`images.igdb.com`) | The device's IP and the image ids of the screenshots and of similar games' covers the overview shows; the images load directly from the device, without credentials | |
+| YouTube (`i.ytimg.com`, `youtube.com`) | The device's IP and the video ids whose thumbnails the overview shows; Watch opens YouTube | |
+
+## 9. Game overview
+
+Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-android/issues/107), chosen by the owner on
+2026-11-20: the dashboard continues downward into one vertical page about the focused game. Code:
+`shell/screens/GameOverview.kt` and the `Overview*.kt` files beside it; the data: `GameDetails.kt`, `IgdbImageCache.kt`.
+
+### 9.1 Opening and closing
+
+1. Games with an IGDB match have an overview; built-in apps (Desktop, Steam Big Picture) and unmatched games have none.
+   Down on those nudges the cover by 7 px.
+2. A **"Game info" hint** sits 30 px under the focused cover, drawn for the input in use:
+
+   | Input | Glyph | Opens with |
+   |---|---|---|
+   | Controller | The D-pad cap with the down arm pressed (outline cut), bobbing | Down |
+   | Keyboard | The ↓ key cap, bobbing | ↓ |
+   | Touch | A small arrow up in the accent, bobbing up | A swipe up on the cover, or a tap on the hint |
+   | Mouse | A small arrow down in the accent, bobbing; the hint is a pill that lights on hover | A click on the hint |
+
+   The hint bar names it too (`Game info` with the D-pad or ↓ cap) for a controller and a keyboard.
+3. A swipe up needs vertical intent (Compose's vertical touch slop, so the row's horizontal scroll and the side-menu swipe
+   keep working). The cover follows the finger with resistance (`lift = max(dy, -260) × 0.55`, growing up to
+   1.155) and opens past 40 px of lift; the flight starts where the finger left it.
+4. **Opening** (`OverviewMotion`, all transforms and opacity, read while drawing):
+   - the other covers lift away one after another: 160 px + 30 px per cover of distance up, to 0.92, fading, 620 ms
+     ease-out each, 45 ms apart by distance;
+   - the info row rises 90 px out and fades;
+   - the card's own image flies from its on-screen rectangle (with its focus scale or its dragged position) into the
+     340 × 510 slot of the header: 780 ms `cubic-bezier(.2,.9,.25,1)`, through a midpoint 30 px above the straight line
+     and 4 % larger, the corner going from 27.4 to 30 px;
+   - a text title flies from the dashboard's title to the header's (720 ms); a SteamGridDB logo on the dashboard fades
+     out and the header's title rises in like its other parts;
+   - the page rises from 120 px below (780 ms), the header's parts rise 18 px, 46 ms apart, after 260 ms (the cue
+     after 500 ms);
+   - the backdrop becomes the sharp hero over 900 ms; the rings fill and count up after 380 ms (1.3 s, ease-out-quart).
+5. Nothing delays a control: Play has the focus from the first frame and the page takes input while it enters. The
+   gold ring appears once the opening is over.
+6. **Closing** (B, Esc, Back, Up from the header, the round back button, or pulling the page down 150 px at its top):
+   a close during the opening waits for it; the page scrolls to its top (420 ms), then everything reverses: the cover
+   flies back into its card (640 ms ease-in-out), the page sinks 120 px and fades (560 ms), the other covers come back
+   in the reverse order, the header's parts leave first (240 ms). The card takes the focus again.
+7. **Reduced motion** keeps the fades and drops every transform: the cover and the title fade in place, nothing lifts,
+   rises, drifts or bobs, the ring jumps.
+8. App settings opens the per-app settings; when they close the overview is there again without the flight.
+
+### 9.2 Layout (1920 × 1080 stage)
+
+1. The page has 150 px sides. It fades in under the status bar (clear to 70 px, solid from 140 px) and out at the
+   bottom 60 px.
+2. **Header**, one screen minus 160 px high, 150 px from the top: the 340 × 510 cover (30 px corner, deep shadow)
+   and, 72 px beside it, 24 px apart: the year and developers (15 px tracked accent eyebrow); the title (68 px
+   Unbounded, up to 1150 px wide, balanced lines, the game's color gradient); the genre and theme tags (two each,
+   as on the dashboard) and the HDR badge; the critics' and players' rings (104 px) with the age rating of the
+   device's region; **Play** and **App settings** (76 px pills); the streaming time, last streamed and HowLongToBeat.
+   At the header's bottom a cue names the sections below ("About · Media · Details · Similar games") with a bobbing
+   caret.
+3. **Sections**, 70 px apart, each with a 30 px Unbounded heading and its icon:
+   - **About**: the summary (28 px) with the storyline expanding in place under it (600 ms) and a "Read the story" /
+     "Show less" button; a 560 px glass facts card (developer, publisher with "self-published", release date,
+     ported by, engine, series);
+   - **Screenshots and videos** with its count: a full-width carousel of 520 × 292 thumbnails, videos first; each
+     picture lags 7 % behind the carousel's movement (parallax);
+   - **Details** (glass card, two columns): genres, themes, game modes, perspective, platforms, age ratings with
+     descriptors, multiplayer, languages, keywords (5);
+   - **Your streaming** (glass card, three columns): the streaming time counting up when the card is first focused,
+     last streamed (or "Running on <PC> now"), HowLongToBeat with a bar of the share streamed;
+   - **Links**: IGDB's websites, the official site first (or the Steam page when IGDB lists none);
+   - **Similar games**: 200 × 300 covers, "In library" on the ones the user owns;
+   - the data credit.
+4. A section without anything to show does not exist. While the details load, a spinner line stands in for the
+   sections; when they cannot be loaded, one muted line. Ratings: no critics' rating reads "No critic reviews yet",
+   fewer than 50 player ratings "… · few so far", no age rating "Not rated".
+5. The glass cards blur the backdrop behind them for real (Haze, 30 px) under the prototype's light gradient.
+6. The **backdrop** is the dashboard's hero as two layers, sharp (62 % at the top) and blurred 40 px, crossfaded by the
+   scroll over 520 px (opacity only, no animated blur radius); it drifts up to 70 px slower than the page and zooms
+   up to 10 %. Focusing a screenshot crossfades it to that screenshot (800 ms), leaving the media back to the hero.
+
+### 9.3 Navigation
+
+1. Up and Down walk the sections, Left and Right walk a row; the buttons, the carousel, the links and the similar
+   games are rows the focus does not leave sideways. The nearest element in the direction wins (sideways distance
+   weighs 2.2 times), and going back the way one came returns to where one came from (`OverviewNavigator`).
+2. Up from the header goes back to the dashboard, the natural reverse of Down.
+3. The focused section scrolls to 132 px under the top (620 ms ease-out); in a section taller than the view the
+   element comes into view with 160 px around it; the header scrolls to the top. The carousel keeps 150 px beside the
+   focused item.
+4. One gold ring glides between the elements (560 ms, slight overshoot) in the page's coordinates, so it scrolls with
+   the page and rides along with a scrolling carousel. It is hidden for touch.
+5. Touch: focus first (a tap on an element that is not focused only focuses it), drag to scroll, pull down at the top
+   to close. Mouse: hovering focuses without scrolling, the wheel scrolls, a click activates.
+6. Activating: Play starts or resumes the game (with another game running, the game's menu offers the choices);
+   App settings opens the per-app settings; a screenshot or video opens the viewer; a link opens the browser; a
+   similar game the user owns closes this overview and opens its own; one outside the library says so in a toast.
+
+### 9.4 Screenshot viewer
+
+1. It zooms out of the thumbnail (560 ms) and back into it (440 ms), or fades when the thumbnail is scrolled away.
+2. The picture is as large as fits 280 × 300 px inside the stage, 16:9; the thumbnail stays until the full picture
+   (`screenshot_huge`, `1080p` on a 4:3 stage) is decoded. The page behind is blurred (40 px, a dark tint).
+3. Left and Right browse: the new picture slides in 160 px from the side of the key while the old one leaves 90 px
+   the other way; at the ends the picture nudges. A on a video opens it on YouTube. B closes. The hint bar shows
+   Browse, Watch (videos) and Back.
+4. A filmstrip of the items sits 112 px above the bottom, the current one larger with the accent ring; the count and
+   the item's name sit top left. A mouse gets round previous and next buttons; a mouse and a finger get a close
+   button. A finger swipes sideways to browse and down to close.
+
+### 9.5 Data and caching
+
+1. The details come from the Worker's `GET /v1/igdb/game-details?id=<igdb id>` (shape:
+   [tools/metadata-worker/README.md](../../tools/metadata-worker/README.md), "Game details"). They are fetched when the
+   overview opens or after a game has been focused for a second.
+2. They are stored with the game's metadata record (cache schema 7) and refreshed after 7 days; a failure backs off
+   30 minutes like the other providers and keeps the stored details. A game IGDB does not know is remembered as
+   having no details until the next refresh.
+3. The cover is exactly the library card's image (the user's SteamGridDB choice, else the default card art); the
+   game itself needs no IGDB cover. Similar games the user owns show their library card, the others IGDB's
+   `cover_big`.
+4. IGDB images load directly from `images.igdb.com`; they are kept in a 150 MB disk cache (`cacheDir/igdb-images`)
+   and a 32 MB memory cache of decoded pictures, decoded no larger than they are drawn. The first two thumbnails and
+   the first full screenshot are fetched while the overview opens.
+
 
 ## Settings
 
@@ -506,6 +631,10 @@ Page lookup:
 | `MarqueeText` | The edge fade and scrolling of the badge row when it does not fit |
 | `tools/metadata-worker` | The Delos metadata Worker: IGDB, PCGamingWiki and `GET /v1/steam/tags?app=<id>` |
 | `DELOS_METADATA_URL` (`BuildConfig`) | The Worker's base URL |
+| `screens/GameOverview.kt`, `OverviewController.kt` | The game overview's page and its opening and closing timeline |
+| `screens/OverviewNav.kt`, `OverviewModel.kt` | Its navigation, scroll targets and motion; what it shows from the details (`OverviewNavTest`, `OverviewModelTest`) |
+| `screens/OverviewFocus.kt`, `OverviewParts.kt`, `OverviewViewer.kt` | Its gliding ring, its parts (rings, tags, age badges, glass) and the screenshot viewer |
+| `data/GameDetails.kt`, `data/IgdbImageCache.kt` | The details' model and parser, IGDB image URLs and the image caches |
 
 ## Verification
 

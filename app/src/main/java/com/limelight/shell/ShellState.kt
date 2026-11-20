@@ -302,6 +302,18 @@ class ShellState(initial: Screen) {
     /** Key ("pc uuid/app id") of the focused game on the home screen. */
     var homeGame by mutableStateOf<String?>(null)
 
+    /** The focused game has a game overview (an IGDB match): Down opens it, the hint bar names it. */
+    var homeOverviewAvailable by mutableStateOf(false)
+
+    /**
+     * Key ("pc uuid/app id") of the game whose overview is open (docs/gui/GAME_INFO.md, "Game overview"); kept while its app settings are
+     * open, so the overview is there again when they close.
+     */
+    var overviewGame by mutableStateOf<String?>(null)
+
+    /** The overview's screenshot viewer is open: null when it is not, else whether it shows a video (A watches it). */
+    var overviewViewer by mutableStateOf<Boolean?>(null)
+
     /** The PC whose games the shell shows (null before a PC is chosen); the companion screen shows it (docs/DUAL_SCREEN.md). */
     var pcName by mutableStateOf<String?>(null)
 

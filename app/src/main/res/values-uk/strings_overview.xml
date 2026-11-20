@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="overview_game_info">Про гру</string>
+    <string name="overview_play">Грати</string>
+    <string name="overview_section_about">Про гру</string>
+    <string name="overview_section_media">Знімки та відео</string>
+    <string name="overview_section_details">Подробиці</string>
+    <string name="overview_section_streaming">Твій стрімінг</string>
+    <string name="overview_section_links">Посилання</string>
+    <string name="overview_section_similar">Схожі ігри</string>
+    <string name="overview_cue_media">Медіа</string>
+    <string name="overview_read_story">Читати сюжет</string>
+    <string name="overview_show_less">Згорнути</string>
+    <string name="overview_critics">Критики</string>
+    <string name="overview_players">Гравці</string>
+    <plurals name="overview_reviews">
+        <item quantity="one">%s рецензія</item>
+        <item quantity="few">%s рецензії</item>
+        <item quantity="many">%s рецензій</item>
+        <item quantity="other">%s рецензії</item>
+    </plurals>
+    <plurals name="overview_ratings">
+        <item quantity="one">%s оцінка</item>
+        <item quantity="few">%s оцінки</item>
+        <item quantity="many">%s оцінок</item>
+        <item quantity="other">%s оцінки</item>
+    </plurals>
+    <plurals name="overview_ratings_few">
+        <item quantity="one">%s оцінка · поки мало</item>
+        <item quantity="few">%s оцінки · поки мало</item>
+        <item quantity="many">%s оцінок · поки мало</item>
+        <item quantity="other">%s оцінки · поки мало</item>
+    </plurals>
+    <string name="overview_no_critics">Рецензій критиків ще немає</string>
+    <string name="overview_not_rated_yet">Ще не оцінено</string>
+    <string name="overview_not_rated">Без рейтингу</string>
+    <string name="overview_no_age_rating">Немає вікового рейтингу на IGDB</string>
+    <string name="overview_no_descriptors">Без дескрипторів</string>
+    <string name="overview_fact_developer">Розробник</string>
+    <string name="overview_fact_publisher">Видавець</string>
+    <string name="overview_fact_released">Вихід</string>
+    <string name="overview_fact_ported">Портування</string>
+    <string name="overview_fact_engine">Рушій</string>
+    <string name="overview_fact_series">Серія</string>
+    <string name="overview_self_published">власне видання</string>
+    <string name="overview_detail_genres">Жанри</string>
+    <string name="overview_detail_themes">Теми</string>
+    <string name="overview_detail_modes">Режими гри</string>
+    <string name="overview_detail_perspective">Перспектива</string>
+    <string name="overview_detail_platforms">Платформи</string>
+    <string name="overview_detail_age">Віковий рейтинг</string>
+    <string name="overview_detail_multiplayer">Мультиплеєр</string>
+    <string name="overview_detail_languages">Мови</string>
+    <string name="overview_detail_keywords">Ключові слова</string>
+    <plurals name="overview_languages">
+        <item quantity="one">%d мова</item>
+        <item quantity="few">%d мови</item>
+        <item quantity="many">%d мов</item>
+        <item quantity="other">%d мови</item>
+    </plurals>
+    <string name="overview_online_coop">Онлайн-кооп до %d</string>
+    <string name="overview_online_max">Онлайн до %d</string>
+    <string name="overview_couch_coop">Локальний кооп до %d</string>
+    <string name="overview_lan_coop">LAN-кооп</string>
+    <string name="overview_split_screen">Розділений екран</string>
+    <string name="overview_streaming_note">На цьому профілі та ПК</string>
+    <string name="overview_running_on">Зараз запущено на %1$s</string>
+    <string name="overview_hltb">HowLongToBeat</string>
+    <string name="overview_hltb_all">HowLongToBeat · усі стилі</string>
+    <string name="overview_hltb_share">Ти стрімив %1$s · %2$d %% від цього</string>
+    <string name="overview_official_site">Офіційний сайт</string>
+    <string name="overview_in_library">У бібліотеці</string>
+    <string name="overview_not_in_library">%1$s немає у твоїй бібліотеці.</string>
+    <string name="overview_screenshot">Знімок %1$d</string>
+    <string name="overview_video_youtube">%1$s · YouTube</string>
+    <string name="overview_video">Відео</string>
+    <string name="overview_viewer_count">/ %1$d · %2$s</string>
+    <string name="overview_hint_browse">Гортати</string>
+    <string name="overview_hint_watch">Дивитися</string>
+    <string name="overview_previous">Назад</string>
+    <string name="overview_next">Далі</string>
+    <string name="overview_loading">Завантаження інформації…</string>
+    <string name="overview_unavailable">Інформація про гру зараз недоступна.</string>
+    <string name="overview_credit">Дані про ігри з IGDB.com · час проходження з HowLongToBeat · HDR з PCGamingWiki · обкладинка з твоїх зображень</string>
+</resources>

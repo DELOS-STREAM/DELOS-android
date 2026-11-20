@@ -11,6 +11,7 @@ import com.limelight.shell.data.ArtworkStore
 import com.limelight.shell.data.BoxArtCache
 import com.limelight.shell.data.GameLauncher
 import com.limelight.shell.data.GameMetadataStore
+import com.limelight.shell.data.IgdbImageCache
 import com.limelight.shell.data.Library
 import com.limelight.shell.data.Pc
 import com.limelight.shell.data.PcRepository
@@ -174,6 +175,7 @@ internal class PreviewWorld(base: Context, activity: Activity, route: ShellRoute
         root = File(context.filesDir, "game-metadata"), settings = profiles::settings, providers = PreviewMetadataProviders,
         clock = { PreviewFixtures.NOW }, io = Dispatchers.IO, main = Dispatchers.Main,
     )
+    val igdbImages = IgdbImageCache(context)
     val launcher = GameLauncher(activity, repo)
     val setup: PcSetup = PreviewSetup(context, repo, profiles)
     val links = MutableStateFlow<ShellLink?>(null)

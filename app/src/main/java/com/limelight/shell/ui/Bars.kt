@@ -465,6 +465,7 @@ enum class InputCap(val symbols: List<String>) {
     SPACE(listOf(Symbols.MAC_SPACE)),
     ESCAPE(listOf(Symbols.MAC_ESCAPE)),
     ARROWS(listOf(Symbols.MAC_ARROW_LEFT, Symbols.MAC_ARROW_RIGHT)),
+    ARROW_DOWN(listOf(Symbols.MAC_ARROW_DOWN)),
     CLICK(listOf(Symbols.MAC_MOUSE_CLICK_LEFT)),
 }
 
@@ -498,6 +499,10 @@ sealed interface Glyph {
         val R1 = Pad(GlyphRole.RIGHT_SHOULDER)
         val MENU_LEFT = Pad(GlyphRole.MENU_LEFT)
         val MENU_RIGHT = Pad(GlyphRole.MENU_RIGHT)
+
+        /** Down on the D-pad (the game overview) and left-right (browsing its screenshots): drawn in the outline cut, the pressed arm filled. */
+        val DPAD_DOWN = Pad(GlyphRole.DPAD_DOWN)
+        val DPAD_HORIZONTAL = Pad(GlyphRole.DPAD_HORIZONTAL)
 
         /** Material swap_horiz 0.827 x 0.661 em vs Phosphor arrows-left-right 0.6875 x 0.6875 em -> area-equivalent 1.075 (17.7 px). */
         val ADJUST = Icon(Symbols.SWAP_HORIZ, scale = 1.075f)
@@ -662,7 +667,8 @@ internal const val BUTTON_INK_FRACTION = .75f
 fun GlyphButton(glyph: Glyph, size: Int = 38) {
     val colors = LocalDelosColors.current
     when (glyph) {
-        is Glyph.Pad -> FontCap(ControllerGlyphs.family.fontSymbol(glyph.role), size, colors.text)
+        // The pressed D-pad reads better in the outline cut, where the pressed arm is the filled one
+        is Glyph.Pad -> FontCap(ControllerGlyphs.family.fontSymbol(glyph.role), size, colors.text, filled = glyph != Glyph.DPAD_DOWN && glyph != Glyph.DPAD_HORIZONTAL)
         is Glyph.Cap -> Row(verticalAlignment = Alignment.CenterVertically) { glyph.cap.symbols.forEach { FontCap(it, size, colors.text) } }
         is Glyph.Icon -> Box(
             Modifier.size(size.px).clip(CircleShape).background(colors.text),
@@ -675,11 +681,11 @@ fun GlyphButton(glyph: Glyph, size: Int = 38) {
 
 /** One complete cap of the shared font, [size] stage pixels high. */
 @Composable
-private fun FontCap(symbol: String, size: Int, color: Color) {
+private fun FontCap(symbol: String, size: Int, color: Color, filled: Boolean = true) {
     // The glyph is text (em.tpx grows with the text scale): its box grows the same way, so the cap is never cut at a text scale above 100 %
     val em = size / BUTTON_INK_FRACTION
     val scale = LocalStage.current.textScale
     Box(Modifier.width((em * scale).px).height((size * scale).px), contentAlignment = Alignment.Center) {
-        Symbol(symbol, em.tpx, color, modifier = Modifier.requiredSize((em * scale).px), filled = true)
+        Symbol(symbol, em.tpx, color, modifier = Modifier.requiredSize((em * scale).px), filled = filled)
     }
 }
