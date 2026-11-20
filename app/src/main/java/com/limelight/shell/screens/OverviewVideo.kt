@@ -24,8 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -42,10 +40,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.limelight.R
 import com.limelight.shell.data.YouTubeEmbeds
 import com.limelight.shell.ui.Cue
@@ -61,12 +55,11 @@ import com.limelight.shell.ui.px
 import com.limelight.shell.ui.rememberPressPulse
 import com.limelight.shell.ui.tpx
 import java.util.Locale
-import kotlinx.coroutines.delay
 import org.json.JSONObject
 
 
 /** Without any word from the player this long after it began to load, the video counts as failed. */
-private const val LOAD_TIMEOUT_MS = 15_000L
+internal const val LOAD_TIMEOUT_MS = 15_000L
 
 /** A YouTube video id as IGDB stores it; anything else is never put into the player's page. */
 private val VIDEO_ID = Regex("[A-Za-z0-9_-]{6,20}")
@@ -223,46 +216,9 @@ internal class OverviewVideoPlayer(val videoId: String) {
     }
 }
 
-/**
- * A fully opaque native surface, never alpha-gated by readiness. The viewer draws the loading thumbnail ABOVE it as a sibling.
- * This view must not acquire a graphicsLayer, blur, rounded clip or transformed/offscreen ancestor.
- */
-@Composable
-internal fun OverviewVideoView(player: OverviewVideoPlayer, modifier: Modifier) {
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle, player) {
-        player.setActive(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> player.setActive(true)
-                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> player.setActive(false)
-                else -> Unit
-            }
-        }
-        lifecycle.addObserver(observer)
-        onDispose {
-            lifecycle.removeObserver(observer)
-            player.setActive(false)
-        }
-    }
-    LaunchedEffect(player) {
-        delay(LOAD_TIMEOUT_MS)
-        if (!player.heard) player.fail(-1)
-    }
-    AndroidView(
-        factory = { context -> playerView(context, player) },
-        modifier = modifier,
-        onRelease = { view ->
-            player.release()
-            view.removeJavascriptInterface("DelosPlayer")
-            view.stopLoading()
-            view.destroy()
-        },
-    )
-}
-
+/** The player's web view: the page of [youTubePlayerHtml], reporting to [player]. It never takes the focus. */
 @SuppressLint("SetJavaScriptEnabled")
-private fun playerView(context: Context, player: OverviewVideoPlayer): WebView {
+internal fun playerView(context: Context, player: OverviewVideoPlayer): WebView {
     val origin = "https://" + context.packageName.lowercase(Locale.ROOT)
     val main = Handler(Looper.getMainLooper())
     return WebView(context).apply {

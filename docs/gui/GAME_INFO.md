@@ -627,6 +627,13 @@ YouTube app.
    thumbnail stays until the video plays. The web view never takes the focus; a finger or a mouse may use YouTube's own
    surface (an ad's Skip), but every navigation away from the page and every new window is refused. Ads are not blocked.
    Browsing away or closing removes the player; the app going to the background pauses it.
+   The web view lives in a window of its own over the app's (`OverviewPlayerWindow.kt`: an application panel, hardware
+   accelerated, that never takes the focus, so keys and Back stay with the shell), with the thumbnail, the DELOS overlay
+   and the hint bar composed over it in that window; drawn inside the shell's Compose layers, a trailer played its sound
+   over a black picture. The app going to the background removes that window and coming back puts it back. When a video
+   starts, logcat tag `OverviewPlayer` (and the diagnostic log) gets `Playback started: webView.isHardwareAccelerated=…,
+   layerType=…, windowType=…, windowHardwareAccelerated=…, window=W×H`; `true`, `NONE`, `1000` (application panel) and
+   `true` are the expected values.
 3. Keys on a video: Left and Right seek 10 s, A plays or pauses (from the start once it has ended), Y mutes or turns
    the sound on (keyboard F or M), L1 and R1 browse, B closes. The hint bar shows Seek 10 s, Play or Pause, Mute or
    Sound on, Previous, Next and Back.
