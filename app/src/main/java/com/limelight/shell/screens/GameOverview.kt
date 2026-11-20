@@ -90,6 +90,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -101,6 +102,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.em
 import com.limelight.R
@@ -666,7 +668,8 @@ private fun Header(
                 }
                 Row(Modifier.st(4), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(36.px)) {
                     val texts = rememberPlaytimeTexts(playtime, resumes)
-                    StatRow(texts, PlaytimeFit.FULL, 45.px)
+                    // As tall as the home's info row at this interface scale: the texts grow with it
+                    StatRow(texts, PlaytimeFit.FULL, HomeCompact.blockHeight(LocalStage.current.textScale).px)
                     if (hltbSeconds != null && hltbSeconds > 0) {
                         Box(Modifier.width(2.px).height(38.px).background(Color(133, 146, 168).copy(alpha = .4f)))
                         Column {
@@ -887,16 +890,12 @@ private fun AboutSection(
             val facts = remember(details) { OverviewModel.facts(details) }
             if (facts.isNotEmpty()) {
                 val locale = PlaytimeFormat.localeOf(res)
-                Column(
-                    Modifier
-                        .width(560.px)
-                        .part("facts", section, parts, onFocused, onHover, onClick = {}, ring = RingStyle(8f, 34f), corner = 34f)
-                        .overviewGlass(LocalBackdropHaze.current, 34f)
-                        .padding(horizontal = 40.px, vertical = 36.px),
-                    verticalArrangement = Arrangement.spacedBy(16.px),
-                ) {
-                    facts.forEach { row ->
-                        Row(verticalAlignment = Alignment.Top) {
+                val labelGap = 28.px
+                val factGap = 16.px
+                // The labels' column is as wide as the longest label in the current language (`.factlist`, `auto 1fr`), 28 px from the values
+                Layout(
+                    content = {
+                        facts.forEach { row ->
                             OverviewEyebrow(
                                 stringResource(
                                     when (row.fact) {
@@ -908,13 +907,35 @@ private fun AboutSection(
                                         OverviewModel.Fact.SERIES -> R.string.overview_fact_series
                                     },
                                 ),
-                                colors.text3, Modifier.width(144.px).padding(top = 4.px), size = 17,
+                                colors.text3, Modifier.padding(top = 4.px), size = 17,
                             )
                             val value = row.date?.let { seconds ->
                                 DateFormat.getDateInstance(DateFormat.LONG, locale).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date(seconds * 1000))
                             } ?: row.value
                             val text = if (row.selfPublished) res.getString(R.string.home_meta_join, value, res.getString(R.string.overview_self_published)) else value
                             BasicText(text, style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 21.tpx))
+                        }
+                    },
+                    modifier = Modifier
+                        .width(560.px)
+                        .part("facts", section, parts, onFocused, onHover, onClick = {}, ring = RingStyle(8f, 34f), corner = 34f)
+                        .overviewGlass(LocalBackdropHaze.current, 34f)
+                        .padding(horizontal = 40.px, vertical = 36.px),
+                ) { measurables, constraints ->
+                    val gap = labelGap.roundToPx()
+                    val rowGap = factGap.roundToPx()
+                    val labels = measurables.filterIndexed { i, _ -> i % 2 == 0 }.map { it.measure(Constraints(maxWidth = constraints.maxWidth / 2)) }
+                    val labelWidth = labels.maxOf { it.width }
+                    val valueWidth = (constraints.maxWidth - labelWidth - gap).coerceAtLeast(0)
+                    val values = measurables.filterIndexed { i, _ -> i % 2 == 1 }.map { it.measure(Constraints(maxWidth = valueWidth)) }
+                    val heights = labels.indices.map { maxOf(labels[it].height, values[it].height) }
+                    val height = heights.sum() + rowGap * (heights.size - 1)
+                    layout(constraints.maxWidth, height) {
+                        var y = 0
+                        labels.indices.forEach {
+                            labels[it].place(0, y)
+                            values[it].place(labelWidth + gap, y)
+                            y += heights[it] + rowGap
                         }
                     }
                 }
