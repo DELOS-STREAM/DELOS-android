@@ -78,6 +78,8 @@ import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.pow
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
@@ -161,15 +163,19 @@ fun LaunchScene(
     val calm = remember(colors) {
         Brush.radialGradient(listOf(colors.accent3.copy(alpha = .16f), colors.bg))
     }
+    // The scene is the blur source of the Cancel pill's glass
+    val scene = remember { HazeState() }
     Box(modifier.fillMaxSize()) {
-        when {
-            clock == null -> Canvas(Modifier.fillMaxSize().graphicsLayer { alpha = 1f - opening().coerceIn(0f, 1f) }) {
-                drawRect(colors.bg)
-                drawRect(calm)
+        Box(Modifier.fillMaxSize().hazeSource(scene)) {
+            when {
+                clock == null -> Canvas(Modifier.fillMaxSize().graphicsLayer { alpha = 1f - opening().coerceIn(0f, 1f) }) {
+                    drawRect(colors.bg)
+                    drawRect(calm)
+                }
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
+                    HyperspaceTunnel(progress, opening, clock, Modifier.fillMaxSize())
+                else -> LegacyLaunchScene(card, stage, progress, opening, clock)
             }
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-                HyperspaceTunnel(progress, opening, clock, Modifier.fillMaxSize())
-            else -> LegacyLaunchScene(card, stage, progress, opening, clock)
         }
         LaunchInformation(card, stage, progress, opening, Modifier.align(Alignment.BottomCenter))
         if (onCancel != null) {
@@ -178,25 +184,26 @@ fun LaunchScene(
             // label, icon and look as the portal's.
             InputKindVisibility(InputKindRule.WITHOUT_CONTROLLER, Modifier.align(Alignment.BottomCenter).padding(bottom = 24.px)
                 .graphicsLayer { alpha = HyperspaceTimeline.infoAlpha(opening()) }, collapse = null) {
-                LaunchCancelButton(onCancel)
+                LaunchCancelButton(onCancel, scene)
             }
         }
     }
 }
 
 /**
- * The Cancel pill of the launch scene (the look of the portal's PillButton), for the inputs without B ([LaunchScene]). It has no focus
- * effects on purpose: the stream's loader composition provides neither LocalFeedback nor LocalFocusTracker, and B cancels by key.
+ * The Cancel pill of the launch scene (the look of the portal's PillButton), for the inputs without B ([LaunchScene]): glass over the
+ * [scene] blurred. It has no focus effects on purpose: the stream's loader composition provides neither LocalFeedback nor
+ * LocalFocusTracker, and B cancels by key.
  */
 @Composable
-fun LaunchCancelButton(onCancel: () -> Unit, modifier: Modifier = Modifier) {
+fun LaunchCancelButton(onCancel: () -> Unit, scene: HazeState, modifier: Modifier = Modifier) {
     val colors = LocalDelosColors.current
     val label = stringResource(R.string.common_cancel)
     Row(
         modifier
             .pointerTap(999f, key = onCancel) { onCancel() }
             .clip(CircleShape)
-            .background(colors.surface)
+            .backdropBlur(scene, 24f, colors.surface)
             .border(1.px, colors.line, CircleShape)
             .height(64.px)
             .semantics(mergeDescendants = true) { role = Role.Button; onClick { onCancel(); true } }

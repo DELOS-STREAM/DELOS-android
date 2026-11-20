@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.em
 import com.limelight.shell.GlobalKeys
 import com.limelight.shell.settings.StreamMenuSettings
+import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.delay
 
 /** How long the capture waits for a first button before it gives up. */
@@ -44,10 +45,11 @@ private const val IDLE_MS = 10_000L
 /**
  * Records the stream menu buttons: every key goes here while it is shown. The buttons held together
  * (one or more) are saved once all are let go; without any press for 10 s it closes unchanged. A tap
- * anywhere cancels too, since every controller button may be wanted for the shortcut.
+ * anywhere cancels too, since every controller button may be wanted for the shortcut. The card blurs
+ * the screen under it ([haze]), as a dialog does.
  */
 @Composable
-fun ButtonCaptureLayer(visible: Boolean, keys: GlobalKeys, onDone: (Set<Int>?) -> Unit) {
+fun ButtonCaptureLayer(visible: Boolean, keys: GlobalKeys, haze: HazeState, onDone: (Set<Int>?) -> Unit) {
     val colors = LocalDelosColors.current
     val res = textResources()
     AnimatedVisibility(visible, enter = fadeIn(tween(250)), exit = fadeOut(tween(250))) {
@@ -87,7 +89,7 @@ fun ButtonCaptureLayer(visible: Boolean, keys: GlobalKeys, onDone: (Set<Int>?) -
             contentAlignment = Alignment.Center,
         ) {
             Column(
-                Modifier.width(820.px).clip(RoundedCornerShape(40.px)).background(colors.surface3).border(1.px, colors.line, RoundedCornerShape(40.px)).padding(52.px),
+                Modifier.width(820.px).clip(RoundedCornerShape(40.px)).backdropBlur(haze, 24f, colors.surface3).border(1.px, colors.line, RoundedCornerShape(40.px)).padding(52.px),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(26.px),
             ) {

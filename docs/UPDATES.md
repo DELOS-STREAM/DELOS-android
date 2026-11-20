@@ -51,8 +51,8 @@ this device. The checksum file is requested only when a newer release with the A
 
 ### Offer card
 
-`shell/ui/UpdateOfferCard.kt` reuses the problem report card (`ProblemOfferCard`): the same glass card in the top right
-corner, accent disc, title and sentence, `PillButton`s with the A and B glyphs and the same pop-in motion. It is not a
+`shell/ui/UpdateOfferCard.kt` is built from the parts of the problem report card (`ProblemOfferCard`), in the top right
+corner: the glass card, accent disc, title and sentence, `PillButton`s with the A and B glyphs and the same pop-in motion. It is not a
 dialog; nothing is dimmed. No new visual element was added except a thin progress bar built from the card's own colors.
 
 | Rule | Value |

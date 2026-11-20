@@ -175,6 +175,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
+import com.limelight.shell.ui.backdropBlur
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 /**
  * The tab of each kind on the artwork screen, with the columns of its grid (the prototype's: 7 covers, 4 wide covers, 3
@@ -843,7 +846,7 @@ private fun FilterStrip(
             val centred = Modifier.align(Alignment.CenterVertically)
             BasicText(
                 tab.resultLine(res, ready.images.size, ready.total, all = !filters.active),
-                centred.clip(CircleShape).background(tint.copy(alpha = .14f)).border(1.px, tint.copy(alpha = .45f), CircleShape).padding(horizontal = 20.px, vertical = 7.px),
+                centred.clip(CircleShape).glass(tint.copy(alpha = .14f)).border(1.px, tint.copy(alpha = .45f), CircleShape).padding(horizontal = 20.px, vertical = 7.px),
                 style = FilterStripMetrics.countStyle().copy(color = colors.accent3),
             )
             if (refreshing) Box(centred) { Spinner(26f) }
@@ -871,7 +874,7 @@ private fun FilterStripChip(label: String, icon: String, modifier: Modifier, onC
     Row(
         modifier
             .focusEffects(onClick = onClick, corner = 999f, focusScale = 1.05f, ring = FocusRing(3f, 3f), glow = null, glide = true)
-            .clip(CircleShape).background(colors.surface2).border(1.px, colors.line, CircleShape)
+            .clip(CircleShape).glass(colors.surface2).border(1.px, colors.line, CircleShape)
             .height(44.px).padding(horizontal = 20.px),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.px),
     ) {
@@ -1211,13 +1214,18 @@ private fun TileDownloadBar(progress: Float?) {
     }
 }
 
-/** A choice in the grid: the image in [tab]'s shape, the "In use" badge, an "Animated" badge, a spinner while [loading], an optional caption. */
+/**
+ * A choice in the grid: the image in [tab]'s shape, the "In use" badge, an "Animated" badge, a spinner while [loading], an optional caption.
+ * The image is the blur source of the dark glass on it (the caption, the "Animated" badge). A logo is transparent: its tile's own fill is
+ * glass over the background; the other tabs' images cover theirs.
+ */
 @Composable
 private fun Tile(
     tab: ArtTab, tileWidth: Float, inUse: Boolean, loading: Boolean, caption: String?, animated: Boolean, modifier: Modifier,
     onFocused: () -> Unit, onClick: () -> Unit, content: @Composable () -> Unit,
 ) {
     val colors = LocalDelosColors.current
+    val art = remember { HazeState() }
     val shape = RoundedCornerShape(20.px)
     Box(
         modifier
@@ -1228,15 +1236,15 @@ private fun Tile(
             .fillMaxWidth()
             .aspectRatio(tab.ratio)
             .clip(shape)
-            .background(colors.surface2)
+            .then(if (tab == ArtTab.LOGO) Modifier.glass(colors.surface2) else Modifier.background(colors.surface2))
             .then(if (inUse) Modifier.border(3.px, colors.accent, shape) else Modifier.border(1.px, colors.line, shape)),
     ) {
-        content()
+        Box(Modifier.matchParentSize().hazeSource(art)) { content() }
         if (caption != null) {
             BasicText(
                 caption,
                 style = TextStyle(color = Color.White, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 18.tpx, textAlign = TextAlign.Center),
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color(0xA6050A14)).padding(vertical = 8.px),
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().backdropBlur(art, 16f, Color(0xA6050A14)).padding(vertical = 8.px),
             )
         }
         if (loading) {
@@ -1264,7 +1272,7 @@ private fun Tile(
             // Icon only on the narrow covers, where "In use" takes the room, and on a tile too small for the label (beside "In use")
             val label = tab != ArtTab.COVER && tileWidth >= (if (inUse) ArtworkLayout.BOTH_LABELS_MIN else ArtworkLayout.ANIMATED_LABEL_MIN)
             Row(
-                Modifier.align(Alignment.TopEnd).padding(12.px).clip(CircleShape).background(Color(0xB3050A14)).padding(horizontal = if (label) 12.px else 6.px, vertical = 4.px),
+                Modifier.align(Alignment.TopEnd).padding(12.px).clip(CircleShape).backdropBlur(art, 16f, Color(0xB3050A14)).padding(horizontal = if (label) 12.px else 6.px, vertical = 4.px),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.px),
             ) {

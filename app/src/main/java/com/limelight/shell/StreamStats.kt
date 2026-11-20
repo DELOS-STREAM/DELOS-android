@@ -205,8 +205,9 @@ class StreamStatsPanel internal constructor(
                 else -> Alignment.TopEnd
             },
         ) {
+            // Over the stream's video (a SurfaceView) nothing can blur it: the documented fallback is a darker tint (docs/GUI.md, "Glass")
             val glass = Modifier.clip(RoundedCornerShape(if (compact) 999.px else 18.px))
-                .background(Color.Black.copy(alpha = .55f))
+                .background(Color.Black.copy(alpha = .7f))
                 .border(1.px, Color.White.copy(alpha = .10f), RoundedCornerShape(if (compact) 999.px else 18.px))
             if (compact) CompactLine(s, glass) else FullPanel(s, glass)
         }
