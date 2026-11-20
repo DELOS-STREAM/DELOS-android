@@ -47,8 +47,11 @@ object PointerLook {
     /** The move cue of a focus the pointer moved plays at most this often (sweeping over a row of covers is no burst of clicks). */
     const val CUE_GAP_MS = 90L
 
-    /** The scale of an element [hover] (0..1) over it and [press] (0..1) pressed: the press squeezes whatever scale it has. */
-    fun scale(hover: Float, press: Float): Float = Motion.lerp(1f, HOVER_SCALE, hover) * Motion.lerp(1f, Motion.PRESS_SCALE, press)
+    /**
+     * The scale of an element [hover] (0..1) over it and [press] (0..1) pressed: a press drops the hover lift and squeezes, so a pressed
+     * element stands at [Motion.PRESS_SCALE] of its size at rest, below every lift.
+     */
+    fun scale(hover: Float, press: Float): Float = Motion.lerp(1f, HOVER_SCALE, hover * (1f - press)) * Motion.lerp(1f, Motion.PRESS_SCALE, press)
 }
 
 /**
@@ -120,8 +123,9 @@ fun Modifier.pressInput(pulse: PressPulse): Modifier = pointerInput(pulse) {
 }
 
 /**
- * The press of every interactive element (docs/GUI.md, "Motion"): squeezes it to [Motion.PRESS_SCALE] of its scale while [pulse] is
- * pressed, from [origin]. A finger or a mouse button squeezes it from its down ([pressInput]); an activation by key fires [pulse].
+ * The press of every interactive element (docs/GUI.md, "Motion"): squeezes it to [Motion.PRESS_SCALE] while [pulse] is pressed, from
+ * [origin]; the element's own lift (focus, hover) drops to 1 meanwhile, so it stands at [Motion.PRESS_SCALE] of its size at rest. A finger
+ * or a mouse button squeezes it from its down ([pressInput]); an activation by key fires [pulse].
  */
 fun Modifier.pressLook(pulse: PressPulse, origin: TransformOrigin = TransformOrigin.Center): Modifier =
     pressInput(pulse).graphicsLayer {
@@ -133,9 +137,9 @@ fun Modifier.pressLook(pulse: PressPulse, origin: TransformOrigin = TransformOri
 
 /**
  * The hover look ([PointerLook]) of an element of [corner] stage pixels (999: round) that is no focus item. Only a mouse or a trackpad
- * shows it; a finger has no hover.
+ * shows it; a finger has no hover. With the element's [pulse] the lift drops while it is pressed.
  */
-fun Modifier.hoverLook(corner: Float): Modifier = composed {
+fun Modifier.hoverLook(corner: Float, pulse: PressPulse? = null): Modifier = composed {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
     val reduced = LocalReducedMotion.current
@@ -161,7 +165,7 @@ fun Modifier.hoverLook(corner: Float): Modifier = composed {
             }
         }
         .graphicsLayer {
-            val s = PointerLook.scale(hover.value, 0f)
+            val s = PointerLook.scale(hover.value, pulse?.amount ?: 0f) / PointerLook.scale(0f, pulse?.amount ?: 0f)
             scaleX = s
             scaleY = s
         }
@@ -184,7 +188,7 @@ fun Modifier.pointerTap(corner: Float, key: Any? = Unit, cue: Cue? = null, onTap
     val feedback = if (cue != null) LocalFeedback.current else null
     val tap by rememberUpdatedState(onTap)
     this
-        .hoverLook(corner)
+        .hoverLook(corner, pulse)
         .pressLook(pulse)
         .pointerInput(key) {
             detectTapGestures {

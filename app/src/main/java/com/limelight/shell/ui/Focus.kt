@@ -110,7 +110,8 @@ data class FocusGlow(val offsetY: Float = 30f, val blur: Float = 80f, val spread
  * the [com.limelight.shell.FocusTracker], with its [contextMenu] and whether it is [adjustable] with
  * left/right.
  *
- * Every activation squeezes it ([pressLook], [Motion.PRESS_SCALE] of its focus scale, the glow blurred out to [Motion.PRESS_GLOW]); a tap
+ * Every activation drops its focus lift and squeezes it ([pressLook]: pressed, it stands at [Motion.PRESS_SCALE] of its size at rest,
+ * the glow blurred out to [Motion.PRESS_GLOW]); a tap
  * or a click squeezes from the finger's down and acts once the squeeze has landed. The pointer focuses it by moving over it and opens
  * its Options with a right click, both without scrolling it into view ([PointerFocus], docs/GUI.md, "Keyboard and pointer").
  *
@@ -139,6 +140,8 @@ fun Modifier.focusEffects(
     focusMillis: Int = Motion.FOCUS,
     /** False for a focus target that does nothing when activated (a text panel that scrolls): no press. */
     press: Boolean = true,
+    /** The element's press when its caller draws a focus lift of its own (the stream menu's tile): it drops that lift while pressed. */
+    pressPulse: PressPulse? = null,
     /** Share the surrounding list's moving plate instead of drawing a separate ring and glow. */
     glide: Boolean = false,
     /** The element's focus requester when its caller needs it too (a part of the element that takes its own taps); otherwise its own. */
@@ -164,9 +167,10 @@ fun Modifier.focusEffects(
     val look = focused || tracker.holds(requester)
     val currentLookChange by rememberUpdatedState(onLookChange)
     LaunchedEffect(look) { currentLookChange?.invoke(look) }
-    // The press squeezes the element around its focus scale (Motion.PRESS_SCALE of whatever it has): pressLook below
-    val pulse = rememberPressPulse()
-    val scale by animateFocusScale(look, false, focusScale, focusMillis = if (plate != null) Motion.ROW_FOCUS else focusMillis)
+    // A press drops the focus lift and pressLook below squeezes the rest: pressed, the element stands at Motion.PRESS_SCALE of its size at rest
+    val ownPulse = rememberPressPulse()
+    val pulse = pressPulse ?: ownPulse
+    val scale by animateFocusScale(look, press && pulse.pressed, focusScale, focusMillis = if (plate != null) Motion.ROW_FOCUS else focusMillis)
     // Hosted rows never draw an independent ring or glow.
     val ringAlpha by animateFloatAsState(
         if (look) 1f else 0f, tween(if (look) 140 else 110, easing = EaseOut), label = "focusRing",

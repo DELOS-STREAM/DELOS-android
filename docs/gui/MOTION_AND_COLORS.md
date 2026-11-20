@@ -34,7 +34,7 @@ One motion language serves the whole UI. Every screen animates with the motion l
 | Motion | Rule | Value | Easing |
 |---|---|---|---|
 | Focus | A spring. | 420 ms | `EaseSpring` |
-| Press | Every activation squeezes the element to 0.96 of its current scale (focused or not) on the spring, holds, and springs back in the focus's 420 ms; its glow's blur pulses to 1.6 times. A tap or a click squeezes from the finger's or the button's down and runs its action once the squeeze has landed; A and Enter act at once. | 120 ms in, 130 ms held | `EaseSpring` |
+| Press | Every activation drops the element's lift (focus, hover) to 1 and squeezes it, so pressed it stands at 0.96 of its size at rest, below every focus scale, on the spring; it holds and springs back in the focus's 420 ms; its glow's blur pulses to 1.6 times. A tap or a click squeezes from the finger's or the button's down and runs its action once the squeeze has landed; A and Enter act at once. | 120 ms in, 130 ms held | `EaseSpring` |
 | Hover | A mouse or trackpad over an element that is no focus item lays the `text` colour at 8 % over it in its shape and lifts it to 1.03. A focus item takes the focus instead. | In 140 ms, out 110 ms | CSS `ease` |
 | Enter | Things enter by rising and fading in, one after the other. | Rise 18 px, 46 ms apart, 420 ms each | `EaseOut` |
 | Leave | Everything leaves faster than it came. | 240 ms | ease-in |
@@ -56,7 +56,7 @@ Nothing ever delays a control:
 |---|---|---|
 | `Modifier.staggerEntrance()` | Fade and rise by place. The place comes from the surrounding `EntranceScope`, from an index, or from the counter of a stream menu page. | |
 | `focusEffects` | Focus spring, ring, glow, the press (`pressLook`), the pointer's hover focus and right click. `press = false` only for a focus target that does nothing when activated. | Press as above |
-| `pressLook` + `PressPulse` | The one press of every interactive element: a layer around the element's own focus scale, so the squeeze multiplies it. | 0.96, glow blur 1.6x |
+| `pressLook` + `PressPulse` | The one press of every interactive element: a layer around the element that squeezes to 0.96, while `animateFocusScale` (and the hover lift) drop to 1 for the press. The Full keyboard's keys use `animatePressScale`. | 0.96 of the size at rest, glow blur 1.6x |
 | `pointerTap` / `hoverLook` | A tap target that is no focus item (hint pill, back arrow, tab pill, submenu back chip, reset pill, the loader's Cancel): hover look, press look, deferred tap. `hoverLook` alone on the toast's action. | 1.03, 8 % |
 | `GlideRingHost` + `Modifier.glideTarget` | One ring that glides to the focused element. `Circles` uses it. | 560 ms with a slight overshoot |
 | `RowGlideHost` + `Modifier.rowGlideTarget` / `SettingRowList` | The same for a scrolling list of settings rows. See "Settings row focus" in [MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md). | 520 ms |

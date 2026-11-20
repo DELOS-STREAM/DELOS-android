@@ -490,7 +490,7 @@ private fun StepButton(
     Box(
         Modifier
             .size(P.VALUE_BUTTON.px)
-            .hoverLook(999f)
+            .hoverLook(999f, pulse)
             .pressLook(pulse)
             .alpha(if (enabled) 1f else .35f)
             .clip(CircleShape)

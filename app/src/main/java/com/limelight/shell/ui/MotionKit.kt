@@ -226,23 +226,34 @@ fun rememberPressPulse(): PressPulse {
 }
 
 /**
- * The scale of a focusable element: the focus lifts it to [focusScale] with the overshooting spring ([focusMillis], by default
- * [Motion.FOCUS]; a settings row with a gliding ring takes the calmer [Motion.ROW_FOCUS]), a press squeezes it to [pressScale]
- * for a moment ([Motion.PRESS]). With reduced motion it jumps.
+ * The focus lift of an element: the focus lifts it to [focusScale] with the overshooting spring ([focusMillis], by default
+ * [Motion.FOCUS]; a settings row with a gliding ring takes the calmer [Motion.ROW_FOCUS]). While it is [pressed] the lift drops to 1 in
+ * [Motion.PRESS], so with the shared squeeze of [pressLook] a pressed element stands at [Motion.PRESS_SCALE] of its size at rest, below
+ * every focus scale. With reduced motion it jumps.
  */
 @Composable
 fun animateFocusScale(
     focused: Boolean,
     pressed: Boolean,
     focusScale: Float,
-    pressScale: Float = Motion.PRESS_SCALE,
     label: String = "focusScale",
     focusMillis: Int = Motion.FOCUS,
 ): State<Float> {
     val reduced = LocalReducedMotion.current
     return animateFloatAsState(
-        Motion.scaleTarget(focused, pressed, focusScale, pressScale),
+        Motion.scaleTarget(focused, pressed, focusScale),
         if (reduced) snap() else tween(if (pressed) Motion.PRESS else focusMillis, easing = EaseSpring),
+        label = label,
+    )
+}
+
+/** A squeeze of its own for what has no [PressPulse] (the Full keyboard's keys and ring): [Motion.PRESS_SCALE] while [pressed]. */
+@Composable
+fun animatePressScale(pressed: Boolean, label: String = "pressScale"): State<Float> {
+    val reduced = LocalReducedMotion.current
+    return animateFloatAsState(
+        if (pressed) Motion.PRESS_SCALE else 1f,
+        if (reduced) snap() else tween(if (pressed) Motion.PRESS else Motion.FOCUS, easing = EaseSpring),
         label = label,
     )
 }

@@ -74,12 +74,13 @@ class PointerLookTest {
         assertEquals(110, PointerLook.HOVER_OUT)
     }
 
-    @Test fun `the press squeezes the element's current scale`() {
+    @Test fun `a pressed element stands at 0,96 of its size at rest, below every lift`() {
         assertEquals(1f, PointerLook.scale(0f, 0f), 0f)
         assertEquals(.96f, PointerLook.scale(0f, 1f), 1e-6f)
         assertEquals(1.03f, PointerLook.scale(1f, 0f), 1e-6f)
-        // Hovered and pressed: .96 of the lifted 1.03
-        assertEquals(1.03f * .96f, PointerLook.scale(1f, 1f), 1e-6f)
+        // Hovered and pressed: the hover lift is gone, 0.96 of the size at rest
+        assertEquals(.96f, PointerLook.scale(1f, 1f), 1e-6f)
+        assertTrue(PointerLook.scale(1f, 1f) < 1f)
     }
 
     @Test fun `a tap acts once the squeeze has landed`() {
