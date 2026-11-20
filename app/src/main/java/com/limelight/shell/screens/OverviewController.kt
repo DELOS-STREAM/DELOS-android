@@ -7,6 +7,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Rect
 import com.limelight.shell.data.App
 import com.limelight.shell.ui.Motion
@@ -16,8 +17,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
-/** Where the dashboard's title was when the overview opened: its box on screen (root pixels) and its font size in stage pixels. */
-internal data class TitleSource(val rect: Rect, val fontSize: Float)
+/** Where the dashboard's title was when the overview opened: its box on screen (root pixels) and, for text, its font size in stage pixels (null: a logo). */
+internal data class TitleSource(val rect: Rect, val fontSize: Float?)
 
 /**
  * The timeline of the game overview (docs/gui/GAME_INFO.md, "Game overview"), shared by the dashboard, which lifts its covers away and
@@ -55,7 +56,7 @@ internal class OverviewController(private val scope: CoroutineScope) {
     var from: Rect? = null
         private set
 
-    /** The dashboard's title when the overview opened; null when it showed a logo (the title then rises like the header). */
+    /** The dashboard's title (text or logo) when the overview opened; null when it was not laid out (the title then rises like the header). */
     var title: TitleSource? = null
         private set
 
@@ -95,10 +96,10 @@ internal class OverviewController(private val scope: CoroutineScope) {
     }
 
     /**
-     * Closes the overview: waits for the opening, runs [prepare] (the page scrolls back to its top), then reverses every motion and
-     * calls [done] once the card is back in its row.
+     * Closes the overview: waits for the opening, runs [prepare] (the dashboard takes back the focus and the hints, the page scrolls
+     * back to its top), then reverses every motion; the overview leaves composition once the card is back in its row.
      */
-    fun close(prepare: suspend () -> Unit, done: () -> Unit) {
+    fun close(prepare: suspend () -> Unit) {
         if (app == null || leaving) return
         leaving = true
         val opened = job
@@ -113,10 +114,12 @@ internal class OverviewController(private val scope: CoroutineScope) {
                 val total = closeTotal(reduced)
                 clock.animateTo(total.toFloat(), tween(total, easing = LinearEasing))
             }
+            // The last frame of the motion is drawn first; taking the whole page out of composition (the heaviest frame of the
+            // closing) happens in the next one, when nothing moves any more
+            withFrameNanos { }
             app = null
             closing = false
             leaving = false
-            done()
         }
     }
 

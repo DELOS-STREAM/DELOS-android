@@ -113,6 +113,9 @@ import com.limelight.shell.ui.LaunchCard
 import com.limelight.shell.ui.LaunchHandoff
 import com.limelight.shell.ui.LaunchOverlay
 import com.limelight.shell.ui.LocalBackdropHaze
+import com.limelight.shell.ui.LocalBackdropMirror
+import com.limelight.shell.ui.backdropMirrorSource
+import com.limelight.shell.ui.rememberBackdropMirror
 import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.LocalFeedback
 import com.limelight.shell.ui.NavButton
@@ -194,6 +197,8 @@ fun Shell(
     val haze = rememberHazeState()
     // Only the animated background, for glass that is always on (the focused row, the top bar)
     val backdropHaze = rememberHazeState()
+    // The same background, recorded for a page that continues it over the dashboard (the game overview)
+    val backdropMirror = rememberBackdropMirror()
     var blurSource by remember { mutableStateOf(false) }
     LaunchedEffect(shell.layer != null || shell.portal != null || shell.picker != null) {
         if (shell.layer != null || shell.portal != null || shell.picker != null) {
@@ -755,7 +760,7 @@ fun Shell(
     val statusEdges = remember { com.limelight.shell.ui.StatusBarEdges() }
     CompositionLocalProvider(
         LocalShell provides shell, LocalFocusTracker provides tracker, LocalGameActions provides actions, LocalDeviceActions provides devices,
-        LocalBackdropHaze provides backdropHaze, LocalLibrary provides library, LocalImeAvoidance provides imeAvoidance,
+        LocalBackdropHaze provides backdropHaze, LocalBackdropMirror provides backdropMirror, LocalLibrary provides library, LocalImeAvoidance provides imeAvoidance,
         com.limelight.shell.screens.LocalLinkTests provides linkTests, com.limelight.shell.ui.LocalStatusBarEdges provides statusEdges,
         // Touch: a focused choice or slider row's tap opens its popup at the row (issue #92)
         LocalRowPicker provides { popup -> shell.openPicker(popup, tracker) },
@@ -795,7 +800,7 @@ fun Shell(
             // is shown (and while it fades out)
             // On in the very frame an overlay appears (its blur would otherwise start empty and clipped)
             Box(Modifier.fillMaxSize().then(if (blurSource || shell.layer != null || shell.portal != null || shell.result != null || shell.picker != null) Modifier.hazeSource(haze) else Modifier)) {
-                Box(Modifier.fillMaxSize().hazeSource(backdropHaze)) {
+                Box(Modifier.fillMaxSize().hazeSource(backdropHaze).backdropMirrorSource(backdropMirror)) {
                     ShellBackdrop(shell, appearance, colors, heroShown = shell.screen == Screen.Home, animate = shell.launch == null && shell.portal == null)
                 }
                 AnimatedContent(
@@ -957,23 +962,7 @@ fun Shell(
             val artworkProgress = artwork.progress.value
             ArtworkProgressBar(artworkProgress ?: metadata.progress.value,
                 label = res.getString(if (artworkProgress != null) R.string.shell_progress_artwork else R.string.shell_progress_metadata))
-            // The "Game info" hint under the focused cover takes the note's place at the bottom left
-            val note = (library as? Library.Ready)?.takeIf { shell.screen == Screen.Home && shell.layer == null && shell.overviewGame == null && !shell.homeOverviewAvailable }?.let { ready ->
-                val shown = if (metadata.filters.active) ready.apps.count { metadata.filters.matches(it, metadata.entry(ready.pc, it).data) } else ready.apps.size
-                if (shown == ready.apps.size) res.getQuantityString(R.plurals.shell_home_apps_on_pc, shown, shown, ready.pc.name)
-                else res.getQuantityString(R.plurals.shell_home_apps_filtered, ready.apps.size, shown, ready.apps.size, ready.pc.name)
-            }
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                val filterHint = (library as? Library.Ready)?.takeIf { it.apps.isNotEmpty() }?.let { filterHintLabel(res, metadata.filters) }
-                // Written for a controller, shown for the input in use (a finger, a mouse, a keyboard: ui/HintKinds.kt)
-                val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint).adaptedTo(ControllerGlyphs.kind)
-                com.limelight.shell.companion.PublishCompanionContext(hintEntries, library, pcs)
-                // A tap on the Filter pill (no controller in use) does what Y does: opens the library's filters
-                ZoomedBar(uiScale) {
-                    HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null,
-                        onTap = { if (keys.canFilter()) keys.onFilter?.invoke() })
-                }
-            }
+            ShellHints(shell, library, pcs, tracker, keys, uiScale)
             val launch = shell.launch
             val launchLogo = launch?.let { rememberArtwork(artwork, it.pc, it.app, ArtKind.LOGO).value }
             // Read off the main thread: profile and per-game settings; the card gets them when they are ready
@@ -1078,6 +1067,32 @@ private class ShellGameActions(
 @Composable
 private fun ShellBackdrop(shell: ShellState, appearance: Appearance, colors: DelosColors, heroShown: Boolean, animate: Boolean) {
     Backdrop(appearance, colors, hero = if (heroShown) shell.hero else null, animate = animate)
+}
+
+/**
+ * The hint bar and the library note. It reads the shell's state itself, so what only changes the hints (the game overview opening
+ * or closing, its viewer) recomposes just this, not the whole shell.
+ */
+@Composable
+private fun ShellHints(shell: ShellState, library: Library, pcs: List<Pc>, tracker: FocusTracker, keys: GlobalKeys, uiScale: Float) {
+    val res = textResources()
+    val metadata = LocalGameMetadata.current
+    val note = (library as? Library.Ready)?.takeIf { shell.screen == Screen.Home && shell.layer == null && shell.overviewGame == null }?.let { ready ->
+        val shown = if (metadata.filters.active) ready.apps.count { metadata.filters.matches(it, metadata.entry(ready.pc, it).data) } else ready.apps.size
+        if (shown == ready.apps.size) res.getQuantityString(R.plurals.shell_home_apps_on_pc, shown, shown, ready.pc.name)
+        else res.getQuantityString(R.plurals.shell_home_apps_filtered, ready.apps.size, shown, ready.apps.size, ready.pc.name)
+    }
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+        val filterHint = (library as? Library.Ready)?.takeIf { it.apps.isNotEmpty() }?.let { filterHintLabel(res, metadata.filters) }
+        // Written for a controller, shown for the input in use (a finger, a mouse, a keyboard: ui/HintKinds.kt)
+        val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint).adaptedTo(ControllerGlyphs.kind)
+        com.limelight.shell.companion.PublishCompanionContext(hintEntries, library, pcs)
+        // A tap on the Filter pill (no controller in use) does what Y does: opens the library's filters
+        ZoomedBar(uiScale) {
+            HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null,
+                onTap = { if (keys.canFilter()) keys.onFilter?.invoke() })
+        }
+    }
 }
 
 /** Button hints for the current screen and layer (the prototype's updateHints). */

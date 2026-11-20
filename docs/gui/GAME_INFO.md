@@ -490,16 +490,18 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
 
 1. Games with an IGDB match have an overview; built-in apps (Desktop, Steam Big Picture) and unmatched games have none.
    Down on those nudges the cover by 7 px.
-2. A **"Game info" hint** sits 30 px under the focused cover, drawn for the input in use:
+2. A **"Game info" chip** sits on the focused cover's lower edge, centred, 22 px above it, in the dark glass of the cover's
+   badges (so it reads over any art), drawn for the input in use:
 
    | Input | Glyph | Opens with |
    |---|---|---|
    | Controller | The D-pad cap with the down arm pressed (outline cut), bobbing | Down |
    | Keyboard | The ↓ key cap, bobbing | ↓ |
-   | Touch | A small arrow up in the accent, bobbing up | A swipe up on the cover, or a tap on the hint |
-   | Mouse | A small arrow down in the accent, bobbing; the hint is a pill that lights on hover | A click on the hint |
+   | Touch | A small arrow up, bobbing up | A swipe up on the cover, or a tap on the chip |
+   | Mouse | A small arrow down, bobbing; the chip darkens on hover | A click on the chip |
 
-   The hint bar does not repeat it: the hint under the cover is the only place that names it.
+   The hint bar does not repeat it: the chip on the cover is the only place that names it. It stays clear of the hint
+   bar, whose library note ("LIBRARY · N apps on <PC>") shows as on any other game.
 3. A swipe up needs vertical intent (Compose's vertical touch slop, so the row's horizontal scroll and the side-menu swipe
    keep working). The cover follows the finger with resistance (`lift = max(dy, -260) × 0.55`, growing up to
    1.155) and opens past 40 px of lift; the flight starts where the finger left it.
@@ -507,20 +509,25 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    - the other covers lift away one after another: 160 px + 30 px per cover of distance up, to 0.92, fading, 620 ms
      ease-out each, 45 ms apart by distance;
    - the info row rises 90 px out and fades;
-   - the card's own image flies from its on-screen rectangle (with its focus scale or its dragged position) into the
+   - the cover flies from the card's on-screen rectangle (with its focus scale or its dragged position) into the
      340 × 510 slot of the header: 780 ms `cubic-bezier(.2,.9,.25,1)`, through a midpoint 30 px above the straight line
-     and 4 % larger, the corner going from 27.4 to 30 px;
-   - a text title flies from the dashboard's title to the header's (720 ms); a SteamGridDB logo on the dashboard fades
-     out and the header's title rises in like its other parts;
+     and 4 % larger, the corner going from 27.4 to 30 px. Only its frame changes shape (the wide first card's turns
+     portrait): the pictures in it keep their proportions, cropped to the frame, and the card as the row drew it (its own
+     art, a wide card's too, the current frame of its animation, its badge) crossfades into the header's cover over the
+     first 60 % of the way;
+   - the title flies from the dashboard's title to the header's (720 ms): the SteamGridDB logo from the logo (one scale,
+     the two logo boxes have the same proportions), the name from the name; when the dashboard showed the other kind,
+     the header's title rises in like its other parts;
    - the page rises from 120 px below (780 ms), the header's parts rise 18 px, 46 ms apart, after 260 ms (the cue
      after 500 ms);
-   - the backdrop becomes the sharp hero over 900 ms; the rings fill and count up after 380 ms (1.3 s, ease-out-quart).
+   - the backdrop's own layers fade in over 900 ms; the rings fill and count up after 380 ms (1.3 s, ease-out-quart).
 5. Nothing delays a control: Play has the focus from the first frame and the page takes input while it enters. The
    gold ring appears once the opening is over.
 6. **Closing** (B, Esc, Back, Up from the header, the round back button, or pulling the page down 150 px at its top):
-   a close during the opening waits for it; the page scrolls to its top (420 ms), then everything reverses: the cover
-   flies back into its card (640 ms ease-in-out), the page sinks 120 px and fades (560 ms), the other covers come back
-   in the reverse order, the header's parts leave first (240 ms). The card takes the focus again.
+   a close during the opening waits for it; the card takes the focus again and the hint bar shows the dashboard's hints,
+   the page scrolls to its top (420 ms), then everything reverses: the cover flies back into its card (640 ms
+   ease-in-out), the page sinks 120 px and fades (560 ms), the other covers come back in the reverse order, the header's
+   parts leave first (240 ms). The page leaves composition one frame after the motion's last one.
 7. **Reduced motion** keeps the fades and drops every transform: the cover and the title fade in place, nothing lifts,
    rises, drifts or bobs, the ring jumps.
 8. App settings opens the per-app settings; when they close the overview is there again without the flight.
@@ -530,10 +537,12 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
 1. The page has 150 px sides. It fades in under the status bar (clear to 70 px, solid from 140 px) and out at the
    bottom 60 px.
 2. **Header**, one screen minus 160 px high, 150 px from the top: the 340 × 510 cover (30 px corner, deep shadow)
-   and, 72 px beside it, 24 px apart: the year and developers (15 px tracked accent eyebrow); the title (68 px
-   Unbounded, up to 1150 px wide, balanced lines, the game's color gradient); the genre and theme tags (two each,
-   as on the dashboard) and the HDR badge; the critics' and players' rings (104 px) with the age rating of the
-   device's region; **Play** and **App settings** (76 px pills); the streaming time, last streamed and HowLongToBeat.
+   and, 72 px beside it, 24 px apart: the year and developers (15 px tracked accent eyebrow); the title: the game's logo
+   when it has one (the dashboard's: the user's SteamGridDB choice, else the default logo, its animation playing; up to
+   700 × 140 px), else the name (68 px Unbounded, up to 1150 px wide, balanced lines, the game's color gradient); the
+   genre and theme tags (two each, as on the dashboard) and the HDR badge; the critics' and players' rings (104 px) with
+   the age rating of the device's region; **Play** and **App settings** (76 px pills); the streaming time, last streamed
+   and HowLongToBeat.
    At the header's bottom a cue names the sections below ("About · Media · Details · Similar games") with a bobbing
    caret.
 3. **Sections**, 70 px apart, each with a 30 px Unbounded heading and its icon:
@@ -547,15 +556,21 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    - **Your streaming** (glass card, three columns): the streaming time counting up when the card is first focused,
      last streamed (or "Running on <PC> now"), HowLongToBeat with a bar of the share streamed;
    - **Links**: IGDB's websites, the official site first (or the Steam page when IGDB lists none);
-   - **Similar games**: 200 × 300 covers, "In library" on the ones the user owns;
+   - **Similar games**: 260 × 390 covers (24 px corner), "In library" on the ones the user owns;
    - the data credit.
 4. A section without anything to show does not exist. While the details load, a spinner line stands in for the
    sections; when they cannot be loaded, one muted line. Ratings: no critics' rating reads "No critic reviews yet",
    fewer than 50 player ratings "… · few so far", no age rating "Not rated".
 5. The glass cards blur the backdrop behind them for real (Haze, 30 px) under the prototype's light gradient.
-6. The **backdrop** is the dashboard's hero as two layers, sharp (62 % at the top) and blurred 40 px, crossfaded by the
-   scroll over 520 px (opacity only, no animated blur radius); it drifts up to 70 px slower than the page and zooms
-   up to 10 %. Focusing a screenshot crossfades it to that screenshot (800 ms), leaving the media back to the hero.
+6. The **backdrop** continues the dashboard's own background: its hero exactly as the dashboard shows it (the user's
+   background blur, playing when animated) is drawn again from the shell's recording, not decoded or blurred a second time.
+   Over it a 40 px blurred layer of the hero is crossfaded in by the scroll over 520 px (opacity only, no animated blur
+   radius); it drifts up to 70 px slower than the page and zooms up to 10 %. Focusing a screenshot crossfades it to that
+   screenshot, sharp (62 %) and blurred (800 ms), leaving the media back to the hero.
+7. The header's cover plays its animated artwork as the card does (the art-motion setting and reduced motion apply); it
+   stops when the overview leaves.
+8. The page is a blur source over the shell's background: the top bar's glass and the screenshot viewer blur what lies
+   under them now (the background and the page as it scrolls), not the dashboard behind the page.
 
 ### 9.3 Navigation
 

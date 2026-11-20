@@ -1,7 +1,6 @@
 package com.limelight.shell.screens
 
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import com.limelight.shell.ui.EaseOut
 import com.limelight.shell.ui.Motion
@@ -188,43 +187,48 @@ internal object OverviewMotion {
     /** How long the whole opening runs, so the last staggered part has risen. */
     val OPEN_TOTAL: Int get() = max(FLIGHT_IN, CUE_DELAY + 5 * Motion.STAGGER_ROW + Motion.ROW_IN)
 
-    /** One frame of the cover in flight: its top-left, its scale along each axis and its corner radius in its own (unscaled) pixels. */
-    data class Frame(val offset: Offset, val scaleX: Float, val scaleY: Float, val corner: Float)
+    /** One frame of the cover in flight: the frame it shows, relative to the slot's top-left (screen pixels), and its corner (stage pixels). */
+    data class Frame(val rect: Rect, val corner: Float)
 
     /**
      * The cover at [progress] (already eased) of its flight from [from] to [to] (both on screen): the keyframes of the prototype's
      * `Flight.cover`, start, a lifted and slightly grown midpoint, end, with the corner going from [FROM_CORNER] to [TO_CORNER].
-     * The frame is relative to [to]: (0, 0) and scale 1 is the cover at rest in its slot.
+     * Only the frame moves and changes its shape (a wide card's into the portrait slot): the picture in it keeps its proportions
+     * ([fillScale]). (0, 0) and the slot's size is the cover at rest in its slot.
      */
     fun cover(progress: Float, from: Rect, to: Rect, arcPx: Float): Frame {
-        val sx = from.width / to.width
-        val sy = from.height / to.height
         val ax = from.left - to.left
         val ay = from.top - to.top
         val mx = ax * .5f
         val my = ay * .5f - arcPx
-        val ms = (sx + 1f) / 2f * MID_SCALE
+        val mw = (from.width + to.width) / 2f * MID_SCALE
+        val mh = (from.height + to.height) / 2f * MID_SCALE
         // Two linear segments between the keyframes, like WAAPI with the easing over the whole animation
         val x: Float
         val y: Float
-        val scaleX: Float
-        val scaleY: Float
+        val w: Float
+        val h: Float
         if (progress < .5f) {
             val f = progress / .5f
             x = Motion.lerp(ax, mx, f)
             y = Motion.lerp(ay, my, f)
-            scaleX = Motion.lerp(sx, ms, f)
-            scaleY = Motion.lerp(sy, ms, f)
+            w = Motion.lerp(from.width, mw, f)
+            h = Motion.lerp(from.height, mh, f)
         } else {
             val f = (progress - .5f) / .5f
             x = Motion.lerp(mx, 0f, f)
             y = Motion.lerp(my, 0f, f)
-            scaleX = Motion.lerp(ms, 1f, f)
-            scaleY = Motion.lerp(ms, 1f, f)
+            w = Motion.lerp(mw, to.width, f)
+            h = Motion.lerp(mh, to.height, f)
         }
-        val corner = Motion.lerp(FROM_CORNER / sx, TO_CORNER, progress)
-        return Frame(Offset(x, y), scaleX, scaleY, corner)
+        return Frame(Rect(x, y, x + w, y + h), Motion.lerp(FROM_CORNER, TO_CORNER, progress))
     }
+
+    /** The one scale at which a picture of [w] × [h] fills a frame of [frameW] × [frameH], cropped (`object-fit: cover`). */
+    fun fillScale(frameW: Float, frameH: Float, w: Float, h: Float): Float = max(frameW / w, frameH / h)
+
+    /** How much of the row's own card shows over the header's cover at [progress] of the flight: all of it at the card, none from 60 %. */
+    fun cardShown(progress: Float): Float = 1f - (progress / .6f).coerceIn(0f, 1f)
 
     /** How far the cover has flown at [millis] after the opening began ([opening]) or the closing began. */
     fun flight(millis: Float, opening: Boolean): Float =

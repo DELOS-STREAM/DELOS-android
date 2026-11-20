@@ -302,9 +302,6 @@ class ShellState(initial: Screen) {
     /** Key ("pc uuid/app id") of the focused game on the home screen. */
     var homeGame by mutableStateOf<String?>(null)
 
-    /** The focused game has a game overview (an IGDB match): Down opens it, the hint bar names it. */
-    var homeOverviewAvailable by mutableStateOf(false)
-
     /**
      * Key ("pc uuid/app id") of the game whose overview is open (docs/gui/GAME_INFO.md, "Game overview"); kept while its app settings are
      * open, so the overview is there again when they close.
