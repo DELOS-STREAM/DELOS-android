@@ -1,5 +1,7 @@
 package com.limelight.shell.screens
 
+import android.os.SystemClock
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -12,11 +14,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -25,26 +27,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -59,7 +58,6 @@ import com.limelight.shell.LocalShell
 import com.limelight.shell.OverviewViewerHints
 import com.limelight.shell.data.rememberIgdbImage
 import com.limelight.shell.ui.ControllerGlyphs
-import com.limelight.shell.ui.Cue
 import com.limelight.shell.ui.EaseOut
 import com.limelight.shell.ui.Figtree
 import com.limelight.shell.ui.InputKind
@@ -75,6 +73,7 @@ import com.limelight.shell.ui.px
 import com.limelight.shell.ui.stageUnit
 import com.limelight.shell.ui.tpx
 import dev.chrisbanes.haze.HazeState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.min
@@ -82,25 +81,31 @@ import kotlin.math.min
 /** The viewer opened on item [index], zooming out of the thumbnail at [from] (root pixels; null: it fades in); [closing]: Back was pressed. */
 internal data class ViewerRequest(val index: Int, val from: Rect?, val closing: Boolean = false)
 
-/** Where the viewer's picture sits on a stage of [width] × [height]: as large as fits 280 × 300 px inside, 16:9, a little above the middle. */
-internal fun viewerFit(width: Float, height: Float): Rect {
-    var w = width - 280f
-    var h = w * 9f / 16f
-    if (h > height - 300f) {
-        h = height - 300f
-        w = h * 16f / 9f
+/** The entire viewport belongs to the image; Image's Fit preserves its natural aspect ratio inside it. */
+internal fun viewerFit(width: Float, height: Float): Rect = Rect(0f, 0f, width, height)
+
+/** Non-consuming input observation, also called before the shell consumes a global key or pointer event. */
+@androidx.compose.runtime.Stable
+internal class OverviewViewerInput(now: Long = SystemClock.uptimeMillis()) {
+    var controlsVisible by mutableStateOf(true)
+        private set
+    private var lastInput = now
+
+    fun onInput(now: Long = SystemClock.uptimeMillis()) {
+        lastInput = now
+        controlsVisible = true
     }
-    val x = (width - w) / 2f
-    val y = (height - h) / 2f - 10f
-    return Rect(x, y, x + w, y + h)
+
+    internal fun remaining(now: Long): Long = (3_000L - (now - lastInput)).coerceAtLeast(0L)
+
+    internal fun hideIfIdle(now: Long) {
+        if (remaining(now) == 0L) controlsVisible = false
+    }
 }
 
 /**
- * The full-screen viewer of screenshots and videos (the prototype's `Viewer`): it zooms out of the thumbnail and back into it (or fades
- * when the thumbnail is scrolled away), crossfades with parallax between items, shows a filmstrip and the count, and blurs the page
- * behind it for real ([haze]). Left and right browse (a nudge at the ends), L1 and R1 too, a finger swipes sideways or down. A video
- * plays here, in YouTube's player ([OverviewVideoView]) with the DELOS controls under it ([VideoControls]): Left and Right seek 10 s,
- * A plays or pauses, Y mutes; one the player cannot play says why ([VideoError]).
+ * Full-viewport media with independent native playback, thumbnail and control siblings. Only the images and overlays animate;
+ * the native surface never enters a transformed, clipped, blurred or alpha-composited layer.
  */
 @Composable
 internal fun OverviewViewer(
@@ -112,44 +117,60 @@ internal fun OverviewViewer(
     onIndex: (Int) -> Unit,
     onClosed: () -> Unit,
     onCloseRequest: () -> Unit,
+    input: OverviewViewerInput? = null,
+    onControlsVisibilityChanged: (Boolean) -> Unit = {},
 ) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
     val feedback = LocalFeedback.current
     val k = stageUnit()
-    val scope = rememberCoroutineScope()
     val fit = remember(stage.stageWidth, stage.stageHeight) { viewerFit(stage.stageWidth, stage.stageHeight) }
-    val videoFit = remember(stage.stageWidth, stage.stageHeight) { viewerVideoFit(stage.stageWidth, stage.stageHeight) }
     val shell = LocalShell.current
     val kind = ControllerGlyphs.kind
+    val localInput = remember { OverviewViewerInput() }
+    val controls = input ?: localInput
+    val visibilityChanged by rememberUpdatedState(onControlsVisibilityChanged)
     var root by remember { mutableStateOf<LayoutCoordinates?>(null) }
-
-    // 0: at the thumbnail (or invisible), 1: in place
     val zoom = remember { Animatable(0f) }
     val scrim = remember { Animatable(0f) }
     val ui = remember { Animatable(0f) }
     var zoomFrom by remember { mutableStateOf(request.from ?: thumbRect(request.index)) }
     var fading by remember { mutableStateOf(zoomFrom == null || reduced) }
-    // The item shown and the one leaving, the direction of the change and its progress
     var shown by remember { mutableIntStateOf(request.index) }
     var leaving by remember { mutableStateOf<Int?>(null) }
     var direction by remember { mutableIntStateOf(1) }
     val change = remember { Animatable(1f) }
-    val nudge = remember { Animatable(0f) }
     var drag by remember { mutableStateOf(Offset.Zero) }
-    // The opening zoom has ended: a video's player may load
     var opened by remember { mutableStateOf(false) }
     val currentRequest by rememberUpdatedState(request)
+    val player = remember(shown) {
+        media.getOrNull(shown)?.takeIf { it.kind == OverviewModel.MediaKind.VIDEO }?.let { OverviewVideoPlayer(it.id) }
+    }
+    val video = player?.takeIf { it.error == null }
+    val settled = opened && leaving == null && !request.closing
+    val thumbnailAlpha by animateFloatAsState(
+        if (settled && player?.started == true && player.error == null) 0f else 1f,
+        tween(if (reduced) 0 else Motion.FADE), label = "viewerThumbnail",
+    )
 
     LaunchedEffect(Unit) {
-        launch { scrim.animateTo(1f, tween(Motion.SCRIM, easing = Motion.Ease)) }
-        launch { kotlinx.coroutines.delay(if (reduced) 0 else 300); ui.animateTo(1f, tween(300, easing = Motion.Ease)) }
+        controls.onInput()
+        launch { scrim.animateTo(1f, tween(if (reduced) 0 else Motion.SCRIM, easing = Motion.Ease)) }
+        launch { delay(if (reduced) 0 else 300); ui.animateTo(1f, tween(if (reduced) 0 else 300, easing = Motion.Ease)) }
         zoom.animateTo(1f, if (fading) tween(Motion.FADE, easing = Motion.Ease) else tween(560, easing = OverviewMotion.Flight))
         opened = true
     }
-    // Browsing: the new picture slides in from the side of the key, the old one leaves the other way
+    LaunchedEffect(controls, controls.controlsVisible) {
+        visibilityChanged(controls.controlsVisible)
+        while (controls.controlsVisible) {
+            delay(controls.remaining(SystemClock.uptimeMillis()).coerceAtLeast(1L))
+            controls.hideIfIdle(SystemClock.uptimeMillis())
+        }
+    }
+    DisposableEffect(controls) { onDispose { visibilityChanged(true) } }
     LaunchedEffect(request.index) {
         if (request.index == shown) return@LaunchedEffect
+        controls.onInput()
         direction = if (request.index > shown) 1 else -1
         leaving = shown
         shown = request.index
@@ -157,46 +178,29 @@ internal fun OverviewViewer(
         change.animateTo(1f, tween(if (reduced) Motion.FADE else 560, easing = EaseOut))
         leaving = null
     }
-    // Closing: back into the thumbnail of the item shown, or a fade when it is scrolled away
     LaunchedEffect(request.closing) {
         if (!request.closing) return@LaunchedEffect
+        player?.pause()
         feedback.play(Cue.BACK)
-        launch { ui.animateTo(0f, tween(200)) }
-        launch { scrim.animateTo(0f, tween(Motion.SCRIM, easing = Motion.Ease)) }
-        val target = if (reduced) null else thumbRect(shown)
-        zoomFrom = target
-        fading = target == null
+        launch { ui.animateTo(0f, tween(if (reduced) 0 else 200)) }
+        launch { scrim.animateTo(0f, tween(if (reduced) 0 else Motion.SCRIM, easing = Motion.Ease)) }
+        zoomFrom = if (reduced) null else thumbRect(shown)
+        fading = zoomFrom == null
         zoom.animateTo(0f, if (fading) tween(Motion.EXIT, easing = Motion.In) else tween(440, easing = EaseOut))
         onClosed()
     }
-
     fun go(index: Int) {
-        if (currentRequest.closing) return
-        if (index < 0 || index > media.lastIndex) {
-            if (!reduced) scope.launch {
-                nudge.snapTo(0f)
-                nudge.animateTo(1f, tween(320, easing = EaseOut))
-                nudge.snapTo(0f)
-            }
-            direction = if (index < 0) -1 else 1
-            return
-        }
+        controls.onInput()
+        if (currentRequest.closing || index !in media.indices || index == shown) return
         feedback.play(Cue.MOVE)
         onIndex(index)
     }
-
-    /** A video sits lower than a screenshot, above its control bar. */
-    fun rectOf(index: Int): Rect = if (media.getOrNull(index)?.kind == OverviewModel.MediaKind.VIDEO) videoFit else fit
-
-    // The video shown, in the player once the viewer has settled on it; null on a screenshot
-    val player = remember(shown) { media.getOrNull(shown)?.takeIf { it.kind == OverviewModel.MediaKind.VIDEO }?.let { OverviewVideoPlayer(it.id) } }
-    val video = player?.takeIf { it.error == null }
-    val settled = opened && leaving == null && !request.closing
     val hints = OverviewViewerHints(video = video != null, playing = video?.playing == true, muted = video?.muted == true)
     LaunchedEffect(hints) { shell.overviewViewer = hints }
-    // L1 and R1 browse, on a video too (where Left and Right seek)
+    val currentShown by rememberUpdatedState(shown)
+    val currentGo by rememberUpdatedState(::go)
     DisposableEffect(shell) {
-        val shoulder: (Int) -> Unit = { step -> go(shown + step) }
+        val shoulder: (Int) -> Unit = { step -> controls.onInput(); currentGo(currentShown + step) }
         val previous = shell.onShoulder
         shell.onShoulder = shoulder
         onDispose {
@@ -204,42 +208,86 @@ internal fun OverviewViewer(
             shell.overviewViewer = null
         }
     }
-
     val requester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { runCatching { requester.requestFocus() } }
-
+    LaunchedEffect(Unit) { requester.requestFocus() }
+    BackHandler { controls.onInput(); onCloseRequest() }
     Box(
-        Modifier
-            .fillMaxSize()
+        Modifier.fillMaxSize()
             .onGloballyPositioned { root = it }
-            .focusRequester(requester)
-            .focusable()
-            .onKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown) return@onKeyEvent event.key in VIEWER_KEYS
+            .onPreviewKeyEvent { event ->
+                controls.onInput()
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent event.key in VIEWER_KEYS
                 when (event.key) {
-                    Key.DirectionLeft -> if (video != null) {
-                        feedback.play(Cue.MOVE)
-                        video.seekBy(-10)
-                    } else go(shown - 1)
-                    Key.DirectionRight -> if (video != null) {
-                        feedback.play(Cue.MOVE)
-                        video.seekBy(10)
-                    } else go(shown + 1)
-                    Key.ButtonA, Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> video?.let {
-                        feedback.play(Cue.SELECT)
-                        it.togglePlay()
-                    }
-                    Key.ButtonY, Key.M -> video?.let {
-                        feedback.play(Cue.SELECT)
-                        it.toggleMute()
-                    }
+                    Key.Back, Key.Escape, Key.ButtonB -> onCloseRequest()
+                    Key.DirectionLeft -> if (video != null) video.seekBy(-10) else go(shown - 1)
+                    Key.DirectionRight -> if (video != null) video.seekBy(10) else go(shown + 1)
+                    Key.ButtonA, Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> video?.togglePlay()
+                    Key.ButtonY, Key.M -> video?.toggleMute()
                     Key.DirectionUp, Key.DirectionDown -> Unit
-                    else -> return@onKeyEvent false
+                    else -> return@onPreviewKeyEvent false
                 }
                 true
             }
-            .pointerInput(Unit) {
-                // A finger: sideways browses, down closes; the picture follows it meanwhile
+            .focusRequester(requester)
+            .focusable()
+            .pointerInput(controls) {
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitPointerEvent(PointerEventPass.Initial)
+                        controls.onInput()
+                    }
+                }
+            },
+    ) {
+        // Effects belong to this backdrop sibling, never to the native player's ancestors.
+        Box(Modifier.fillMaxSize().graphicsLayer { alpha = scrim.value }
+            .backdropBlur(haze, 40f, Color(4, 8, 16).copy(alpha = .55f)))
+        if (settled && player != null && player.error == null) {
+            OverviewVideoView(player, Modifier.fillMaxSize())
+        }
+        // The thumbnail is ABOVE the opaque WebView until state 1 actually reports playing.
+        listOfNotNull(leaving, shown).forEach { index ->
+            val item = media.getOrNull(index) ?: return@forEach
+            val isLeaving = index == leaving
+            Box(
+                Modifier.fillMaxSize().graphicsLayer {
+                    transformOrigin = TransformOrigin(0f, 0f)
+                    val c = change.value
+                    if (isLeaving) {
+                        val p = min(1f, c * 560f / 420f)
+                        alpha = 1f - p
+                        if (!reduced) translationX = -direction * 90f * k * p
+                        return@graphicsLayer
+                    }
+                    var a = if (leaving != null) c else 1f
+                    if (leaving != null && !reduced) translationX = direction * 160f * k * (1f - c)
+                    val z = zoom.value
+                    val from = zoomFrom
+                    if (fading || from == null || root == null) a *= z
+                    else if (z < 1f) {
+                        val scale = min(from.width / (fit.width * k), from.height / (fit.height * k))
+                        translationX += (from.center.x - fit.width * k * scale / 2f) * (1f - z)
+                        translationY = (from.center.y - fit.height * k * scale / 2f) * (1f - z)
+                        scaleX = Motion.lerp(scale, 1f, z)
+                        scaleY = scaleX
+                    }
+                    if (item.kind != OverviewModel.MediaKind.VIDEO && !reduced) {
+                        translationX += drag.x * .6f
+                        translationY += drag.y.coerceAtLeast(0f)
+                    }
+                    alpha = a * if (item.kind == OverviewModel.MediaKind.VIDEO) thumbnailAlpha else 1f
+                }.background(Color.Black),
+            ) {
+                val thumb by rememberIgdbImage(item.thumb, (569f * k).toInt())
+                val full by rememberIgdbImage(item.full, (maxOf(fit.width, fit.height) * k).toInt())
+                (full ?: thumb)?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit) }
+            }
+        }
+        if (settled && player?.error != null) VideoError(player.error!!, Modifier.fillMaxSize())
+        // An input-only sibling keeps embedded web content out of focus and leaves native rendering untouched.
+        Box(Modifier.fillMaxSize()
+            .pointerInput(shown) { detectTapGestures { controls.onInput() } }
+            .pointerInput(shown) {
                 detectDragGestures(
                     onDragEnd = {
                         val d = drag / k
@@ -251,177 +299,36 @@ internal fun OverviewViewer(
                         }
                     },
                     onDragCancel = { drag = Offset.Zero },
-                ) { change, amount ->
-                    change.consume()
-                    drag += amount
-                }
-            },
-    ) {
-        // The page behind, blurred (`.vw-scrim`: blur 40 px, rgba(4, 8, 16, .55))
-        Box(Modifier.fillMaxSize().graphicsLayer {
-            val pulled = if (drag.y > 0f && abs(drag.y) > abs(drag.x)) 1f - min(drag.y / k, 400f) / 500f else 1f
-            alpha = scrim.value * pulled
-        }.backdropBlur(haze, 40f, Color(4, 8, 16).copy(alpha = .55f)))
-
-        // The pictures: the one leaving under the one shown
-        listOfNotNull(leaving, shown).forEach { index ->
-            val item = media.getOrNull(index) ?: return@forEach
-            val isLeaving = index == leaving
-            val rect = rectOf(index)
-            Box(
-                Modifier
-                    .offset(rect.left.px, rect.top.px)
-                    .size(rect.width.px, rect.height.px)
-                    .graphicsLayer {
-                        transformOrigin = TransformOrigin(0f, 0f)
-                        val c = change.value
-                        if (isLeaving) {
-                            val p = min(1f, c * 560f / 420f)
-                            alpha = 1f - p
-                            if (!reduced) {
-                                transformOrigin = TransformOrigin.Center
-                                translationX = -direction * 90f * k * p
-                                val s = Motion.lerp(1f, .94f, p)
-                                scaleX = s
-                                scaleY = s
-                            }
-                            return@graphicsLayer
-                        }
-                        // Entering after a change
-                        var a = if (leaving != null) c else 1f
-                        if (leaving != null && !reduced) {
-                            transformOrigin = TransformOrigin.Center
-                            translationX = direction * 160f * k * (1f - c)
-                            val s = Motion.lerp(.96f, 1f, c)
-                            scaleX = s
-                            scaleY = s
-                        }
-                        // The zoom out of the thumbnail (or the fade)
-                        val z = zoom.value
-                        val from = zoomFrom
-                        val origin = root
-                        if (fading || from == null || origin == null) {
-                            a *= z
-                            if (!reduced && currentRequest.closing) {
-                                transformOrigin = TransformOrigin.Center
-                                val s = Motion.lerp(.94f, 1f, z)
-                                scaleX = s
-                                scaleY = s
-                            }
-                        } else if (z < 1f) {
-                            val fx = rect.left * k
-                            val fy = rect.top * k
-                            val sx = from.width / (rect.width * k)
-                            val sy = from.height / (rect.height * k)
-                            translationX = (from.left - fx) * (1f - z)
-                            translationY = (from.top - fy) * (1f - z)
-                            scaleX = Motion.lerp(sx, 1f, z)
-                            scaleY = Motion.lerp(sy, 1f, z)
-                        }
-                        // A finger dragging, the nudge at the ends
-                        val d = drag
-                        if (abs(d.y) > abs(d.x) && d.y > 0f) {
-                            transformOrigin = TransformOrigin.Center
-                            translationY += d.y
-                            val s = 1f - min(d.y / k, 400f) / 1600f
-                            scaleX *= s
-                            scaleY *= s
-                        } else translationX += d.x * .6f
-                        val n = nudge.value
-                        if (n > 0f) translationX += direction * 14f * k * (if (n < .5f) n * 2f else (1f - n) * 2f)
-                        alpha = a
-                        val corner = if (fading || from == null) 18f else Motion.lerp(40f, 18f, z)
-                        shape = RoundedCornerShape(corner * k)
-                        clip = true
-                        shadowElevation = 30f * k
+                ) { change, amount -> change.consume(); drag += amount; controls.onInput() }
+            })
+        if (controls.controlsVisible && !request.closing) {
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = ui.value }) {
+                Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
+                    0f to Color.Black.copy(alpha = .65f), .2f to Color.Transparent,
+                    .7f to Color.Transparent, 1f to Color.Black.copy(alpha = .8f),
+                )))
+                val item = media.getOrNull(shown)
+                Row(Modifier.offset(72.px, 40.px).padding(end = 180.px), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.px)) {
+                    BasicText((shown + 1).toString(), style = TextStyle(color = colors.accent, fontFamily = Unbounded, fontWeight = FontWeight.Bold, fontSize = 26.tpx))
+                    val name = when {
+                        item == null -> ""
+                        item.kind == OverviewModel.MediaKind.VIDEO -> item.name ?: stringResource(R.string.overview_video)
+                        else -> stringResource(R.string.overview_screenshot, item.number)
                     }
-                    .background(colors.surface2),
-            ) {
-                val thumb by rememberIgdbImage(item.thumb, (569f * k).toInt())
-                val full by rememberIgdbImage(item.full, (fit.width * k).toInt())
-                // The thumbnail stays until the full picture is decoded
-                (full ?: thumb)?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
-                if (item.kind == OverviewModel.MediaKind.VIDEO) {
-                    Box(Modifier.align(Alignment.Center)) { Symbol(Symbols.VIDEO_PLAY, 96.tpx, Color.White, filled = true) }
-                    BasicText(
-                        stringResource(R.string.overview_video_youtube, item.name ?: stringResource(R.string.overview_video)),
-                        Modifier.align(Alignment.BottomStart).padding(start = 30.px, bottom = 26.px),
-                        style = TextStyle(color = Color.White, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 26.tpx, shadow = Shadow(Color.Black.copy(alpha = .7f), Offset(0f, 2f * k), 10f * k)),
-                    )
+                    BasicText(stringResource(R.string.overview_viewer_count, media.size, name),
+                        style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 22.tpx))
                 }
-            }
-        }
-
-        // The video's player on its picture once the viewer has settled, or why it cannot play; it follows a finger pulling down
-        val rect = rectOf(shown)
-        val onVideo = Modifier
-            .offset(rect.left.px, rect.top.px)
-            .size(rect.width.px, rect.height.px)
-            .graphicsLayer {
-                val d = drag
-                if (abs(d.y) > abs(d.x) && d.y > 0f) {
-                    translationY = d.y
-                    val s = 1f - min(d.y / k, 400f) / 1600f
-                    scaleX = s
-                    scaleY = s
-                } else translationX = d.x * .6f
-                shape = RoundedCornerShape(18f * k)
-                clip = true
-            }
-        if (settled && player != null) {
-            val error = player.error
-            if (error == null) OverviewVideoView(player, onVideo) else VideoError(error, onVideo)
-        }
-
-        // The count, the filmstrip and the pointer's controls
-        Box(Modifier.fillMaxSize().graphicsLayer { alpha = ui.value }) {
-            val item = media.getOrNull(shown)
-            Row(Modifier.offset(72.px, 40.px), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.px)) {
-                BasicText((shown + 1).toString(), style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.Bold, fontSize = 26.tpx))
-                val name = when {
-                    item == null -> ""
-                    item.kind == OverviewModel.MediaKind.VIDEO -> item.name ?: stringResource(R.string.overview_video)
-                    else -> stringResource(R.string.overview_screenshot, item.number)
+                if (video != null) {
+                    VideoControls(video, Modifier.align(Alignment.BottomCenter).padding(start = 72.px, end = 72.px, bottom = 112.px)
+                        .fillMaxWidth().height(72.px))
                 }
-                BasicText(
-                    stringResource(R.string.overview_viewer_count, media.size, name),
-                    style = TextStyle(color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 22.tpx),
-                )
-            }
-            Row(
-                Modifier.align(Alignment.BottomCenter).padding(bottom = 112.px),
-                horizontalArrangement = Arrangement.spacedBy(12.px),
-            ) {
-                media.forEachIndexed { index, strip ->
-                    val on = index == shown
-                    val scale by animateFloatAsState(if (on) 1.18f else 1f, tween(420, easing = com.limelight.shell.ui.EaseSpring), label = "strip")
-                    val alpha by animateFloatAsState(if (on) 1f else .45f, tween(300), label = "stripAlpha")
-                    val thumb by rememberIgdbImage(strip.thumb, (96f * 1.18f * k).toInt())
-                    Box(
-                        Modifier
-                            .size(96.px, 54.px)
-                            .graphicsLayer { scaleX = scale; scaleY = scale; this.alpha = alpha }
-                            .drawWithContent {
-                                drawContent()
-                                if (on) drawRoundRect(colors.accent, topLeft = Offset(-3f * k / 2f, -3f * k / 2f), size = size.copy(size.width + 3f * k, size.height + 3f * k),
-                                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(9.5f * k), style = androidx.compose.ui.graphics.drawscope.Stroke(3f * k))
-                            }
-                            .clip(RoundedCornerShape(8.px))
-                            .background(colors.surface2)
-                            .pointerInput(index) { detectTapGestures { go(index) } },
-                    ) { thumb?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) } }
+                if (kind == InputKind.POINTER) {
+                    ViewerButton(Symbols.CHEVRON_LEFT, stringResource(R.string.overview_previous), Modifier.align(Alignment.CenterStart).padding(start = 40.px)) { go(shown - 1) }
+                    ViewerButton(Symbols.CHEVRON_RIGHT, stringResource(R.string.overview_next), Modifier.align(Alignment.CenterEnd).padding(end = 40.px)) { go(shown + 1) }
                 }
-            }
-            if (video != null && !request.closing) {
-                val bar = videoFit
-                VideoControls(video, Modifier.offset(bar.left.px, (bar.bottom + VIDEO_BAR_GAP).px).size(bar.width.px, VIDEO_BAR_HEIGHT.px))
-            }
-            if (kind == InputKind.POINTER) {
-                ViewerButton(Symbols.CHEVRON_LEFT, stringResource(R.string.overview_previous), Modifier.align(Alignment.CenterStart).padding(start = 40.px)) { go(shown - 1) }
-                ViewerButton(Symbols.CHEVRON_RIGHT, stringResource(R.string.overview_next), Modifier.align(Alignment.CenterEnd).padding(end = 40.px)) { go(shown + 1) }
-            }
-            if (kind == InputKind.POINTER || kind == InputKind.TOUCH) {
-                ViewerButton(Symbols.CLOSE, stringResource(R.string.shell_hint_close), Modifier.align(Alignment.TopEnd).padding(top = 30.px, end = 56.px), size = 72f, onClick = onCloseRequest)
+                if (kind == InputKind.POINTER || kind == InputKind.TOUCH) {
+                    ViewerButton(Symbols.CLOSE, stringResource(R.string.shell_hint_close), Modifier.align(Alignment.TopEnd).padding(top = 30.px, end = 56.px), size = 72f, onClick = onCloseRequest)
+                }
             }
         }
     }
@@ -429,6 +336,7 @@ internal fun OverviewViewer(
 
 private val VIEWER_KEYS = setOf(
     Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown, Key.ButtonA, Key.Enter, Key.NumPadEnter, Key.DirectionCenter,
+    Key.Back, Key.Escape, Key.ButtonB,
     Key.ButtonY, Key.M,
 )
 

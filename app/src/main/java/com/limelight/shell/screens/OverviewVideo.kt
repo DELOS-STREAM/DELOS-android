@@ -65,9 +65,6 @@ import java.util.Locale
 import kotlinx.coroutines.delay
 import org.json.JSONObject
 
-/** The control bar's height and its gap under the video (stage px). */
-internal const val VIDEO_BAR_HEIGHT = 72f
-internal const val VIDEO_BAR_GAP = 22f
 
 /** Without any word from the player this long after it began to load, the video counts as failed. */
 private const val LOAD_TIMEOUT_MS = 15_000L
@@ -75,21 +72,8 @@ private const val LOAD_TIMEOUT_MS = 15_000L
 /** A YouTube video id as IGDB stores it; anything else is never put into the player's page. */
 private val VIDEO_ID = Regex("[A-Za-z0-9_-]{6,20}")
 
-/**
- * Where a video sits in the viewer on a stage of [width] × [height]: like [viewerFit], but 140 px lower, which leaves room for the control
- * bar under it (nothing of DELOS may lie on the YouTube player).
- */
-internal fun viewerVideoFit(width: Float, height: Float): Rect {
-    var w = width - 280f
-    var h = w * 9f / 16f
-    if (h > height - 440f) {
-        h = height - 440f
-        w = h * 16f / 9f
-    }
-    val x = (width - w) / 2f
-    val y = (height - h) / 2f - 70f
-    return Rect(x, y, x + w, y + h)
-}
+/** The native player owns the full viewport; its iframe preserves the video's natural aspect ratio. */
+internal fun viewerVideoFit(width: Float, height: Float): Rect = Rect(0f, 0f, width, height)
 
 /** [seconds] as `m:ss`, or `h:mm:ss` from an hour on. */
 internal fun videoTime(seconds: Float): String {
@@ -113,13 +97,14 @@ internal fun youTubePlayerHtml(videoId: String, origin: String): String? {
         <!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
         <style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#p{position:absolute;inset:0;width:100%;height:100%}</style></head>
         <body><div id="p"></div><script>
-        var player;
+        var player,ready=false;
         function post(o){DelosPlayer.post(JSON.stringify(o));}
-        function status(){if(!player||!player.getPlayerState)return;post({type:'status',state:player.getPlayerState(),time:player.getCurrentTime()||0,duration:player.getDuration()||0,muted:player.isMuted()});}
+        function status(){if(!ready||!player.getPlayerState)return;post({type:'status',state:player.getPlayerState(),time:player.getCurrentTime()||0,duration:player.getDuration()||0,muted:player.isMuted()});}
+        function setPlaybackAllowed(allowed,wanted){if(!ready)return;if(allowed&&wanted)player.playVideo();else player.pauseVideo();}
         function onYouTubeIframeAPIReady(){
           player=new YT.Player('p',{host:'https://www.youtube-nocookie.com',videoId:'$videoId',
-            playerVars:{playsinline:1,rel:0,controls:0,fs:0,disablekb:1,iv_load_policy:3,autoplay:1,enablejsapi:1,origin:'$origin'},
-            events:{onReady:function(){player.playVideo();status();setInterval(status,500);},
+            playerVars:{playsinline:1,rel:0,controls:0,fs:0,disablekb:1,iv_load_policy:3,autoplay:0,enablejsapi:1,origin:'$origin'},
+            events:{onReady:function(){ready=true;post({type:'ready'});status();setInterval(status,500);},
                     onStateChange:function(){status();},
                     onError:function(e){post({type:'error',code:e.data});}}});
         }
@@ -152,19 +137,43 @@ internal class OverviewVideoPlayer(val videoId: String) {
         private set
     private var ended = false
     internal var web: WebView? = null
+    private var active = false
+    private var wantsPlayback = true
+    private var released = false
 
-    fun togglePlay() {
-        val js = when {
-            playing -> "player.pauseVideo()"
-            ended -> "player.seekTo(0,true);player.playVideo()"
-            else -> "player.playVideo()"
+    /** Backgrounding revokes autoplay too, including an iframe whose onReady arrives later. */
+    fun setActive(value: Boolean) {
+        active = value && !released
+        if (!active) {
+            wantsPlayback = false
+            playing = false
         }
-        // The next report confirms it; the hint and the button turn at once
-        playing = !playing
-        run(js)
+        applyPlayback()
     }
 
-    fun pause() = run("player.pauseVideo()")
+    private fun applyPlayback() {
+        web?.evaluateJavascript("if(window.setPlaybackAllowed){setPlaybackAllowed($active,$wantsPlayback)}", null)
+    }
+
+    fun release() {
+        setActive(false)
+        released = true
+        web = null
+    }
+
+    fun togglePlay() {
+        if (!active || released || error != null) return
+        wantsPlayback = !playing
+        if (wantsPlayback && ended) run("player.seekTo(0,true)")
+        playing = wantsPlayback
+        applyPlayback()
+    }
+
+    fun pause() {
+        wantsPlayback = false
+        playing = false
+        applyPlayback()
+    }
 
     fun seekBy(seconds: Int) {
         time = (time + seconds).coerceIn(0f, if (duration > 0f) duration else Float.MAX_VALUE)
@@ -189,24 +198,27 @@ internal class OverviewVideoPlayer(val videoId: String) {
 
     /** The player failed with [code]: no more commands; an error that stays removes the video from the carousel. */
     fun fail(code: Int) {
-        if (error != null) return
+        if (error != null || released) return
+        pause()
         error = code
-        web = null
         YouTubeEmbeds.playerError(videoId, code)
     }
 
     /** A report of the page (main thread). */
     fun receive(message: String) {
+        if (released || error != null) return
         val json = runCatching { JSONObject(message) }.getOrNull() ?: return
         heard = true
         when (json.optString("type")) {
+            "ready" -> applyPlayback()
             "error" -> fail(json.optInt("code", -1))
             "status" -> {
                 // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
                 val state = json.optInt("state", -1)
-                playing = state == 1 || state == 3
+                playing = active && wantsPlayback && (state == 1 || state == 3)
                 ended = state == 0
-                if (state == 1) started = true
+                if (state == 1 && active && wantsPlayback) started = true
+                if ((state == 1 || state == 3) && (!active || !wantsPlayback)) applyPlayback()
                 time = json.optDouble("time", 0.0).toFloat()
                 duration = json.optDouble("duration", 0.0).toFloat()
                 muted = json.optBoolean("muted", muted)
@@ -216,17 +228,26 @@ internal class OverviewVideoPlayer(val videoId: String) {
 }
 
 /**
- * The web view of [player], loading at once and invisible until the video plays (the thumbnail under it shows meanwhile). It never takes
- * the focus (the controller stays with the viewer), every navigation away from its page and every new window is refused (videos play only
- * here, nothing opens a browser), and it pauses when the app goes to the background.
+ * A fully opaque native surface, never alpha-gated by readiness. The viewer draws the loading thumbnail ABOVE it as a sibling.
+ * This view must not acquire a graphicsLayer, blur, rounded clip or transformed/offscreen ancestor.
  */
 @Composable
 internal fun OverviewVideoView(player: OverviewVideoPlayer, modifier: Modifier) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, player) {
-        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_PAUSE) player.pause() }
+        player.setActive(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> player.setActive(true)
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> player.setActive(false)
+                else -> Unit
+            }
+        }
         lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
+        onDispose {
+            lifecycle.removeObserver(observer)
+            player.setActive(false)
+        }
     }
     LaunchedEffect(player) {
         delay(LOAD_TIMEOUT_MS)
@@ -235,9 +256,9 @@ internal fun OverviewVideoView(player: OverviewVideoPlayer, modifier: Modifier) 
     AndroidView(
         factory = { context -> playerView(context, player) },
         modifier = modifier,
-        update = { it.alpha = if (player.started) 1f else 0f },
         onRelease = { view ->
-            if (player.web === view) player.web = null
+            player.release()
+            view.removeJavascriptInterface("DelosPlayer")
             view.stopLoading()
             view.destroy()
         },
@@ -252,7 +273,7 @@ private fun playerView(context: Context, player: OverviewVideoPlayer): WebView {
         isFocusable = false
         isFocusableInTouchMode = false
         setBackgroundColor(android.graphics.Color.BLACK)
-        alpha = 0f
+        alpha = 1f
         settings.javaScriptEnabled = true
         // The player keeps its settings in local storage
         settings.domStorageEnabled = true
@@ -268,7 +289,7 @@ private fun playerView(context: Context, player: OverviewVideoPlayer): WebView {
                 return true
             }
         }
-        addJavascriptInterface(PlayerBridge { message -> main.post { player.receive(message) } }, "DelosPlayer")
+        addJavascriptInterface(PlayerBridge { message -> main.post { if (player.web === this) player.receive(message) } }, "DelosPlayer")
         player.web = this
         val html = youTubePlayerHtml(player.videoId, origin)
         if (html == null) main.post { player.fail(2) } else loadDataWithBaseURL(origin, html, "text/html", "utf-8", null)
@@ -281,17 +302,14 @@ private class PlayerBridge(private val onMessage: (String) -> Unit) {
     fun post(message: String) = onMessage(message)
 }
 
-/**
- * The viewer's control bar under the video (DELOS glass): back 10 s, play or pause, forward 10 s, the time, the progress track (a tap
- * seeks there), the length and the sound. A finger and a mouse use it; the controller's keys do the same (the hint bar names them).
- */
+/** The viewer's overlay transport controls: seeking, playback, elapsed time, duration and mute. */
 @Composable
 internal fun VideoControls(player: OverviewVideoPlayer, modifier: Modifier) {
     val colors = LocalDelosColors.current
     val feedback = LocalFeedback.current
     val time = TextStyle(color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 20.tpx, fontFeatureSettings = "tnum")
     Row(
-        modifier.overviewGlass(null, VIDEO_BAR_HEIGHT / 2f).padding(horizontal = 14.px),
+        modifier.overviewGlass(null, 36f).padding(horizontal = 14.px),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.px),
     ) {
