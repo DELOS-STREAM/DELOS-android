@@ -51,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -758,12 +759,15 @@ fun Shell(
     val imeAvoidance = rememberImeAvoidance()
     // Where the status bar's Wi-Fi, battery and clock start: the start screen's profile chip keeps clear of them on a compact stage
     val statusEdges = remember { com.limelight.shell.ui.StatusBarEdges() }
+    // The overview viewer's player window covers the hint bar below: it draws this one over the video
+    val windowHintBar: @Composable () -> Unit = remember(shell, uiScale) { { WindowHintBar(shell, uiScale) } }
     CompositionLocalProvider(
         LocalShell provides shell, LocalFocusTracker provides tracker, LocalGameActions provides actions, LocalDeviceActions provides devices,
         LocalBackdropHaze provides backdropHaze, LocalBackdropMirror provides backdropMirror, LocalLibrary provides library, LocalImeAvoidance provides imeAvoidance,
         com.limelight.shell.screens.LocalLinkTests provides linkTests, com.limelight.shell.ui.LocalStatusBarEdges provides statusEdges,
         // Touch: a focused choice or slider row's tap opens its popup at the row (issue #92)
         LocalRowPicker provides { popup -> shell.openPicker(popup, tracker) },
+        LocalWindowHintBar provides windowHintBar,
         // Touch: a long press on a cover (or any element with a context menu) opens it, as Start does
         LocalContextMenuOpener provides { menu, bounds ->
             if (longPressOpensContext(menu, true, shell.layer != null, shell.launch != null || shell.portal != null || shell.result != null || shell.picker != null)) {
@@ -1082,20 +1086,38 @@ private fun ShellHints(shell: ShellState, library: Library, pcs: List<Pc>, track
         if (shown == ready.apps.size) res.getQuantityString(R.plurals.shell_home_apps_on_pc, shown, shown, ready.pc.name)
         else res.getQuantityString(R.plurals.shell_home_apps_filtered, ready.apps.size, shown, ready.apps.size, ready.pc.name)
     }
+    val filterHint = (library as? Library.Ready)?.takeIf { it.apps.isNotEmpty() }?.let { filterHintLabel(res, metadata.filters) }
+    // Written for a controller, shown for the input in use (a finger, a mouse, a keyboard: ui/HintKinds.kt)
+    val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint).adaptedTo(ControllerGlyphs.kind)
+    com.limelight.shell.companion.PublishCompanionContext(hintEntries, library, pcs)
+    // A tap on the Filter pill (no controller in use) does what Y does: opens the library's filters
+    HintBarLayer(shell, hintEntries, note, uiScale) { if (keys.canFilter()) keys.onFilter?.invoke() }
+}
+
+/**
+ * The hint bar for a window over the shell's own, which covers the shell's bar (the game overview viewer's player window): the
+ * viewer's hints, read from the shell's state. Null outside the shell.
+ */
+internal val LocalWindowHintBar = staticCompositionLocalOf<(@Composable () -> Unit)?> { null }
+
+@Composable
+private fun WindowHintBar(shell: ShellState, uiScale: Float) {
+    val entries = hints(textResources(), shell, adjustable = false, options = false, filterHint = null).adaptedTo(ControllerGlyphs.kind)
+    HintBarLayer(shell, entries, note = null, uiScale, onTap = null)
+}
+
+/** The hint bar at the bottom, with the library [note]; it fades out with the game overview viewer's overlay. */
+@Composable
+private fun HintBarLayer(shell: ShellState, entries: List<Hint>, note: String?, uiScale: Float, onTap: ((Hint) -> Unit)?) {
+    val res = textResources()
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-        val filterHint = (library as? Library.Ready)?.takeIf { it.apps.isNotEmpty() }?.let { filterHintLabel(res, metadata.filters) }
-        // Written for a controller, shown for the input in use (a finger, a mouse, a keyboard: ui/HintKinds.kt)
-        val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint).adaptedTo(ControllerGlyphs.kind)
-        com.limelight.shell.companion.PublishCompanionContext(hintEntries, library, pcs)
-        // A tap on the Filter pill (no controller in use) does what Y does: opens the library's filters
         val viewerHintsAlpha by androidx.compose.animation.core.animateFloatAsState(
             if (shell.overviewViewer != null && !shell.overviewViewerControlsVisible) 0f else 1f,
             tween(Motion.FADE, easing = Motion.Ease), label = "viewerHints",
         )
         Box(Modifier.graphicsLayer { alpha = viewerHintsAlpha }) {
             ZoomedBar(uiScale) {
-                HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null,
-                    onTap = { if (keys.canFilter()) keys.onFilter?.invoke() })
+                HintBar(entries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null, onTap = onTap)
             }
         }
     }
