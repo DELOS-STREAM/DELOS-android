@@ -25,11 +25,12 @@ class StatusBarFitTest {
     private fun brandWidth(barWidth: Float, pc: Boolean = true): Float =
         40f + (if (barWidth >= Compact.NARROW_STAGE) 18f + 175f else 0f) + if (pc) 18f + 69f else 0f
 
-    private fun navWidth(step: StatusBarStep) = c.navWidth(3, c.NAV_BUTTON, if (step.tight) c.NAV_GAP_TIGHT else c.NAV_GAP)
+    /** The navigation pill keeps its focus-rule gaps in every step: only the status cluster tightens. */
+    private val navWidth = c.navWidth(3, c.NAV_BUTTON, c.NAV_COMPACT.gap)
 
     private fun fit(width: Float, nav: Boolean = true, brand: Boolean = true, safeLeft: Float = 0f, safeRight: Float = 0f): StatusBarFit =
         fitStatusBar(width, c.SIDE + safeLeft, c.SIDE + safeRight, c.MIN_GAP) { step ->
-            StatusBarWidths(if (brand) brandWidth(width) else 0f, if (nav) navWidth(step) else 0f, statusWidth(step))
+            StatusBarWidths(if (brand) brandWidth(width) else 0f, if (nav) navWidth else 0f, statusWidth(step))
         }
 
     /** The free space between the clusters at [step], the gaps taken off. */
@@ -39,21 +40,26 @@ class StatusBarFitTest {
     private fun assertAir(name: String, width: Float, fit: StatusBarFit, safeLeft: Float = 0f, safeRight: Float = 0f) {
         val leftEnd = c.SIDE + safeLeft + brandWidth(width)
         val rightStart = width - c.SIDE - safeRight - statusWidth(fit.step)
-        val nav = navWidth(fit.step)
+        val nav = navWidth
         assertTrue("$name fits", fit.fits)
         assertTrue("$name left gap ${fit.navX - leftEnd}", fit.navX - leftEnd >= c.MIN_GAP - .01f)
         assertTrue("$name right gap ${rightStart - fit.navX - nav}", rightStart - (fit.navX + nav) >= c.MIN_GAP - .01f)
         // Nothing is given up before it has to be: every earlier step is too wide
-        for (earlier in StatusBarStep.entries.takeWhile { it != fit.step }) assertTrue("$name ${earlier.name} would not fit", room(width, earlier, safeLeft, safeRight) < navWidth(earlier))
+        for (earlier in StatusBarStep.entries.takeWhile { it != fit.step }) assertTrue("$name ${earlier.name} would not fit", room(width, earlier, safeLeft, safeRight) < navWidth)
     }
 
     @Test
-    fun theNavigationIsAPillOfThree56Buttons() {
-        assertEquals(212f, c.navWidth(3, c.NAV_BUTTON, c.NAV_GAP), 0f)
-        assertEquals(196f, c.navWidth(3, c.NAV_BUTTON, c.NAV_GAP_TIGHT), 0f)
-        assertEquals(0f, c.navWidth(0, c.NAV_BUTTON, c.NAV_GAP), 0f)
+    fun theNavigationIsAPillOfThree56ButtonsThatKeepTheFocusRule() {
+        // A focused button grows to 1.12 without a ring: 3.36 px to each side of a 56 px one (3.84 of a 64 px one) and 8 px of clear space
+        assertEquals(c.NAV_BUTTON, c.NAV_COMPACT.size, 0f)
+        assertEquals(14.72f, c.NAV_COMPACT.minGap, .001f)
+        assertEquals(15.68f, c.NAV.minGap, .001f)
+        assertTrue(c.NAV_COMPACT.gap >= c.NAV_COMPACT.minGap)
+        assertTrue(c.NAV.gap >= c.NAV.minGap)
+        assertEquals(214f, c.navWidth(3, c.NAV_BUTTON, c.NAV_COMPACT.gap), 0f)
+        assertEquals(0f, c.navWidth(0, c.NAV_BUTTON, c.NAV_COMPACT.gap), 0f)
         // The 16:9 pill: three 64 px buttons
-        assertEquals(236f, c.navWidth(3, 64f, c.NAV_GAP), 0f)
+        assertEquals(240f, c.navWidth(3, c.NAV.size, c.NAV.gap), 0f)
     }
 
     @Test
@@ -81,8 +87,8 @@ class StatusBarFitTest {
         // 1488 at 1.15 is a 1294 px bar: the brand with its wordmark ends at 392, the status cluster starts at 916: the middle is free
         val wide = fit(1488f / 1.15f)
         assertTrue(wide.centred)
-        assertEquals((1488f / 1.15f - 212f) / 2f, wide.navX, .01f)
-        // 1051 at 1.15 is a 914 px bar: the status cluster starts at 536, the centred pill would end at 563: it moves left, into the
+        assertEquals((1488f / 1.15f - 214f) / 2f, wide.navX, .01f)
+        // 1051 at 1.15 is a 914 px bar: the status cluster starts at 536, the centred pill would end at 564: it moves left, into the
         // middle of the free space, with the same air on both sides
         val bar = 1051f / 1.15f
         val narrow = fit(bar)
@@ -90,15 +96,16 @@ class StatusBarFitTest {
         assertEquals(StatusBarStep.FULL, narrow.step)
         val leftEnd = c.SIDE + brandWidth(bar)
         val rightStart = bar - c.SIDE - statusWidth(StatusBarStep.FULL)
-        assertEquals((leftEnd + rightStart - 212f) / 2f, narrow.navX, .01f)
-        assertEquals(narrow.navX - leftEnd, rightStart - (narrow.navX + 212f), .01f)
+        assertEquals((leftEnd + rightStart - 214f) / 2f, narrow.navX, .01f)
+        assertEquals(narrow.navX - leftEnd, rightStart - (narrow.navX + 214f), .01f)
     }
 
     @Test
     fun theLargestInterfaceScaleTightensThenDropsThePercentage() {
-        // At 1.3 a 1051 stage is an 808 px bar: the full bar does not leave 212 + 2 x 24, the tighter gaps do
-        assertEquals(StatusBarStep.TIGHT, fit(1051f / 1.3f).step)
-        // The narrowest compact stage at 1.3 (792 px): the percentage goes too
+        // At 1.3 a 1082 stage is an 832 px bar: the full bar does not leave 214 + 2 x 24, the tighter status gaps do
+        assertEquals(StatusBarStep.TIGHT, fit(1082f / 1.3f).step)
+        // A 1051 stage at 1.3 (808 px) and the narrowest compact stage (792 px): the percentage goes too
+        assertEquals(StatusBarStep.NO_PERCENT, fit(1051f / 1.3f).step)
         assertEquals(StatusBarStep.NO_PERCENT, fit(1030f / 1.3f).step)
         var stage = 1030f
         while (stage <= 1500f) {
@@ -116,7 +123,7 @@ class StatusBarFitTest {
         assertEquals(StatusBarStep.NO_PERCENT, fit.step)
         val leftEnd = c.SIDE + brandWidth(560f)
         val rightStart = 560f - c.SIDE - statusWidth(StatusBarStep.NO_PERCENT)
-        assertEquals(leftEnd + (rightStart - leftEnd - 196f) / 2f, fit.navX, .01f)
+        assertEquals(leftEnd + (rightStart - leftEnd - 214f) / 2f, fit.navX, .01f)
     }
 
     @Test

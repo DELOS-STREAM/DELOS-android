@@ -265,7 +265,7 @@ fun ContextMenuLayer(
 /** A guess of the card's height before it is measured (header and rows), stage pixels. */
 private fun estimatedHeight(menu: ContextMenu?, stageHeight: Float, marginY: Float, marginBottom: Float): Float {
     val rows = menu?.items?.size ?: 0
-    return (110f + rows * (L.ROW_HEIGHT + L.ROW_GAP) + 2 * L.PADDING + 8f).coerceAtMost(L.maxHeight(stageHeight, marginY, marginBottom))
+    return (110f + rows * (L.ROW_HEIGHT + L.ROWS.gap) + 2 * L.PADDING + 8f).coerceAtMost(L.maxHeight(stageHeight, marginY, marginBottom))
 }
 
 /** Places its child (the card with the room around it for the caret) by [placeContextMenu]. */
@@ -388,7 +388,7 @@ private fun MenuCard(
                     CompositionLocalProvider(LocalBringIntoViewSpec provides bringIntoView) {
                         Column(
                             Modifier.fillMaxWidth().padding(start = (4f + glow).px, end = (4f + glow).px, top = (6f + glow).px, bottom = (2f + glow).px),
-                            verticalArrangement = Arrangement.spacedBy(L.ROW_GAP.px),
+                            verticalArrangement = Arrangement.spacedBy(L.ROWS.gap.px),
                         ) {
                             items.forEachIndexed { i, item ->
                                 MenuRow(item, i + 1, Modifier.focusedListRow(navigation, i), onFocused = { plateDanger.value = item.danger }) {

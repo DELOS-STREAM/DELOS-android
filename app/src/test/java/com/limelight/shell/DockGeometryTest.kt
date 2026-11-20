@@ -38,7 +38,7 @@ class DockGeometryTest {
         assertTrue(g === DockGeometry.Standard)
         assertEquals(1920f, g.width, 0f)
         assertEquals(150f, g.tile, 0f)
-        assertEquals(125f, g.tilesLeft, 0f)
+        assertEquals(109f, g.tilesLeft, 0f)
         assertEquals(452f, g.dockHeight, 0f)
         assertEquals(160f, g.dockShift, 0f)
         assertEquals(322f, g.popoverBottom, 0f)
@@ -64,11 +64,11 @@ class DockGeometryTest {
             assertEquals("$name ring", c.RING, g.ring, 0f)
             assertEquals("$name icon", c.TILE_ICON, g.icon, 0f)
             assertEquals("$name corner", c.TILE_RADIUS, g.tileRadius, 0f)
-            assertEquals("$name tiles", 1670f, g.tilesWidth, 0f)
+            assertEquals("$name tiles", 1702f, g.tilesWidth, 0f)
             // The row is wider than the stage and starts 80 px from the edge: the first tile's ring (18) and its glow (62) are on the screen
             assertTrue("$name scrolls", g.scrolls)
             assertEquals("$name first tile", DockGeometry.COMPACT_SIDE, g.tilesLeft, 0f)
-            assertEquals("$name row", 1670f + 160f, g.rowWidth, 0f)
+            assertEquals("$name row", 1702f + 160f, g.rowWidth, 0f)
             assertEquals("$name scroll range", g.rowWidth - g.width, g.scrollMax, .01f)
             assertTrue("$name side margin", DockGeometry.COMPACT_SIDE >= 48f && DockGeometry.COMPACT_SIDE >= -g.ringTop + 62f)
         }

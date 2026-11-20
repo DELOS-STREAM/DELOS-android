@@ -403,6 +403,15 @@ private const val ROW_CORNER = 24f
 private const val ROW_FOCUS_SCALE = 1.02f
 private val ROW_RING = FocusRing(width = 3f, gap = 0f)
 
+/** A focused row of a [SettingRowList]: it grows by [ROW_FOCUS_SCALE] and the plate draws [ROW_RING] around the grown bounds. */
+val SETTING_ROW_LOOK = FocusLook(ROW_FOCUS_SCALE, outset = ROW_RING.gap, band = ROW_RING.width, ringScales = false)
+
+/**
+ * Between two rows of a [SettingRowList] (settings, their search results, per game, debug info, the side menu): the plate's reach on the
+ * tallest row, one with impact chips (1.2 + 3 px), twice, and the clear space make 16.4; 18 holds rows up to 200 px (a large text scale).
+ */
+val SETTING_ROWS = FocusGap(SETTING_ROW_LOOK, IMPACT_ROW_MIN_HEIGHT.toFloat(), 18f)
+
 /**
  * A scrolling list of [SettingRow]s (settings, per-game settings, debug info): one focus plate (tint, ring and glow)
  * glides from row to row ([RowGlideHost], [Motion.ROW_FOCUS]) and follows the scrolling list. [modifier] is the list's:

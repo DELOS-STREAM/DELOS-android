@@ -8,6 +8,8 @@ import com.limelight.preferences.UpscalerMode
 import com.limelight.shell.settings.SettingsHelp
 import com.limelight.shell.settings.StreamMenuHelp
 import kotlin.math.floor
+import com.limelight.shell.ui.FocusGap
+import com.limelight.shell.ui.FocusLook
 
 /**
  * The decisions of the stream menu that need no Compose: which tile of the dock a page belongs to, where the
@@ -154,10 +156,11 @@ internal object StreamMenuLayout {
     /** The share of its font size that an average character of Figtree is wide (the model of the help fit tests). */
     const val AVERAGE_CHAR_WIDTH = .5f
 
-    // The tiles: 9 x 150 + 8 x 40 = 1670, 125 left and right
+    // The tiles: 9 x 150 + 8 x 44 = 1702, 109 left and right; the gap keeps the focused tile's ring 8 px clear of its neighbours
+    // (docs/GUI.md, "Focus spacing": [TILES])
     const val TILE = 150f
     const val TILE_RADIUS = 42f
-    const val TILE_GAP = 40f
+    const val TILE_GAP = 44f
     const val TILE_ICON = 64f
     const val TILES_WIDTH = 9 * TILE + 8 * TILE_GAP
     const val TILES_LEFT = (STAGE_WIDTH - TILES_WIDTH) / 2f
@@ -168,6 +171,9 @@ internal object StreamMenuLayout {
     const val RING = 186f
     const val RING_RADIUS = 56f
     const val RING_WIDTH = 4f
+
+    /** The tiles' focus spacing: the ring's 4 px band lies inside the [RING] box around the scaled tile. */
+    val TILES = FocusGap(FocusLook(FOCUS_SCALE, outset = (RING - TILE * FOCUS_SCALE) / 2f - RING_WIDTH, band = RING_WIDTH, ringScales = false), TILE, TILE_GAP)
 
     // Labels, pills and the caption
     const val LABEL_SIZE = 24f

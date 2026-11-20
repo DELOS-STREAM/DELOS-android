@@ -370,6 +370,11 @@ data class KeyboardMetrics(val bodyWidth: Float, val keyHeight: Float) {
         const val ROWS = 6
         const val GAP = 6f
         const val SEP = 12f
+
+        /** The keys' focus spacing: no lift, the ring ([KeyRing]) inside the key, so [GAP] stays clear (the key's size does not matter). */
+        val KEYS = com.limelight.shell.ui.FocusGap(
+            com.limelight.shell.ui.FocusLook(scale = 1f, outset = KeyRing.gap, band = KeyRing.width), size = 0f, gap = GAP,
+        )
         const val SIDE = 24f
         const val TOP_PAD = 22f
         /** Under the rows: the hint strip (48 + 14) and the space above it. */

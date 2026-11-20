@@ -24,6 +24,9 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import com.limelight.shell.ui.FocusGap
+import com.limelight.shell.ui.FocusLook
+import com.limelight.shell.ui.FocusSpacing
 import com.limelight.shell.ui.DelosColors
 import com.limelight.shell.ui.Motion
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +36,39 @@ import kotlin.math.min
 
 /** How the gold ring sits around a focusable part of the overview: [pad] stage pixels outside it, its corner (999: a pill). */
 internal data class RingStyle(val pad: Float = 6f, val corner: Float = 999f)
+
+/**
+ * The overview's groups of focusable parts and their gaps (docs/GUI.md, "Focus spacing"): the shared ring is a 4 px band [RingStyle.pad]
+ * outside a part's scaled bounds ([FocusSpacing.overview]); the size is the longest part along the axis.
+ */
+internal object OverviewGaps {
+    /** Play and App settings (`FocusRow`): 1.06, and Play's sweep band at 7..11 px outside the pill, inside its scaled layer. */
+    val BUTTONS = FocusLook(scale = 1.06f, outset = 7f, band = 4f)
+    const val BUTTONS_GAP = 20f
+
+    /** The summary (ring 14 px out, no growth) above the "Read the story" button and beside the facts card. */
+    val ABOUT = FocusGap(FocusSpacing.overview(1f, 14f), size = 0f, gap = 44f)
+
+    /** The screenshots and videos: 520 × 292 thumbnails at 1.06, the ring 6 px out. */
+    const val MEDIA_W = 520f
+    const val MEDIA_H = 292f
+    const val MEDIA_SCALE = 1.06f
+    const val MEDIA_PAD = 6f
+    val MEDIA = FocusGap(FocusSpacing.overview(MEDIA_SCALE, MEDIA_PAD), size = MEDIA_W, gap = 60f)
+
+    /** Similar games: 260 × 390 covers at 1.06, the ring 6 px out. */
+    const val SIMILAR_W = 260f
+    const val SIMILAR_H = 390f
+    const val SIMILAR_SCALE = 1.06f
+    const val SIMILAR_PAD = 6f
+    val SIMILAR = FocusGap(FocusSpacing.overview(SIMILAR_SCALE, SIMILAR_PAD), size = SIMILAR_W, gap = 44f)
+
+    /** The links: 64 px pills at 1.05, the ring 6 px out, wrapping; labels up to about 400 px wide side by side. */
+    const val LINK_H = 64f
+    const val LINK_SCALE = 1.05f
+    val LINKS_ACROSS = FocusGap(FocusSpacing.overview(LINK_SCALE, 6f), size = 400f, gap = 48f)
+    val LINKS_DOWN = FocusGap(FocusSpacing.overview(LINK_SCALE, 6f), size = LINK_H, gap = 32f)
+}
 
 /** A focusable part of the overview: its focus requester, where it is, its row ([NavTarget.group]) and its section. */
 internal class OverviewTarget(

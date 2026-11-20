@@ -25,8 +25,8 @@ object Compact {
     const val MARGIN = 48f
 
     /**
-     * The gap between two pill buttons side by side (24 elsewhere): a focused one grows 4 % to each side (17 px for a 420 px button) and
-     * wears an 8 px ring, so 44 keeps the ring 12 px or more from the next button.
+     * The least gap between two pill buttons side by side (24 elsewhere), kept from before the focus rule; a [FocusRow] widens it to
+     * [FocusSpacing.PILL]'s gap for the widest of them (59 between 420 px buttons).
      */
     const val BUTTON_GAP = 44f
 

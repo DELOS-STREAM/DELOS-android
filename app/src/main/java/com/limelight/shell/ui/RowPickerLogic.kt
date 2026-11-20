@@ -91,6 +91,13 @@ internal object PickerLayout {
     const val OPTION = 64f
     const val GAP = 4f
 
+    /** A focused option: it does not grow, its [OPTION_RING] lies around its edge. */
+    val OPTION_RING = FocusRing(width = 3f, gap = 0f)
+    val OPTION_LOOK = FocusLook(1f, outset = OPTION_RING.gap, band = OPTION_RING.width)
+
+    /** Between two options: both rings (3 px each) and the clear space. [GAP] stays the room under the title. */
+    val OPTIONS = FocusGap(OPTION_LOOK, OPTION, 14f)
+
     /** Where the caret's tip enters the row, from its right edge: the right part of the row, left of the value's text. */
     const val VALUE_AREA = 360f
 
@@ -120,7 +127,7 @@ internal object PickerLayout {
     const val VALUE_HEIGHT = 2 * PAD + TITLE + VALUE_FIELD + VALUE_CONTROLS + 2 * VALUE_GAP
 
     /** The height of the list of [count] options when nothing limits it. */
-    fun listHeight(count: Int): Float = if (count <= 0) 0f else count * OPTION + (count - 1) * GAP + 2 * LIST_ROOM
+    fun listHeight(count: Int): Float = if (count <= 0) 0f else count * OPTION + (count - 1) * OPTIONS.gap + 2 * LIST_ROOM
 
     /** The card of an options list: [selected] lies over the row ([anchor], stage pixels; null: centred on the stage). */
     fun options(anchor: Rect?, count: Int, selected: Int, stageW: Float, stageH: Float, top: Float = TOP_MARGIN, bottom: Float = BOTTOM_MARGIN): PickerPlacement {
