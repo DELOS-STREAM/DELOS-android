@@ -253,7 +253,7 @@ object Symbols {
     const val ADD_ADDRESS = "\uE314"
     const val LINK_TEST = "\uEDDE"
     const val RECOMMEND = "\uE48E"
-    const val GPU = "\uE612"
+    const val GPU = "\uE610"
     const val VERSION = "\uE390"
     const val PROVIDER_IGDB = "\uE1DE"
     const val PROVIDER_PCGW = "\uE0A8"

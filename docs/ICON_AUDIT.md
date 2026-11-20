@@ -504,7 +504,7 @@ The header pills. The per-app settings tab pills use the same glyphs.
 | Toast: virtual display not ready | `monitor` | `MONITOR` | the display |
 | Toast: wake sent | `alarm` | `WAKE` | see Wake the PC |
 | Toast: profile name needed | `identification-badge` | `BADGE` |  |
-| Impact chip GPU | `graphics-card` | `GPU` | graphics card (the CPU chip is the Debug kernel) |
+| Impact chip GPU | `cpu` | `GPU` | owner's decision 2026-11-20: the chip, because these devices have an SoC rather than a graphics card; shares the glyph with the Debug kernel row, on another screen |
 | Impact chip Latency | `timer` | `TIMER` | same as Ultra low latency |
 | Impact chip Network | `wifi-high` | `WIFI` |  |
 | Button capture dialog | `game-controller` | `SPORTS_ESPORTS` | a controller |
@@ -834,7 +834,7 @@ that had no glyph before. An empty `Reason` means the reason is the note of the 
 | Dialogs, search keyboard, stream result, portals, toasts | Portal: link test | `gauge` | `network` |  |
 | Dialogs, search keyboard, stream result, portals, toasts | Toast: reset | `arrow-clockwise` / `arrows-clockwise` | `arrow-u-up-left` |  |
 | Dialogs, search keyboard, stream result, portals, toasts | Toast: wake sent | `power` | `alarm` |  |
-| Dialogs, search keyboard, stream result, portals, toasts | Impact chip GPU | `cpu` | `graphics-card` |  |
+| Dialogs, search keyboard, stream result, portals, toasts | Impact chip GPU | `cpu` | `graphics-card` | reverted to `cpu` by the owner's decision of 2026-11-20 (SoC devices, no graphics card) |
 | Stream menu bar and pages | Bar: Brightness | `sun-dim` | `sun` |  |
 | Stream menu bar and pages | More: Send clipboard | `upload-simple` | `paper-plane-tilt` |  |
 | Stream menu bar and pages | More: Get clipboard | `download-simple` | `tray-arrow-down` |  |
