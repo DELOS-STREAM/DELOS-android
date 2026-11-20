@@ -311,8 +311,8 @@ class ShellState(initial: Screen) {
      */
     var overviewGame by mutableStateOf<String?>(null)
 
-    /** The overview's screenshot viewer is open: null when it is not, else whether it shows a video (A watches it). */
-    var overviewViewer by mutableStateOf<Boolean?>(null)
+    /** The overview's viewer is open: null when it is not, else what the hint bar names for the item shown. */
+    var overviewViewer by mutableStateOf<OverviewViewerHints?>(null)
 
     /** The PC whose games the shell shows (null before a PC is chosen); the companion screen shows it (docs/DUAL_SCREEN.md). */
     var pcName by mutableStateOf<String?>(null)
@@ -494,6 +494,14 @@ class ShellState(initial: Screen) {
 }
 
 val LocalShell = staticCompositionLocalOf<ShellState> { error("ShellState not provided") }
+
+/**
+ * What the hint bar shows for the overview's viewer: on a [video] the player can play, Left/Right seek, A plays or pauses ([playing]),
+ * Y mutes or turns the sound on ([muted]), L1/R1 browse; on a screenshot (or a video that cannot play) Left/Right browse.
+ */
+@androidx.compose.runtime.Immutable
+data class OverviewViewerHints(val video: Boolean, val playing: Boolean = false, val muted: Boolean = false)
+
 val LocalFocusTracker = staticCompositionLocalOf<FocusTracker> { error("FocusTracker not provided") }
 
 /**

@@ -68,7 +68,16 @@
     <string name="overview_video">Video</string>
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">Durchsuchen</string>
-    <string name="overview_hint_watch">Ansehen</string>
+    <string name="overview_hint_seek">10 s springen</string>
+    <string name="overview_hint_play">Abspielen</string>
+    <string name="overview_hint_pause">Pause</string>
+    <string name="overview_hint_mute">Stumm</string>
+    <string name="overview_hint_unmute">Ton an</string>
+    <string name="overview_video_back">10 Sekunden zurück</string>
+    <string name="overview_video_forward">10 Sekunden vor</string>
+    <string name="overview_video_unavailable">Dieses Video kann nicht abgespielt werden</string>
+    <string name="overview_video_blocked">Sein Eigentümer erlaubt die Wiedergabe in anderen Apps nicht.</string>
+    <string name="overview_video_failed">YouTube konnte es nicht laden. Prüf die Verbindung und versuch es noch mal.</string>
     <string name="overview_previous">Zurück</string>
     <string name="overview_next">Weiter</string>
     <string name="overview_loading">Spielinfo wird geladen…</string>

@@ -478,7 +478,7 @@ Page lookup:
 | The metadata Worker | The game names the app looks up and the client IP address (Cloudflare's request metadata) | No query text, only a short hash on failures |
 | HowLongToBeat | The device's IP and game names; it has no credentials and is still queried directly from the device | |
 | IGDB's image server (`images.igdb.com`) | The device's IP and the image ids of the screenshots and of similar games' covers the overview shows; the images load directly from the device, without credentials | |
-| YouTube (`i.ytimg.com`, `youtube.com`) | The device's IP and the video ids whose thumbnails the overview shows; Watch opens YouTube | |
+| YouTube (`i.ytimg.com`, `youtube.com`, `youtube-nocookie.com`) | The device's IP and the video ids whose thumbnails the overview shows, and one oEmbed request per video id (`youtube.com/oembed`, no cookies) that tells whether the video may be embedded. A video that is opened plays in the app's own YouTube player in privacy-enhanced mode (`youtube-nocookie.com`): YouTube sets no cookies before playback starts; once the video plays, YouTube may set cookies and local storage in the app's web view and plays its ads. Nothing is opened in a browser or the YouTube app | |
 
 ## 9. Game overview
 
@@ -574,17 +574,42 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    App settings opens the per-app settings; a screenshot or video opens the viewer; a link opens the browser; a
    similar game the user owns closes this overview and opens its own; one outside the library says so in a toast.
 
-### 9.4 Screenshot viewer
+### 9.4 Screenshot and video viewer
 
 1. It zooms out of the thumbnail (560 ms) and back into it (440 ms), or fades when the thumbnail is scrolled away.
-2. The picture is as large as fits 280 × 300 px inside the stage, 16:9; the thumbnail stays until the full picture
+2. A screenshot is as large as fits 280 × 300 px inside the stage, 16:9; the thumbnail stays until the full picture
    (`screenshot_huge`, `1080p` on a 4:3 stage) is decoded. The page behind is blurred (40 px, a dark tint).
 3. Left and Right browse: the new picture slides in 160 px from the side of the key while the old one leaves 90 px
-   the other way; at the ends the picture nudges. A on a video opens it on YouTube. B closes. The hint bar shows
-   Browse, Watch (videos) and Back.
+   the other way; at the ends the picture nudges. L1 and R1 (keyboard `[` `]`) browse too, also on a video. B closes.
+   The hint bar shows Browse and Back.
 4. A filmstrip of the items sits 112 px above the bottom, the current one larger with the accent ring; the count and
    the item's name sit top left. A mouse gets round previous and next buttons; a mouse and a finger get a close
    button. A finger swipes sideways to browse and down to close.
+
+**Videos** (`OverviewVideo.kt`, `YouTubeEmbeds.kt`). Trailers play only inside the app; nothing opens a browser or the
+YouTube app.
+
+1. A video is as large as fits 280 × 440 px inside the stage, 16:9, 70 px above the middle (1137 × 640 at 1080p), so
+   its control bar fits under it: a glass bar 72 px tall, 22 px below the video, as wide as it, with back 10 s,
+   play/pause, forward 10 s, the time, a progress track (a tap or click seeks there), the length and the sound. Nothing
+   of DELOS lies on the player (YouTube's terms).
+2. Once the viewer has settled on a video, YouTube's IFrame player loads in a web view on the picture: privacy-enhanced
+   host `youtube-nocookie.com`, inline, autoplay, YouTube's own controls off (`controls=0`; the DELOS bar drives it
+   through the IFrame API), related videos only from the same channel (`rel=0`), no annotations, no full-screen button.
+   The page's base URL is `https://<application id>`, which sets the Referer YouTube requires of embedding apps. The
+   thumbnail stays until the video plays. The web view never takes the focus; a finger or a mouse may use YouTube's own
+   surface (an ad's Skip), but every navigation away from the page and every new window is refused. Ads are not blocked.
+   Browsing away or closing removes the player; the app going to the background pauses it.
+3. Keys on a video: Left and Right seek 10 s, A plays or pauses (from the start once it has ended), Y mutes or turns
+   the sound on (keyboard F or M), L1 and R1 browse, B closes. The hint bar shows Seek 10 s, Play or Pause, Mute or
+   Sound on, Previous, Next and Back.
+4. Videos YouTube will not embed are left out of the carousel: when the details arrive, YouTube's oEmbed endpoint is
+   asked once per video id and process (401: the owner disabled embedding; 400, 403, 404: invalid, private or
+   removed); a failed check keeps the video. The player's errors 100, 101 and 150 drop a video the same way. The open
+   viewer keeps its items until it closes.
+5. A video that still cannot play shows its thumbnail dimmed with "This video can't be played" and why (its owner does
+   not allow other apps, or YouTube could not load it, also when the player has not answered within 15 s), without any
+   button; Left and Right browse then.
 
 ### 9.5 Data and caching
 

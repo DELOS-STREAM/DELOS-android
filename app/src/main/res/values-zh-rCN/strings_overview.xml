@@ -64,7 +64,16 @@
     <string name="overview_video">视频</string>
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">浏览</string>
-    <string name="overview_hint_watch">观看</string>
+    <string name="overview_hint_seek">跳转 10 秒</string>
+    <string name="overview_hint_play">播放</string>
+    <string name="overview_hint_pause">暂停</string>
+    <string name="overview_hint_mute">静音</string>
+    <string name="overview_hint_unmute">取消静音</string>
+    <string name="overview_video_back">后退 10 秒</string>
+    <string name="overview_video_forward">前进 10 秒</string>
+    <string name="overview_video_unavailable">无法播放此视频</string>
+    <string name="overview_video_blocked">所有者不允许在其他应用中播放。</string>
+    <string name="overview_video_failed">YouTube 无法加载此视频。请检查网络连接后重试。</string>
     <string name="overview_previous">上一个</string>
     <string name="overview_next">下一个</string>
     <string name="overview_loading">正在加载游戏信息…</string>
