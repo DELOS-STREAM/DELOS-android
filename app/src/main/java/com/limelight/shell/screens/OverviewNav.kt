@@ -104,9 +104,6 @@ internal object OverviewScroll {
     /** Room left after the last section when the page is scrolled to its end. */
     const val END_PAD = 40f
 
-    /** The carousel keeps this much room beside the focused item. */
-    const val TRACK_MARGIN = 150f
-
     /** [current]'s target for an element at [elementTop]..[elementBottom] in a section at [sectionTop]..[sectionBottom] (content pixels). */
     fun page(
         current: Float, header: Boolean, elementTop: Float, elementBottom: Float, sectionTop: Float, sectionBottom: Float,

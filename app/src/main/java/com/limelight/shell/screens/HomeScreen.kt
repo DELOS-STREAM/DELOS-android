@@ -31,7 +31,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.BringIntoViewSpec
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
-import androidx.compose.foundation.gestures.ScrollableState
+import com.limelight.shell.ui.AnchorRow
+import com.limelight.shell.ui.anchor
+import com.limelight.shell.ui.anchorRowFade
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
@@ -201,9 +203,6 @@ private object NoAutoScroll : BringIntoViewSpec {
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float) = 0f
 }
 
-/** The prototype's library scroll: easeOutCubic over 200 ms. */
-private val FastScroll = tween<Float>(200, easing = CubicBezierEasing(.33f, 1f, .68f, 1f))
-
 /**
  * The home screen (step 6.4): the games of the active PC with their covers, the focused game's info and
  * background, in one scrolling row.
@@ -318,10 +317,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
         { index, app ->
             shell.homeGame = homeKey(pc, app)
             // Keep the focused tile at the left edge; a cover the pointer focused stays where it is (the wheel scrolls the row then)
-            if (PointerFocus.followsFocus) scope.launch {
-                val info = rowState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
-                if (info == null) rowState.scrollToItem(index) else scroll(rowState, info.offset.toFloat(), reducedMotion)
-            }
+            if (PointerFocus.followsFocus) scope.launch { rowState.anchor(index, reducedMotion) }
         }
     }
     val running = library.apps.firstOrNull { it.running }
@@ -486,10 +482,6 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
             matchGameColors = appearance.matchGameColors && !appearance.materialYou,
             overview = overview, titleProbe = titleProbe)
         CompositionLocalProvider(LocalBringIntoViewSpec provides NoAutoScroll, LocalEntranceStagger provides intro) {
-            // At the end the row stops with the last cover at the right edge, so the right fade goes away there; at its start nothing lies
-            // beyond the left edge, so the first cover's ring and glow are not faded either
-            val endFade by animateFloatAsState(if (rowState.canScrollForward) 1f else 0f, tween(300), label = "rowEndFade")
-            val startFade by animateFloatAsState(if (rowState.canScrollBackward) 1f else 0f, tween(300), label = "rowStartFade")
             val density = LocalDensity.current.density
             // Faded out for a moment while a long wrap jumps close to the other end
             val rowAlpha = remember { Animatable(1f) }
@@ -507,7 +499,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                         alpha = rowAlpha.value
                         translationX = rowBounce.value
                     }
-                    .fadeMask(stage, vertical = false, startClear = 0f, startSolid = 120f * startFade, endSolid = (if (compact) HomeCompact.FADE_SOLID else 260f) * endFade, endClear = (if (compact) HomeCompact.FADE_CLEAR else 20f) * endFade)
+                    .anchorRowFade(stage, rowState, endSolid = if (compact) HomeCompact.FADE_SOLID else AnchorRow.END_SOLID, endClear = if (compact) HomeCompact.FADE_CLEAR else AnchorRow.END_CLEAR)
                     // Left on the first game goes round to the last one, right on the last one back to the first
                     .onPreviewKeyEvent { event ->
                         // While the overview is up or on its way back, the row (which has the focus again as it closes) takes no keys
@@ -714,11 +706,6 @@ private const val WRAP_GLIDE_ITEMS = 12
 
 /** How much a cover grows when focused (focusEffects' default). */
 private const val TILE_FOCUS_SCALE = 1.055f
-
-private suspend fun scroll(state: ScrollableState, delta: Float, reducedMotion: Boolean) {
-    if (kotlin.math.abs(delta) < 1f) return
-    if (reducedMotion) state.scrollBy(delta) else state.animateScrollBy(delta, FastScroll)
-}
 
 /**
  * The ids of [apps] with custom per-game settings in the current profile ([GameSettingsStore.customAppIds]), recomputed when the
