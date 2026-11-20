@@ -94,12 +94,15 @@ class TranslucentSurfaceTest {
             Allowed("ui/ImpactChips.kt", "colors.text3.copy(alpha = .3f)", "bar segment"),
             Allowed("screens/ArtworkScreen.kt", "Color(0x99050A14))) {", "download track"),
             Allowed("screens/GameOverview.kt", "height(10.px).clip(RoundedCornerShape(5.px))", "playtime track"),
-            Allowed("screens/OverviewVideo.kt", "height(6.px).clip(RoundedCornerShape(3.px))", "progress track"),
             // Nested in glass: the panel around them blurs already (no blur inside a blur)
             Allowed("ui/StreamResultLayer.kt", ".background(colors.surface)", "details box in the result layer's glass"),
             Allowed("ui/StreamResultLayer.kt", "colors.accent.copy(alpha = .16f)", "chip in the result layer's glass"),
             Allowed("ui/ContextMenuLayer.kt", "clip(CircleShape).background(Color.White.copy(alpha = .10f))", "back disc in the menu's glass"),
             Allowed("ui/RowPicker.kt", ".background(colors.surface2)", "value field in the popup's glass"),
+            Allowed("screens/OverviewDock.kt", "background(tint.copy(alpha = .45f))", "dock tint over video where the player window cannot be blurred"),
+            Allowed("screens/OverviewDock.kt", "Color(10, 16, 32).copy(alpha = .8f)", "seek time label in the dock's glass"),
+            Allowed("screens/OverviewDock.kt", "background(Color.White.copy(alpha = .08f))", "volume pill in the dock's glass"),
+            Allowed("screens/OverviewDock.kt", "dot.background(Color.White.copy(alpha = .4f))", "page dot in the dock's glass"),
             Allowed("ui/Rows.kt", "background(tint.copy(alpha = .22f))", "reset pill in the focused row's glass"),
             Allowed("ui/ToastHost.kt", "gold.copy(alpha = .16f)", "icon disc on the opaque toast"),
             Allowed("screens/ArtworkScreen.kt", "colors.accent2.copy(alpha = .2f)", "icon disc in the game chip's glass"),
@@ -120,13 +123,6 @@ class TranslucentSurfaceTest {
             // Performance: the settings search's 30 to 45 keys as glass are as many blurs of the animated background every frame (measured
             // on the emulator: janky frames 0.6 % to 9.8 %, 95th percentile 26 to 89 ms)
             Allowed("screens/SettingsScreen.kt", ".background(if (focused) colors.surface2 else colors.surface)", "settings search keys: one blur per key is too slow"),
-            // The game overview's own glass changes (its owner's branch): the button, the story and link pills, the tags, the
-            // empty age rating and the "In library" badge become glass there; these entries go with that change
-            Allowed("screens/GameOverview.kt", ".background(if (primary) colors.accent else colors.surface)", "overview: pending glass"),
-            Allowed("screens/GameOverview.kt", "height(52.px).clip(CircleShape).background(Color.White.copy(alpha = .06f))", "overview: pending glass"),
-            Allowed("screens/GameOverview.kt", "LINK_H.px).clip(CircleShape).background(Color.White.copy(alpha = .06f))", "overview: pending glass"),
-            Allowed("screens/GameOverview.kt", "Color(5, 10, 20).copy(alpha = .6f)", "overview: pending glass"),
-            Allowed("screens/OverviewParts.kt", "Color.White.copy(alpha = .08f)", "overview: pending glass"),
         )
     }
 }
