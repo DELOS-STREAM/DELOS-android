@@ -1,5 +1,6 @@
 import { createResponseCache } from "./cache.js";
 import { HttpError, RETRY_AFTER_SECONDS } from "./errors.js";
+import { buildDetailsQuery, normalizeDetails } from "./details.js";
 import { buildIdQuery, buildSearchQuery, createIgdb } from "./igdb.js";
 import { createBucket, createGate } from "./limits.js";
 import { cargoParams, createPcgw, pageWhere, parseParams, redirectParams, searchParams, steamWhere } from "./pcgw.js";
@@ -78,6 +79,13 @@ export function createHandler(deps = {}) {
         }
         const id = validId(values.id, MAX_IGDB_ID);
         return id === null ? null : { normalized: [["id", String(id)]], upstream: (env) => igdb.games(env, buildIdQuery(id)) };
+      },
+    },
+    "/v1/igdb/game-details": {
+      parse(params) {
+        const values = singleParams(params, ["id"], { required: ["id"] });
+        const id = values && validId(values.id, MAX_IGDB_ID);
+        return id ? { normalized: [["id", String(id)]], upstream: async (env) => normalizeDetails(await igdb.games(env, buildDetailsQuery(id))) } : null;
       },
     },
     "/v1/pcgw/cargo": {
