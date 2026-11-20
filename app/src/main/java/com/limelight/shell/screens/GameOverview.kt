@@ -91,6 +91,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.limelight.shell.ui.animateFocusScale
+import com.limelight.shell.ui.FocusRow
 import com.limelight.shell.ui.rememberPressPulse
 import com.limelight.shell.ui.pressInput
 import com.limelight.shell.ui.PointerLook
@@ -848,7 +849,8 @@ private fun Header(
                         )
                     }
                 }
-                Row(Modifier.st(3), horizontalArrangement = Arrangement.spacedBy(20.px)) {
+                // The gap grows with the wider button, so Play's sweep band never reaches App settings (FocusSpacing)
+                FocusRow(OverviewGaps.BUTTONS, OverviewGaps.BUTTONS_GAP, Modifier.st(3)) {
                     OverviewButton("play", Symbols.PLAY_ARROW, stringResource(R.string.overview_play), primary = true, playRequester, onPlay, register, onFocused, onHover, playEffectActive)
                     OverviewButton("settings", Symbols.SETTINGS, stringResource(R.string.home_menu_settings), primary = false, remember { FocusRequester() }, onSettings, register, onFocused, onHover)
                 }
@@ -1013,7 +1015,7 @@ private fun OverviewButton(
     LaunchedEffect(id) { register(id) }
     var focused by remember { mutableStateOf(false) }
     val pulse = rememberPressPulse()
-    val scale = animateFocusScale(focused, pulse.pressed, 1.06f)
+    val scale = animateFocusScale(focused, pulse.pressed, OverviewGaps.BUTTONS.scale)
     val reduced = com.limelight.shell.ui.LocalReducedMotion.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val window = LocalWindowInfo.current
@@ -1128,7 +1130,11 @@ private fun BoxScope.PlayEffect(shown: Boolean, running: Boolean, reduced: Boole
 
 private const val PLAY_SWEEP_MS = 5800
 
-/** A focusable part of a section: registers, scales on focus and reports it. */
+/**
+ * A focusable part of a section: registers, scales on focus and reports it. The part draws its own focus lift and squeeze (like
+ * [OverviewButton]) so the shared ring observes that clock: without it the ring is only redrawn while something else moves (a
+ * carousel's anchor scroll), and a part the pointer focuses in place keeps a ring of a half-grown frame.
+ */
 @Composable
 private fun Modifier.part(
     id: String, section: OverviewModel.Section, parts: HashMap<String, PartFocus>, onFocused: (String) -> Unit, onHover: () -> Unit,
@@ -1137,13 +1143,23 @@ private fun Modifier.part(
 ): Modifier {
     val requester = remember(id) { FocusRequester() }
     LaunchedEffect(id, track, index) { parts[id] = PartFocus(section.name, track, index) }
+    var look by remember { mutableStateOf(false) }
+    val pulse = rememberPressPulse()
+    val scale = animateFocusScale(look, pulse.pressed, focusScale)
     return this
         .hoverFocus(requester, onHover)
         .focusEffects(
-            onClick = onClick, corner = corner, focusScale = focusScale, ring = null, glow = null, focusRequester = requester,
-            onFocusChange = { onFocusChange(it); if (it) onFocused(id) }, onTouchTap = { it },
+            onClick = onClick, corner = corner, focusScale = 1f, press = false, pressPulse = pulse, ring = null, glow = null,
+            focusRequester = requester, onFocusChange = { onFocusChange(it); if (it) onFocused(id) }, onLookChange = { look = it },
+            onTouchTap = { it },
         )
-        .overviewTarget(id, requester, section.name, group, locked, ring)
+        .pressInput(pulse)
+        .graphicsLayer {
+            val s = scale.value * PointerLook.scale(0f, pulse.amount)
+            scaleX = s
+            scaleY = s
+        }
+        .overviewTarget(id, requester, section.name, group, locked, ring, visualMotion = { scale.value + pulse.amount })
 }
 
 /** About: the summary, the storyline expanding in place, the facts card. */
@@ -1206,7 +1222,7 @@ private fun AboutSection(
                     var focused by remember { mutableStateOf(false) }
                     Row(
                         Modifier
-                            .padding(top = 26.px)
+                            .padding(top = OverviewGaps.ABOUT.gap.px)
                             .part("story", section, parts, onFocused, onHover, onClick = {
                                 onStory(!storyOpen)
                                 // The page settles on the button again once the text has opened or closed
@@ -1297,7 +1313,7 @@ private fun MediaSection(
             // Room above and below inside the edge fade's layer for the focus growth and ring
             modifier = Modifier.fillMaxWidth().padding(top = 24.px, bottom = 30.px).overdraw(0.dp, TRACK_ROOM.px).anchorRowFade(LocalStage.current, track),
             contentPadding = PaddingValues(start = SIDE.px, end = SIDE.px, top = TRACK_ROOM.px, bottom = TRACK_ROOM.px),
-            horizontalArrangement = Arrangement.spacedBy(26.px),
+            horizontalArrangement = Arrangement.spacedBy(OverviewGaps.MEDIA.gap.px),
         ) {
             itemsIndexed(media, key = { _, item -> item.kind.name + item.id }) { index, item ->
                 Box(
@@ -1305,18 +1321,19 @@ private fun MediaSection(
                         .part(
                             "shot$index", section, parts, onFocused, onHover,
                             onClick = { onOpen(index, null) },
-                            ring = RingStyle(6f, 28f - 6f), corner = 22f, focusScale = 1.06f, group = "track", locked = true, track = track, index = index,
+                            ring = RingStyle(OverviewGaps.MEDIA_PAD, 28f - OverviewGaps.MEDIA_PAD), corner = 22f, focusScale = OverviewGaps.MEDIA_SCALE,
+                            group = "track", locked = true, track = track, index = index,
                         )
-                        .size(520.px, 292.px)
+                        .size(OverviewGaps.MEDIA_W.px, OverviewGaps.MEDIA_H.px)
                         .clip(RoundedCornerShape(22.px))
                         .background(colors.surface2),
                 ) {
-                    val image by rememberIgdbImage(item.thumb, (520f * 1.06f * k * 1.28f).toInt())
+                    val image by rememberIgdbImage(item.thumb, (OverviewGaps.MEDIA_W * OverviewGaps.MEDIA_SCALE * k * 1.28f).toInt())
                     image?.let { bitmap ->
                         Image(
                             bitmap, null, contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .requiredSize((520f * 1.28f).px, 292.px)
+                                .requiredSize((OverviewGaps.MEDIA_W * 1.28f).px, OverviewGaps.MEDIA_H.px)
                                 .graphicsLayer {
                                     // Parallax: the picture lags behind the carousel by 7 % of its distance from the middle
                                     val info = track.layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
@@ -1499,14 +1516,17 @@ private fun LinksSection(
     val section = OverviewModel.Section.LINKS
     Column(Modifier.padding(horizontal = SIDE.px).overviewSection(section.name)) {
         SectionHeading(Symbols.OVERVIEW_LINKS, stringResource(R.string.overview_section_links))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(18.px), verticalArrangement = Arrangement.spacedBy(18.px)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(OverviewGaps.LINKS_ACROSS.gap.px),
+            verticalArrangement = Arrangement.spacedBy(OverviewGaps.LINKS_DOWN.gap.px),
+        ) {
             links.forEachIndexed { index, link ->
                 var focused by remember { mutableStateOf(false) }
                 Row(
                     Modifier
                         .part("link$index", section, parts, onFocused, onHover, onClick = { onOpen(link.url) }, ring = RingStyle(), corner = 999f,
-                            focusScale = 1.05f, group = "links", locked = true, onFocusChange = { focused = it })
-                        .height(64.px).clip(CircleShape).glass(Color.White.copy(alpha = .06f)).border(1.px, colors.line, CircleShape)
+                            focusScale = OverviewGaps.LINK_SCALE, group = "links", locked = true, onFocusChange = { focused = it })
+                        .height(OverviewGaps.LINK_H.px).clip(CircleShape).glass(Color.White.copy(alpha = .06f)).border(1.px, colors.line, CircleShape)
                         .padding(horizontal = 24.px),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.px),
                 ) {
@@ -1545,7 +1565,7 @@ private fun SimilarSection(
             // The edge fade's layer reaches 8 px further up and down: room for the focus growth (6 %) and the ring of the 260 × 390 covers
             modifier = Modifier.fillMaxWidth().overdraw(0.dp, 8.px).anchorRowFade(LocalStage.current, row),
             contentPadding = PaddingValues(start = SIDE.px, end = SIDE.px, top = 24.px, bottom = 38.px),
-            horizontalArrangement = Arrangement.spacedBy(30.px),
+            horizontalArrangement = Arrangement.spacedBy(OverviewGaps.SIMILAR.gap.px),
         ) {
             itemsIndexed(details.similarGames, key = { _, game -> game.id }) { index, game ->
                 val owned = remember(game, library) {
@@ -1555,9 +1575,10 @@ private fun SimilarSection(
                     Modifier
                         .part(
                             "similar$index", section, parts, onFocused, onHover, onClick = { onOpen(owned, game.name) },
-                            ring = RingStyle(6f, SIMILAR_CORNER), corner = SIMILAR_CORNER, focusScale = 1.06f, group = "similar", locked = true, track = row, index = index,
+                            ring = RingStyle(OverviewGaps.SIMILAR_PAD, SIMILAR_CORNER), corner = SIMILAR_CORNER, focusScale = OverviewGaps.SIMILAR_SCALE,
+                            group = "similar", locked = true, track = row, index = index,
                         )
-                        .size(SIMILAR_W.px, SIMILAR_H.px)
+                        .size(OverviewGaps.SIMILAR_W.px, OverviewGaps.SIMILAR_H.px)
                         .clip(RoundedCornerShape(SIMILAR_CORNER.px))
                         .background(colors.surface2),
                 ) {
@@ -1566,7 +1587,7 @@ private fun SimilarSection(
                     Box(Modifier.matchParentSize().hazeSource(art)) {
                         if (owned != null) coverArt(owned, Modifier.fillMaxSize())
                         else {
-                            val image by rememberIgdbImage(game.coverImageId?.let { IgdbImageUrls.image(it, IgdbImageSize.COVER_BIG) }, (SIMILAR_W * 1.06f * k).toInt())
+                            val image by rememberIgdbImage(game.coverImageId?.let { IgdbImageUrls.image(it, IgdbImageSize.COVER_BIG) }, (OverviewGaps.SIMILAR_W * OverviewGaps.SIMILAR_SCALE * k).toInt())
                             val bitmap = image
                             if (bitmap != null) Image(bitmap, game.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                             else {
@@ -1588,9 +1609,7 @@ private fun SimilarSection(
     }
 }
 
-/** A similar game's cover: 1.3 times the first design's 200 × 300, its corner with it. */
-private const val SIMILAR_W = 260f
-private const val SIMILAR_H = 390f
+/** A similar game's cover corner (its size: [OverviewGaps.SIMILAR_W] × [OverviewGaps.SIMILAR_H], 1.3 times the first design's 200 × 300). */
 private const val SIMILAR_CORNER = 24f
 
 /** Room above and below the carousel's pictures inside its edge fade's layer: their focus growth (6 %) and ring. */

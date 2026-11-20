@@ -52,7 +52,8 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -100,10 +101,13 @@ import com.limelight.shell.data.rememberAvatarImage
 private const val CENTER_FOCUS_ROOM = 96f
 private const val CENTER_FADE = 48f
 
-/** `.center-col`: a centered column. */
+/**
+ * `.center-col`: a centered column. A compact stage scales [gap] with the stage, but never under [minGap] (the focus rule's gap of the
+ * column's focusable children, where its scaled gap would bring them too close).
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CenterColumn(gap: Float, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun CenterColumn(gap: Float, modifier: Modifier = Modifier, minGap: Float = 0f, content: @Composable ColumnScope.() -> Unit) {
     val stage = LocalStage.current
     if (stage.compact) {
         // A compact stage is short: the column keeps clear of the status and hint bars (which the interface scale zooms), its gaps shrink
@@ -134,7 +138,7 @@ fun CenterColumn(gap: Float, modifier: Modifier = Modifier, content: @Composable
                             .verticalScroll(scroll)
                             .padding(horizontal = Compact.MARGIN.px, vertical = 24.px),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy((gap * stage.compactScale).px),
+                        verticalArrangement = Arrangement.spacedBy(maxOf(gap * stage.compactScale, minGap).px),
                         content = content,
                     )
                 }
@@ -145,7 +149,7 @@ fun CenterColumn(gap: Float, modifier: Modifier = Modifier, content: @Composable
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         // Its headline and circles enter one after the other (docs/GUI.md, "Motion")
         EntranceScope {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap.px), content = content)
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(maxOf(gap, minGap).px), content = content)
         }
     }
 }
@@ -184,6 +188,10 @@ fun Spinner(size: Float, modifier: Modifier = Modifier, color: Color = LocalDelo
     }
 }
 
+/** A [PillButton]'s height and its toolbar size's (`compact`); it wears [FocusSpacing.PILL]. */
+const val PILL_HEIGHT = 76f
+const val PILL_HEIGHT_COMPACT = 64f
+
 /**
  * `.btn` (and `.btn.primary`): a pill with an icon and a label. [compact] is the toolbar size (64 px, smaller text); [trailing]
  * adds what follows the label (a count badge); [glyph] is the button that presses it, [glyphSize] stage pixels, shown last and only for
@@ -201,12 +209,12 @@ fun PillButton(
     Row(
         modifier
             .focusEffects(
-                onClick = onClick, corner = 999f, focusScale = 1.08f, ring = FocusRing(4f, 4f), glow = FocusGlow(18f, 50f, -12f),
+                onClick = onClick, corner = 999f, focusScale = FocusSpacing.PILL.scale, ring = FocusRing(FocusSpacing.PILL.band, FocusSpacing.PILL.outset), glow = FocusGlow(18f, 50f, -12f),
                 sweep = primary, clickCue = clickCue, onFocusChange = { focused = it },
             )
             .clip(CircleShape)
             .then(if (primary) Modifier.background(colors.accent) else Modifier.glass(colors.surface).border(1.px, colors.line, CircleShape))
-            .height((if (compact) 64 else 76).px)
+            .height((if (compact) PILL_HEIGHT_COMPACT else PILL_HEIGHT).px)
             .padding(horizontal = (if (compact) 28 else 40).px),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -299,12 +307,12 @@ fun CircleItem(
     var focused by remember { mutableStateOf(false) }
     val lit by animateFloatAsState(if (focused || selected) 1f else 0f, tween(Motion.FOCUS, easing = EaseOut), label = "circleLabel")
     // The same scale as focusEffects, for the check badge that is drawn above the focus ring
-    val badgeScale by animateFocusScale(focused, false, 1.16f, label = "circleBadge", focusMillis = if (rowPlate != null) Motion.ROW_FOCUS else Motion.FOCUS)
+    val badgeScale by animateFocusScale(focused, false, CircleRowLayout.FOCUS_SCALE, label = "circleBadge", focusMillis = if (rowPlate != null) Motion.ROW_FOCUS else Motion.FOCUS)
     // The badge pops in when the circle becomes the selected one
     val badgePop by animateFloatAsState(if (selected) 1f else 0f, if (reduced) tween(Motion.FADE, easing = Motion.Ease) else tween(Motion.PILL_POP, easing = EaseSpring), label = "circleBadgePop")
     val cs = scale ?: stage.compactScale
     val compact = stage.compact
-    val side = (diameter ?: if (big) 220f else 176f) * cs
+    val side = (diameter ?: if (big) CircleRowLayout.BIG_CIRCLE else CircleRowLayout.CIRCLE) * cs
     // A grid's cell keeps its width (a compact stage's is at most 176, its label may run 15 px over each edge); never narrower than the circle
     val fixed = when {
         width != null -> maxOf(if (compact) minOf(width, 176f) else width, side)
@@ -325,7 +333,8 @@ fun CircleItem(
                 modifier
                     .glideTarget(focused)
                     .focusEffects(
-                        onClick = onClick, corner = 999f, focusScale = 1.16f, ring = if (glide != null) null else FocusRing(5f, 5f), glow = FocusGlow(26f, 70f, -16f),
+                        onClick = onClick, corner = 999f, focusScale = CircleRowLayout.FOCUS_SCALE,
+                        ring = if (glide != null) null else FocusRing(CircleRowLayout.LOOK.band, CircleRowLayout.LOOK.outset), glow = FocusGlow(26f, 70f, -16f),
                         contextMenu = contextMenu, onFocusChange = { if (it) onFocused?.invoke() }, onLookChange = { focused = it },
                         glide = rowPlate != null,
                     )
@@ -416,18 +425,18 @@ fun CircleItem(
 /**
  * `.circles`: a centered row of circle items. When they do not fit the stage's width they stay in one row that scrolls sideways instead of
  * wrapping into more rows or shrinking (the focus scrolls into view with the next item peeking in, the cut edges fade out); while they fit
- * it is the plain centered row (as many PCs as fit in 1920 do). A compact stage keeps the prototype's 56 px between the items while
- * they fit with it and uses 44 when they do not ([CircleRowLayout]).
+ * it is the plain centered row (as many PCs as fit in 1920 do). The items stand [CircleRowLayout.GAP] apart (the prototype's 56 grown to
+ * the focus rule's); a compact stage uses [CircleRowLayout.tightGap] when they do not fit with it.
  */
 @Composable
 fun Circles(content: @Composable RowScope.() -> Unit) {
     val stage = LocalStage.current
     val compact = stage.compact
     val c = CircleRowLayout
-    val wide = c.GAP.px
-    val tight = c.GAP_TIGHT.px
+    val wide = c.GAP.gap.px
+    val tight = c.tightGap(stage.compactScale).px
     // One ring glides between the circles (docs/GUI.md, "Motion") instead of every circle fading its own
-    GlideRingHost(FocusRing(5f, 5f), corner = 999f, focusScale = c.FOCUS_SCALE) {
+    GlideRingHost(FocusRing(c.LOOK.band, c.LOOK.outset), corner = 999f, focusScale = c.LOOK.scale) {
         // The scroll area gets the room of a focused circle's glow on every side (taken back from the layout), so nothing of the focus is cut;
         // a compact stage also keeps a little air above and below for the ring next to the headline
         // The stage's width: a compact row that does not fit inside its 48 px margins scrolls with the gap that lets the item at each cut edge show
@@ -437,7 +446,7 @@ fun Circles(content: @Composable RowScope.() -> Unit) {
         val maxGap = c.MAX_GAP.px
         ScrollRow(
             // The column around it keeps 48 px at each side: the row reaches over them, so its cut edges are the stage's own
-            Modifier.then(if (compact) Modifier.overdraw(Compact.MARGIN.px, 0.px) else Modifier).fillMaxWidth().onSizeChanged { viewport.intValue = it.width }, gap = c.GAP, centered = true, edge = if (compact) c.EDGE else 40f,
+            Modifier.then(if (compact) Modifier.overdraw(Compact.MARGIN.px, 0.px) else Modifier).fillMaxWidth().onSizeChanged { viewport.intValue = it.width }, gap = c.GAP.gap, centered = true, edge = if (compact) c.EDGE else 40f,
             padVertical = if (compact) c.RING_AIR else 0f, focusMargin = c.FOCUS_MARGIN, bleed = c.GLOW_ROOM,
             minPad = if (compact) c.SIDE else 0f,
             arrangement = if (compact) remember(wide, tight, pad, peek, maxGap) { FitGapArrangement(wide, tight, { viewport.intValue }, pad, peek, maxGap) } else null,
@@ -560,6 +569,10 @@ fun ScrollRow(
 /** The green of an online PC (`.status-dot`). */
 val OnlineGreen = Color(0xFF3DDC84)
 
+/** A [TextFieldPill]'s height and its focus look: 1.05 and a 4 px band 4 px outside, drawn in its scaled layer. */
+const val FIELD_HEIGHT = 84f
+val FIELD_LOOK = FocusLook(1.05f, outset = 4f, band = 4f)
+
 /**
  * `.field`: a pill-shaped text field, the one text input of the whole app (dialogs, the profile name, the
  * settings search). The on-screen keyboard appears only when the field is *activated*: a tap, or A / the
@@ -595,8 +608,9 @@ fun TextFieldPill(
     // The field is being edited: activated by A / the centre key or by a tap, until the focus leaves. ImeAvoidance pins an engaged field into the top
     // band of the window whatever the keyboard is. It never starts the keyboard itself.
     var engaged by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(if (focused) 1.05f else 1f, tween(Motion.FOCUS, easing = EaseSpring), label = "fieldScale")
+    val scale by animateFloatAsState(if (focused) FIELD_LOOK.scale else 1f, tween(Motion.FOCUS, easing = EaseSpring), label = "fieldScale")
     val ring by animateFloatAsState(if (focused) 1f else 0f, tween(Motion.FOCUS, easing = EaseOut), label = "fieldRing")
+    val fieldFocus = remember { FocusRequester() }
     BasicTextField(
         state = state,
         modifier = modifier
@@ -615,7 +629,7 @@ fun TextFieldPill(
             }
             .drawWithContent {
                 drawContent()
-                if (ring > 0f) drawFocusRing(FocusRing(4f, 4f), size.height / 2f, ring, colors, stage)
+                if (ring > 0f) drawFocusRing(FocusRing(FIELD_LOOK.band, FIELD_LOOK.outset), size.height / 2f, ring, colors, stage)
             }
             .onFocusChanged {
                 if (it.isFocused != focused) {
@@ -638,12 +652,15 @@ fun TextFieldPill(
                         true
                     }
                     Key.DirectionUp, Key.DirectionDown -> {
-                        if (it.type == KeyEventType.KeyDown) focusManager.moveFocus(if (it.key == Key.DirectionUp) FocusDirection.Up else FocusDirection.Down)
+                        if (it.type == KeyEventType.KeyDown) RowNav.moveFocus(focusManager, down = it.key == Key.DirectionDown)
                         true
                     }
                     else -> false
                 }
-            },
+            }
+            // A source and a target of row-first Up / Down (RowNav)
+            .rowNavItem(fieldFocus)
+            .focusRequester(fieldFocus),
         inputTransformation = InputTransformation.maxLength(maxLength),
         textStyle = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 30.tpx),
         keyboardOptions = KeyboardOptions(
@@ -664,7 +681,7 @@ fun TextFieldPill(
             Row(
                 Modifier
                     .width(width.px)
-                    .height(84.px)
+                    .height(FIELD_HEIGHT.px)
                     .clip(CircleShape)
                     .glass(colors.surface2)
                     .border(1.px, colors.line, CircleShape)
@@ -694,7 +711,7 @@ fun ValuePill(label: String, value: String, icon: String, placeholder: String, m
     Row(
         modifier
             .width(width.px)
-            .height(84.px)
+            .height(FIELD_HEIGHT.px)
             .clip(CircleShape)
             .glass(colors.surface2)
             .border(1.px, colors.line, CircleShape)

@@ -3,6 +3,8 @@ package com.limelight.shell.screens
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.ui.geometry.Rect
 import com.limelight.shell.ui.EaseOut
+import com.limelight.shell.ui.RowCandidates
+import com.limelight.shell.ui.RowFirst
 import com.limelight.shell.ui.Motion
 import kotlin.math.PI
 import kotlin.math.abs
@@ -27,22 +29,59 @@ internal data class NavTarget(val rect: Rect, val group: String? = null, val loc
 
 /**
  * The overview's spatial focus (the prototype's `Focus.move`): the element in [direction] whose edge is nearest, sideways distance
- * weighing 2.2 times as much, with a slight pull towards the same column or line. Left and right never leave a [NavTarget.locked]
- * row (the buttons, the carousel, the links, the similar games). Coming back the way one came returns to the element one came from
- * ([remember]), so Down then Up is always a round trip.
+ * weighing 2.2 times as much, with a slight pull towards the same column or line. Up and Down then follow the shell's row-first rule
+ * ([RowFirst]): they land on the first element on screen of the row that nearest element is in. Left and right never leave a
+ * [NavTarget.locked] row (the buttons, the carousel, the links, the similar games). Coming back the way one came returns to the element
+ * one came from ([remember]), so Down then Up is always a round trip; Up or Down back into the row the last vertical move left lands
+ * on the element it left.
  */
 internal class OverviewNavigator<K : Any> {
     private val back = HashMap<K, Pair<NavDirection, K>>()
 
-    fun forget() = back.clear()
+    /** The element the last vertical move left and the direction that leads back to it. */
+    private var left: K? = null
+    private var leftBack: NavDirection? = null
+    private val rows = RowCandidates()
+    private val keys = ArrayList<K>()
+
+    fun forget() {
+        back.clear()
+        left = null
+    }
 
     /** The element [direction] of [from] among [targets], or null at the edge. */
     fun move(from: K, direction: NavDirection, targets: Map<K, NavTarget>): K? {
         val a = targets[from] ?: return null
         val memo = back[from]
-        val best = if (memo != null && memo.first == direction && memo.second in targets) memo.second else nearest(from, a, direction, targets)
-        if (best != null) back[best] = direction.opposite to from
+        val best = if (memo != null && memo.first == direction && memo.second in targets) memo.second
+        else nearest(from, a, direction, targets)?.let { hit -> if (direction.vertical) rowFirst(from, a.rect, hit, direction, targets) else hit }
+        if (best != null) {
+            back[best] = direction.opposite to from
+            if (direction.vertical) {
+                left = from
+                leftBack = direction.opposite
+            }
+        }
         return best
+    }
+
+    /** The row-first target of a vertical move from [from] whose nearest element is [hit]; on screen means a left edge at x >= 0. */
+    private fun rowFirst(from: K, r: Rect, hit: K, direction: NavDirection, targets: Map<K, NavTarget>): K {
+        rows.clear()
+        keys.clear()
+        var hitIndex = -1
+        var remembered = -1
+        for ((key, b) in targets) {
+            if (key == from) continue
+            if (key == hit) hitIndex = rows.size
+            if (key == left && leftBack == direction) remembered = rows.size
+            rows.add(b.rect.left, b.rect.top, b.rect.right, b.rect.bottom, onScreen = b.rect.left >= 0f)
+            keys.add(key)
+        }
+        val i = RowFirst.resolve(rows, hitIndex, r.left, r.top, r.right, r.bottom, direction == NavDirection.DOWN, remembered)
+        val target = if (i >= 0) keys[i] else hit
+        keys.clear()
+        return target
     }
 
     private fun nearest(from: K, a: NavTarget, direction: NavDirection, targets: Map<K, NavTarget>): K? {

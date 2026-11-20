@@ -96,8 +96,11 @@ import kotlin.math.roundToInt
  * between the keys. Everything moves with the shared motion language (Motion.kt, MotionKit.kt) like the stream menu.
  */
 
-/** The ring: a 4 px gold line with a 3 px gap in the background color, around a key of corner 11. */
-private val KeyRing = FocusRing(width = 4f, gap = 3f)
+/**
+ * The ring: a 4 px gold line 1 px inside the edge of a key of corner 11 (the dense-grid look of docs/GUI.md, "Focus spacing": no lift,
+ * the ring inside the key), so it never reaches the neighbours [KeyboardMetrics.GAP] away ([KeyboardMetrics.KEYS]).
+ */
+internal val KeyRing = FocusRing(width = 4f, gap = -5f)
 private const val KEY_CORNER = 11f
 
 /** The popup stands this far above the key and is 1.1 keys wide and 1.15 keys tall at least. */

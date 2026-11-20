@@ -1,14 +1,34 @@
 package com.limelight.shell.ui
 
+import kotlin.math.ceil
+
 /**
  * The arithmetic of a row of circle items ([Circles]: Start, Devices, Pair a PC, Profile), stage pixels. One row, never wrapped and never
- * squeezed: the items keep their size, the gap between them is the prototype's 56 while they all fit and 44 on a compact stage when
- * they do not; what still does not fit scrolls sideways with a fade at the cut edges. Pure, covered by `CircleRowFitTest`.
+ * squeezed: the items keep their size, the gap between them is [GAP] while they all fit and [tightGap] on a compact stage when they do
+ * not; what still does not fit scrolls sideways with a fade at the cut edges. Pure, covered by `CircleRowFitTest`.
  */
 object CircleRowLayout {
-    /** The gap between two items: the prototype's, and the least a compact stage uses. */
-    const val GAP = 56f
+    /** A circle and a big one (Devices, Pair a PC) at the prototype's size; a compact stage scales both by its compactScale. */
+    const val CIRCLE = 176f
+    const val BIG_CIRCLE = 220f
+
+    /** What a focused circle is scaled to. */
+    const val FOCUS_SCALE = 1.16f
+
+    /** A focused circle's look: [FOCUS_SCALE] and the row's gliding ring, a 5 px band 5 px outside its scaled bounds ([GlideRingHost]). */
+    val LOOK = FocusLook(FOCUS_SCALE, outset = 5f, band = 5f, ringScales = false)
+
+    /**
+     * The gap between two items while they fit, on every shape: the prototype's 56 grown to the focus rule's for the big circle (a row
+     * does not know its circles' size; a column of a smaller circle is wider than it, which only adds air).
+     */
+    val GAP = FocusGap(LOOK, BIG_CIRCLE, 64f)
+
+    /** The least gap a compact stage's row uses when the items do not fit with [GAP]. */
     const val GAP_TIGHT = 44f
+
+    /** The tight gap at the compact stage's [scale]: [GAP_TIGHT], but never under the focus rule's for a big circle that size. */
+    fun tightGap(scale: Float): Float = ceil(maxOf(GAP_TIGHT, LOOK.minGap(BIG_CIRCLE * scale)))
 
     /** The widest label and status line of an item on a compact stage (a longer name is cut in its middle, a longer status wraps). */
     const val LABEL_MAX = 260f
@@ -29,24 +49,17 @@ object CircleRowLayout {
     /** A focused circle keeps this far from the cut edges of a scrolling row, so the next item peeks in beside it. */
     const val FOCUS_MARGIN = 150f
 
-    /** What a focused circle is scaled to, and its ring (a 5 px gap and 5 px of ring, drawn in the scaled layer). */
-    const val FOCUS_SCALE = 1.16f
-    const val RING = 10f
-
-    /** The least air between a focused circle's ring and its neighbour (the user's rule: the growth, the ring and 12 px). */
+    /** The least air between a focused circle's ring and a circle in the row of a grid below (the user's rule: the reach and 12 px). */
     const val FOCUS_AIR = 12f
 
-    /** How far a focused circle [side] wide reaches beyond its own box on each side: half its growth and the ring. */
-    fun focusReach(side: Float): Float = side * (FOCUS_SCALE - 1f) / 2f + RING * FOCUS_SCALE
-
     /**
-     * The gap between a circle and its label on a compact stage: the focused circle's reach and 8 px (the label's line has about 6 px of
-     * air above its capitals, so the ring stays 12 px or more from the letters).
+     * The gap between a circle and its label on a compact stage: the focused circle's reach ([LOOK]) and 8 px (the label's line has about
+     * 6 px of air above its capitals, so the ring stays 12 px or more from the letters).
      */
-    fun labelGap(side: Float): Float = focusReach(side) + 8f
+    fun labelGap(side: Float): Float = LOOK.reach(side) + 8f
 
     /** The gap between two rows of a grid of circles (the avatar picker) on a compact stage: the reach of a focused circle and [FOCUS_AIR] above it. */
-    fun rowGap(side: Float): Float = focusReach(side) + FOCUS_AIR
+    fun rowGap(side: Float): Float = LOOK.reach(side) + FOCUS_AIR
 
     /** An item is as wide as the widest of its circle, its label and its status line, the texts capped. */
     fun itemWidth(side: Float, label: Float, meta: Float): Float = maxOf(side, minOf(label, LABEL_MAX), minOf(meta, META_MAX))

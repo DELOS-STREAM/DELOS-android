@@ -98,6 +98,7 @@ and the texts of the app. A rule changes only by a change of this file that the 
 | K5 | Code that runs per frame or per input event does not allocate, format strings or build log lines. | Garbage collection pauses are visible as stutter. | Review |
 | K6 | Dead code is deleted, not commented out. A `TODO` names its issue. | Commented code is never maintained. | Review |
 | K7 | JNI code checks every lookup and allocation result, deletes local references on attached threads and keeps debug-only code behind the debug macro. | A failed lookup crashes the process without a Java stack trace. | Review |
+| K8 | Focusable siblings take their gap from `ui/FocusSpacing.kt`: a named `FocusGap`, `FocusLook.minGap` or `FocusRow`. The gap is never a bare literal, so it stays at least 2 · reach + 8 (GUI.md, "Focus spacing"). | A focused element's ring or lift touching its neighbour looks broken. | `FocusSpacingTest`; review |
 
 ## 9. Commit messages and branch names
 
