@@ -32,6 +32,7 @@ Glyph names are Phosphor 2.1.2 (Regular, with the Fill twin used on focus).
 
 | Glyph | Where | Why it is one meaning |
 |---|---|---|
+| `arrow-counter-clockwise` | Replay, the video player's back 10 s | turning time back |
 | `drop` (opacity) | Keyboard opacity, OSC opacity, Free stick opacity (Controls); Game background opacity (Appearance) | the same property on different targets |
 | `arrow-u-up-left` (reset) | Reset on-screen controls / Reset keyboard layout, Reset all, Reset to profile value, Reset filters, Reset metadata match, toasts | the same action |
 | `file-arrow-down` (import) | Import keyboard layout, Import special buttons | the same action |
@@ -444,8 +445,10 @@ The header pills. The per-app settings tab pills use the same glyphs.
 | Link: Steam | `steam-logo` | `STEAM` |  |
 | A video in the carousel and the viewer | `youtube-logo` | `VIDEO_PLAY` | a YouTube video, played in the app |
 | Video player: play / pause | `play` / `pause` | `PLAYER_PLAY` / `PLAYER_PAUSE` | repeat: `play` is Start game's |
-| Video player: back / forward 10 s | `rewind-circle` / `fast-forward-circle` | `PLAYER_BACK` / `PLAYER_FORWARD` | not `fast-forward` (Skip) |
+| Video player: back / forward 10 s (with a drawn "10") | `arrow-counter-clockwise` / `arrow-clockwise` | `PLAYER_SEEK_BACK` / `PLAYER_SEEK_FORWARD` | repeat: `arrow-counter-clockwise` is Replay's; both turn time back |
+| Video player: previous / next item | `skip-back` / `skip-forward` | `PLAYER_PREVIOUS` / `PLAYER_NEXT` |  |
 | Video player: sound / muted | `speaker-high` / `speaker-slash` | `PLAYER_SOUND` / `PLAYER_MUTED` | repeat: `speaker-high` is Play audio on the PC's |
+| Video player: low / no volume | `speaker-low` / `speaker-none` | `PLAYER_VOLUME_LOW` / `PLAYER_VOLUME_NONE` | the sound button at a low or zero volume |
 | A video that cannot play | `warning` | `WARNING` |  |
 | Game modes: single player / with others | `user` / `users-four` | `MODE_SINGLE` / `MODE_MULTI` |  |
 | Perspective | `cube-focus` | `PERSPECTIVE` |  |

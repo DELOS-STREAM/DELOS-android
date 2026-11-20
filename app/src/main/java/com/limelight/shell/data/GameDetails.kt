@@ -225,5 +225,8 @@ object IgdbImageUrls {
 
     fun youtubeThumb(videoId: String): String = "https://i.ytimg.com/vi/$videoId/hqdefault.jpg"
 
+    /** The largest still YouTube keeps (1280 × 720); not every video has one, so the viewer keeps [youtubeThumb] until it loads. */
+    fun youtubeStill(videoId: String): String = "https://i.ytimg.com/vi/$videoId/maxresdefault.jpg"
+
     fun youtubeWatch(videoId: String): String = "https://www.youtube.com/watch?v=$videoId"
 }

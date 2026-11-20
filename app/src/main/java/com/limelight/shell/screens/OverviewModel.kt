@@ -32,7 +32,7 @@ internal object OverviewModel {
     /** Videos first, then the screenshots (the prototype's order); [screenshotSize] is the viewer's picture (`screenshot_huge` on a 1080p stage). */
     fun media(details: GameDetails, screenshotSize: IgdbImageSize = IgdbImageSize.SCREENSHOT_HUGE): List<Media> =
         details.videos.mapIndexed { i, video ->
-            Media(MediaKind.VIDEO, video.videoId, video.name, IgdbImageUrls.youtubeThumb(video.videoId), IgdbImageUrls.youtubeThumb(video.videoId), i + 1)
+            Media(MediaKind.VIDEO, video.videoId, video.name, IgdbImageUrls.youtubeThumb(video.videoId), IgdbImageUrls.youtubeStill(video.videoId), i + 1)
         } + details.screenshots.mapIndexed { i, shot ->
             Media(
                 MediaKind.SCREENSHOT, shot.imageId, null,

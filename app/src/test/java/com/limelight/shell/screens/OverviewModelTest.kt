@@ -44,6 +44,7 @@ class OverviewModelTest {
         val media = OverviewModel.media(details())
         assertEquals(listOf(OverviewModel.MediaKind.VIDEO, OverviewModel.MediaKind.SCREENSHOT, OverviewModel.MediaKind.SCREENSHOT), media.map { it.kind })
         assertEquals("https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", media[0].thumb)
+        assertEquals("https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg", media[0].full)
         assertEquals("https://images.igdb.com/igdb/image/upload/t_screenshot_med/sc1.jpg", media[1].thumb)
         assertEquals("https://images.igdb.com/igdb/image/upload/t_screenshot_huge/sc1.jpg", media[1].full)
         assertEquals(2, media[2].number)

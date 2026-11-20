@@ -84,6 +84,7 @@
     <string name="overview_hint_unmute">Zapnout zvuk</string>
     <string name="overview_video_back">O 10 sekund zpět</string>
     <string name="overview_video_forward">O 10 sekund vpřed</string>
+    <string name="overview_video_volume">Hlasitost</string>
     <string name="overview_video_unavailable">Video nejde přehrát</string>
     <string name="overview_video_blocked">Jeho vlastník nepovoluje přehrávání v jiných aplikacích.</string>
     <string name="overview_video_failed">YouTube ho nenačetl. Zkontroluj připojení a zkus to znovu.</string>

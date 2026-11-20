@@ -43,7 +43,9 @@ fun List<Hint>.adaptedTo(kind: InputKind): List<Hint> = when (kind) {
     InputKind.CONTROLLER -> this
     InputKind.KEYBOARD -> {
         val shown = HashSet<InputCap>()
-        mapNotNull { hint -> hint.glyph.keyCap()?.takeIf(shown::add)?.let { hint.copy(glyph = Glyph.Cap(it), tappable = false) } }
+        mapNotNull { hint ->
+            hint.glyph.keyCap()?.takeIf(shown::add)?.let { hint.copy(glyph = Glyph.Cap(it), tappable = false, pair = hint.pair?.keyCap()?.let(Glyph::Cap)) }
+        }
     }
-    else -> mapNotNull { hint -> if (hint.tappable) hint else hint.glyph.forKind(kind)?.let { hint.copy(glyph = it) } }
+    else -> mapNotNull { hint -> if (hint.tappable) hint else hint.glyph.forKind(kind)?.let { hint.copy(glyph = it, pair = hint.pair?.forKind(kind)) } }
 }

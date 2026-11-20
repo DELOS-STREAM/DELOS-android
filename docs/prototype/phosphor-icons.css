@@ -321,10 +321,14 @@
 .ms[data-icon="video_play"] { --phosphor-glyph: "\e4fc"; }
 .ms[data-icon="player_play"] { --phosphor-glyph: "\e3d0"; }
 .ms[data-icon="player_pause"] { --phosphor-glyph: "\e39e"; }
-.ms[data-icon="player_back"] { --phosphor-glyph: "\e3fa"; }
-.ms[data-icon="player_forward"] { --phosphor-glyph: "\e22c"; }
 .ms[data-icon="player_sound"] { --phosphor-glyph: "\e44a"; }
 .ms[data-icon="player_muted"] { --phosphor-glyph: "\e45a"; }
+.ms[data-icon="player_seek_back"] { --phosphor-glyph: "\e038"; }
+.ms[data-icon="player_seek_forward"] { --phosphor-glyph: "\e036"; }
+.ms[data-icon="player_previous"] { --phosphor-glyph: "\e5a4"; }
+.ms[data-icon="player_next"] { --phosphor-glyph: "\e5a6"; }
+.ms[data-icon="player_volume_low"] { --phosphor-glyph: "\e44c"; }
+.ms[data-icon="player_volume_none"] { --phosphor-glyph: "\e44e"; }
 .ms[data-icon="mode_single"] { --phosphor-glyph: "\e4c2"; }
 .ms[data-icon="mode_multi"] { --phosphor-glyph: "\e68c"; }
 .ms[data-icon="perspective"] { --phosphor-glyph: "\ed0a"; }

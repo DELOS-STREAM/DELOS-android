@@ -76,6 +76,7 @@
     <string name="overview_hint_unmute">Ton an</string>
     <string name="overview_video_back">10 Sekunden zurück</string>
     <string name="overview_video_forward">10 Sekunden vor</string>
+    <string name="overview_video_volume">Lautstärke</string>
     <string name="overview_video_unavailable">Dieses Video kann nicht abgespielt werden</string>
     <string name="overview_video_blocked">Sein Eigentümer erlaubt die Wiedergabe in anderen Apps nicht.</string>
     <string name="overview_video_failed">YouTube konnte es nicht laden. Prüf die Verbindung und versuch es noch mal.</string>

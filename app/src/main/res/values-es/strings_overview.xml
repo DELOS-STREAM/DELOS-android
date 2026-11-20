@@ -80,6 +80,7 @@
     <string name="overview_hint_unmute">Activar sonido</string>
     <string name="overview_video_back">Retroceder 10 segundos</string>
     <string name="overview_video_forward">Avanzar 10 segundos</string>
+    <string name="overview_video_volume">Volumen</string>
     <string name="overview_video_unavailable">No se puede reproducir este vídeo</string>
     <string name="overview_video_blocked">Su propietario no permite reproducirlo en otras aplicaciones.</string>
     <string name="overview_video_failed">YouTube no pudo cargarlo. Revisa la conexión y vuelve a intentarlo.</string>
