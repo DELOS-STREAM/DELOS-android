@@ -21,8 +21,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.BringIntoViewSpec
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
-import androidx.compose.foundation.gestures.animateScrollBy
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -200,6 +198,10 @@ import com.limelight.shell.data.rememberArtworkResult
 import com.limelight.shell.ui.AnimatedArtLayer
 import com.limelight.shell.ui.LocalBackdropMirror
 import com.limelight.shell.ui.drawBackdropMirror
+import com.limelight.shell.ui.anchor
+import com.limelight.shell.ui.anchorRowFade
+import com.limelight.shell.ui.overdraw
+import androidx.compose.ui.unit.dp
 
 /** The page's sides (`.a-page`: padding 0 150px), the header's top and its column gap, the cover's size, in stage pixels. */
 private const val SIDE = 150f
@@ -448,7 +450,7 @@ internal fun GameOverview(
                         val destination = focus.targets[nextId]
                         if (destination != null) runCatching { destination.requester.requestFocus() }
                         else scope.launch {
-                            if (reduced) row.scrollToItem(nextIndex) else row.animateScrollToItem(nextIndex)
+                            row.anchor(nextIndex, reduced)
                             withFrameNanos { }
                             runCatching { focus.targets[nextId]?.requester?.requestFocus() }
                         }
@@ -566,7 +568,7 @@ internal fun GameOverview(
                 onIndex = { index ->
                     viewer = request.copy(index = index)
                     backdropShot = viewerMedia.getOrNull(index)?.thumb
-                    carouselIndex(index).takeIf { it >= 0 }?.let { scope.launch { track.animateScrollToItem(it) } }
+                    carouselIndex(index).takeIf { it >= 0 }?.let { scope.launch { track.anchor(it, reducedMotion) } }
                 },
                 onClosed = {
                     val index = carouselIndex(viewer?.index ?: request.index).coerceAtLeast(0)
@@ -601,18 +603,8 @@ private suspend fun revealPart(focus: OverviewFocus, id: String, part: PartFocus
         scroll.value / k, part.section == HEAD, element.top / k, element.bottom / k, sectionRect.top / k, sectionRect.bottom / k,
         view, scroll.maxValue / k,
     )
-    val track = part.track
-    if (track != null) {
-        val info = track.layoutInfo.visibleItemsInfo.firstOrNull { it.index == part.index }
-        val width = track.layoutInfo.viewportSize.width.toFloat()
-        if (info != null && width > 0f) {
-            val margin = OverviewScroll.TRACK_MARGIN * k
-            val delta = OverviewScroll.reveal(0f, info.offset.toFloat(), (info.offset + info.size).toFloat(), width, margin)
-            if (abs(delta) > 1f) kotlinx.coroutines.coroutineScope {
-                launch { if (reduced) track.scrollBy(delta) else track.animateScrollBy(delta, tween(560, easing = EaseOut)) }
-            }
-        }
-    }
+    // A carousel scrolls like the dashboard's cover row: the focused item glides to the row's start
+    part.track?.anchor(part.index, reduced)
     val pixels = (to * k).toInt()
     if (abs(pixels - scroll.value) > 1) {
         if (reduced) scroll.scrollTo(pixels) else scroll.animateScrollTo(pixels, tween(620, easing = EaseOut))
@@ -1215,8 +1207,9 @@ private fun MediaSection(
         Box(Modifier.padding(horizontal = SIDE.px)) { SectionHeading(Symbols.OVERVIEW_MEDIA, stringResource(R.string.overview_section_media), media.size) }
         LazyRow(
             state = track,
-            modifier = Modifier.fillMaxWidth().padding(top = 24.px, bottom = 30.px),
-            contentPadding = PaddingValues(start = SIDE.px, end = (SIDE + OverviewScroll.TRACK_MARGIN).px),
+            // Room above and below inside the edge fade's layer for the focus growth and ring
+            modifier = Modifier.fillMaxWidth().padding(top = 24.px, bottom = 30.px).overdraw(0.dp, TRACK_ROOM.px).anchorRowFade(LocalStage.current, track),
+            contentPadding = PaddingValues(start = SIDE.px, end = SIDE.px, top = TRACK_ROOM.px, bottom = TRACK_ROOM.px),
             horizontalArrangement = Arrangement.spacedBy(26.px),
         ) {
             itemsIndexed(media, key = { _, item -> item.kind.name + item.id }) { index, item ->
@@ -1462,9 +1455,9 @@ private fun SimilarSection(
         Box(Modifier.padding(horizontal = SIDE.px)) { SectionHeading(Symbols.OVERVIEW_SIMILAR, stringResource(R.string.overview_section_similar)) }
         LazyRow(
             state = row,
-            modifier = Modifier.fillMaxWidth(),
-            // Room above and below for the focus growth (6 %) and the ring of the 260 × 390 covers
-            contentPadding = PaddingValues(start = SIDE.px, end = SIDE.px, top = 16.px, bottom = 30.px),
+            // The edge fade's layer reaches 8 px further up and down: room for the focus growth (6 %) and the ring of the 260 × 390 covers
+            modifier = Modifier.fillMaxWidth().overdraw(0.dp, 8.px).anchorRowFade(LocalStage.current, row),
+            contentPadding = PaddingValues(start = SIDE.px, end = SIDE.px, top = 24.px, bottom = 38.px),
             horizontalArrangement = Arrangement.spacedBy(30.px),
         ) {
             itemsIndexed(details.similarGames, key = { _, game -> game.id }) { index, game ->
@@ -1508,6 +1501,9 @@ private fun SimilarSection(
 private const val SIMILAR_W = 260f
 private const val SIMILAR_H = 390f
 private const val SIMILAR_CORNER = 24f
+
+/** Room above and below the carousel's pictures inside its edge fade's layer: their focus growth (6 %) and ring. */
+private const val TRACK_ROOM = 24f
 
 /**
  * The header cover this frame ([OverviewMotion.cover], [OverviewMotion.fillScale]): one scale and the translation of its top-left
