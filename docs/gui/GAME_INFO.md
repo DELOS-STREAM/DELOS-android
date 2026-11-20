@@ -599,9 +599,10 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
 5. The glass cards blur the backdrop behind them for real (Haze, 30 px) under the prototype's light gradient.
 6. The **backdrop** continues the dashboard's own background: its hero exactly as the dashboard shows it (the user's
    background blur, playing when animated) is drawn again from the shell's recording, not decoded or blurred a second time.
-   Over it a 40 px blurred layer of the hero is crossfaded in by the scroll over 520 px (opacity only, no animated blur
-   radius); it drifts up to 70 px slower than the page and zooms up to 10 %. Focusing a screenshot crossfades it to that
-   screenshot, sharp (62 %) and blurred (800 ms), leaving the media back to the hero.
+   A deeper hero render fades in over 520 px of scroll, using the greater of 24 px and the dashboard's configured blur
+   (opacity only, no animated blur radius); it drifts up to 70 px slower than the page and zooms up to 10 %. Browsing
+   screenshots or videos never changes this hero source, forces its deep layer or prefetches a media backdrop.
+   The text's dim layers use 70 % of their former opacity; the full-screen viewer keeps its own blurred still.
 7. The header's cover plays its animated artwork as the card does (the art-motion setting and reduced motion apply); it
    stops when the overview leaves.
 8. The page is a blur source over the shell's background: the top bar's glass and the screenshot viewer blur what lies
@@ -717,8 +718,8 @@ YouTube app.
    game itself needs no IGDB cover. Similar games the user owns show their library card, the others IGDB's
    `cover_big`.
 4. IGDB images load directly from `images.igdb.com`; they are kept in a 150 MB disk cache (`cacheDir/igdb-images`)
-   and a 32 MB memory cache of decoded pictures, decoded no larger than they are drawn. The first two thumbnails and
-   the first full screenshot are fetched while the overview opens.
+   and a 32 MB memory cache of decoded pictures, decoded no larger than they are drawn. Media images load where they
+   are displayed; opening the overview does not prefetch media for its background.
 
 
 ## Settings
