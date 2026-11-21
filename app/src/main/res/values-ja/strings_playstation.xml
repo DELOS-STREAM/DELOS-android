@@ -54,6 +54,9 @@
     <string name="ps_menu_help_rest">本体をレストモードにしてストリーミングを終了します。ゲームは中断され、本体で再開できます。</string>
     <string name="ps_settings_auto_bitrate_title">自動ビットレート</string>
     <string name="ps_settings_auto_bitrate_description">本体がビットレートを自動で選び、パケットロスがあると下げ、その後また上げます。オフ：下の固定ビットレートを使います。</string>
+    <string name="ps_settings_unlock_bitrate_title">ビットレートを200 Mbit/sまで解放</string>
+    <string name="ps_settings_unlock_bitrate_description">固定ビットレートを200 Mbit/sまで上げられます。PS5が送るのは最大約50 Mbit/sと報告されているため、それ以上では画質が変わらないことがあります。オフ：固定ビットレートは50 Mbit/s以下のままです。</string>
+    <string name="ps_settings_bitrate_zones">緑：この解像度で確実に得られる範囲。オレンジ：この解像度で本体が送ると報告されている最大値まで。赤：それ以上。本体が届けられないことがあります。</string>
     <string name="ps_settings_video_queue_title">フレームキュー</string>
     <string name="ps_settings_video_queue_description">デコーダーを待てるフレームの数。少ないほど遅延が小さく、多いほど不安定なネットワークでも滑らかです。</string>
     <string name="ps_settings_video_queue_few">少ない（最小遅延）</string>

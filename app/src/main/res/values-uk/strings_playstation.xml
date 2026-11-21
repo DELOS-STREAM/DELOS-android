@@ -54,6 +54,9 @@
     <string name="ps_menu_help_rest">Переводить консоль у режим спокою й зупиняє трансляцію. Гра лишається призупиненою, консоль може її продовжити.</string>
     <string name="ps_settings_auto_bitrate_title">Автоматичний бітрейт</string>
     <string name="ps_settings_auto_bitrate_description">Консоль сама обирає бітрейт: знижує його при втраті пакетів, а потім знову підвищує. Вимкнено: діє фіксований бітрейт нижче.</string>
+    <string name="ps_settings_unlock_bitrate_title">Розблокувати бітрейт до 200 Мбіт/с</string>
+    <string name="ps_settings_unlock_bitrate_description">Фіксований бітрейт може сягати 200 Мбіт/с. За повідомленнями, PS5 надсилає щонайбільше близько 50 Мбіт/с, тож більше може не змінити зображення. Вимкнено: фіксований бітрейт лишається 50 Мбіт/с або менше.</string>
+    <string name="ps_settings_bitrate_zones">Зелений: те, що ця роздільність отримає напевно. Помаранчевий: до найбільшого, що консоль, за повідомленнями, надсилає в цій роздільності. Червоний: понад це; консоль може цього не забезпечити.</string>
     <string name="ps_settings_video_queue_title">Черга кадрів</string>
     <string name="ps_settings_video_queue_description">Скільки кадрів може чекати на декодер. Менше — нижча затримка; більше — плавніше в нестабільній мережі.</string>
     <string name="ps_settings_video_queue_few">Мало (найнижча затримка)</string>

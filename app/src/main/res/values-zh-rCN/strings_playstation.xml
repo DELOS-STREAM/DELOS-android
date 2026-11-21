@@ -54,6 +54,9 @@
     <string name="ps_menu_help_rest">让主机进入待机模式并停止串流。游戏会暂停，之后主机可以继续。</string>
     <string name="ps_settings_auto_bitrate_title">自动码率</string>
     <string name="ps_settings_auto_bitrate_description">由主机自行选择码率：网络丢包时降低，之后再提高。关闭时使用下方的固定码率。</string>
+    <string name="ps_settings_unlock_bitrate_title">解锁码率至 200 Mbit/s</string>
+    <string name="ps_settings_unlock_bitrate_description">固定码率最高可设为 200 Mbit/s。据报告 PS5 最多发送约 50 Mbit/s，因此更高可能不会改善画面。关闭时固定码率保持在 50 Mbit/s 或以下。</string>
+    <string name="ps_settings_bitrate_zones">绿色：此分辨率肯定能获得的码率。橙色：直到据报告主机在此分辨率下发送的最高值。红色：超出此值，主机可能无法提供。</string>
     <string name="ps_settings_video_queue_title">帧队列</string>
     <string name="ps_settings_video_queue_description">可以等待解码器的帧数。越少延迟越低；越多在不稳定的网络中越流畅。</string>
     <string name="ps_settings_video_queue_few">少（最低延迟）</string>

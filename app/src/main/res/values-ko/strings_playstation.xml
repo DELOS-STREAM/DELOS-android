@@ -54,6 +54,9 @@
     <string name="ps_menu_help_rest">본체를 휴식 모드로 전환하고 스트리밍을 끝냅니다. 게임은 본체가 다시 이어갈 수 있게 일시 중지됩니다.</string>
     <string name="ps_settings_auto_bitrate_title">자동 비트레이트</string>
     <string name="ps_settings_auto_bitrate_description">본체가 비트레이트를 직접 고르고, 패킷 손실이 생기면 낮췄다가 다시 올립니다. 끄면 아래의 고정 비트레이트를 유지합니다.</string>
+    <string name="ps_settings_unlock_bitrate_title">비트레이트 200 Mbit/s까지 잠금 해제</string>
+    <string name="ps_settings_unlock_bitrate_description">고정 비트레이트를 200 Mbit/s까지 올릴 수 있습니다. PS5는 최대 약 50 Mbit/s를 보내는 것으로 알려져 있어 그 이상은 화질이 달라지지 않을 수 있습니다. 끄면 고정 비트레이트가 50 Mbit/s 이하로 유지됩니다.</string>
+    <string name="ps_settings_bitrate_zones">초록: 이 해상도에서 확실히 받는 범위. 주황: 이 해상도에서 본체가 보낸다고 알려진 최대치까지. 빨강: 그 이상이며 본체가 보내지 못할 수 있습니다.</string>
     <string name="ps_settings_video_queue_title">프레임 대기열</string>
     <string name="ps_settings_video_queue_description">디코더를 기다릴 수 있는 프레임 수입니다. 적을수록 지연이 낮고, 많을수록 불안정한 네트워크에서 부드럽습니다.</string>
     <string name="ps_settings_video_queue_few">적게 (최저 지연)</string>

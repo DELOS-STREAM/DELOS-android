@@ -54,6 +54,9 @@
     <string name="ps_menu_help_rest">Met la console en mode repos et arrête le streaming. Le jeu reste suspendu, la console peut le reprendre.</string>
     <string name="ps_settings_auto_bitrate_title">Débit automatique</string>
     <string name="ps_settings_auto_bitrate_description">La console choisit le débit, le baisse quand le réseau perd des paquets puis le remonte. Désactivé : le débit fixe ci-dessous est conservé.</string>
+    <string name="ps_settings_unlock_bitrate_title">Débloquer le débit jusqu’à 200 Mbit/s</string>
+    <string name="ps_settings_unlock_bitrate_description">Le débit fixe peut monter jusqu’à 200 Mbit/s. Une PS5 enverrait au plus environ 50 Mbit/s, donc plus peut ne rien changer à l’image. Désactivé : le débit fixe reste à 50 Mbit/s ou moins.</string>
+    <string name="ps_settings_bitrate_zones">Vert : ce que cette résolution reçoit à coup sûr. Orange : jusqu’au maximum que la console enverrait à cette résolution. Rouge : au-delà ; la console peut ne pas le fournir.</string>
     <string name="ps_settings_video_queue_title">File d\'images</string>
     <string name="ps_settings_video_queue_description">Combien d\'images peuvent attendre le décodeur. Moins réduit la latence ; plus lisse un réseau irrégulier.</string>
     <string name="ps_settings_video_queue_few">Peu (latence minimale)</string>

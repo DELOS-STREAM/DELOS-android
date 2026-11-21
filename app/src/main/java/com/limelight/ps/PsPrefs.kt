@@ -27,14 +27,22 @@ object PsPrefs {
     /** Boolean, default true: the console sets the bitrate itself from the loss DELOS reports, up to [autoCeilingKbps]. */
     const val AUTO_BITRATE = "ps_auto_bitrate"
 
+    /** Boolean, default false: a fixed bitrate may go past [MAX_BITRATE_KBPS], up to [UNLOCKED_MAX_BITRATE_KBPS]. */
+    const val UNLOCK_BITRATE = "ps_unlock_bitrate"
+
     /**
      * The range of a fixed bitrate. Remote Play takes the bitrate as a ceiling; a PS5 at 1080p60 is reported to send about 30–50 Mbit/s
-     * at most (protocol spec, 9 [UNVERIFIED]), so more would not change the picture.
+     * at most (protocol spec, 9 [UNVERIFIED]), so more is not guaranteed to change the picture: it is offered only unlocked.
      */
     const val MIN_BITRATE_KBPS = 2_000
     const val MAX_BITRATE_KBPS = 50_000
+    const val UNLOCKED_MAX_BITRATE_KBPS = 200_000
 
     fun autoBitrate(prefs: SharedPreferences): Boolean = prefs.getBoolean(AUTO_BITRATE, true)
+
+    /** The most a fixed bitrate may be: [MAX_BITRATE_KBPS], or [UNLOCKED_MAX_BITRATE_KBPS] when unlocked. */
+    fun maxBitrateKbps(prefs: SharedPreferences): Int =
+        if (prefs.getBoolean(UNLOCK_BITRATE, false)) UNLOCKED_MAX_BITRATE_KBPS else MAX_BITRATE_KBPS
 
     /** The ceiling of the automatic bitrate for a stream [height] lines high: the most that size uses. */
     fun autoCeilingKbps(height: Int): Int = when {
@@ -42,6 +50,17 @@ object PsPrefs {
         height <= 540 -> 8_000
         height <= 720 -> 20_000
         else -> MAX_BITRATE_KBPS
+    }
+
+    /**
+     * The bitrate up to which a stream [height] lines high is sure to get what it asks for: the low end of what a PS5 is reported to
+     * send at 1080p (30 Mbit/s, protocol spec, 9 [UNVERIFIED]), scaled down for smaller sizes, above the reference presets.
+     */
+    fun idealBitrateKbps(height: Int): Int = when {
+        height <= 360 -> 3_000
+        height <= 540 -> 6_000
+        height <= 720 -> 12_000
+        else -> 30_000
     }
 
     private const val RESOLUTION = "list_resolution"

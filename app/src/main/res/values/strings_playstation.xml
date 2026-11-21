@@ -55,6 +55,9 @@
     <string name="ps_menu_help_rest">Puts the console in rest mode and stops streaming. The game stays suspended where the console can resume it.</string>
     <string name="ps_settings_auto_bitrate_title">Automatic bitrate</string>
     <string name="ps_settings_auto_bitrate_description">The console picks the bitrate itself and lowers it when the network drops packets, then raises it again. Off: the fixed bitrate below is held.</string>
+    <string name="ps_settings_unlock_bitrate_title">Unlock bitrate up to 200 Mbit/s</string>
+    <string name="ps_settings_unlock_bitrate_description">Lets the fixed bitrate go up to 200 Mbit/s. A PS5 is reported to send about 50 Mbit/s at most, so more may not change the picture. Off: the fixed bitrate stays at 50 Mbit/s or less.</string>
+    <string name="ps_settings_bitrate_zones">Green: what this resolution is sure to get. Orange: up to the most the console is reported to send at this resolution. Red: above it; the console may not deliver it.</string>
     <string name="ps_settings_video_queue_title">Video frame queue</string>
     <string name="ps_settings_video_queue_description">How many frames may wait for the decoder. Fewer means lower latency; more smooths out an uneven network.</string>
     <string name="ps_settings_video_queue_few">Few (lowest latency)</string>

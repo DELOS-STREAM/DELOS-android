@@ -54,7 +54,7 @@ private enum class PsSettingsTab(@StringRes val label: Int, val icon: String, va
     STREAM(R.string.settings_tab_stream, Symbols.CAST,
         listOf("list_resolution", "list_fps", "seekbar_bitrate_kbps", "video_format", "checkbox_enable_hdr", "frame_pacing")),
     PICTURE(R.string.ps_settings_tab_picture, Symbols.MONITOR,
-        listOf("checkbox_sgsr", "list_sgsr_quality", "seekbar_sgsr_sharpness", "list_sgsr_supersampling_level", "list_video_scale_mode",
+        listOf("checkbox_sgsr", "list_sgsr_quality", "seekbar_sgsr_sharpness", "list_sgsr_supersampling_level", "list_frame_generation", "list_video_scale_mode",
             "checkbox_enable_perf_overlay", "checkbox_enable_perf_overlay_lite")),
     NETWORK(R.string.ps_settings_tab_network, Symbols.NETWORK_CHECK,
         listOf("checkbox_prevent_packet_loss", "checkbox_enable_pip")),
@@ -221,6 +221,9 @@ private fun psRows(
 ): List<PsRow> {
     val res = textResources()
     val auto = values[PsPrefs.AUTO_BITRATE] as? Boolean ?: true
+    val unlocked = values[PsPrefs.UNLOCK_BITRATE] as? Boolean ?: false
+    val maxBitrate = if (unlocked) PsPrefs.UNLOCKED_MAX_BITRATE_KBPS else PsPrefs.MAX_BITRATE_KBPS
+    val height = (values["list_resolution"] as? String)?.substringAfter('x')?.toIntOrNull() ?: 1080
     val classic = tab.classic.mapNotNull { key -> catalog.all.firstOrNull { it.key == key } }
         .filter { it.key !in (caps?.hidden ?: emptySet()) }
         .flatMap { spec ->
@@ -234,17 +237,23 @@ private fun psRows(
                     nextSettingChoice(current, choices, dir)?.let { stream.write(spec, it.value) }
                 }, options = choices.map { it.label }, selected = choices.indexOfFirst { it.value == current },
                     onPick = { i -> choices.getOrNull(i)?.let { stream.write(spec, it.value) } })
-                // The bitrate within what the console streams (PsPrefs.MAX_BITRATE_KBPS)
+                // The bitrate within what the console streams (PsPrefs.maxBitrateKbps), coloured by what this size is sure to get
                 SettingKind.SLIDER -> if (bitrate) RowValue.Slider(((current as? Number)?.toInt() ?: PsPrefs.MIN_BITRATE_KBPS)
-                    .coerceIn(PsPrefs.MIN_BITRATE_KBPS, PsPrefs.MAX_BITRATE_KBPS), PsPrefs.MIN_BITRATE_KBPS, PsPrefs.MAX_BITRATE_KBPS,
-                    spec.step, spec.unit, spec.divisor) { stream.write(spec, it) }
+                    .coerceIn(PsPrefs.MIN_BITRATE_KBPS, maxBitrate), PsPrefs.MIN_BITRATE_KBPS, maxBitrate,
+                    spec.step, spec.unit, spec.divisor, zones = listOf(
+                        SliderZone(PsPrefs.idealBitrateKbps(height), OnlineGreen),
+                        SliderZone(PsPrefs.autoCeilingKbps(height), WarnOrange),
+                        SliderZone(PsPrefs.UNLOCKED_MAX_BITRATE_KBPS, LowRed),
+                    )) { stream.write(spec, it) }
                     else RowValue.Slider((current as? Number)?.toInt() ?: spec.min, spec.min, spec.max, spec.step, spec.unit, spec.divisor) { stream.write(spec, it) }
                 else -> RowValue.Info(current?.toString().orEmpty())
             }
-            val row = PsRow(spec.key, spec.icon, spec.label, spec.description, SettingsHelp.details(res, spec, values, choices), value,
+            // The bitrate's help is its zones (the PC text points at the stream menu's bitrate, which a console stream lacks)
+            val row = PsRow(spec.key, spec.icon, spec.label, spec.description,
+                if (bitrate) res.getString(R.string.ps_settings_bitrate_zones) else SettingsHelp.details(res, spec, values, choices), value,
                 enabled = caps != null && stream.enabled(spec, caps) && !(bitrate && auto), impact = impact(spec.key, values))
-            // Automatic bitrate sits right above the bitrate it replaces
-            if (bitrate) listOf(autoBitrateRow(res, auto, prefs), row) else listOf(row)
+            // Automatic bitrate sits right above the bitrate it replaces, the unlock right below it
+            if (bitrate) listOf(autoBitrateRow(res, auto, prefs), row, unlockBitrateRow(res, unlocked, !auto, prefs)) else listOf(row)
         }
     return classic + psOnlyRows(tab, values, prefs)
 }
@@ -256,6 +265,17 @@ private fun autoBitrateRow(res: android.content.res.Resources, on: Boolean, pref
     val text = res.getString(R.string.ps_settings_auto_bitrate_description)
     return PsRow(PsPrefs.AUTO_BITRATE, Symbols.NETWORK_CHECK, res.getString(R.string.ps_settings_auto_bitrate_title), text, text,
         RowValue.Toggle(on) { prefs.edit().putBoolean(PsPrefs.AUTO_BITRATE, it).apply() })
+}
+
+/** A fixed bitrate past what a PS5 is reported to send (PsPrefs.UNLOCK_BITRATE); locking it again brings a higher bitrate back down. */
+private fun unlockBitrateRow(res: android.content.res.Resources, on: Boolean, enabled: Boolean, prefs: SharedPreferences): PsRow {
+    val text = res.getString(R.string.ps_settings_unlock_bitrate_description)
+    return PsRow(PsPrefs.UNLOCK_BITRATE, Symbols.MANUAL_BITRATE, res.getString(R.string.ps_settings_unlock_bitrate_title), text, text,
+        RowValue.Toggle(on) { unlock ->
+            val edit = prefs.edit().putBoolean(PsPrefs.UNLOCK_BITRATE, unlock)
+            if (!unlock && prefs.getInt(BITRATE_KEY, 0) > PsPrefs.MAX_BITRATE_KBPS) edit.putInt(BITRATE_KEY, PsPrefs.MAX_BITRATE_KBPS)
+            edit.apply()
+        }, enabled = enabled)
 }
 
 /** The PlayStation-only rows of [tab], written straight to the [PsPrefs] keys; [values] makes them follow every change of the file. */

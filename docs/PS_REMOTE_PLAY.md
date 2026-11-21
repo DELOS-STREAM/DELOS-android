@@ -44,6 +44,11 @@ more than one controller, keeping a stream connected in the background.
 9. PlayStation settings (`Screen.PsSettings`, the button under the console circles) are a file of their own (`PsPrefs`,
    `ps_settings`): the classic stream keys plus keyframe-on-loss, video queue depth, audio buffer and swapped channels.
    Defaults on first use: 1080p, 60 fps, HEVC, DELOS's recommended bitrate. Remote Play offers 360p to 1080p at 30 or 60 fps.
+10. Bitrate: automatic by default (the console adapts to the reported loss, up to `PsPrefs.autoCeilingKbps`). A fixed
+    bitrate is 2–50 Mbit/s, or 2–200 Mbit/s with `ps_unlock_bitrate`; turning the unlock off brings a higher value back to
+    50. The slider's track is coloured by resolution: green up to `PsPrefs.idealBitrateKbps` (30 Mbit/s at 1080p), orange up
+    to `autoCeilingKbps` (50 Mbit/s at 1080p), red above, with a milestone at each boundary. The figures rest on the
+    reported 30–50 Mbit/s of a PS5 at 1080p (protocol spec, section 9, unverified).
 
 ## Code map
 

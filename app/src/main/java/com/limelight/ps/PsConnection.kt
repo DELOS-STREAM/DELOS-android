@@ -112,7 +112,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             else -> PsCodec.HEVC
         }
         val bitrate = if (PsPrefs.autoBitrate(psPrefs)) PsPrefs.autoCeilingKbps(h)
-            else prefs.bitrate.coerceIn(PsPrefs.MIN_BITRATE_KBPS, PsPrefs.MAX_BITRATE_KBPS)
+            else prefs.bitrate.coerceIn(PsPrefs.MIN_BITRATE_KBPS, PsPrefs.maxBitrateKbps(psPrefs))
         return PsStreamRequest(width = w, height = h, fps = if (prefs.fps >= 60) 60 else 30, bitrateKbps = bitrate, codec = codec)
     }
 

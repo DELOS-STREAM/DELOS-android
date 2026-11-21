@@ -274,6 +274,8 @@ private fun wifiIcon(wifi: WifiStatus) = when (wifi.level) {
 private const val LOW_BATTERY = .2f
 
 internal val LowRed = androidx.compose.ui.graphics.Color(0xFFFF453A)
+/** The app's fixed warning orange (warning toasts, a slider's risky range). */
+internal val WarnOrange = androidx.compose.ui.graphics.Color(0xFFFF9D48)
 
 /**
  * The battery in the style of iOS: a light outline with a small cap, filled green to the charge level

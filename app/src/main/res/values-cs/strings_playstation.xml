@@ -54,6 +54,9 @@
     <string name="ps_menu_help_rest">Uspí konzoli do klidového režimu a ukončí stream. Hra zůstane pozastavená, odkud ji konzole umí obnovit.</string>
     <string name="ps_settings_auto_bitrate_title">Automatický datový tok</string>
     <string name="ps_settings_auto_bitrate_description">Konzole si datový tok volí sama: při ztrátě paketů ho sníží a pak zase zvýší. Vypnuto: drží se pevný datový tok níže.</string>
+    <string name="ps_settings_unlock_bitrate_title">Odemknout datový tok až na 200 Mbit/s</string>
+    <string name="ps_settings_unlock_bitrate_description">Pevný datový tok může jít až na 200 Mbit/s. PS5 podle zpráv posílá nejvýš asi 50 Mbit/s, takže víc nemusí obraz změnit. Vypnuto: pevný datový tok zůstane na 50 Mbit/s nebo méně.</string>
+    <string name="ps_settings_bitrate_zones">Zelená: to, co toto rozlišení dostane jistě. Oranžová: až po nejvíc, co konzole podle zpráv v tomto rozlišení posílá. Červená: nad tím; konzole to nemusí dodat.</string>
     <string name="ps_settings_video_queue_title">Fronta snímků</string>
     <string name="ps_settings_video_queue_description">Kolik snímků smí čekat na dekodér. Méně znamená nižší odezvu, více vyrovná nestabilní síť.</string>
     <string name="ps_settings_video_queue_few">Málo (nejnižší odezva)</string>

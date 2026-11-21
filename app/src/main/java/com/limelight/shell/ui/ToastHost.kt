@@ -90,7 +90,7 @@ private val CardRing = Color(0x2EA0B9E6)
 private class KindColors(val fill: Color, val on: Color)
 
 private val Mint = KindColors(Color(0xFF5EE0A0), Color(0xFF04261A))
-private val Orange = KindColors(Color(0xFFFF9D48), Color(0xFF2E1500))
+private val Orange = KindColors(WarnOrange, Color(0xFF2E1500))
 private val Coral = KindColors(Color(0xFFFF6577), Color(0xFF33060D))
 
 private fun kindColors(kind: ToastKind, colors: DelosColors): KindColors = when (kind) {

@@ -54,6 +54,9 @@
     <string name="ps_menu_help_rest">Coloca o console em modo de descanso e para a transmissão. O jogo fica suspenso para o console retomar.</string>
     <string name="ps_settings_auto_bitrate_title">Taxa de bits automática</string>
     <string name="ps_settings_auto_bitrate_description">O console escolhe a taxa de bits, reduz quando a rede perde pacotes e depois aumenta de novo. Desligado: mantém a taxa fixa abaixo.</string>
+    <string name="ps_settings_unlock_bitrate_title">Liberar taxa de bits até 200 Mbit/s</string>
+    <string name="ps_settings_unlock_bitrate_description">Deixa a taxa de bits fixa ir até 200 Mbit/s. Relatos indicam que um PS5 envia no máximo cerca de 50 Mbit/s, então mais pode não mudar a imagem. Desligado: a taxa fixa fica em 50 Mbit/s ou menos.</string>
+    <string name="ps_settings_bitrate_zones">Verde: o que esta resolução recebe com certeza. Laranja: até o máximo que o console envia nesta resolução, segundo relatos. Vermelho: acima disso; o console pode não entregar.</string>
     <string name="ps_settings_video_queue_title">Fila de quadros</string>
     <string name="ps_settings_video_queue_description">Quantos quadros podem esperar pelo decodificador. Menos significa menor latência; mais suaviza uma rede instável.</string>
     <string name="ps_settings_video_queue_few">Poucos (menor latência)</string>

@@ -88,7 +88,10 @@ sealed interface RowValue {
 
     data class Slider(val value: Int, val min: Int, val max: Int, val step: Int, val unit: String, val divisor: Int = 1,
         /** What the value reads at [min] instead of the number and unit (a slider whose lowest value means off). */
-        val minText: String? = null, val onChange: (Int) -> Unit) : RowValue
+        val minText: String? = null,
+        /** Coloured ranges of the track, in order (each up to its [SliderZone.until]), with a milestone between two; the value reads in its range's colour. */
+        val zones: List<SliderZone> = emptyList(),
+        val onChange: (Int) -> Unit) : RowValue
 
     data class Text(val text: String, val onClick: () -> Unit) : RowValue
 
@@ -98,6 +101,9 @@ sealed interface RowValue {
     /** Read-only text. */
     data class Info(val text: String) : RowValue
 }
+
+/** A range of a slider up to [until] (inclusive), shown in [color]. */
+data class SliderZone(val until: Int, val color: Color)
 
 /**
  * How many steps one key repeat moves a slider: one at first, then more the longer the key is held,
@@ -486,8 +492,16 @@ private fun RowValueView(value: RowValue, focused: Boolean, choice: ChoiceMotion
             val knobScale by animateKnobScale(focused)
             val k = stageUnit()
             val trackWidth = 220f * LocalStage.current.compactScale
+            val range = (value.max - value.min).coerceAtLeast(1).toFloat()
             Box(Modifier.size(trackWidth.px, 48.px).drawWithContent {
                 drawContent()
+                // The milestones: a short bar across the track where one zone ends and the next begins
+                value.zones.forEach { zone ->
+                    if (zone.until <= value.min || zone.until >= value.max) return@forEach
+                    val x = size.width * (zone.until - value.min) / range
+                    drawRoundRect(colors.text, Offset(x - 1.5f * k, size.height / 2f - 11f * k),
+                        androidx.compose.ui.geometry.Size(3f * k, 22f * k), CornerRadius(1.5f * k))
+                }
                 // The knob of the slider grows while its row is focused, inside a soft halo
                 val radius = 14f * k * knobScale
                 val center = Offset(size.width * fraction, size.height / 2f)
@@ -510,12 +524,33 @@ private fun RowValueView(value: RowValue, focused: Boolean, choice: ChoiceMotion
                     } finally { dragging = null }
                 }
             }, contentAlignment = Alignment.Center) {
-                Box(Modifier.fillMaxWidth().size(height = 10.px, width = trackWidth.px).clip(CircleShape).background(colors.surface3)) {
-                    Box(Modifier.fillMaxHeight().fillMaxWidth(fraction).clip(CircleShape).background(Brush.horizontalGradient(listOf(colors.accent, colors.accent2))))
+                if (value.zones.isEmpty()) {
+                    Box(Modifier.fillMaxWidth().size(height = 10.px, width = trackWidth.px).clip(CircleShape).background(colors.surface3)) {
+                        Box(Modifier.fillMaxHeight().fillMaxWidth(fraction).clip(CircleShape).background(Brush.horizontalGradient(listOf(colors.accent, colors.accent2))))
+                    }
+                } else {
+                    // A zoned track: each range in its colour, dim past the value and full up to it
+                    Box(Modifier.fillMaxWidth().size(height = 10.px, width = trackWidth.px).clip(CircleShape).drawBehind {
+                        val filled = size.width * fraction
+                        var from = value.min
+                        value.zones.forEach { zone ->
+                            val until = zone.until.coerceIn(value.min, value.max)
+                            val start = size.width * (from - value.min) / range
+                            val end = size.width * (until - value.min) / range
+                            if (end > start) {
+                                drawRect(zone.color.copy(alpha = .28f), Offset(start, 0f), androidx.compose.ui.geometry.Size(end - start, size.height))
+                                if (filled > start) drawRect(zone.color, Offset(start, 0f),
+                                    androidx.compose.ui.geometry.Size(minOf(end, filled) - start, size.height))
+                            }
+                            from = until
+                        }
+                    })
                 }
             }
             val locale = LocalConfiguration.current.locales[0]
-            BasicText(SliderEdit.label(value, number, locale), style = text.copy(textAlign = TextAlign.End), maxLines = 1, modifier = Modifier.width((if (tight) 130 else 160).px))
+            val zoneColor = value.zones.firstOrNull { number <= it.until }?.color
+            BasicText(SliderEdit.label(value, number, locale), style = text.copy(textAlign = TextAlign.End, color = zoneColor ?: text.color), maxLines = 1,
+                modifier = Modifier.width((if (tight) 130 else 160).px))
         }
         is RowValue.Action -> Symbol(Symbols.CHEVRON_RIGHT, 30.tpx, if (calm) arrowColor.value else staticArrows)
         is RowValue.Text -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {

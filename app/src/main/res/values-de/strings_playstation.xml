@@ -54,6 +54,9 @@
     <string name="ps_menu_help_rest">Versetzt die Konsole in den Ruhemodus und beendet das Streaming. Das Spiel bleibt angehalten, wo die Konsole es fortsetzen kann.</string>
     <string name="ps_settings_auto_bitrate_title">Automatische Bitrate</string>
     <string name="ps_settings_auto_bitrate_description">Die Konsole wählt die Bitrate selbst, senkt sie bei Paketverlust und hebt sie danach wieder an. Aus: Die feste Bitrate darunter gilt.</string>
+    <string name="ps_settings_unlock_bitrate_title">Bitrate bis 200 Mbit/s freischalten</string>
+    <string name="ps_settings_unlock_bitrate_description">Die feste Bitrate darf bis 200 Mbit/s gehen. Eine PS5 sendet Berichten zufolge höchstens etwa 50 Mbit/s, mehr ändert das Bild also eventuell nicht. Aus: Die feste Bitrate bleibt bei 50 Mbit/s oder darunter.</string>
+    <string name="ps_settings_bitrate_zones">Grün: was diese Auflösung sicher bekommt. Orange: bis zum Höchstwert, den die Konsole bei dieser Auflösung Berichten zufolge sendet. Rot: darüber; die Konsole liefert es eventuell nicht.</string>
     <string name="ps_settings_video_queue_title">Bildwarteschlange</string>
     <string name="ps_settings_video_queue_description">Wie viele Bilder auf den Decoder warten dürfen. Weniger bedeutet geringere Latenz, mehr gleicht ein ungleichmäßiges Netzwerk aus.</string>
     <string name="ps_settings_video_queue_few">Wenige (geringste Latenz)</string>
