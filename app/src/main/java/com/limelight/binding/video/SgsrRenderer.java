@@ -143,6 +143,14 @@ public final class SgsrRenderer implements AutoCloseable {
     private final Choreographer.FrameCallback arrivalTick = this::onArrivalTick;
     private final Runnable arrivalStateChange = this::updateArrivalState;
     private final AtomicBoolean arrivalStatePending = new AtomicBoolean();
+    // Frame generation (FrameGenerator): the multiplier asked for (1 = off) and the display refresh it fills; GL thread state below
+    private volatile int frameGenMultiplier = 1;
+    private volatile long displayPeriodNs;
+    private volatile FrameGenerator frameGen;
+    private boolean frameGenUnavailable, frameGenScheduled;
+    // When the last decoded frame is shown (its requested presentation time): generated steps follow it one refresh apart
+    private long lastPresentTargetNs;
+    private final Choreographer.FrameCallback frameGenTick = this::onFrameGenTick;
     // These refer to the latest decoded/reconstructed frame. Display ticks never advance decoding
     // or temporal history and never rebuild its mip pyramid unless that frame changes.
     private int cachedSource, cachedProgram, cachedWidth, cachedHeight;
@@ -247,6 +255,19 @@ public final class SgsrRenderer implements AutoCloseable {
     public void setLatencyStages(LatencyStages stages) { latencyStages = stages; }
     /** Phase lock: the codec releases each frame with its target refresh as the buffer timestamp; SDR swaps honour it. */
     public void setPresentAtFrameTimestamp(boolean enabled) { presentAtFrameTimestamp = enabled; }
+    /**
+     * Frame generation: [multiplier] frames shown per decoded frame (1 = off) on a display refreshing at [displayHz]. SDR only for
+     * now; without the driver's frame extrapolation it stays off. Applies from the next decoded frame.
+     */
+    public void setFrameGeneration(int multiplier, float displayHz) {
+        frameGenMultiplier = tenBit ? 1 : Math.max(1, Math.min(4, multiplier));
+        displayPeriodNs = displayHz > 1f ? (long) (1_000_000_000L / displayHz) : 0L;
+    }
+    /** Frames generated since the stream began (0 while frame generation is off or unavailable). */
+    public long getGeneratedFrames() {
+        FrameGenerator generator = frameGen;
+        return generator != null ? generator.generated() : 0;
+    }
     /** On the GL thread with the window current: turns on EGL frame timestamps for the SDR window surface. */
     private static boolean enableSdrTimestamps() {
         try {
@@ -648,11 +669,17 @@ public final class SgsrRenderer implements AutoCloseable {
                 scheduleArrivalTick();
                 return;
             }
+            // Frame generation keeps this frame (before the final pass, at the size that pass samples) as the newest of its pair
+            final FrameGenerator generator = frameGenerator();
+            if (generator != null) {
+                generator.onRealFrame(source,sampledWidth,sampledHeight,texture.getTimestamp(),displayPeriodNs);
+            }
             statsFrameArrivalNs = arrivalNs;
             statsFrameArmed = true;
             presentTimestampNs = presentAtFrameTimestamp ? texture.getTimestamp() : 0L;
             presentCachedNormal();
             presentTimestampNs = 0L;
+            if (generator != null && generator.hasStep()) scheduleFrameGen();
             statsFrameArmed = false;
             final long swapEndNs=System.nanoTime();
             if (stages != null) {
@@ -730,6 +757,71 @@ public final class SgsrRenderer implements AutoCloseable {
         if (arrivalFrameScheduled && choreographer != null)
             choreographer.removeFrameCallback(arrivalTick);
         arrivalFrameScheduled = false;
+    }
+
+    /** The frame generator while frame generation is on (created on first use, null when off or the driver lacks it). GL thread. */
+    private FrameGenerator frameGenerator() {
+        int multiplier = frameGenMultiplier;
+        if (multiplier <= 1 || displayPeriodNs <= 0 || arrivalOnly) {
+            if (frameGen != null) { frameGen.close(); frameGen = null; }
+            return null;
+        }
+        if (frameGen == null && !frameGenUnavailable) {
+            frameGen = FrameGenerator.create(multiplier);
+            frameGenUnavailable = frameGen == null;
+            String state = frameGen != null ? "Frame generation on: up to " + multiplier + " frames per decoded frame"
+                    : "Frame generation unavailable: the GPU driver has no frame extrapolation";
+            LimeLog.info(state);
+            DiagLog.i("FrameGen",state);
+        }
+        if (frameGen != null && frameGen.multiplier() != multiplier) frameGen.setMultiplier(multiplier);
+        return frameGen;
+    }
+
+    private void scheduleFrameGen() {
+        if (!frameGenScheduled && choreographer != null) {
+            frameGenScheduled = true;
+            choreographer.postFrameCallback(frameGenTick);
+        }
+    }
+
+    /**
+     * A refresh between two decoded frames: the next generated step, presented on its refresh after the decoded frame
+     * (FrameGenerator.nextOffset). A decoded frame that is waiting, a full GPU or a refresh already gone drops the step (the display
+     * repeats the last image, as without generation); a decoded frame always wins.
+     */
+    private void onFrameGenTick(long frameTimeNanos) {
+        frameGenScheduled = false;
+        final FrameGenerator generator = frameGen;
+        if (generator == null || closed.get() || !outputAttached || arrivalIsActive() || !generator.hasStep()) return;
+        final long period = displayPeriodNs;
+        final long target = lastPresentTargetNs + generator.nextOffset() * period;
+        // The refresh before the target has not come yet: wait for it
+        if (target - frameTimeNanos > period * 3 / 2) { scheduleFrameGen(); return; }
+        final long now = System.nanoTime();
+        if (frameQueue.pending() > 0 || heldFrame || target < now || gpuBusy(now)) {
+            generator.skipStep();
+            if (generator.hasStep()) scheduleFrameGen();
+            return;
+        }
+        try {
+            final int image = generator.generate();
+            if (acquireOutput()) {
+                drawProgram(cachedProgram,image,cachedWidth,cachedHeight,cachedSampledWidth,cachedSampledHeight,cachedReconstruction);
+                require(GLES31.glGetError()==GLES31.GL_NO_ERROR,"Frame generation draw");
+                EGLExt.eglPresentationTimeANDROID(display,window,target);
+                require(EGL14.eglSwapBuffers(display,window),"Frame generation swap");
+            }
+        } catch (RuntimeException e) {
+            // Generation must never take the stream down: it stops, the decoded frames keep coming
+            LimeLog.warning("Frame generation stopped: " + e);
+            DiagLog.w("FrameGen","Frame generation stopped: " + e);
+            generator.close();
+            frameGen = null;
+            frameGenUnavailable = true;
+            return;
+        }
+        if (generator.hasStep()) scheduleFrameGen();
     }
 
     private void onArrivalTick(long frameTimeNanos) {
@@ -858,8 +950,9 @@ public final class SgsrRenderer implements AutoCloseable {
             long frameId = stages != null && sdrTimestamps ? nativeFrameNextId() : -1;
             // Phase lock: the frame's target refresh (the HDR SurfaceControl path presents as soon as it can)
             final long presentNowNs = System.nanoTime();
-            EGLExt.eglPresentationTimeANDROID(display,window,presentTimestampNs != 0L
-                    ? SgsrPacing.presentationTimeNs(presentTimestampNs,presentNowNs) : presentNowNs);
+            final long presentAtNs = presentTimestampNs != 0L ? SgsrPacing.presentationTimeNs(presentTimestampNs,presentNowNs) : presentNowNs;
+            EGLExt.eglPresentationTimeANDROID(display,window,presentAtNs);
+            lastPresentTargetNs = presentAtNs;
             require(EGL14.eglSwapBuffers(display,window),"SGSR swap");
             if (frameId >= 0) displayTimestamps.add(frameId,statsFrameArrivalNs);
         }
@@ -1044,6 +1137,9 @@ public final class SgsrRenderer implements AutoCloseable {
         handler.removeCallbacks(retryTask);
         heldFrame = false;
         stopArrivalTicks();
+        if (frameGenScheduled && choreographer != null) choreographer.removeFrameCallback(frameGenTick);
+        frameGenScheduled = false;
+        if (frameGen != null) { frameGen.close(); frameGen = null; }
         handler.removeCallbacks(arrivalStateChange);
         arrivalStatePending.set(false);
         arrivalCompletionListener = null;

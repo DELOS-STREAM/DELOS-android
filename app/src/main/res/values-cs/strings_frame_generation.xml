@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title_frame_generation">Generování snímků</string>
+    <string name="summary_frame_generation">Mezi snímky streamu ukazuje snímky, které předpoví GPU. Potřebuje ovladač GPU s extrapolací snímků (Adreno); jen SDR streamy.</string>
+    <string name="frame_generation_off">Vypnuto</string>
+    <string name="frame_generation_2x">2×</string>
+    <string name="frame_generation_3x">3×</string>
+    <string name="frame_generation_4x">4×</string>
+    <string name="help_list_frame_generation">Nepřidává čekání; okraje rychlých objektů mohou mít drobné chyby.</string>
+    <string name="help_list_frame_generation_1">Ukazují se jen snímky streamu.</string>
+    <string name="help_list_frame_generation_2">Jeden předpovězený snímek na snímek: 30 → 60 fps, 60 → 120 fps.</string>
+    <string name="help_list_frame_generation_3">Dva předpovězené snímky na snímek: 30 → 90 fps.</string>
+    <string name="help_list_frame_generation_4">Tři předpovězené snímky na snímek: 30 → 120 fps.</string>
+</resources>

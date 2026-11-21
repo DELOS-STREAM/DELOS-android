@@ -963,10 +963,12 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             LimeLog.info("Delos async decode: " + useAsyncCodec);
         }
         // Delos: an explicit codec reset changes output locally; the network session stays connected.
-        if ((!sgsrRequested || sgsrFailed || sgsrOutputMismatch()) && sgsr != null) { sgsr.close(); sgsr = null; }
-        if (sgsr == null && !sgsrFailed && sgsrRequested) {
-            sgsr = SgsrRenderer.create(context, surfaceHost, renderTarget, initialWidth, initialHeight, prefs.sgsrSharpness,
-                    prefs.sgsrMode.index(),
+        boolean stageWanted = sgsrRequested || frameGenStage();
+        if ((!stageWanted || sgsrFailed || sgsrOutputMismatch()) && sgsr != null) { sgsr.close(); sgsr = null; }
+        if (sgsr == null && !sgsrFailed && stageWanted) {
+            sgsr = SgsrRenderer.create(context, surfaceHost, renderTarget, initialWidth, initialHeight,
+                    sgsrRequested ? prefs.sgsrSharpness : 0,
+                    sgsrRequested ? prefs.sgsrMode.index() : UpscalerMode.SHARPEN_ONLY.index(),
                     prefs.sgsrSupersamplingLevel,
                     (videoFormat & MoonBridge.VIDEO_FORMAT_MASK_10BIT) != 0, sgsrHdrActive, currentHdrMetadata, () -> {
                 SgsrRenderer failed = sgsr;
@@ -997,6 +999,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             sgsr.setLatencyStages(latency);
             sgsr.setOverloadListener(this::onUpscalerOverload);
             sgsr.setPresentAtFrameTimestamp(prefs.framePacing == PreferenceConfiguration.FRAME_PACING_PHASE_LOCK);
+            sgsr.setFrameGeneration(frameGenStage() ? prefs.frameGenMultiplier : 1, displayRefreshHz());
         }
         DirectLaunchArrival arrival = directLaunchArrival;
         // Error publication may race recovery; keep OES until its EGL detach is confirmed.
@@ -1009,7 +1012,9 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                 ? "Delos video output: temporary stream arrival surface"
                 : "Delos video output: direct MediaCodec surface; no Delos sharpening shader");
 
-        try { applySurfaceFrameRate(renderTarget, targetFps); } catch (Throwable t) { LimeLog.warning("applySurfaceFrameRate failed: " + t); }
+        // With frame generation the display has to refresh at the generated rate, not the stream's
+        try { applySurfaceFrameRate(renderTarget, frameGenStage() ? targetFps * prefs.frameGenMultiplier : targetFps); }
+        catch (Throwable t) { LimeLog.warning("applySurfaceFrameRate failed: " + t); }
 
         try {
             MediaCodecInfo __info = videoDecoder.getCodecInfo();
@@ -1282,13 +1287,14 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         }
         if (sgsrFailed) return UpscalerStatus.UNAVAILABLE;
         if (sgsrRequested && sgsr == null) return UpscalerStatus.STARTING;
-        if (!sgsrRequested && sgsr != null) return UpscalerStatus.STOPPING;
-        return sgsr != null ? UpscalerStatus.ON : UpscalerStatus.OFF;
+        // A stage kept only for frame generation (sharpen only at 0) is no upscaler
+        if (!sgsrRequested && sgsr != null && !frameGenStage()) return UpscalerStatus.STOPPING;
+        return sgsr != null && sgsrRequested ? UpscalerStatus.ON : UpscalerStatus.OFF;
     }
     public void setUpscalingSharpness(int value) {
         prefs.sgsrSharpness = Math.max(0, Math.min(100, value));
         SgsrRenderer current = sgsr;
-        if (current != null) current.setSharpness(prefs.sgsrSharpness);
+        if (current != null && sgsrRequested) current.setSharpness(prefs.sgsrSharpness);
         PyroWaveRenderer pw = pyroWave;
         if (pw != null) pw.setSharpness(prefs.sgsrSharpness / 100f);
     }
@@ -1315,7 +1321,17 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     /** Whether the running SGSR stage was built for a different output size than the selected mode needs. */
     private boolean sgsrOutputMismatch() {
         SgsrRenderer current = sgsr;
-        return current != null && current.isSharpenGeometry() != (prefs.sgsrMode == UpscalerMode.SHARPEN_ONLY);
+        // Frame generation alone keeps a stream-sized sharpen-only stage
+        boolean sharpenGeometry = sgsrRequested ? prefs.sgsrMode == UpscalerMode.SHARPEN_ONLY : frameGenStage();
+        return current != null && current.isSharpenGeometry() != sharpenGeometry;
+    }
+
+    /**
+     * Frame generation needs the GL output stage (SgsrRenderer); with the upscaler off the stage runs as a pass-through (sharpen
+     * only at strength 0). SDR streams only for now (docs/VIDEO_FRAME_GENERATION_RESEARCH.md, phase 1).
+     */
+    private boolean frameGenStage() {
+        return prefs.frameGenMultiplier > 1 && (videoFormat & MoonBridge.VIDEO_FORMAT_MASK_10BIT) == 0;
     }
 
     private int getRequestedPyroWaveUpscalingMode() {
@@ -3290,6 +3306,17 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         }
     }
 
+
+    /** The refresh rate of the display the stream is on (the generated frames fill its refreshes). */
+    private float displayRefreshHz() {
+        try {
+            android.view.Display display = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? activity.getDisplay() : null;
+            if (display == null) display = activity.getWindowManager().getDefaultDisplay();
+            return display.getRefreshRate();
+        } catch (RuntimeException e) {
+            return 60f;
+        }
+    }
 
     private void applySurfaceFrameRate(android.view.Surface surface, int targetFps) {
         if (surface == null) return;

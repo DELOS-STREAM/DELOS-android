@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title_frame_generation">フレーム生成</string>
+    <string name="summary_frame_generation">ストリームのフレームの間に GPU が予測したフレームを表示します。フレーム外挿対応の GPU ドライバー（Adreno）が必要で、SDR のみです。</string>
+    <string name="frame_generation_off">オフ</string>
+    <string name="frame_generation_2x">2×</string>
+    <string name="frame_generation_3x">3×</string>
+    <string name="frame_generation_4x">4×</string>
+    <string name="help_list_frame_generation">待ち時間は増えませんが、速い物体の輪郭に小さな誤りが出ることがあります。</string>
+    <string name="help_list_frame_generation_1">ストリームのフレームだけを表示します。</string>
+    <string name="help_list_frame_generation_2">1 フレームごとに予測フレーム 1 枚：30 → 60 fps、60 → 120 fps。</string>
+    <string name="help_list_frame_generation_3">1 フレームごとに予測フレーム 2 枚：30 → 90 fps。</string>
+    <string name="help_list_frame_generation_4">1 フレームごとに予測フレーム 3 枚：30 → 120 fps。</string>
+</resources>

@@ -347,6 +347,8 @@ public class PreferenceConfiguration {
     public int sgsrSharpness;
     /** Native-resolution SGSR level: 1 = 1.33x (1440p), 2 = 2x (2160p) from 1080p. The stored choice; the stream menu changes it per session. */
     public int sgsrSupersamplingLevel;
+    /** Frame generation: frames shown per decoded frame (1 = off, 2 to 4); docs/VIDEO_FRAME_GENERATION_RESEARCH.md. */
+    public int frameGenMultiplier = 1;
     public boolean absoluteMouseMode;
     public boolean enableAudioFx;
     public boolean reduceRefreshRate;
@@ -834,6 +836,7 @@ public class PreferenceConfiguration {
         config.sgsrMode = UpscalerMode.fromValue(prefs.getString("list_sgsr_quality", UpscalerMode.STANDARD.value()));
         config.sgsrSharpness = Math.max(0, Math.min(100, prefs.getInt("seekbar_sgsr_sharpness", 50)));
         config.sgsrSupersamplingLevel = parseSupersamplingLevel(prefs.getString("list_sgsr_supersampling_level", "1"));
+        config.frameGenMultiplier = parseFrameGenMultiplier(prefs.getString("list_frame_generation", "1"));
         config.preferLowerDelays = getPreferLowerDelays(prefs);
 
 
@@ -999,5 +1002,15 @@ public class PreferenceConfiguration {
     /** The supersampling level behind a stored choice: only "2" selects 2x; anything else is the default 1x. */
     public static int parseSupersamplingLevel(String stored) {
         return "2".equals(stored) ? 2 : 1;
+    }
+
+    /** The stored frame generation choice ("1" off, "2" to "4"); anything else reads as off. */
+    public static int parseFrameGenMultiplier(String stored) {
+        try {
+            int value = Integer.parseInt(stored);
+            return value >= 2 && value <= 4 ? value : 1;
+        } catch (NumberFormatException e) {
+            return 1;
+        }
     }
 }

@@ -22,6 +22,18 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string-array name="frame_generation_names">
+        <item>@string/frame_generation_off</item>
+        <item>@string/frame_generation_2x</item>
+        <item>@string/frame_generation_3x</item>
+        <item>@string/frame_generation_4x</item>
+    </string-array>
+    <string-array name="frame_generation_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
     <string-array name="resolution_names">
         <item>@string/resolution_360p</item>
         <item>@string/resolution_480p</item>

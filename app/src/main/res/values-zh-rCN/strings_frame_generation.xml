@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title_frame_generation">帧生成</string>
+    <string name="summary_frame_generation">在串流的帧之间显示由 GPU 预测的帧。需要支持帧外推的 GPU 驱动（Adreno）；仅限 SDR。</string>
+    <string name="frame_generation_off">关闭</string>
+    <string name="frame_generation_2x">2×</string>
+    <string name="frame_generation_3x">3×</string>
+    <string name="frame_generation_4x">4×</string>
+    <string name="help_list_frame_generation">不会增加等待，但快速物体的边缘可能出现小错误。</string>
+    <string name="help_list_frame_generation_1">只显示串流本身的帧。</string>
+    <string name="help_list_frame_generation_2">每帧一个预测帧：30 → 60 fps，60 → 120 fps。</string>
+    <string name="help_list_frame_generation_3">每帧两个预测帧：30 → 90 fps。</string>
+    <string name="help_list_frame_generation_4">每帧三个预测帧：30 → 120 fps。</string>
+</resources>
