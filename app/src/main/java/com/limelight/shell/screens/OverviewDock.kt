@@ -35,6 +35,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -90,6 +91,7 @@ import dev.chrisbanes.haze.HazeState
 import kotlin.math.PI
 import androidx.compose.ui.layout.layout
 import kotlin.math.roundToInt
+import kotlin.math.min
 import kotlin.math.sin
 
 /** A stop of the viewer dock's focus (controller and keyboard); docs/gui/GAME_INFO.md §9.4. */
@@ -307,11 +309,13 @@ internal fun ViewerDock(
             val base = h - bottom * k
             val wide = w - 128f * k
             val compact = w - 256f * k
-            val dots = (74f + 26f * media.size) * k
+            // The dots' slots are 26 px, the current pill's 54 px ([PageDots])
+            val dots = (74f + 26f * min(media.size, PAGE_DOTS) + 28f) * k
             fun rect(x: Float, y: Float, width: Float, height: Float) = Rect(x, y, x + width, y + height)
             val videoFrames = listOf(
                 rect(64f * k, base - 248f * k, wide, 248f * k),
-                rect(108f * k, base - 122f * k, ((wide - 564f * k) / 2f - 74f * k).coerceAtLeast(0f), 54f * k),
+                // The title column ends before the transport in both variants: on a screenshot that is the previous button left of the dots
+                rect(108f * k, base - 122f * k, min((wide - 564f * k) / 2f - 74f * k, center - dots / 2f - 102f * k - 24f * k - 172f * k).coerceAtLeast(0f), 54f * k),
                 rect(108f * k, base - 224f * k, wide - 88f * k, 52f * k),
                 rect(center - 180f * k, base - 140f * k, 92f * k, 92f * k),
                 rect(center - 62f * k, base - 156f * k, 124f * k, 124f * k),
@@ -674,6 +678,16 @@ private fun VolumeSlider(state: DockState, player: OverviewVideoPlayer, focused:
     }
 }
 
+/** At most this many page dots: a longer gallery shows a window of them around the current item. */
+internal const val PAGE_DOTS = 9
+
+/** The items whose dots show: [PAGE_DOTS] around [shown], kept inside 0 until [size]. */
+internal fun pageWindow(size: Int, shown: Int): IntRange {
+    if (size <= PAGE_DOTS) return 0 until size
+    val first = (shown - PAGE_DOTS / 2).coerceIn(0, size - PAGE_DOTS)
+    return first until first + PAGE_DOTS
+}
+
 /** A screenshot's page indicator: one dot per item (videos as rings), the current one a gold bar; a tap on a dot goes there. */
 @Composable
 private fun PageDots(media: List<OverviewModel.Media>, shown: Int, reduced: Boolean, enabled: Boolean, onGo: (Int) -> Unit) {
@@ -684,17 +698,19 @@ private fun PageDots(media: List<OverviewModel.Media>, shown: Int, reduced: Bool
             .padding(horizontal = 37.px),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        media.forEachIndexed { i, item ->
+        for (i in pageWindow(media.size, shown)) key(media[i].kind, media[i].id) {
+            val item = media[i]
             val on = i == shown
             val width by animateFloatAsState(if (on) 40f else 12f, if (reduced) tween(0) else spring(dampingRatio = .6f, stiffness = 300f), label = "pageDot")
+            // The current item is a gold pill: its slot widens with it, so it never covers the dots beside it
             Box(
-                Modifier.height(76.px).width(26.px).then(if (enabled) Modifier.pointerInput(i) { detectTapGestures { onGo(i) } } else Modifier),
+                Modifier.height(76.px).width((width + 14f).px).then(if (enabled) Modifier.pointerInput(i) { detectTapGestures { onGo(i) } } else Modifier),
                 contentAlignment = Alignment.Center,
             ) {
-                val dot = Modifier.size(12.px).graphicsLayer { scaleX = width / 12f }.clip(CircleShape)
+                val dot = Modifier.height(12.px).width(width.px).clip(RoundedCornerShape(6.px))
                 when {
                     on -> Box(dot.background(colors.accent))
-                    item.kind == OverviewModel.MediaKind.VIDEO -> Box(dot.border(2.px, Color.White.copy(alpha = .55f), CircleShape))
+                    item.kind == OverviewModel.MediaKind.VIDEO -> Box(dot.border(2.px, Color.White.copy(alpha = .55f), RoundedCornerShape(6.px)))
                     else -> Box(dot.background(Color.White.copy(alpha = .4f)))
                 }
             }
@@ -719,7 +735,6 @@ internal fun DockRing(state: DockState, visible: () -> Float) {
 
 /** The dock and media use the overview's 0.6 s / 0.8 settle family. */
 internal val ViewerSpring = spring<Float>(OverviewMotion.SETTLE_DAMPING, OverviewMotion.stiffness(OverviewMotion.SETTLE_RESPONSE), visibilityThreshold = .0005f)
-internal val DockRingSpring = spring(OverviewMotion.SETTLE_DAMPING, OverviewMotion.stiffness(OverviewMotion.SETTLE_RESPONSE), visibilityThreshold = Rect(.5f, .5f, .5f, .5f))
 
 /**
  * The seek flash (variant B's arcs): a glass wedge of a ring around the picture's centre on the side of the seek, flashing gold, with the

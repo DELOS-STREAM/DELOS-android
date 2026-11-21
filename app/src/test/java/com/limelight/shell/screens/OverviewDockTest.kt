@@ -48,17 +48,18 @@ class OverviewDockTest {
         }
     }
 
-    @Test fun `media dock and focus ring share the overview settle spring`() {
-        assertEquals(.8f, ViewerSpring.dampingRatio, .0001f)
-        assertEquals(OverviewMotion.stiffness(.6f), ViewerSpring.stiffness, .0001f)
-        assertEquals(ViewerSpring.dampingRatio, DockRingSpring.dampingRatio, .0001f)
-        assertEquals(ViewerSpring.stiffness, DockRingSpring.stiffness, .0001f)
-    }
-
     @Test fun `repeated seeks one way add up, a pause or the other way starts again`() {
         assertEquals(20, seekFlashTotal(10, 1, 1_000, 1, 1_500))
         assertEquals(10, seekFlashTotal(20, 1, 1_000, -1, 1_200))
         assertEquals(10, seekFlashTotal(30, 1, 1_000, 1, 1_000 + SEEK_FLASH_CHAIN_MS + 1))
+    }
+
+    @Test fun `a long gallery shows a window of page dots around the current item`() {
+        assertEquals(0 until 5, pageWindow(5, 4))
+        assertEquals(0 until PAGE_DOTS, pageWindow(29, 2))
+        assertEquals(1 until 1 + PAGE_DOTS, pageWindow(29, 5))
+        assertEquals(29 - PAGE_DOTS until 29, pageWindow(29, 28))
+        (0 until 29).forEach { assertTrue(it in pageWindow(29, it)) }
     }
 
     @Test fun `input brings the hidden overlay back and marks the reveal`() {
