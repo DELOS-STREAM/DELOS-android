@@ -119,7 +119,7 @@ fun PsStartContent(profileName: String?) {
             consoles.forEachIndexed { i, c ->
                 CircleItem(
                     Symbols.CONSOLE_PS5, c.name,
-                    onClick = { context.startActivity(Intent(context, PsStreamActivity::class.java).putExtra(PsStreamActivity.EXTRA_CONSOLE, c.id)) },
+                    onClick = { context.startActivity(psStreamIntent(context, c.id, c.name)) },
                     modifier = if (i == 0) Modifier.focusRequester(first) else Modifier,
                     meta = stringResource(R.string.ps_console_meta), big = true, selected = i == 0,
                     contextMenu = ContextMenu(c.name, below = true, items = listOf(
@@ -136,8 +136,23 @@ fun PsStartContent(profileName: String?) {
                 meta = stringResource(R.string.ps_pair_new_meta), big = true,
             )
         }
+        // Under the circles, centred: Down from a console reaches it
+        PillButton(stringResource(R.string.ps_settings_title), Symbols.SETTINGS, { shell.navigate(Screen.PsSettings) })
     }
 }
+
+/**
+ * The extra that names the console for the stream. The lead's `PsConnection.EXTRA_CONSOLE` has the same value; this switches to it when
+ * the stream integration merges.
+ */
+private const val EXTRA_PS_CONSOLE = "ps_console"
+
+/** Starts the PlayStation stream in DelosStreamActivity; the loader and the companion show the console and "PlayStation". */
+private fun psStreamIntent(context: android.content.Context, consoleId: String, name: String): Intent =
+    Intent(context, com.limelight.DelosStreamActivity::class.java)
+        .putExtra(EXTRA_PS_CONSOLE, consoleId)
+        .putExtra(com.limelight.DelosStreamActivity.EXTRA_PC_NAME, name)
+        .putExtra(com.limelight.DelosStreamActivity.EXTRA_APP_NAME, "PlayStation") // l10n-ignore
 
 /** The three-step progress line of the pairing flow (variant A). */
 @Composable
@@ -386,7 +401,7 @@ private fun DoneStep(step: PsPairStep.Done) {
         Row(horizontalArrangement = Arrangement.spacedBy(18.px)) {
             PillButton(stringResource(R.string.ps_play_now), Symbols.PLAY_ARROW, {
                 shell.navigate(Screen.Start)
-                context.startActivity(Intent(context, PsStreamActivity::class.java).putExtra(PsStreamActivity.EXTRA_CONSOLE, step.consoleId))
+                context.startActivity(psStreamIntent(context, step.consoleId, step.name))
             }, Modifier.focusRequester(first), primary = true)
             PillButton(stringResource(R.string.ps_back_to_start), Symbols.CHECK, { shell.navigate(Screen.Start) })
         }

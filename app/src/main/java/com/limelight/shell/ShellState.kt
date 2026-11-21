@@ -73,6 +73,11 @@ sealed interface Screen {
     /** Pairing a PlayStation, one step per screen (prototype F; issue #25). */
     data class PairPs(val step: com.limelight.shell.ps.PsPairStep, override val back: Screen?) : Screen
 
+    /** The PlayStation stream settings, separate from the PC settings (the button under the consoles on the start screen). */
+    data object PsSettings : Screen {
+        override val back: Screen get() = Start
+    }
+
     /** Debug info: the device, a vibration test and the connected controllers (Settings → About). */
     data object DebugInfo : Screen {
         override val back: Screen get() = Settings

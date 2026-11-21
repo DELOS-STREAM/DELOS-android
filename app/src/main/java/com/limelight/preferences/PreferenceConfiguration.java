@@ -552,7 +552,11 @@ public class PreferenceConfiguration {
     }
 
     public static int getDefaultBitrate(Context context) {
-        SharedPreferences prefs = ProfilesManager.getInstance().getOverlayingSharedPreferences(context);
+        return getDefaultBitrate(ProfilesManager.getInstance().getOverlayingSharedPreferences(context));
+    }
+
+    /** The default bitrate for the resolution, frame rate, codec, HDR and chroma stored in [prefs]. */
+    public static int getDefaultBitrate(SharedPreferences prefs) {
         return getDefaultBitrate(
                 prefs.getString(RESOLUTION_PREF_STRING, DEFAULT_RESOLUTION),
                 prefs.getString(FPS_PREF_STRING, DEFAULT_FPS),
@@ -561,9 +565,7 @@ public class PreferenceConfiguration {
                 "444".equals(prefs.getString("list_pyrowave_chroma", "420")));
     }
 
-    private static FormatOption getVideoFormatValue(Context context) {
-        SharedPreferences prefs = ProfilesManager.getInstance().getOverlayingSharedPreferences(context);
-
+    private static FormatOption getVideoFormatValue(SharedPreferences prefs) {
         String str = prefs.getString(VIDEO_FORMAT_PREF_STRING, DEFAULT_VIDEO_FORMAT);
         if (str.equals("auto")) {
             return FormatOption.AUTO;
@@ -586,9 +588,7 @@ public class PreferenceConfiguration {
         }
     }
 
-    private static ScaleMode getVideoScaleMode(Context context) {
-        SharedPreferences prefs = ProfilesManager.getInstance().getOverlayingSharedPreferences(context);
-
+    private static ScaleMode getVideoScaleMode(SharedPreferences prefs) {
         String str = prefs.getString(VIDEO_SCALE_MODE_PREF_STRING, DEFAULT_VIDEO_SCALE_MODE);
         if (str.equals("fit")) {
             return ScaleMode.FIT;
@@ -605,13 +605,15 @@ public class PreferenceConfiguration {
         }
     }
 
-    
     public static boolean getPreferLowerDelays(Context context) {
-        SharedPreferences prefs = ProfilesManager.getInstance().getOverlayingSharedPreferences(context);
-        // default true: favor lower delay unless user opts out
+        return getPreferLowerDelays(ProfilesManager.getInstance().getOverlayingSharedPreferences(context));
+    }
+
+    public static boolean getPreferLowerDelays(SharedPreferences prefs) {
         return prefs.getBoolean(LOW_LATENCY_FRAME_BALANCE_PREF_STRING, false);
     }
-private static int getFramePacingValue(SharedPreferences prefs) {
+
+    private static int getFramePacingValue(SharedPreferences prefs) {
 
         // Migrate legacy never drop frames option to the new location
         if (prefs.contains(LEGACY_DISABLE_FRAME_DROP_PREF_STRING)) {
@@ -647,9 +649,7 @@ private static int getFramePacingValue(SharedPreferences prefs) {
         }
     }
 
-    private static AnalogStickForScrolling getAnalogStickForScrollingValue(Context context) {
-        SharedPreferences prefs = ProfilesManager.getInstance().getOverlayingSharedPreferences(context);
-
+    private static AnalogStickForScrolling getAnalogStickForScrollingValue(SharedPreferences prefs) {
         String str = prefs.getString(ANALOG_SCROLLING_PREF_STRING, DEFAULT_ANALOG_STICK_FOR_SCROLLING);
         if (str.equals("right")) {
             return AnalogStickForScrolling.RIGHT;
@@ -803,7 +803,7 @@ private static int getFramePacingValue(SharedPreferences prefs) {
         // This must happen after the preferences migration to ensure the preferences are populated
         config.bitrate = prefs.getInt(BITRATE_PREF_STRING, prefs.getInt(BITRATE_PREF_OLD_STRING, 0) * 1000);
         if (config.bitrate == 0) {
-            config.bitrate = getDefaultBitrate(context);
+            config.bitrate = getDefaultBitrate(prefs);
         }
 
         config.meteredBitrate = prefs.getInt((METERED_BITRATE_PREF_STRING), 0);
@@ -823,10 +823,10 @@ private static int getFramePacingValue(SharedPreferences prefs) {
             config.audioConfiguration = MoonBridge.AUDIO_CONFIGURATION_STEREO;
         }
 
-        config.videoScaleMode = getVideoScaleMode(context);
+        config.videoScaleMode = getVideoScaleMode(prefs);
         config.vrrSetting = prefs.getString(VRR_PREF_STRING, DEFAULT_VRR);
 
-        config.videoFormat = getVideoFormatValue(context);
+        config.videoFormat = getVideoFormatValue(prefs);
         config.pyroWaveChroma444 = "444".equals(prefs.getString("list_pyrowave_chroma", "420"));
         config.framePacing = getFramePacingValue(prefs);
         config.asyncDecode = prefs.getBoolean("checkbox_async_decode", false);
@@ -834,7 +834,7 @@ private static int getFramePacingValue(SharedPreferences prefs) {
         config.sgsrMode = UpscalerMode.fromValue(prefs.getString("list_sgsr_quality", UpscalerMode.STANDARD.value()));
         config.sgsrSharpness = Math.max(0, Math.min(100, prefs.getInt("seekbar_sgsr_sharpness", 50)));
         config.sgsrSupersamplingLevel = parseSupersamplingLevel(prefs.getString("list_sgsr_supersampling_level", "1"));
-        config.preferLowerDelays = getPreferLowerDelays(context);
+        config.preferLowerDelays = getPreferLowerDelays(prefs);
 
 
         String warpFactorStr = prefs.getString(FRAME_PACING_PREF_STRING, "");
@@ -844,7 +844,7 @@ private static int getFramePacingValue(SharedPreferences prefs) {
             config.framePacingWarpFactor = 4;
         }
 
-        config.analogStickForScrolling = getAnalogStickForScrollingValue(context);
+        config.analogStickForScrolling = getAnalogStickForScrollingValue(prefs);
 
         config.deadzonePercentage = prefs.getInt(DEADZONE_PREF_STRING, DEFAULT_DEADZONE);
 

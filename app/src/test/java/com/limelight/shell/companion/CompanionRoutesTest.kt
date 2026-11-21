@@ -29,13 +29,13 @@ class CompanionRoutesTest {
     private val routes: List<Screen> = listOf(
         Screen.Home, Screen.Settings, Screen.SettingsSearch, Screen.Profile, Screen.Devices, Screen.Start, Screen.Boot(), Screen.Boot(Screen.Settings),
         Screen.CreateProfile(false, null), Screen.PairPc(Screen.Start), Screen.DebugInfo, Screen.OscPreview, Screen.GameSettings(pc, app), Screen.Artwork(pc, app),
-        Screen.Pin("pc-1", "Gaming PC", null, Screen.Start),
+        Screen.Pin("pc-1", "Gaming PC", null, Screen.Start), Screen.PsSettings,
     )
 
     @Test fun everyRouteOfTheShellIsListed() {
-        // Screen's direct subclasses: 13 data objects and classes, Boot twice here
+        // Screen's direct subclasses listed here: 15 data objects and classes, Boot twice
         val kinds = routes.map { it::class }.toSet()
-        assertEquals(14, kinds.size)
+        assertEquals(15, kinds.size)
     }
 
     @Test fun everyRouteHasAContentKind() {
