@@ -11,30 +11,29 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 ## [Unreleased]
 
 ### Added
-- **Game info** ([#107](https://github.com/DELOS-STREAM/DELOS-android/issues/107)): press Down on a game (or swipe its cover up, tap the "Game info" chip, or scroll down over it with a mouse or trackpad) to open a page about it: cover, title, critic and player ratings, age rating, Play and App settings, your streaming time, summary and story, screenshots and trailers, details, links and similar games. The data and pictures load from IGDB and Steam, which see your IP address.
-- Trailers and screenshots come from Steam when the game has them: trailers play inside the app without ads, each with its own preview frame. YouTube and IGDB are the fallback ([#112](https://github.com/DELOS-STREAM/DELOS-android/issues/112), [#117](https://github.com/DELOS-STREAM/DELOS-android/issues/117)).
-- Full-screen viewer for screenshots and trailers with a glass control dock: timeline, play/pause, 5 s back and forward, previous/next and volume. Swipe sideways (finger, or two fingers on a trackpad) and the next item slides in; double-tap a side to skip 5 s; L1/R1 browse with a controller; a tap shows or hides the dock ([#110](https://github.com/DELOS-STREAM/DELOS-android/issues/110)).
-- Phase lock frame pacing: each new frame is shown at the last safe moment before the screen refreshes, so a slightly late frame is not pushed to the next refresh. Not yet measured on a device ([#115](https://github.com/DELOS-STREAM/DELOS-android/issues/115)).
-- The side menu shows the connected PC with a live status dot, and your total streaming time and last stream ([#98](https://github.com/DELOS-STREAM/DELOS-android/issues/98)).
-- Mouse and trackpad across the app: hovering focuses, a right click opens the item's menu, the wheel scrolls.
-- Every action works from a hardware keyboard, with key hints in the hint bar.
-- In Settings, the right menu button (Start) on a choice or slider opens its full list or slider.
+- **Game info** ([#107](https://github.com/DELOS-STREAM/DELOS-android/issues/107)): press Down on a game (or swipe its cover up, tap the "Game info" chip, or scroll down over it with a mouse or trackpad) and the dashboard continues into a page about the game. The cover flies into the header next to the title, the critic and player ratings, the age rating, Play, App settings and your streaming time; below follow the summary and story, screenshots and trailers, details, links and similar games. The background blurs deeper as you scroll, and Back, Up or pulling the page down returns to the dashboard. The data and pictures load from IGDB and Steam, which see your IP address.
+- **Steam trailers and screenshots** ([#112](https://github.com/DELOS-STREAM/DELOS-android/issues/112), [#117](https://github.com/DELOS-STREAM/DELOS-android/issues/117)): when a game is on Steam, its trailers play inside the app without ads and start at once, and its full-size screenshots replace IGDB's. Every trailer gets its own preview frame in the carousel. Games without Steam media fall back to YouTube and IGDB; nothing opens a browser or the YouTube app.
+- **Screenshot and trailer viewer** ([#110](https://github.com/DELOS-STREAM/DELOS-android/issues/110)): a full-screen viewer with a glass dock: timeline, play/pause, 5 s back and forward, previous/next, sound and volume; on a screenshot, page dots. Swipe sideways with a finger or two fingers on a trackpad and the next item slides in; double-tap the left or right side to skip 5 s; L1/R1 browse with a controller. A tap shows or hides the dock, which hides by itself after 3 s while a video plays.
+- **Phase lock** frame pacing ([#115](https://github.com/DELOS-STREAM/DELOS-android/issues/115)): each new frame is shown at the last moment that still makes the next screen refresh, so a frame that arrives a little late is not pushed a whole refresh back. It is listed first in frame pacing (hidden for PyroWave). Not yet measured on a device.
+- **Side menu** ([#98](https://github.com/DELOS-STREAM/DELOS-android/issues/98)): its header shows the connected PC with a live status dot (online, streaming, connecting, asleep, offline) and a card with your total streaming time and your last stream.
+- **Mouse and trackpad** across the app: hovering focuses an item without scrolling the page, a right click (or two-finger click) opens the item's menu, and the wheel scrolls lists and the library row.
+- **Hardware keyboard**: every action has a key (arrows, Enter, Esc, Tab for the side menu, O for the menu, F for filter and search, [ and ] for tabs), shown in the hint bar.
+- In Settings and the per-app settings, the right menu button (Start) on a choice or slider opens the full list of values or the slider, so a controller sees every option at once.
 
 ### Changed
-- Library filter: pick several values in each row and apply them with "Show N apps".
-- Touch: a tap on a cover only selects it; a tap on the selected cover starts the game.
-- Moving up or down goes to the first item of the next row and returns to the item you came from; focus rings no longer touch neighbouring items.
-- See-through panels blur what is behind them. Inside game info they are tinted instead, which keeps the page smooth over a playing background video.
-- Buttons, covers and rows share one press animation.
-- Frame pacing and codec lists show the familiar choices first.
-- The problem report card is centred and wider; the GPU impact chip shows a chip icon again.
+- **Library filter**: each row (genres, themes, HDR…) takes several values at once. The library changes only when you confirm with "Show N apps", which counts the matching games as you pick.
+- **Touch**: a tap on a cover only selects it and shows its background and info; a tap on the selected cover starts the game, so looking at a game never launches it by accident.
+- **Navigation**: moving up or down goes to the first item of the next row and back to the item you came from. Focus rings and glows no longer touch the neighbouring item; spacing widened on many screens.
+- **Glass**: see-through panels, badges and pills blur what lies behind them. Inside game info they are tinted instead, because the background there is blurred already and per-panel blur cost smoothness.
+- Buttons, covers and rows share one press animation that starts the moment you touch them.
+- Frame pacing and codec lists show the familiar choices first; the problem report card is centred and wider; the GPU impact chip shows a chip icon again.
 
 ### Fixed
-- Smoother on the AYN Odin 2: game info with an animated background stutters in about 2 % of frames instead of 15 %, and scrolling and focus moves do less work ([#113](https://github.com/DELOS-STREAM/DELOS-android/issues/113)).
-- SGSR 2 uses the previous frames again on moving pictures instead of upscaling each frame alone.
-- A cover swiped up is no longer cut off and follows the finger; pulling game info down to close no longer jumps ([#109](https://github.com/DELOS-STREAM/DELOS-android/issues/109)).
-- Back closes an open menu before the game info page behind it, and the side menu no longer opens over game info.
-- Tags and links that wrap to a new line in game info keep their spacing ([#111](https://github.com/DELOS-STREAM/DELOS-android/issues/111)).
+- **Smoothness on the AYN Odin 2** ([#113](https://github.com/DELOS-STREAM/DELOS-android/issues/113)): game info with an animated background stutters in about 2 % of frames instead of 15 %, and the fans stay quieter. Scrolling, focus moves and Settings also do less work per frame.
+- **SGSR 2** uses the previous frames again on moving pictures. Before, it mostly upscaled each frame on its own, so motion was less detailed and less stable.
+- A cover swiped up is no longer cut off at the top and follows the finger; pulling game info down to close no longer makes the cover jump ([#109](https://github.com/DELOS-STREAM/DELOS-android/issues/109)).
+- Back closes an open menu before the game info page behind it, and the side menu no longer opens over game info or the viewer.
+- Tags, age badges and links that wrap to a new line in game info keep their spacing ([#111](https://github.com/DELOS-STREAM/DELOS-android/issues/111)).
 
 ## [1.2.0] - 2026-11-17
 _Touch everywhere, the last input decides the hints, new controller glyphs, Guide and Back for the stream menu, anchored on-screen controls; the project moves to the DELOS-STREAM organization._
