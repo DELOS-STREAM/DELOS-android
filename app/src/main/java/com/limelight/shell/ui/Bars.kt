@@ -40,6 +40,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -287,18 +288,19 @@ private fun BatteryIndicator(battery: BatteryStatus) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
     // While charging, one cycle of 1.8 s: the green fades up and down, and the moment it is at full strength
-    // a ring pulses out from the outline, like the one around the focused cover
-    val phase = if (battery.charging) {
-        val p by rememberInfiniteTransition(label = "charging").animateFloat(
+    // a ring pulses out from the outline, like the one around the focused cover. The phase is read while drawing only, so
+    // the animation redraws the icon without recomposing it every frame.
+    val phase: State<Float>? = if (battery.charging) {
+        rememberInfiniteTransition(label = "charging").animateFloat(
             0f, 1f, infiniteRepeatable(tween(1800, easing = LinearEasing)), label = "chargingPhase",
         )
-        p
-    } else 0f
-    val pulse = if (battery.charging) .55f + .45f * EaseOut.transform(if (phase < .5f) phase * 2f else (1f - phase) * 2f) else 1f
-    val wave = EaseOut.transform((phase + .5f) % 1f)
+    } else null
     val fill = if (!battery.charging && battery.level <= LOW_BATTERY) LowRed else OnlineGreen
     Box(Modifier.size(48.px, 24.px), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
+            val p = phase?.value ?: 0f
+            val pulse = if (phase != null) .55f + .45f * EaseOut.transform(if (p < .5f) p * 2f else (1f - p) * 2f) else 1f
+            val wave = EaseOut.transform((p + .5f) % 1f)
             val k = stage.dpPerPx * density
             val stroke = 2f * k
             val cap = 3f * k

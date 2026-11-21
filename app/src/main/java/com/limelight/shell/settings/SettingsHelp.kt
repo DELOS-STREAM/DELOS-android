@@ -97,10 +97,14 @@ private val NOT_ALPHANUMERIC = Regex("[^a-z0-9]+")
 
 /**
  * The text of the string resource [name] (a `help_*` or `stream_help_*` key), or null when there is none. It goes through
- * the formatter, so a literal percent sign is written `%%` in the XML.
+ * the formatter, so a literal percent sign is written `%%` in the XML. The resource ids are kept ([helpIds]): the settings
+ * list asks for every row's help on each recomposition, and a lookup by name searches the resource table.
  */
 @SuppressLint("DiscouragedApi") // the help keys are built from setting keys; res/raw/keep.xml keeps the resources
 internal fun lookup(res: Resources, name: String, vararg args: Any): String? {
-    val id = res.getIdentifier(name, "string", res.getResourcePackageName(R.string.help_dynamic_fps))
+    val id = helpIds.getOrPut(name) { res.getIdentifier(name, "string", res.getResourcePackageName(R.string.help_dynamic_fps)) }
     return if (id == 0) null else res.getString(id, *args)
 }
+
+/** Resource ids by name (0: none), the same in every language and configuration of the app. */
+private val helpIds = java.util.concurrent.ConcurrentHashMap<String, Int>()

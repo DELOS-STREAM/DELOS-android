@@ -204,6 +204,8 @@ fun SettingsScreen(
     }
     LaunchedEffect(capabilities, profile.currentId, values["checkbox_unlock_fps"]) { capabilities?.let { stream.normalize(res, it) } }
     val act = settingsActions(profiles, stream)
+    // A row's search terms depend on its setting and the language only; the list is rebuilt on every focus move
+    val searchTerms = remember(res) { HashMap<String, String>() }
     val classic = profiles.catalog.visible.filter { spec ->
         spec.key !in (capabilities?.hidden ?: emptySet()) &&
             (activity?.packageManager?.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN) != false ||
@@ -230,7 +232,7 @@ fun SettingsScreen(
         SettingsItem(spec.key, spec.tab, spec.section, spec.icon, spec.label,
             description, row, stream.enabled(spec, capabilities),
             detail = SettingsHelp.details(res, spec.copy(description = description), values, capabilities?.choices(res, spec, values) ?: spec.choices),
-            searchTerms = settingSearchTerms(res, spec), impact = impact(spec.key, values))
+            searchTerms = searchTerms.getOrPut(spec.key) { settingSearchTerms(res, spec) }, impact = impact(spec.key, values))
     }
     val withLink = withLinkRows(classic, guidance, pc, values, profiles.catalog.all.firstOrNull { it.key == "seekbar_bitrate_kbps" }) { spec, kbps -> stream.write(spec, kbps) }
     val all = nativeSettings(appearance, update, startup, updateStartup, pcs, profiles.settings()) + withLink

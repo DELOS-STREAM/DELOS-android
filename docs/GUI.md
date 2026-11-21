@@ -60,14 +60,15 @@ The principles hold on every screen. The documents above specify how each screen
 
 ## Glass
 
-Every semi-transparent surface blurs what lies behind it for real (Haze). A surface is a panel, pill, chip, card,
+Every semi-transparent surface blurs what lies behind it for real (Haze), except over a backdrop that is blurred already
+(the game overview). A surface is a panel, pill, chip, card,
 overlay on a picture, dialog, menu, toast, hint bar pill, top bar pill, info box, dock, sheet or popover with a
 translucent fill.
 
 | Where the surface lies | Its glass |
 |---|---|
 | On a page, over the animated background | `glass(tint)`: the shell's background haze (`LocalBackdropHaze`, recorded once for the whole screen), 8 px |
-| Inside the game overview | The same `glass(tint)`: the page's own backdrop haze; its cards `overviewGlass` |
+| Inside the game overview | A tint, no blur: `glass(tint)` and `overviewGlass` find no source there. The page's backdrop is the hero blurred already, and one blur per pill, chip and card rendered the playing hero again for each of them every frame (#113; owner, 2026-11-21). The top bar over the page keeps its blur |
 | Over the whole screen (side menu, context menu, dialogs, filters, row popups, the result, the button capture, the problem report card) | `backdropBlur(haze, …)` over the shell's screen haze, which records the screen only while one of them is up (and 600 ms after) |
 | On a picture (a cover's badges and Game info chip, an artwork tile's caption and Animated badge, the launch scene's Cancel pill) | `backdropBlur` over the picture itself: the picture is a `hazeSource` of its own, 16 to 24 px |
 | Over the stream's video (a `SurfaceView`): the statistics, the classic notification and performance overlays | Nothing can blur it: a darker tint, black at 70 % |
