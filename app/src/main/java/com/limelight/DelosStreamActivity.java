@@ -33,6 +33,9 @@ import com.limelight.binding.video.StreamDisplayPlanner;
 import com.limelight.binding.video.StreamSurfaceController;
 import com.limelight.binding.video.VrrMode;
 import com.limelight.nvstream.NvConnection;
+import com.limelight.nvstream.StreamConnection;
+import com.limelight.ps.PsConnection;
+import com.limelight.ps.PsPrefs;
 import com.limelight.nvstream.NvConnectionListener;
 import com.limelight.nvstream.StreamConfiguration;
 import com.limelight.nvstream.http.ComputerDetails;
@@ -144,7 +147,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     private int displayWidth;
     private int displayHeight;
 
-    public NvConnection conn;
+    public StreamConnection conn;
+    // The PlayStation console this stream plays (PsConnection.EXTRA_CONSOLE), or null for a PC stream
+    private String psConsoleId;
     private StreamLoader spinner;
     // The loader for its whole life: spinner is dropped once connected, but the loader shows through the opening animation
     private StreamLoader loader;
@@ -250,7 +255,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     private final Runnable backgroundPing = () -> {
         if (connected) {
             timerHandler.postDelayed(DelosStreamActivity.this.backgroundPing, 20);
-            MoonBridge.sendEmptyPayload();
+            conn.sendKeepAlive();
         }
     };
 
@@ -284,8 +289,11 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         // We don't want a title bar
         requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        // Read the stream preferences
-        prefConfig = PreferenceConfiguration.readPreferences(this);
+        // Read the stream preferences: a PlayStation stream has its own settings, apart from every PC profile
+        psConsoleId = getIntent().getStringExtra(PsConnection.EXTRA_CONSOLE);
+        prefConfig = psConsoleId != null
+                ? PreferenceConfiguration.readPreferences(this, PsPrefs.INSTANCE.prefs(this))
+                : PreferenceConfiguration.readPreferences(this);
         tombstonePrefs = DelosStreamActivity.this.getSharedPreferences("DecoderTombstone", 0);
         windowController = new StreamWindowController(this, prefConfig, new WindowHost());
         surfaceController = new StreamSurfaceController(this::runOnUiThread, prefConfig, new SurfaceHost());
@@ -484,15 +492,17 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         launch = StreamIntentParams.fromIntent(getIntent());
         final PlaytimeStore playtimeStore = new PlaytimeStore(getApplicationContext());
         playtime = new PlaytimeTracker(SystemClock::elapsedRealtime, playtimeStore::add);
-        String playtimePc = getIntent().getStringExtra(EXTRA_PC_UUID);
-        if (playtimePc != null && launch.hasValidApp()) {
-            playtime.begin(new PlaytimeKey(ProfileStore.Companion.currentId(this), playtimePc, launch.appId));
-        }
-        httpConn = launch.createHttp(this);
+        if (psConsoleId == null) {
+            String playtimePc = getIntent().getStringExtra(EXTRA_PC_UUID);
+            if (playtimePc != null && launch.hasValidApp()) {
+                playtime.begin(new PlaytimeKey(ProfileStore.Companion.currentId(this), playtimePc, launch.appId));
+            }
+            httpConn = launch.createHttp(this);
 
-        if (!launch.hasValidApp()) {
-            finish();
-            return;
+            if (!launch.hasValidApp()) {
+                finish();
+                return;
+            }
         }
 
         // Initialize the MediaCodec helper before creating the decoder
@@ -648,38 +658,46 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         float displayRefreshRate = displayPlan.displayRefreshRate;
         float chosenFrameRate = displayPlan.streamFrameRate;
 
-        StreamConfiguration config = new StreamConfiguration.Builder()
-                .setResolution(
-                        displayWidth,
-                        displayHeight
-                )
-                .setLaunchRefreshRate(prefConfig.fps)
-                .setRefreshRate(chosenFrameRate)
-                .setVirtualDisplay(launch.vDisplay)
-                .setResolutionScaleFactor(prefConfig.resolutionScaleFactor)
-                .setApp(launch.app)
-                .setEnableUltraLowLatency(prefConfig.enableUltraLowLatency)
-                .setBitrate(isMetered ? prefConfig.meteredBitrate: prefConfig.bitrate)
-                .setEnableSops(false) // Delos: GFE only, Vibepollo / Apollo / Sunshine ignore it
-                .enableLocalAudioPlayback(prefConfig.playHostAudio)
-                .setMaxPacketSize(1392)
-                .setRemoteConfiguration(StreamConfiguration.STREAM_CFG_AUTO) // NvConnection will perform LAN and VPN detection
-                .setSupportedVideoFormats(supportedVideoFormats)
-                .setAttachedGamepadMask(gamepadMask)
-                .setClientRefreshRateX100((int)(displayRefreshRate * 100))
-                .setAudioConfiguration(prefConfig.audioConfiguration)
-                .setColorSpace(decoderRenderer.getPreferredColorSpace())
-                .setColorRange(decoderRenderer.getPreferredColorRange())
-                .setPersistGamepadsAfterDisconnect(!prefConfig.multiController)
-                .build();
+        if (psConsoleId != null) {
+            // A PlayStation stream: the console decides the stream from the PlayStation settings (PsConnection), the rest is the same
+            decoderRenderer.setStreamDiagnostics(prefConfig.bitrate, isMetered, false);
+            conn = new PsConnection(getApplicationContext(), psConsoleId, prefConfig);
+        } else {
+            StreamConfiguration config = new StreamConfiguration.Builder()
+                    .setResolution(
+                            displayWidth,
+                            displayHeight
+                    )
+                    .setLaunchRefreshRate(prefConfig.fps)
+                    .setRefreshRate(chosenFrameRate)
+                    .setVirtualDisplay(launch.vDisplay)
+                    .setResolutionScaleFactor(prefConfig.resolutionScaleFactor)
+                    .setApp(launch.app)
+                    .setEnableUltraLowLatency(prefConfig.enableUltraLowLatency)
+                    .setBitrate(isMetered ? prefConfig.meteredBitrate: prefConfig.bitrate)
+                    .setEnableSops(false) // Delos: GFE only, Vibepollo / Apollo / Sunshine ignore it
+                    .enableLocalAudioPlayback(prefConfig.playHostAudio)
+                    .setMaxPacketSize(1392)
+                    .setRemoteConfiguration(StreamConfiguration.STREAM_CFG_AUTO) // NvConnection will perform LAN and VPN detection
+                    .setSupportedVideoFormats(supportedVideoFormats)
+                    .setAttachedGamepadMask(gamepadMask)
+                    .setClientRefreshRateX100((int)(displayRefreshRate * 100))
+                    .setAudioConfiguration(prefConfig.audioConfiguration)
+                    .setColorSpace(decoderRenderer.getPreferredColorSpace())
+                    .setColorRange(decoderRenderer.getPreferredColorRange())
+                    .setPersistGamepadsAfterDisconnect(!prefConfig.multiController)
+                    .build();
 
-        decoderRenderer.setStreamDiagnostics(config.getBitrate(), isMetered, prefConfig.pyroWaveChroma444);
+            decoderRenderer.setStreamDiagnostics(config.getBitrate(), isMetered, prefConfig.pyroWaveChroma444);
 
-        // Initialize the connection
-        conn = new NvConnection(getApplicationContext(),
-                new ComputerDetails.AddressTuple(launch.host, launch.port),
-                launch.httpsPort, launch.uniqueId, config,
-                PlatformBinding.getCryptoProvider(this), launch.serverCert);
+            // Initialize the connection
+            conn = new NvConnection(getApplicationContext(),
+                    new ComputerDetails.AddressTuple(launch.host, launch.port),
+                    launch.httpsPort, launch.uniqueId, config,
+                    PlatformBinding.getCryptoProvider(this), launch.serverCert);
+        }
+        // The stats take the round trip from the stream's own connection
+        decoderRenderer.setRttInfoSupplier(conn::getEstimatedRttInfo);
         controllerHandler = new ControllerHandler(this, conn, this, prefConfig);
         keyboardTranslator = new KeyboardTranslator(prefConfig);
 
@@ -1004,7 +1022,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             // A surface that appears after a cancel must not start a connection
             if (loaderCancelled || isFinishing()) return;
             connecting = true;
-            conn.start(new AndroidAudioRenderer(DelosStreamActivity.this, prefConfig.playHostAudio),
+            conn.start(new AndroidAudioRenderer(DelosStreamActivity.this, prefConfig.playHostAudio, conn::getPendingAudioDurationMs),
                     decoderRenderer, DelosStreamActivity.this);
         }
 
@@ -1017,7 +1035,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     /** What StreamKeyHandler needs from the stream: the connection, the grab state, the menu and the Full keyboard. */
     private final class KeyHost implements StreamKeyHandler.Host {
         @Override
-        public NvConnection conn() {
+        public StreamConnection conn() {
             return conn;
         }
 
@@ -1068,7 +1086,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     /** What StreamPointerHandler needs from the stream: the connection, the mouse capture and the gesture actions. */
     private final class PointerHost implements StreamPointerHandler.Host {
         @Override
-        public NvConnection conn() {
+        public StreamConnection conn() {
             return conn;
         }
 
@@ -1103,7 +1121,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     /** What MouseModeController needs from the stream: the connection the touch contexts send to. */
     private final class MouseModeHost implements MouseModeController.Host {
         @Override
-        public NvConnection conn() {
+        public StreamConnection conn() {
             return conn;
         }
 
@@ -1659,7 +1677,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     public boolean stageFailed(final String stage, final int portFlags, final int errorCode) {
         // Perform a connection test if the failure could be due to a blocked port
         // This does network I/O, so don't do it on the main thread.
-        final int portTestResult = MoonBridge.testClientConnectivity(ServerHelper.CONNECTION_TEST_SERVER, 443, portFlags);
+        final int portTestResult = conn.reportsMoonlightPortFailures()
+                ? MoonBridge.testClientConnectivity(ServerHelper.CONNECTION_TEST_SERVER, 443, portFlags)
+                : MoonBridge.ML_TEST_RESULT_INCONCLUSIVE;
 
         if (errorCode == 0 && portFlags != 0 && (portTestResult == MoonBridge.ML_TEST_RESULT_INCONCLUSIVE || portTestResult == 0)) {
             spinner.setMessage(getResources().getString(R.string.unlocking_or_starting));
@@ -1693,8 +1713,10 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     public void connectionTerminated(final int errorCode) {
         // Perform a connection test if the failure could be due to a blocked port
         // This does network I/O, so don't do it on the main thread.
-        final int portFlags = MoonBridge.getPortFlagsFromTerminationErrorCode(errorCode);
-        final int portTestResult = MoonBridge.testClientConnectivity(ServerHelper.CONNECTION_TEST_SERVER,443, portFlags);
+        final int portFlags = conn.reportsMoonlightPortFailures() ? MoonBridge.getPortFlagsFromTerminationErrorCode(errorCode) : 0;
+        final int portTestResult = conn.reportsMoonlightPortFailures()
+                ? MoonBridge.testClientConnectivity(ServerHelper.CONNECTION_TEST_SERVER, 443, portFlags)
+                : MoonBridge.ML_TEST_RESULT_INCONCLUSIVE;
 
         runOnUiThread(new Runnable() {
             @Override
@@ -1767,8 +1789,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             return;
         }
         DiagLog.i("Stream", "Stream started");
-        StreamEncryption encryption = StreamEncryption.read(conn.getServerAppVersion());
-        DiagLog.i("Stream", encryption.logLine());
+        if (conn.getServerAppVersion() != null) {
+            DiagLog.i("Stream", StreamEncryption.read(conn.getServerAppVersion()).logLine());
+        }
         playtime.setConnected(true);
         timerHandler.removeCallbacks(playtimeFlush);
         timerHandler.postDelayed(playtimeFlush, PLAYTIME_FLUSH_MS);
@@ -1824,12 +1847,12 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
                     usbDriverServiceConnection, Service.BIND_AUTO_CREATE);
         }
 
-        // Add the launched game to the Android TV channel
-        ComputerDetails computer = new ComputerDetails();
-        computer.name = launch.pcName;
-        computer.uuid = DelosStreamActivity.this.getIntent().getStringExtra(EXTRA_PC_UUID);
-        if (launch.appName != null) {
-            // This may be null if launched from the "Resume Session" PC context menu item
+        // Add the launched game to the Android TV channel (PC streams: a console has no game list here)
+        if (psConsoleId == null && launch.appName != null) {
+            // The app name may be null if launched from the "Resume Session" PC context menu item
+            ComputerDetails computer = new ComputerDetails();
+            computer.name = launch.pcName;
+            computer.uuid = DelosStreamActivity.this.getIntent().getStringExtra(EXTRA_PC_UUID);
             new ShortcutHelper(this).reportGameLaunched(computer, launch.app);
         }
     }

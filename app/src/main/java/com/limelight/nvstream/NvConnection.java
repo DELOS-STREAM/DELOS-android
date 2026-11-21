@@ -44,7 +44,7 @@ import com.limelight.nvstream.http.PairingManager;
 import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
 
-public class NvConnection {
+public class NvConnection implements StreamConnection {
     // Context parameters
     private LimelightCryptoProvider cryptoProvider;
     private String uniqueId;
@@ -119,8 +119,39 @@ public class NvConnection {
     }
 
     /** The host's {@code appversion}, known once the start has read {@code serverinfo}. */
+    @Override
     public String getServerAppVersion() {
         return context.serverAppVersion;
+    }
+
+    @Override
+    public long getEstimatedRttInfo() {
+        return MoonBridge.getEstimatedRttInfo();
+    }
+
+    @Override
+    public int getPendingAudioDurationMs() {
+        return MoonBridge.getPendingAudioDuration();
+    }
+
+    @Override
+    public void sendKeepAlive() {
+        MoonBridge.sendEmptyPayload();
+    }
+
+    @Override
+    public boolean reportsMoonlightPortFailures() {
+        return true;
+    }
+
+    @Override
+    public boolean supportsRuntimeBitrate() {
+        return true;
+    }
+
+    @Override
+    public boolean supportsKeyboardAndMouse() {
+        return true;
     }
 
     private InetAddress resolveServerAddress() throws IOException {

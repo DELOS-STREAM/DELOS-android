@@ -13,16 +13,21 @@ import com.limelight.LimeLog;
 import com.limelight.nvstream.av.audio.AudioRenderer;
 import com.limelight.nvstream.jni.MoonBridge;
 
+import java.util.function.IntSupplier;
+
 public class AndroidAudioRenderer implements AudioRenderer {
 
     private final Context context;
     private final boolean enableAudioFx;
+    /** Audio the connection still holds ahead of this renderer, in ms (moonlight-common-c's queue, or a PlayStation jitter queue). */
+    private final IntSupplier pendingAudioMs;
 
     private AudioTrack track;
 
-    public AndroidAudioRenderer(Context context, boolean enableAudioFx) {
+    public AndroidAudioRenderer(Context context, boolean enableAudioFx, IntSupplier pendingAudioMs) {
         this.context = context;
         this.enableAudioFx = enableAudioFx;
+        this.pendingAudioMs = pendingAudioMs;
     }
 
     private AudioTrack createAudioTrack(int channelConfig, int sampleRate, int bufferSize, boolean lowLatency) {
@@ -188,14 +193,15 @@ public class AndroidAudioRenderer implements AudioRenderer {
     @Override
     public void playDecodedAudio(short[] audioData) {
         // Only queue up to 40 ms of pending audio data in addition to what AudioTrack is buffering for us.
-        if (MoonBridge.getPendingAudioDuration() < 40) {
+        int pending = pendingAudioMs.getAsInt();
+        if (pending < 40) {
             // This will block until the write is completed. That can cause a backlog
             // of pending audio data, so we do the above check to be able to bound
             // latency at 40 ms in that situation.
             track.write(audioData, 0, audioData.length);
         }
         else {
-            LimeLog.info("Too much pending audio data: " + MoonBridge.getPendingAudioDuration() +" ms");
+            LimeLog.info("Too much pending audio data: " + pending + " ms");
         }
     }
 

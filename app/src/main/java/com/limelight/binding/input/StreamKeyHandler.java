@@ -11,7 +11,7 @@ import android.view.KeyEvent;
 import androidx.annotation.Nullable;
 
 import com.limelight.binding.input.virtual_controller.keyboard.KeyBoardLayoutController;
-import com.limelight.nvstream.NvConnection;
+import com.limelight.nvstream.StreamConnection;
 import com.limelight.nvstream.input.KeyboardPacket;
 import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
@@ -33,7 +33,7 @@ public final class StreamKeyHandler {
 
     /** What the key handler needs from the stream activity. */
     public interface Host {
-        NvConnection conn();
+        StreamConnection conn();
 
         KeyboardTranslator keyboardTranslator();
 

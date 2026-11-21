@@ -41,7 +41,6 @@ class PsDebugActivity : Activity() {
     private var stream: PsStream? = null
     private var codec: MediaCodec? = null
     private var pad = PsControllerState()
-    private var audio: PsAudioPlayer? = null
 
     /** Sony's sign-in page in [com.limelight.shell.ps.PsSignInActivity]; DELOS only receives the account id (spec 3.1). */
     private fun signIn() {
@@ -169,8 +168,8 @@ class PsDebugActivity : Activity() {
         override fun onStatus(text: String) = say(text)
         override fun onEnded(reason: String) { say("Stream ended: $reason"); runOnUiThread { surface.visibility = View.GONE; panel.visibility = View.VISIBLE } }
         override fun onStreamInfo(width: Int, height: Int, videoHeader: ByteArray, audioHeader: ByteArray?) {
+            // Video only: the full stream with sound runs in DELOS's stream activity (PsConnection)
             say("STREAMINFO ${width}x$height, video header ${videoHeader.size} bytes, audio ${audioHeader?.let { PsHex.encode(it) }}")
-            audioHeader?.let { h -> runCatching { audio = PsAudioPlayer(h) }.onFailure { say("audio: ${it.message}") } }
             runOnUiThread {
                 panel.visibility = View.GONE
                 surface.visibility = View.VISIBLE
@@ -184,7 +183,6 @@ class PsDebugActivity : Activity() {
             }
         }
         override fun onVideoFrame(frame: ByteArray, index: Int) = feed(frame)
-        override fun onAudio(opus: ByteArray, frameIndex: Int) { audio?.play(opus, frameIndex) }
     }
 
     /** Frames waiting for a decoder input buffer; the codec runs asynchronously, so the network thread never waits for it. */
@@ -231,7 +229,6 @@ class PsDebugActivity : Activity() {
     private fun stop() = thread {
         stream?.close(); stream = null
         ctrl?.close(); ctrl = null
-        audio?.close(); audio = null
         say("Stopped")
         runOnUiThread { surface.visibility = View.GONE; panel.visibility = View.VISIBLE; immersive(false) }
     }

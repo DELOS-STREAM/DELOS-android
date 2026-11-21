@@ -238,6 +238,8 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     private String glRenderer;
     private boolean foreground = true;
     private PerfOverlayListener perfListener;
+    /** The stream's round trip for the stats ({@code (rttMs << 32) | varianceMs}, -1 unknown); set from the connection before it starts. */
+    private volatile java.util.function.LongSupplier rttInfo = MoonBridge::getEstimatedRttInfo;
 
     private static final int CR_MAX_TRIES = 10;
     private static final int CR_RECOVERY_TYPE_NONE = 0;
@@ -439,6 +441,11 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         }
 
         return decoderInfo;
+    }
+
+    /** Where the stats take the round trip from: the stream's connection (a PlayStation stream has no moonlight-common-c session). */
+    public void setRttInfoSupplier(java.util.function.LongSupplier rttInfo) {
+        this.rttInfo = rttInfo;
     }
 
     public void setRenderTarget(Surface renderTarget) {
@@ -1421,7 +1428,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         long drawFrames = stats[PyroWaveRenderer.STAT_GPU_DRAW_FRAMES];
         float processingTimeMs = drawFrames > 0 ? stats[PyroWaveRenderer.STAT_GPU_DRAW_TOTAL_US] / 1000f / drawFrames : 0f;
         long hostFrames = stats[PyroWaveRenderer.STAT_HOST_LATENCY_FRAMES];
-        long rttInfo = MoonBridge.getEstimatedRttInfo();
+        long rttInfo = this.rttInfo.getAsLong();
         float realtimeNetData = measureNetDataKb();
         String decoder = "PyroWave (Vulkan)";
         PyroWaveBacklog backlog = new PyroWaveBacklog(stats, seconds);
@@ -2703,7 +2710,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                         (float)lastTwo.decoderTimeMs / lastTwo.totalFramesReceived : 0f;
                 SgsrRenderer activeSgsr = sgsr;
                 float processingTimeMs = activeSgsr != null ? activeSgsr.getGpuTimeMs() : 0f;
-                long rttInfo = MoonBridge.getEstimatedRttInfo();
+                long rttInfo = this.rttInfo.getAsLong();
                 // Delos: measured once for both overlays, in KB per stats window (about a second); -1 if unknown
                 float realtimeNetData = measureNetDataKb();
                 StringBuilder sb = new StringBuilder();

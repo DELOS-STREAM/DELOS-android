@@ -7,7 +7,7 @@ import com.limelight.binding.input.touch.AbsoluteTouchContext;
 import com.limelight.binding.input.touch.RelativeTouchContext;
 import com.limelight.binding.input.touch.TouchContext;
 import com.limelight.binding.input.touch.TrackpadContext;
-import com.limelight.nvstream.NvConnection;
+import com.limelight.nvstream.StreamConnection;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.profiles.ProfilesManager;
 import com.limelight.ui.StreamContainer;
@@ -28,7 +28,7 @@ public final class MouseModeController {
 
     /** What the mouse mode needs from the stream activity. */
     public interface Host {
-        NvConnection conn();
+        StreamConnection conn();
 
         boolean isOnExternalDisplay();
     }
@@ -175,7 +175,7 @@ public final class MouseModeController {
         }
 
         //Initialize touch contexts
-        NvConnection conn = host.conn();
+        StreamConnection conn = host.conn();
         TouchContext[] touchContextMap = pointerHandler.touchContexts();
         for (int i = 0; i < touchContextMap.length; i++) {
             if (touchContextMap[i] != null) touchContextMap[i].cancelTouch();

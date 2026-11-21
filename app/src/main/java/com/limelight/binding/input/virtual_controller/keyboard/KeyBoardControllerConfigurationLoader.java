@@ -20,7 +20,7 @@ import androidx.preference.PreferenceManager;
 import com.limelight.GameMenu;
 import com.limelight.LimeLog;
 import com.limelight.R;
-import com.limelight.nvstream.NvConnection;
+import com.limelight.nvstream.StreamConnection;
 import com.limelight.nvstream.input.KeyboardPacket;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.utils.KeyConfigHelper;
@@ -216,7 +216,7 @@ public class KeyBoardControllerConfigurationLoader {
             final int icon,
             final boolean sticky,
             final KeyBoardController controller,
-            final NvConnection conn,
+            final StreamConnection conn,
             final Context context
     ) {
         KeyBoardDigitalButton button = new KeyBoardDigitalButton(controller, elementId, layer, context);
@@ -341,7 +341,7 @@ public class KeyBoardControllerConfigurationLoader {
     }
 
     /** The default layout on the screen the keys are drawn on (the window's size, from the resources). */
-    public static void createDefaultLayout(final KeyBoardController controller, final Context context, final NvConnection conn) {
+    public static void createDefaultLayout(final KeyBoardController controller, final Context context, final StreamConnection conn) {
         DisplayMetrics screen = context.getResources().getDisplayMetrics();
         createDefaultLayout(controller, context, conn, screen.widthPixels, screen.heightPixels);
     }
@@ -351,7 +351,7 @@ public class KeyBoardControllerConfigurationLoader {
      * never wider than the screen (a key is at most an eighteenth of its width), the stick against the left edge and the D-pad
      * against the right one, both kept on the screen whatever its shape.
      */
-    public static void createDefaultLayout(final KeyBoardController controller, final Context context, final NvConnection conn,
+    public static void createDefaultLayout(final KeyBoardController controller, final Context context, final StreamConnection conn,
                                            final int screenWidth, final int screenHeight) {
 
         PreferenceConfiguration config = PreferenceConfiguration.readPreferences(context);

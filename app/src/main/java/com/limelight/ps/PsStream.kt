@@ -14,13 +14,17 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-/** What the stream reports to its user (the debug screen today, the stream activity later). */
+/** What the stream reports to its user (the stream activity through [PsConnection], or the debug bench). */
 interface PsStreamListener {
     fun onStreamInfo(width: Int, height: Int, videoHeader: ByteArray, audioHeader: ByteArray?) {}
     /** A complete Annex-B access unit. */
     fun onVideoFrame(frame: ByteArray, index: Int) {}
     fun onAudio(opus: ByteArray, frameIndex: Int) {}
     fun onRumble(left: Int, right: Int) {}
+    /** The console's pad info (8.4): light bar colour and whether the game resets the motion origin. */
+    fun onPadInfo(red: Int, green: Int, blue: Int, motionReset: Boolean) {}
+    /** CONNECTIONQUALITY: the console's round-trip estimate and its target bitrate. */
+    fun onConnectionQuality(rttMs: Int, targetKbps: Int) {}
     fun onStatus(text: String) {}
     fun onEnded(reason: String) {}
 }
@@ -36,6 +40,8 @@ class PsStream(
     private val rpCrypt: RpCrypt,
     private val request: PsStreamRequest,
     private val listener: PsStreamListener,
+    /** Ask for a keyframe whenever frames go missing, not only when one cannot be rebuilt (PsPrefs.KEYFRAME_ON_LOSS). */
+    private val keyframeOnLoss: Boolean = false,
 ) : AutoCloseable {
     private val v12 = target.takionVersion >= 12
     private val socket = DatagramSocket()
@@ -243,6 +249,10 @@ class PsStream(
         when (dataType) {
             0 -> onMessage(PsProtoMessage(whole))
             7 -> if (whole.size >= 3) listener.onRumble(u(whole[1]), u(whole[2]))
+            9 -> when {
+                whole.size >= 25 -> listener.onPadInfo(u(whole[9]), u(whole[10]), u(whole[11]), whole[12].toInt() != 0)
+                whole.size >= 17 -> listener.onPadInfo(u(whole[1]), u(whole[2]), u(whole[3]), whole[4].toInt() != 0)
+            }
         }
     }
 
@@ -251,7 +261,7 @@ class PsStream(
             PsMsg.BANG -> bang = m.message(3)
             PsMsg.STREAMINFO -> m.message(15)?.let { if (gkRecv == null) streamInfo = it else onStreamInfo(it) }
             PsMsg.DISCONNECT -> { listener.onEnded(m.message(10)?.string(1) ?: "disconnected"); close() }
-            PsMsg.CONNECTIONQUALITY -> m.message(17)?.let { listener.onStatus("quality: target ${it.uint(1)} kbit/s, rtt ${it.uint(5)}") }
+            PsMsg.CONNECTIONQUALITY -> m.message(17)?.let { listener.onConnectionQuality(it.uint(5)?.toInt() ?: -1, it.uint(1)?.toInt() ?: 0) }
         }
     }
 
@@ -275,7 +285,7 @@ class PsStream(
                 is PsFrameAssembler.Result.Frame -> listener.onVideoFrame(r.data, r.index)
                 is PsFrameAssembler.Result.Lost -> requestIdr(r.from, r.to)
             }
-            assembler.takeLoss()?.let { (a, b) -> corrupt(a, b) }
+            assembler.takeLoss()?.let { (a, b) -> if (keyframeOnLoss) requestIdr(a, b) else corrupt(a, b) }
         } else if (packet.audioMarker != 2) {
             val desc = packet.fecOrAudioDesc
             val size = desc ushr 8
@@ -291,6 +301,12 @@ class PsStream(
         sendMessage(2, 0, PsProtoWriter().uint(1, PsMsg.CORRUPTFRAME.toLong()).message(6, PsProtoWriter().uint(1, from.toLong()).uint(2, to.toLong())).toByteArray())
 
     private fun requestIdr(from: Int, to: Int) { corrupt(from, to); sendMessage(2, 0, PsMsg.simple(PsMsg.IDRREQUEST)) }
+
+    /** Asks the console for a keyframe now: the decoder lost its reference (codec reset, overflow) and drops frames until one comes. */
+    fun requestKeyframe() { if (running && gkSend != null) sendMessage(2, 0, PsMsg.simple(PsMsg.IDRREQUEST)) }
+
+    /** An empty datagram to the console: keeps a power-saving Wi-Fi radio awake between frames ("prevent packet loss"). */
+    fun ping() = send(ByteArray(0))
 
     private fun sendCongestion() {
         val gk = gkSend ?: return

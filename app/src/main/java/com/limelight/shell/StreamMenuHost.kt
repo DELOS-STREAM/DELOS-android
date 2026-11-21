@@ -38,6 +38,9 @@ internal interface StreamMenuHost {
     /** Runs [action] once the stream has the focus again (after the menu closed). */
     fun runWhenStreamFocused(action: () -> Unit)
 
+    /** Whether the host takes keyboard, mouse, text and commands: a PlayStation does not, so their rows are not offered. */
+    val keyboardAndMouse: Boolean get() = true
+
     // Overlay and keyboard
     val overlayOn: Boolean
     val overlayCompact: Boolean

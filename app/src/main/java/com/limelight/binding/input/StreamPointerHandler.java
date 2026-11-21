@@ -16,7 +16,7 @@ import com.limelight.SensitivityBean;
 import com.limelight.binding.input.capture.InputCaptureProvider;
 import com.limelight.binding.input.touch.TouchContext;
 import com.limelight.binding.input.touch.TrackpadContext;
-import com.limelight.nvstream.NvConnection;
+import com.limelight.nvstream.StreamConnection;
 import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.preferences.PreferenceConfiguration;
@@ -47,7 +47,7 @@ public final class StreamPointerHandler {
 
     /** What the pointer handler needs from the stream activity. */
     public interface Host {
-        NvConnection conn();
+        StreamConnection conn();
 
         /** The mouse capture (pointer capture or the device-specific provider). */
         InputCaptureProvider inputCaptureProvider();
@@ -592,7 +592,7 @@ public final class StreamPointerHandler {
 
     // Mice and non-finger touch devices
     private boolean handleMouseEvent(View view, MotionEvent event, int eventSource) {
-        NvConnection conn = host.conn();
+        StreamConnection conn = host.conn();
         InputCaptureProvider inputCaptureProvider = host.inputCaptureProvider();
         int buttonState = event.getButtonState();
         int changedButtons = buttonState ^ lastButtonState;
@@ -785,7 +785,7 @@ public final class StreamPointerHandler {
     }
 
     private void sendMouseButtonChanges(int buttonState, int changedButtons) {
-        NvConnection conn = host.conn();
+        StreamConnection conn = host.conn();
         if ((changedButtons & MotionEvent.BUTTON_PRIMARY) != 0) {
             if ((buttonState & MotionEvent.BUTTON_PRIMARY) != 0) {
                 conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_LEFT);

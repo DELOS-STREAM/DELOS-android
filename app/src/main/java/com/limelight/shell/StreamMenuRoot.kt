@@ -485,16 +485,18 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
     when (page) {
         MenuPage.MAIN, MenuPage.KEYS, MenuPage.COMMANDS -> null
         MenuPage.MORE -> buildList {
-            add(MoreRow.KEYS)
-            add(MenuKey.SEND_CLIPBOARD)
-            add(MenuKey.GET_CLIPBOARD)
-            add(MoreRow.COMMANDS)
-            add(MenuKey.TASK_MANAGER)
+            if (host.keyboardAndMouse) {
+                add(MoreRow.KEYS)
+                add(MenuKey.SEND_CLIPBOARD)
+                add(MenuKey.GET_CLIPBOARD)
+                add(MoreRow.COMMANDS)
+                add(MenuKey.TASK_MANAGER)
+            }
             add(MenuKey.ZOOM)
-            if (host.allowChangeMouseMode) add(MoreRow.MOUSE)
+            if (host.allowChangeMouseMode && host.keyboardAndMouse) add(MoreRow.MOUSE)
             add(MenuKey.ONSCREEN_CONTROLS)
             add(MoreRow.OSC_OPACITY)
-            add(MoreRow.ANDROID_KEYBOARD)
+            if (host.keyboardAndMouse) add(MoreRow.ANDROID_KEYBOARD)
             add(MenuKey.TOUCH_SENSITIVITY)
             add(MoreRow.RUMBLE)
             if (host.gyroSmoothingAvailable) add(MoreRow.GYRO)
@@ -546,14 +548,17 @@ private fun PageRows(
     when (page) {
         MenuPage.MAIN -> Unit
         MenuPage.MORE -> {
-            fun entry(label: String) = if (label == (entryRow ?: MoreRow.KEYS)) Modifier.focusRequester(first) else Modifier
-            KeyedRow(Symbols.KEYBOARD_COMMAND_KEY, R.string.stream_menu_row_send_keys, MoreRow.KEYS, RowValue.Action { openPage(MenuPage.KEYS) }, entry(MoreRow.KEYS))
-            KeyedRow(Symbols.SEND, R.string.stream_menu_row_send_clipboard, MenuKey.SEND_CLIPBOARD, RowValue.Action { close { host.sendClipboard() } })
-            KeyedRow(Symbols.RECEIVE, R.string.stream_menu_row_get_clipboard, MenuKey.GET_CLIPBOARD, RowValue.Action { close { host.getClipboard() } })
-            KeyedRow(Symbols.TERMINAL, R.string.stream_menu_row_commands, MoreRow.COMMANDS, RowValue.Action { openPage(MenuPage.COMMANDS) }, entry(MoreRow.COMMANDS))
-            KeyedRow(Symbols.TASK_MANAGER, R.string.stream_menu_row_task_manager, MenuKey.TASK_MANAGER, RowValue.Action { close { host.sendTaskManager() } })
-            KeyedRow(Symbols.ZOOM_IN, R.string.stream_menu_row_zoom, MenuKey.ZOOM, RowValue.Toggle(host.zoomOn) { toggle { host.toggleZoom() } })
-            if (host.allowChangeMouseMode) KeyedRow(Symbols.MOUSE, R.string.stream_menu_row_mouse_mode, MoreRow.MOUSE, RowValue.Action { openPage(MenuPage.MOUSE) }, entry(MoreRow.MOUSE))
+            // A PlayStation takes no keys, clipboard, commands or mouse: the page starts at the zoom
+            fun entry(label: String) = if (label == (entryRow ?: if (host.keyboardAndMouse) MoreRow.KEYS else MenuKey.ZOOM)) Modifier.focusRequester(first) else Modifier
+            if (host.keyboardAndMouse) {
+                KeyedRow(Symbols.KEYBOARD_COMMAND_KEY, R.string.stream_menu_row_send_keys, MoreRow.KEYS, RowValue.Action { openPage(MenuPage.KEYS) }, entry(MoreRow.KEYS))
+                KeyedRow(Symbols.SEND, R.string.stream_menu_row_send_clipboard, MenuKey.SEND_CLIPBOARD, RowValue.Action { close { host.sendClipboard() } })
+                KeyedRow(Symbols.RECEIVE, R.string.stream_menu_row_get_clipboard, MenuKey.GET_CLIPBOARD, RowValue.Action { close { host.getClipboard() } })
+                KeyedRow(Symbols.TERMINAL, R.string.stream_menu_row_commands, MoreRow.COMMANDS, RowValue.Action { openPage(MenuPage.COMMANDS) }, entry(MoreRow.COMMANDS))
+                KeyedRow(Symbols.TASK_MANAGER, R.string.stream_menu_row_task_manager, MenuKey.TASK_MANAGER, RowValue.Action { close { host.sendTaskManager() } })
+            }
+            KeyedRow(Symbols.ZOOM_IN, R.string.stream_menu_row_zoom, MenuKey.ZOOM, RowValue.Toggle(host.zoomOn) { toggle { host.toggleZoom() } }, entry(MenuKey.ZOOM))
+            if (host.allowChangeMouseMode && host.keyboardAndMouse) KeyedRow(Symbols.MOUSE, R.string.stream_menu_row_mouse_mode, MoreRow.MOUSE, RowValue.Action { openPage(MenuPage.MOUSE) }, entry(MoreRow.MOUSE))
             KeyedRow(Symbols.JOYSTICK, R.string.stream_menu_row_onscreen_controls, MenuKey.ONSCREEN_CONTROLS, RowValue.Toggle(host.onscreenControlsOn) { toggle { host.toggleOnscreenControls() } })
             // Applies to the running controls at once and is the profile's value, the same as the Settings row; changesTick recomposes the value
             KeyedRow(Symbols.OPACITY, R.string.settings_native_osc_opacity_title, MoreRow.OSC_OPACITY,
@@ -561,7 +566,7 @@ private fun PageRows(
                     host.setOscOpacity(it)
                     changesTick()
                 })
-            KeyedRow(Symbols.ANDROID_KEYBOARD, R.string.stream_menu_row_android_keyboard, MoreRow.ANDROID_KEYBOARD, RowValue.Action { close { host.toggleSystemKeyboard() } })
+            if (host.keyboardAndMouse) KeyedRow(Symbols.ANDROID_KEYBOARD, R.string.stream_menu_row_android_keyboard, MoreRow.ANDROID_KEYBOARD, RowValue.Action { close { host.toggleSystemKeyboard() } })
             KeyedRow(Symbols.TOUCH_SENSITIVITY, R.string.stream_menu_row_touch_sensitivity, MenuKey.TOUCH_SENSITIVITY, RowValue.Toggle(host.touchSensitivityOn) { toggle { host.toggleTouchSensitivity() } })
             KeyedRow(Symbols.VIBRATION, R.string.stream_menu_row_rumble_feel, MoreRow.RUMBLE, RowValue.Text(host.rumblePreset?.label(res) ?: stringResource(R.string.stream_menu_rumble_custom)) { openPage(MenuPage.RUMBLE) }, entry(MoreRow.RUMBLE))
             if (host.gyroSmoothingAvailable) {

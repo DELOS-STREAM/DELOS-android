@@ -4,7 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.limelight.LimeLog;
-import com.limelight.nvstream.NvConnection;
+import com.limelight.nvstream.StreamConnection;
 import com.limelight.nvstream.input.MouseButtonPacket;
 
 public class TrackpadContext implements TouchContext {
@@ -31,7 +31,7 @@ public class TrackpadContext implements TouchContext {
     private long lastMoveTime;
     private boolean isScrollTransitioning = false;
 
-    private final NvConnection conn;
+    private final StreamConnection conn;
     private final int actionIndex;
     private final Handler handler;
 
@@ -52,13 +52,13 @@ public class TrackpadContext implements TouchContext {
     private static final int FLICK_VELOCITY_DECAY_TIMEOUT_MS = 50;
     private static final int SCROLL_TRANSITION_TIMEOUT_MS = 200;
 
-    public TrackpadContext(NvConnection conn, int actionIndex) {
+    public TrackpadContext(StreamConnection conn, int actionIndex) {
         this.conn = conn;
         this.actionIndex = actionIndex;
         this.handler = new Handler(Looper.getMainLooper());
     }
 
-    public TrackpadContext(NvConnection conn, int actionIndex, boolean swapAxis, int sensitivityX, int sensitivityY) {
+    public TrackpadContext(StreamConnection conn, int actionIndex, boolean swapAxis, int sensitivityX, int sensitivityY) {
         this(conn, actionIndex);
         this.swapAxis = swapAxis;
         this.sensitivityX = (float) sensitivityX / 100;

@@ -400,6 +400,7 @@ class StreamMenu(private val game: DelosStreamActivity) {
             w.attributes = w.attributes.apply { blurBehindRadius = (amount * blurRadius).toInt() }
         }
         override fun runWhenStreamFocused(action: () -> Unit) = whenGameFocused(action)
+        override val keyboardAndMouse get() = game.conn?.supportsKeyboardAndMouse() ?: true
 
         override val overlayOn get() = prefs.enablePerfOverlay
         override val overlayCompact get() = prefs.enablePerfOverlayLite

@@ -32,7 +32,7 @@ import com.limelight.LimeLog;
 import com.limelight.R;
 import com.limelight.binding.input.ControllerHandler;
 import com.limelight.binding.input.virtual_controller.OscGeometry;
-import com.limelight.nvstream.NvConnection;
+import com.limelight.nvstream.StreamConnection;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.utils.KeyConfigHelper;
 import com.limelight.utils.KeyMapper;
@@ -63,7 +63,7 @@ public class KeyBoardController {
 
     private static final boolean _PRINT_DEBUG_INFORMATION = false;
 
-    private final NvConnection conn;
+    private final StreamConnection conn;
     private final Context context;
     private final Handler handler;
 
@@ -87,7 +87,7 @@ public class KeyBoardController {
     // The keys hidden by the last "Clear all", kept until the editor step ends so the button can bring them back
     private List<keyBoardVirtualControllerElement> clearedElements = null;
 
-    public KeyBoardController(final NvConnection conn, FrameLayout layout, final Context context) {
+    public KeyBoardController(final StreamConnection conn, FrameLayout layout, final Context context) {
         this.conn = conn;
         this.frame_layout = layout;
         this.context = context;
