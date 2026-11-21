@@ -293,4 +293,34 @@ public class PreferenceMigrationTest {
         assertEquals(100, config.sgsrSharpness);
         assertEquals(0, config.gyroSmoothing);
     }
+
+    @Test
+    public void everyPacingChoiceSurvivesRestartAndUnknownChoicesUseLatency() {
+        String[] values = {"latency", "balanced", "cap-fps", "fast-vsync", "phase-lock", "smoothness", "unknown"};
+        int[] expected = {
+                PreferenceConfiguration.FRAME_PACING_MIN_LATENCY,
+                PreferenceConfiguration.FRAME_PACING_BALANCED,
+                PreferenceConfiguration.FRAME_PACING_CAP_FPS,
+                PreferenceConfiguration.FRAME_PACING_FAST_VSYNC,
+                PreferenceConfiguration.FRAME_PACING_PHASE_LOCK,
+                PreferenceConfiguration.FRAME_PACING_MAX_SMOOTHNESS,
+                PreferenceConfiguration.FRAME_PACING_MIN_LATENCY
+        };
+        for (int i = 0; i < values.length; i++) {
+            prefs.edit().putString("frame_pacing", values[i]).commit();
+            assertEquals(values[i], expected[i], read().framePacing);
+            assertEquals(values[i], expected[i], read().framePacing);
+        }
+    }
+
+    @Test
+    public void onlyExactPresetDimensionsAreExcludedFromNativeResolutions() {
+        int[][] presets = {{640, 360}, {854, 480}, {1280, 720}, {1920, 1080}, {2560, 1440}, {3840, 2160}};
+        for (int[] size : presets) {
+            assertFalse(PreferenceConfiguration.isNativeResolution(size[0], size[1]));
+            assertTrue(PreferenceConfiguration.isNativeResolution(size[0], size[1] + 1));
+            assertTrue(PreferenceConfiguration.isNativeResolution(size[0] + 1, size[1]));
+        }
+        assertTrue(PreferenceConfiguration.isNativeResolution(2400, 1080));
+    }
 }
