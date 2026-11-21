@@ -27,7 +27,8 @@
     <string name="ps_sign_in_keep">Continuar com esta conta</string>
     <string name="ps_pin_title">Digite o PIN do seu PS5</string>
     <string name="ps_pin_note">No PS5: Configurações › Sistema › Remote Play › Parear dispositivo. Digite os 8 dígitos mostrados na TV.</string>
-    <string name="ps_pin_pair">Parear %1$s</string>
+    <string name="ps_pin_eyebrow">%1$s · conta vinculada</string>
+    <string name="ps_pin_hint">Use o direcional e A, ou digite os números. O oitavo dígito pareia.</string>
     <string name="ps_pin_pairing">Pareando…</string>
     <string name="ps_pin_failed">Falha ao parear: %1$s</string>
     <string name="ps_paired_title">%1$s está pareado</string>

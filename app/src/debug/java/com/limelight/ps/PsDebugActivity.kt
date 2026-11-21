@@ -2,6 +2,7 @@ package com.limelight.ps
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.media.MediaCodec
 import android.media.MediaFormat
@@ -20,10 +21,6 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import android.webkit.CookieManager
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import java.net.InetAddress
 import java.util.Base64
 import kotlin.concurrent.thread
@@ -44,40 +41,29 @@ class PsDebugActivity : Activity() {
     private var stream: PsStream? = null
     private var codec: MediaCodec? = null
     private var pad = PsControllerState()
-    private var web: WebView? = null
-    private lateinit var root: FrameLayout
     private var audio: PsAudioPlayer? = null
 
-    /** Sony's sign-in page in a WebView; the redirect with the code is caught here and never loaded (spec 3.1). */
+    /** Sony's sign-in page in [com.limelight.shell.ps.PsSignInActivity]; DELOS only receives the account id (spec 3.1). */
     private fun signIn() {
-        CookieManager.getInstance().removeAllCookies(null)
-        val w = WebView(this)
-        w.settings.javaScriptEnabled = true
-        w.settings.domStorageEnabled = true
-        w.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                val code = PsOAuth.codeFrom(request.url.toString()) ?: return false
-                closeWeb()
-                thread {
-                    try {
-                        val id = PsAccountId.toBase64(PsOAuth.accountId(code))
-                        prefs.edit().putString("account", id).apply()
-                        runOnUiThread { accountField.setText(id) }
-                        say("Signed in: account id $id")
-                    } catch (e: Exception) { say("PSN sign-in failed: ${e.message}") }
-                }
-                return true
-            }
-        }
-        web = w
-        root.addView(w, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        w.loadUrl(PsOAuth.authorizeUrl())
+        @Suppress("DEPRECATION")
+        startActivityForResult(com.limelight.shell.ps.PsSignInActivity.Contract.createIntent(this, Unit), SIGN_IN)
         say("Sign in on Sony's page; DELOS only receives the account id")
     }
 
-    private fun closeWeb() = runOnUiThread { web?.let { root.removeView(it); it.destroy() }; web = null }
-
-    override fun onBackPressed() { if (web != null) closeWeb() else @Suppress("DEPRECATION") super.onBackPressed() }
+    @Deprecated("Activity result of the sign-in")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION") super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != SIGN_IN) return
+        when (val outcome = com.limelight.shell.ps.PsSignInActivity.Contract.parseResult(resultCode, data)) {
+            is com.limelight.shell.ps.PsSignInActivity.Outcome.Account -> {
+                prefs.edit().putString("account", outcome.id).apply()
+                accountField.setText(outcome.id)
+                say("Signed in: account id ${outcome.id}")
+            }
+            is com.limelight.shell.ps.PsSignInActivity.Outcome.Failed -> say("PSN sign-in failed: ${outcome.message}")
+            null -> say("Sign-in cancelled")
+        }
+    }
 
     private val prefs by lazy { getSharedPreferences("ps_debug", Context.MODE_PRIVATE) }
 
@@ -102,7 +88,6 @@ class PsDebugActivity : Activity() {
         column.addView(log)
         panel = ScrollView(this).apply { addView(column) }
         root.addView(panel)
-        this.root = root
         setContentView(root)
         say("Saved console: ${prefs.getString("nickname", "none")}")
     }
@@ -306,5 +291,6 @@ class PsDebugActivity : Activity() {
     companion object {
         /** The reference always uses 9295 for registration, session and ctrl, whatever host-request-port says (spec 5.9 (3)). */
         const val REQUEST_PORT = 9295
+        private const val SIGN_IN = 1
     }
 }

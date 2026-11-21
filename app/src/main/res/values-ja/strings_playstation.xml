@@ -27,7 +27,8 @@
     <string name="ps_sign_in_keep">このアカウントで続ける</string>
     <string name="ps_pin_title">PS5 の PIN を入力</string>
     <string name="ps_pin_note">PS5 で：設定 › システム › リモートプレイ › 機器を登録する。テレビに表示された 8 桁を入力してください。</string>
-    <string name="ps_pin_pair">%1$s を登録</string>
+    <string name="ps_pin_eyebrow">%1$s · アカウント連携済み</string>
+    <string name="ps_pin_hint">方向キーと A で選ぶか、数字を入力してください。8 桁目で登録します。</string>
     <string name="ps_pin_pairing">登録中…</string>
     <string name="ps_pin_failed">登録に失敗しました：%1$s</string>
     <string name="ps_paired_title">%1$s を登録しました</string>

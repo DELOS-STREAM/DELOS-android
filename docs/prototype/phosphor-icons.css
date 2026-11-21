@@ -56,6 +56,7 @@
 .ms[data-icon="account_circle"] { --phosphor-glyph: "\e4c4"; }
 .ms[data-icon="account_tree"] { --phosphor-glyph: "\e67c"; }
 .ms[data-icon="add_link"] { --phosphor-glyph: "\e2e2"; }
+.ms[data-icon="add_device"] { --phosphor-glyph: "\e3d6"; }
 .ms[data-icon="badge"] { --phosphor-glyph: "\e6f6"; }
 .ms[data-icon="desktop_windows"] { --phosphor-glyph: "\e562"; }
 .ms[data-icon="search_name"] { --phosphor-glyph: "\ebe0"; }

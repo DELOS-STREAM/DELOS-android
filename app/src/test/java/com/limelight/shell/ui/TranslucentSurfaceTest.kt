@@ -125,6 +125,8 @@ class TranslucentSurfaceTest {
             // Performance: the settings search's 30 to 45 keys as glass are as many blurs of the animated background every frame (measured
             // on the emulator: janky frames 0.6 % to 9.8 %, 95th percentile 26 to 89 ms)
             Allowed("screens/SettingsScreen.kt", ".background(if (focused) colors.surface2 else colors.surface)", "settings search keys: one blur per key is too slow"),
+            // The PlayStation PIN pad's 12 keys sit in one glass panel, like the settings search's keys
+            Allowed("ps/PsScreens.kt", ".background(if (focused) colors.surface2 else colors.surface)", "PIN pad keys inside the pad's glass"),
         )
     }
 }

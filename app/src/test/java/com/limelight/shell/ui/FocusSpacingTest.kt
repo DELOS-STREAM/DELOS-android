@@ -50,6 +50,7 @@ class FocusSpacingTest {
         "overview links down" to OverviewGaps.LINKS_DOWN,
         "stream menu tiles" to StreamMenuLayout.TILES,
         "keyboard keys" to KeyboardMetrics.KEYS,
+        "PlayStation PIN keys" to com.limelight.shell.ps.PinKey.KEYS,
     )
 
     @Test

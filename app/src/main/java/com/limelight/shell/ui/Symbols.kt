@@ -49,6 +49,7 @@ object Symbols {
     const val ACCOUNT_CIRCLE = "\uE4C4"
     const val ACCOUNT_TREE = "\uE67C"
     const val ADD_LINK = "\uE2E2"
+    const val ADD_DEVICE = "\uE3D6"
     const val BADGE = "\uE6F6"
     const val DESKTOP_WINDOWS = "\uE562"
     const val SEARCH_NAME = "\uEBE0"

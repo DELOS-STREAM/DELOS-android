@@ -1,11 +1,8 @@
 package com.limelight.shell.ps
 
-import android.annotation.SuppressLint
 import android.content.Intent
-import android.webkit.CookieManager
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,18 +27,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.unit.em
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.limelight.R
 import com.limelight.ps.PsAccountId
 import com.limelight.ps.PsDiscovery
 import com.limelight.ps.PsHost
-import com.limelight.ps.PsOAuth
 import com.limelight.ps.PsRegistrationClient
 import com.limelight.shell.ContextMenu
 import com.limelight.shell.LocalShell
@@ -50,14 +49,21 @@ import com.limelight.shell.Screen
 import com.limelight.shell.ui.CenterColumn
 import com.limelight.shell.ui.CircleItem
 import com.limelight.shell.ui.Circles
+import com.limelight.shell.ui.Compact
+import com.limelight.shell.ui.compact
 import com.limelight.shell.ui.Cue
 import com.limelight.shell.ui.Figtree
+import com.limelight.shell.ui.FocusGap
 import com.limelight.shell.ui.Heading
 import com.limelight.shell.ui.InitialFocus
 import com.limelight.shell.ui.LocalDelosColors
+import com.limelight.shell.ui.LocalStage
 import com.limelight.shell.ui.OnlineGreen
 import com.limelight.shell.ui.PillButton
 import com.limelight.shell.ui.Symbols
+import com.limelight.shell.ui.Symbol
+import com.limelight.shell.ui.focusEffects
+import com.limelight.shell.screens.LetterPicker
 import com.limelight.shell.ui.Unbounded
 import com.limelight.shell.ui.glass
 import com.limelight.shell.ui.px
@@ -122,7 +128,7 @@ fun PsStartContent(profileName: String?) {
                 )
             }
             CircleItem(
-                Symbols.ADD_LINK, stringResource(R.string.ps_pair_new), { shell.navigate(Screen.PairPs(PsPairStep.Find, back = Screen.Start)) },
+                Symbols.ADD_DEVICE, stringResource(R.string.ps_pair_new), { shell.navigate(Screen.PairPs(PsPairStep.Find, back = Screen.Start)) },
                 modifier = if (consoles.isEmpty()) Modifier.focusRequester(first) else Modifier,
                 meta = stringResource(R.string.ps_pair_new_meta), big = true,
             )
@@ -201,48 +207,26 @@ private fun FindStep(screen: Screen.PairPs) {
     }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
 @Composable
 private fun SignInStep(screen: Screen.PairPs, step: PsPairStep.SignIn) {
     val shell = LocalShell.current
     val context = LocalContext.current
     val res = textResources()
     val store = remember { PsConsoleStore.get(context) }
-    val scope = rememberCoroutineScope()
-    var web by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val saved = store.accountId
     val first = remember { FocusRequester() }
     InitialFocus(first)
-    if (web) {
-        // Sony's page fills the screen; the redirect with the code is caught and never loaded (spec 3.1)
-        AndroidView(
-            factory = { ctx ->
-                CookieManager.getInstance().removeAllCookies(null)
-                WebView(ctx).apply {
-                    settings.javaScriptEnabled = true
-                    settings.domStorageEnabled = true
-                    webViewClient = object : WebViewClient() {
-                        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                            val code = PsOAuth.codeFrom(request.url.toString()) ?: return false
-                            web = false
-                            scope.launch {
-                                runCatching { withContext(Dispatchers.IO) { PsAccountId.toBase64(PsOAuth.accountId(code)) } }
-                                    .onSuccess { id ->
-                                        store.accountId = id
-                                        shell.navigate(Screen.PairPs(PsPairStep.Pin(step.host, id), back = screen.back ?: Screen.Start))
-                                    }
-                                    .onFailure { error = res.getString(R.string.ps_sign_in_failed, it.message ?: "") }
-                            }
-                            return true
-                        }
-                    }
-                    loadUrl(PsOAuth.authorizeUrl())
-                }
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
-        return
+    // Sony's page opens in its own full-screen activity; back there returns here
+    val signIn = rememberLauncherForActivityResult(PsSignInActivity.Contract) { outcome ->
+        when (outcome) {
+            is PsSignInActivity.Outcome.Account -> {
+                store.accountId = outcome.id
+                shell.navigate(Screen.PairPs(PsPairStep.Pin(step.host, outcome.id), back = screen.back ?: Screen.Start))
+            }
+            is PsSignInActivity.Outcome.Failed -> error = res.getString(R.string.ps_sign_in_failed, outcome.message)
+            null -> Unit
+        }
     }
     CenterColumn(gap = 44f) {
         Steps(2)
@@ -251,7 +235,7 @@ private fun SignInStep(screen: Screen.PairPs, step: PsPairStep.SignIn) {
             if (saved != null) PillButton(stringResource(R.string.ps_sign_in_keep), Symbols.CHECK, {
                 shell.navigate(Screen.PairPs(PsPairStep.Pin(step.host, saved), back = screen.back ?: Screen.Start))
             }, Modifier.focusRequester(first), primary = true)
-            PillButton(stringResource(R.string.ps_sign_in_button), Symbols.PAD_DUALSENSE_PS, { web = true },
+            PillButton(stringResource(R.string.ps_sign_in_button), Symbols.PAD_DUALSENSE_PS, { error = null; signIn.launch(Unit) },
                 if (saved == null) Modifier.focusRequester(first) else Modifier, primary = saved == null)
         }
     }
@@ -262,63 +246,127 @@ private fun PinStep(screen: Screen.PairPs, step: PsPairStep.Pin) {
     val shell = LocalShell.current
     val context = LocalContext.current
     val colors = LocalDelosColors.current
+    val stage = LocalStage.current
     val res = textResources()
-    val scope = rememberCoroutineScope()
     var pin by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val first = remember { FocusRequester() }
     InitialFocus(first)
     val name = step.host.name ?: "PlayStation"
-    fun pair() {
-        if (pin.length != 8 || busy) return
+    fun type(digit: Char) { if (!busy && pin.length < 8) { error = null; pin += digit } }
+    fun erase() { if (!busy) pin = pin.dropLast(1) }
+    // The eighth digit pairs at once (prototype F); a wrong PIN empties the boxes and says why
+    LaunchedEffect(pin) {
+        if (pin.length != 8 || busy) return@LaunchedEffect
         busy = true
-        error = null
-        scope.launch {
-            val account = PsAccountId.fromBase64(step.accountId)
-            val result = withContext(Dispatchers.IO) {
-                runCatching { PsRegistrationClient.register(step.host.address, PS_PORT, step.host.target, account!!, pin.toInt()) }
-            }
-            busy = false
-            result.onSuccess { c ->
-                PsConsoleStore.get(context).add(c.nickname ?: name, step.host.address.hostAddress.orEmpty(), c)
-                shell.navigate(Screen.PairPs(PsPairStep.Done(c.nickname ?: name, PsHexId.of(c.mac)), back = Screen.Start))
-            }.onFailure { error = res.getString(R.string.ps_pin_failed, it.message ?: ""); pin = "" }
+        val account = PsAccountId.fromBase64(step.accountId)
+        val result = withContext(Dispatchers.IO) {
+            runCatching { PsRegistrationClient.register(step.host.address, PS_PORT, step.host.target, account!!, pin.toInt()) }
         }
+        busy = false
+        result.onSuccess { c ->
+            PsConsoleStore.get(context).add(c.nickname ?: name, step.host.address.hostAddress.orEmpty(), c)
+            shell.navigate(Screen.PairPs(PsPairStep.Done(c.nickname ?: name, PsHexId.of(c.mac)), back = Screen.Start))
+        }.onFailure { error = res.getString(R.string.ps_pin_failed, it.message ?: ""); pin = "" }
     }
-    CenterColumn(gap = 36f) {
-        Steps(3)
-        Heading(stringResource(R.string.ps_pin_title), error ?: stringResource(R.string.ps_pin_note))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.px)) {
-            for (i in 0 until 8) {
-                val shape = RoundedCornerShape(18.px)
-                Box(
-                    Modifier.size(76.px, 96.px).clip(shape).glass(colors.surface2).border(1.5.px, if (i == pin.length) colors.accent else colors.line, shape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    BasicText(pin.getOrNull(i)?.toString() ?: "", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 44.tpx, textAlign = TextAlign.Center))
+    val side = if (stage.compact) Compact.SIDE else 120f
+    Row(
+        Modifier.fillMaxSize()
+            .padding(start = (side + stage.safe.left).px, end = (side + stage.safe.right).px, top = (if (stage.compact) 120f else 150f).px, bottom = 110.px)
+            // Digits typed on a keyboard go into the boxes too
+            .onPreviewKeyEvent { e ->
+                val code = e.nativeKeyEvent.keyCode
+                when {
+                    e.type != KeyEventType.KeyDown -> false
+                    code in android.view.KeyEvent.KEYCODE_0..android.view.KeyEvent.KEYCODE_9 -> { type('0' + (code - android.view.KeyEvent.KEYCODE_0)); true }
+                    code == android.view.KeyEvent.KEYCODE_DEL -> { erase(); true }
+                    else -> false
                 }
-            }
-        }
-        // A number pad for the controller: three rows of digits, then clear, 0, erase; the pair button under it
-        Column(verticalArrangement = Arrangement.spacedBy(14.px), horizontalAlignment = Alignment.CenterHorizontally) {
-            listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9")).forEachIndexed { r, row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(14.px)) {
-                    row.forEachIndexed { c, d ->
-                        Box(Modifier.width(120.px)) {
-                            PillButton(d, null, { if (pin.length < 8) pin += d }, if (r == 0 && c == 0) Modifier.focusRequester(first) else Modifier, compact = true)
-                        }
+            },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(80.px),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(26.px)) {
+            Steps(3)
+            BasicText(stringResource(R.string.ps_pin_eyebrow, name).uppercase(), style = TextStyle(color = colors.accent2, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 20.tpx, letterSpacing = .08.em),
+                modifier = Modifier.padding(top = 18.px))
+            BasicText(stringResource(R.string.ps_pin_title), style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = (if (stage.compact) 40 else 48).tpx, letterSpacing = (-.01).em))
+            BasicText(stringResource(R.string.ps_pin_note), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 26.tpx))
+            // Eight boxes in two groups of four; the next one to fill is outlined in the accent
+            Row(Modifier.padding(top = 10.px), horizontalArrangement = Arrangement.spacedBy(14.px), verticalAlignment = Alignment.CenterVertically) {
+                for (i in 0 until 8) {
+                    if (i == 4) Box(Modifier.width(14.px))
+                    val shape = RoundedCornerShape(18.px)
+                    val next = i == pin.length && !busy
+                    Box(
+                        Modifier.size(72.px, 92.px).clip(shape).glass(colors.surface2).border(if (next) 2.px else 1.px, if (next) colors.accent else colors.line, shape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        BasicText(pin.getOrNull(i)?.toString() ?: "–", style = TextStyle(color = if (i < pin.length) colors.text else colors.text3, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 40.tpx, textAlign = TextAlign.Center))
                     }
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(14.px)) {
-                PillButton(stringResource(R.string.ps_clear), Symbols.CLOSE, { pin = "" }, compact = true, clickCue = Cue.BACK)
-                Box(Modifier.width(120.px)) { PillButton("0", null, { if (pin.length < 8) pin += "0" }, compact = true) }
-                PillButton("", Symbols.BACKSPACE, { pin = pin.dropLast(1) }, compact = true, clickCue = Cue.BACK)
+            BasicText(
+                error ?: stringResource(if (busy) R.string.ps_pin_pairing else R.string.ps_pin_hint),
+                style = TextStyle(color = if (error != null) colors.text else colors.text3, fontFamily = Figtree, fontSize = 22.tpx),
+            )
+        }
+        PinPad(first, ::type, ::erase) { if (!busy) { error = null; pin = "" } }
+    }
+}
+
+/**
+ * The PIN pad (prototype F): 1–9, then Clear, 0 and erase, in a glass panel. The keys are the letter picker's (Settings search): a dense
+ * grid where a focused key does not grow, its ring lies inside its edge and its fill and digit light up; the D-pad moves, A types.
+ */
+@Composable
+private fun PinPad(first: FocusRequester, type: (Char) -> Unit, erase: () -> Unit, clear: () -> Unit) {
+    val colors = LocalDelosColors.current
+    val panel = RoundedCornerShape(36.px)
+    Column(
+        Modifier.clip(panel).glass(colors.surface).border(1.px, colors.line, panel).padding(PinKey.PAD.px),
+        verticalArrangement = Arrangement.spacedBy(PinKey.KEYS.gap.px),
+    ) {
+        listOf("123", "456", "789").forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(PinKey.KEYS.gap.px)) {
+                row.forEach { d -> PinKey(if (d == '1') Modifier.focusRequester(first) else Modifier, { type(d) }) { lit -> PinLabel(d.toString(), lit, 40) } }
             }
-            PillButton(if (busy) stringResource(R.string.ps_pin_pairing) else stringResource(R.string.ps_pin_pair, name), Symbols.ADD_LINK, ::pair, primary = pin.length == 8)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(PinKey.KEYS.gap.px)) {
+            PinKey(Modifier, clear, Cue.BACK) { lit -> PinLabel(stringResource(R.string.ps_clear), lit, 26) }
+            PinKey(Modifier, { type('0') }) { lit -> PinLabel("0", lit, 40) }
+            PinKey(Modifier, erase, Cue.BACK) { lit -> Symbol(Symbols.BACKSPACE, 36.tpx, if (lit) colors.accent else colors.text2, filled = lit) }
         }
     }
+}
+
+@Composable
+private fun PinLabel(text: String, lit: Boolean, size: Int) {
+    val colors = LocalDelosColors.current
+    BasicText(text, maxLines = 1, style = TextStyle(color = if (lit) colors.accent else colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = size.tpx))
+}
+
+/** One key of the [PinPad], with [LetterPicker]'s focus look; [content] gets whether the key is focused. */
+@Composable
+private fun PinKey(modifier: Modifier, onClick: () -> Unit, cue: Cue = Cue.SELECT, content: @Composable (Boolean) -> Unit) {
+    val colors = LocalDelosColors.current
+    var focused by remember { mutableStateOf(false) }
+    Box(
+        modifier.size(PinKey.WIDTH.px, PinKey.HEIGHT.px)
+            .focusEffects(onClick, corner = PinKey.CORNER, focusScale = LetterPicker.KEY_LOOK.scale, ring = LetterPicker.KEY_RING, glow = null, clickCue = cue, onFocusChange = { focused = it })
+            .clip(RoundedCornerShape(PinKey.CORNER.px)).background(if (focused) colors.surface2 else colors.surface),
+        contentAlignment = Alignment.Center,
+    ) { content(focused) }
+}
+
+/** The [PinPad]'s keys and their gap (stage px); the gap follows the focus spacing rule for the letter picker's look. */
+internal object PinKey {
+    const val WIDTH = 136f
+    const val HEIGHT = 92f
+    const val CORNER = 18f
+    const val PAD = 24f
+    val KEYS = FocusGap(LetterPicker.KEY_LOOK, WIDTH, 14f)
 }
 
 @Composable

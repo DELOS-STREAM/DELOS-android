@@ -27,7 +27,8 @@
     <string name="ps_sign_in_keep">Mit diesem Konto fortfahren</string>
     <string name="ps_pin_title">Gib die PIN deiner PS5 ein</string>
     <string name="ps_pin_note">Auf der PS5: Einstellungen › System › Remote Play › Gerät koppeln. Gib die 8 Ziffern vom Fernseher ein.</string>
-    <string name="ps_pin_pair">%1$s koppeln</string>
+    <string name="ps_pin_eyebrow">%1$s · Konto verknüpft</string>
+    <string name="ps_pin_hint">Steuerkreuz und A oder die Ziffern tippen. Die achte Ziffer koppelt.</string>
     <string name="ps_pin_pairing">Wird gekoppelt…</string>
     <string name="ps_pin_failed">Koppeln fehlgeschlagen: %1$s</string>
     <string name="ps_paired_title">%1$s ist gekoppelt</string>

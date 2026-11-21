@@ -27,7 +27,8 @@
     <string name="ps_sign_in_keep">Pokračovat s tímto účtem</string>
     <string name="ps_pin_title">Zadej PIN ze své PS5</string>
     <string name="ps_pin_note">Na PS5: Nastavení › Systém › Remote Play › Spárovat zařízení. Zadej 8 číslic z televize.</string>
-    <string name="ps_pin_pair">Spárovat %1$s</string>
+    <string name="ps_pin_eyebrow">%1$s · účet propojen</string>
+    <string name="ps_pin_hint">Ovládej D-padem a A, nebo čísla napiš. Osmou číslicí se spáruje.</string>
     <string name="ps_pin_pairing">Párování…</string>
     <string name="ps_pin_failed">Párování selhalo: %1$s</string>
     <string name="ps_paired_title">%1$s je spárovaná</string>

@@ -27,7 +27,8 @@
     <string name="ps_sign_in_keep">使用此账号继续</string>
     <string name="ps_pin_title">输入 PS5 上的 PIN</string>
     <string name="ps_pin_note">在 PS5 上：设置 › 系统 › 遥控游玩 › 配对设备。输入电视上显示的 8 位数字。</string>
-    <string name="ps_pin_pair">配对 %1$s</string>
+    <string name="ps_pin_eyebrow">%1$s · 账号已关联</string>
+    <string name="ps_pin_hint">用方向键和 A 选择，或直接输入数字。输入第 8 位即开始配对。</string>
     <string name="ps_pin_pairing">正在配对…</string>
     <string name="ps_pin_failed">配对失败：%1$s</string>
     <string name="ps_paired_title">%1$s 已配对</string>

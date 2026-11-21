@@ -245,6 +245,13 @@
             android:screenOrientation="sensorLandscape"
             android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+        <!-- PSN sign-in page, full screen without the shell over it (issue #25) -->
+        <activity
+            android:name="com.limelight.shell.ps.PsSignInActivity"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
 
     </application>
 

@@ -28,7 +28,8 @@
     <string name="ps_sign_in_keep">Continue with this account</string>
     <string name="ps_pin_title">Enter the PIN from your PS5</string>
     <string name="ps_pin_note">On the PS5: Settings › System › Remote Play › Pair Device. Enter the 8 digits shown on the TV.</string>
-    <string name="ps_pin_pair">Pair %1$s</string>
+    <string name="ps_pin_eyebrow">%1$s · account linked</string>
+    <string name="ps_pin_hint">Use the D-pad and A, or type the digits. The eighth digit pairs.</string>
     <string name="ps_pin_pairing">Pairing…</string>
     <string name="ps_pin_failed">Pairing failed: %1$s</string>
     <string name="ps_paired_title">%1$s is paired</string>

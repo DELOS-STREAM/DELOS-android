@@ -27,7 +27,8 @@
     <string name="ps_sign_in_keep">Continuar con esta cuenta</string>
     <string name="ps_pin_title">Introduce el PIN de tu PS5</string>
     <string name="ps_pin_note">En la PS5: Ajustes › Sistema › Remote Play › Vincular dispositivo. Introduce los 8 dígitos que aparecen en la TV.</string>
-    <string name="ps_pin_pair">Vincular %1$s</string>
+    <string name="ps_pin_eyebrow">%1$s · cuenta vinculada</string>
+    <string name="ps_pin_hint">Usa la cruceta y A, o escribe los dígitos. El octavo dígito vincula.</string>
     <string name="ps_pin_pairing">Vinculando…</string>
     <string name="ps_pin_failed">Error al vincular: %1$s</string>
     <string name="ps_paired_title">%1$s está vinculada</string>

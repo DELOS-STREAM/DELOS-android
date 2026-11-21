@@ -27,7 +27,8 @@
     <string name="ps_sign_in_keep">이 계정으로 계속</string>
     <string name="ps_pin_title">PS5의 PIN을 입력하세요</string>
     <string name="ps_pin_note">PS5에서: 설정 › 시스템 › 리모트 플레이 › 기기 등록. TV에 표시된 8자리 숫자를 입력하세요.</string>
-    <string name="ps_pin_pair">%1$s 등록</string>
+    <string name="ps_pin_eyebrow">%1$s · 계정 연결됨</string>
+    <string name="ps_pin_hint">방향 패드와 A로 고르거나 숫자를 입력하세요. 여덟 번째 숫자에서 등록됩니다.</string>
     <string name="ps_pin_pairing">등록 중…</string>
     <string name="ps_pin_failed">등록 실패: %1$s</string>
     <string name="ps_paired_title">%1$s 등록 완료</string>

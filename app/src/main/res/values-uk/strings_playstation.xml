@@ -27,7 +27,8 @@
     <string name="ps_sign_in_keep">Продовжити з цим обліковим записом</string>
     <string name="ps_pin_title">Введи PIN зі своєї PS5</string>
     <string name="ps_pin_note">На PS5: Налаштування › Система › Remote Play › Сполучити пристрій. Введи 8 цифр із телевізора.</string>
-    <string name="ps_pin_pair">Сполучити %1$s</string>
+    <string name="ps_pin_eyebrow">%1$s · обліковий запис пов’язано</string>
+    <string name="ps_pin_hint">Обирай хрестовиною та A або введи цифри. Восьма цифра сполучає.</string>
     <string name="ps_pin_pairing">Сполучення…</string>
     <string name="ps_pin_failed">Не вдалося сполучити: %1$s</string>
     <string name="ps_paired_title">%1$s сполучено</string>

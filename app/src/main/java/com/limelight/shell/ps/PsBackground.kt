@@ -54,7 +54,8 @@ fun PlayStationBackground(reducedMotion: Boolean, modifier: Modifier = Modifier)
         }
     }
     val path = remember { Path() }
-    Canvas(modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen; blendMode = BlendMode.Screen }) {
+    // Its own layer: the shapes add up inside it, and the whole (opaque) picture covers what is under it at the layer's opacity
+    Canvas(modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
         @Suppress("UNUSED_VARIABLE")
         val redraw = tick // subscribes the drawing to the throttled clock
         val unit = min(size.width / W, size.height / H)

@@ -52,6 +52,7 @@ warning = warning
 account_circle = user-circle
 account_tree = tree-structure
 add_link = link
+add_device = plus-circle
 badge = identification-badge
 desktop_windows = desktop-tower
 search_name = list-magnifying-glass

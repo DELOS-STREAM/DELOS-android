@@ -133,7 +133,7 @@ fun StartScreen(profiles: Profiles, store: ProfileStore, pcs: List<Pc>, startup:
                     )
                 }
                 CircleItem(
-                    Symbols.ADD_LINK, stringResource(R.string.devices_pair_new), { shell.navigate(Screen.PairPc(back = Screen.Start)) },
+                    Symbols.ADD_DEVICE, stringResource(R.string.devices_pair_new), { shell.navigate(Screen.PairPc(back = Screen.Start)) },
                     modifier = if (focusPc == null) Modifier.focusRequester(first) else Modifier,
                     meta = stringResource(R.string.devices_pair_new_meta), big = true,
                     onFocused = { focusedUuid = null },
@@ -238,7 +238,7 @@ fun DevicesScreen(pcs: List<Pc>, activeUuid: String?, defaultPc: String?) {
                 )
             }
             CircleItem(
-                Symbols.ADD_LINK, stringResource(R.string.devices_pair_new), { shell.navigate(Screen.PairPc(back = Screen.Devices)) },
+                Symbols.ADD_DEVICE, stringResource(R.string.devices_pair_new), { shell.navigate(Screen.PairPc(back = Screen.Devices)) },
                 modifier = if (paired.isEmpty()) Modifier.focusRequester(first) else Modifier,
                 meta = stringResource(R.string.devices_pair_new_meta), big = true,
                 onFocused = { focusedUuid = null },
