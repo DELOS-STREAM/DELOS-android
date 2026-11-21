@@ -151,6 +151,7 @@ class ShellActivity : ComponentActivity() {
         // Debug builds only: draws all of it in a box of another panel's size and density (Debug info menu, or `preview_shape`)
         val simulator = ShapeSimulator.from(this, intent)
         setContent {
+            com.limelight.shell.ui.QuietAccessibility()
             val screen: @Composable () -> Unit = {
                 if (preview != null) ShellTheme(appearance, feedback) {
                     preview()
