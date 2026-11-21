@@ -862,6 +862,7 @@ fun Shell(
                         }
                         is Screen.PairPc -> PairPcScreen(screen, pcs, startup.defaultPc)
                         is Screen.PairPs -> com.limelight.shell.ps.PsPairScreen(screen)
+                        Screen.PsSettings -> com.limelight.shell.ps.PsSettingsScreen(profileStore, appearance)
                         is Screen.Artwork -> ArtworkScreen(screen)
                         is Screen.GameSettings -> GameSettingsScreen(screen, profileStore, appearance)
                         Screen.DebugInfo -> DebugInfoScreen()
@@ -1196,6 +1197,8 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
             is Screen.CreateProfile -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             is Screen.PairPc -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back), optionsHint)
             is Screen.PairPs -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
+            Screen.PsSettings -> adjust + listOfNotNull(hint(Glyph.L1, R.string.shell_hint_previous_tab), hint(Glyph.R1, R.string.shell_hint_next_tab), hint(Glyph.A, R.string.shell_hint_change),
+                optionsHint, hint(Glyph.B, R.string.shell_hint_back))
             is Screen.Pin -> listOf(hint(Glyph.B, R.string.shell_hint_cancel))
             Screen.DebugInfo -> adjust + listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             // Like a stream: nothing over the controls
