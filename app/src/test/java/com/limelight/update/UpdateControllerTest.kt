@@ -137,6 +137,15 @@ class UpdateControllerTest {
         assertEquals("v1.1.0", offered().tag)
     }
 
+    @Test fun onlyAnOfferFromCheckNowIsRequested() = runBlocking {
+        controller.checkInBackground().join()
+        assertFalse(controller.requested.value)
+        controller.checkNow()
+        assertTrue(controller.requested.value)
+        controller.later()
+        assertFalse(controller.requested.value)
+    }
+
     @Test fun updateDownloadsVerifiesAndOnlyThenInstalls() = runBlocking {
         controller.checkInBackground().join()
         controller.accept()!!.join()
