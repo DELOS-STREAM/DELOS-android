@@ -6,9 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 The 0.x versions are development versions, not published releases; 0.1.0 to 0.15.0 are reconstructed or tagged milestones of the history. 1.0.0 is the first public release.
 
-Not verified on real hardware yet: variable refresh rate (no VRR display was available) and dual-screen handhelds such as the AYN Thor (tested only on emulators and the shape simulator). Delos is developed and tested with one handheld (AYN Odin 2 Portal Max, Android 13) and Vibepollo on Windows; there is no recorded test with Apollo, Sunshine or a Linux host.
+Not verified on real hardware yet: variable refresh rate (no VRR display was available), dual-screen handhelds such as the AYN Thor (tested only on emulators and the shape simulator), and the effect of Phase lock frame pacing (not measured yet). Delos is developed and tested with one handheld (AYN Odin 2 Portal Max, Android 13) and Vibepollo on Windows; there is no recorded test with Apollo, Sunshine or a Linux host.
 
 ## [Unreleased]
+
+## [1.3.0] - 2026-11-21
+_Game info with Steam trailers and a screenshot viewer, Phase lock frame pacing, a smoother interface on the AYN Odin 2, and mouse, trackpad and keyboard everywhere._
 
 ### Added
 - **Game info** ([#107](https://github.com/DELOS-STREAM/DELOS-android/issues/107)): press Down on a game (or swipe its cover up, tap the "Game info" chip, or scroll down over it with a mouse or trackpad) and the dashboard continues into a page about the game. The cover flies into the header next to the title, the critic and player ratings, the age rating, Play, App settings and your streaming time; below follow the summary and story, screenshots and trailers, details, links and similar games. The background blurs deeper as you scroll, and Back, Up or pulling the page down returns to the dashboard. The data and pictures load from IGDB and Steam, which see your IP address.
@@ -30,7 +33,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ### Fixed
 - **Smoothness on the AYN Odin 2** ([#113](https://github.com/DELOS-STREAM/DELOS-android/issues/113)): game info with an animated background stutters in about 2 % of frames instead of 15 %, and the fans stay quieter. Scrolling, focus moves and Settings also do less work per frame.
-- **SGSR 2** uses the previous frames again on moving pictures. Before, it mostly upscaled each frame on its own, so motion was less detailed and less stable.
+- **SGSR 2** uses the previous frames again on moving pictures; before, a bug made it upscale most frames on their own. On the Odin no artifacts were seen; the gain in detail was not measured.
 - A cover swiped up is no longer cut off at the top and follows the finger; pulling game info down to close no longer makes the cover jump ([#109](https://github.com/DELOS-STREAM/DELOS-android/issues/109)).
 - Back closes an open menu before the game info page behind it, and the side menu no longer opens over game info or the viewer.
 - Tags, age badges and links that wrap to a new line in game info keep their spacing ([#111](https://github.com/DELOS-STREAM/DELOS-android/issues/111)).
@@ -381,7 +384,8 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 ### Removed
 - SBS 3D, performance logging and other dead code.
 
-[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v0.15.0...v1.0.0

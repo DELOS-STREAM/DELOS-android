@@ -835,3 +835,14 @@ The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verifi
 - [ICONS.md](../ICONS.md): the icon font.
 - [tools/metadata-worker/README.md](../../tools/metadata-worker/README.md): Worker deployment and secrets.
 - [GUI.md](../GUI.md): index of the GUI documents.
+
+## Evidence (2026-11-21)
+
+AYN Odin 2 Portal Max, Android 13, 120 Hz, debug build, no stream; Oblivion Remastered with an animated cover and hero;
+the same 25 s key sequence (open the overview, scroll down six sections, walk the carousel, close); `dumpsys gfxinfo`
+and `atrace`.
+
+| Page glass | Janky frames | p50 | p90 | Render passes per overview frame |
+|---|---|---|---|---|
+| Blurred per surface (before) | 15.1 % | 11 ms | 28 ms | about 120 |
+| Tinted (`LocalBackdropHaze` null on the page) | 2.3 % | 9 ms | 16 ms | about 24 |
