@@ -11,7 +11,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 ## [Unreleased]
 
 ## [1.3.0] - 2026-11-21
-_Game info with Steam trailers and a screenshot viewer, Phase lock frame pacing, a smoother interface on the AYN Odin 2, and mouse, trackpad and keyboard everywhere._
+_Game info with Steam trailers and a screenshot viewer, Phase lock frame pacing, a smoother interface on Android handhelds, and mouse, trackpad and keyboard everywhere._
 
 ### Added
 - **Game info** ([#107](https://github.com/DELOS-STREAM/DELOS-android/issues/107)): press Down on a game (or swipe its cover up, tap the "Game info" chip, or scroll down over it with a mouse or trackpad) and the dashboard continues into a page about the game. The cover flies into the header next to the title, the critic and player ratings, the age rating, Play, App settings and your streaming time; below follow the summary and story, screenshots and trailers, details, links and similar games. The background blurs deeper as you scroll, and Back, Up or pulling the page down returns to the dashboard. The data and pictures load from IGDB and Steam, which see your IP address.
@@ -32,7 +32,7 @@ _Game info with Steam trailers and a screenshot viewer, Phase lock frame pacing,
 - Frame pacing and codec lists show the familiar choices first; the problem report card is centred and wider; the GPU impact chip shows a chip icon again.
 
 ### Fixed
-- **Smoothness on the AYN Odin 2** ([#113](https://github.com/DELOS-STREAM/DELOS-android/issues/113)): game info with an animated background stutters in about 2 % of frames instead of 15 %, and the fans stay quieter. Scrolling, focus moves and Settings also do less work per frame.
+- **Smoother interface** ([#113](https://github.com/DELOS-STREAM/DELOS-android/issues/113)): game info no longer blurs each panel separately over its animated background, and scrolling, focus moves and Settings do less work per frame. Measured on the AYN Odin 2: about 2 % stuttering frames instead of 15 %, with quieter fans.
 - **SGSR 2** uses the previous frames again on moving pictures; before, a bug made it upscale most frames on their own. On the Odin no artifacts were seen; the gain in detail was not measured.
 - A cover swiped up is no longer cut off at the top and follows the finger; pulling game info down to close no longer makes the cover jump ([#109](https://github.com/DELOS-STREAM/DELOS-android/issues/109)).
 - Back closes an open menu before the game info page behind it, and the side menu no longer opens over game info or the viewer.
