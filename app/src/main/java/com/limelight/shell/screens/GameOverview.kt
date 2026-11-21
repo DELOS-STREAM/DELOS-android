@@ -309,6 +309,11 @@ internal fun GameOverview(
     // Steam's trailers play natively
     val allMedia = remember(details, screenshotSize) { details?.let { OverviewModel.media(it, screenshotSize) }.orEmpty() }
     LaunchedEffect(allMedia) { YouTubeEmbeds.check(allMedia.filter { it.kind == OverviewModel.MediaKind.VIDEO && it.stream == null }.map { it.id }) }
+    // Every Steam trailer's still starts as the overview opens (three at a time), not only once its tile scrolls into view
+    val images = com.limelight.shell.data.LocalIgdbImages.current
+    LaunchedEffect(allMedia) {
+        images.stills.prefetch(allMedia.mapNotNull { m -> m.stream?.takeIf { m.kind == OverviewModel.MediaKind.VIDEO && ".m3u8" in it }?.let { m.id to it } })
+    }
     val media by remember(allMedia) {
         derivedStateOf { allMedia.filter { it.kind != OverviewModel.MediaKind.VIDEO || it.stream != null || YouTubeEmbeds.playable(it.id) } }
     }
@@ -572,20 +577,6 @@ internal fun GameOverview(
                     }
                 }
             }
-        }
-        // A finger or a mouse gets a round back button instead of the hint bar's B
-        if (kind == InputKind.TOUCH || kind == InputKind.POINTER) {
-            val shown by animateFloatAsState(if (controller.leaving) 0f else 1f, tween(Motion.FADE), label = "overviewBack")
-            Box(
-                Modifier
-                    .offset(56.px, 130.px)
-                    .graphicsLayer { alpha = shown * pageMotion().second }
-                    .size(72.px)
-                    .overviewGlass(pageHaze, 36f)
-                    .semantics { contentDescription = res.getString(R.string.shell_hint_back) }
-                    .pointerInput(Unit) { detectTapGestures { currentClose(0f) } },
-                contentAlignment = Alignment.Center,
-            ) { Symbol(Symbols.ARROW_BACK, 34.tpx, colors.text) }
         }
         viewer?.let { request ->
             OverviewViewer(
@@ -1339,12 +1330,13 @@ private fun MediaSection(
                                 .requiredSize((OverviewGaps.MEDIA_W * OverviewGaps.MEDIA_OVERSCAN).px, (OverviewGaps.MEDIA_H * OverviewGaps.MEDIA_OVERSCAN).px)
                                 .hazeSource(tileHaze)
                                 .graphicsLayer {
-                                    // Parallax: the picture lags behind the carousel by 3.5 % of its distance from the middle (within its 6.5 % rim)
+                                    // Parallax: the picture lags behind the carousel by 10 % of its distance from the middle, at most its rim
                                     val info = track.layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
                                     val width = track.layoutInfo.viewportSize.width
                                     if (info != null && width > 0) {
                                         val c = info.offset + info.size / 2f - width / 2f
-                                        translationX = (-c * .035f).coerceIn(-size.width * .055f, size.width * .055f)
+                                        val rim = size.width * (1f - 1f / OverviewGaps.MEDIA_OVERSCAN) / 2f
+                                        translationX = (-c * .10f).coerceIn(-rim, rim)
                                     }
                                 },
                         )

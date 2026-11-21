@@ -12,6 +12,8 @@ class HlsStillTest {
         hls_264_0_video.m3u8
         #EXT-X-STREAM-INF:BANDWIDTH=2600000,RESOLUTION=1280x720,AUDIO="audio"
         hls_264_1_video.m3u8
+        #EXT-X-STREAM-INF:BANDWIDTH=1400000,RESOLUTION=854x480,AUDIO="audio"
+        hls_264_2_video.m3u8
         #EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=640x360,AUDIO="audio"
         hls_264_3_video.m3u8
     """.trimIndent()
@@ -35,8 +37,8 @@ class HlsStillTest {
         #EXT-X-ENDLIST
     """.trimIndent()
 
-    @Test fun `the 1280 px rendition is read, not the audio or the largest`() {
-        assertEquals("hls_264_1_video.m3u8", HlsStill.variant(master))
+    @Test fun `the 854 px rendition is read, not the audio or the largest`() {
+        assertEquals("hls_264_2_video.m3u8", HlsStill.variant(master))
         assertNull(HlsStill.variant("#EXTM3U\n"))
     }
 
