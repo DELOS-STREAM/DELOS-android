@@ -41,7 +41,8 @@ import kotlinx.coroutines.delay
 private const val TAG = "OverviewPlayer"
 
 /**
- * The viewer's video in a window of its own: an application panel over the shell's window, placed on [bounds] (the viewer, in the
+ * A YouTube video of the viewer (the fallback for a game without Steam trailers, which play in the viewer's own tree) in a window of
+ * its own: an application panel over the shell's window, placed on [bounds] (the viewer, in the
  * shell window's pixels). Its root is the player's web view, hardware accelerated, with no Compose layer, blur, alpha or transform of
  * any ancestor around it: a web view drawn inside the shell's Compose tree played the sound but showed a black picture. [content] (all
  * the viewer draws above the video: the thumbnail until it plays, the DELOS overlay, the hint bar) is composed over it in the same
@@ -52,7 +53,7 @@ private const val TAG = "OverviewPlayer"
  */
 @Composable
 internal fun OverviewPlayerWindow(
-    player: OverviewVideoPlayer,
+    player: YouTubeVideoPlayer,
     bounds: IntRect,
     pointerHidden: Boolean,
     onPointer: () -> Unit,
@@ -96,7 +97,7 @@ internal fun OverviewPlayerWindow(
 
 private class PlayerWindow(
     private val anchor: View,
-    private val player: OverviewVideoPlayer,
+    private val player: YouTubeVideoPlayer,
     parent: CompositionContext,
     onPointer: () -> Unit,
     content: @Composable () -> Unit,

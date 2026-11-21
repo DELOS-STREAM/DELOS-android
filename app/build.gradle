@@ -153,6 +153,9 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0'
     // Backdrop blur for overlays (Android 12+, dimmed fallback below)
     implementation 'dev.chrisbanes.haze:haze-blur:2.1.0'
+    // Steam trailers in the game overview's viewer: ExoPlayer with HLS (docs/gui/GAME_INFO.md)
+    implementation 'androidx.media3:media3-exoplayer:1.11.1'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.11.1'
 
     // Unit test dependencies
     testImplementation 'junit:junit:4.13.2'

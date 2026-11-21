@@ -97,37 +97,66 @@ internal fun youTubePlayerHtml(videoId: String, origin: String): String? {
 }
 
 /**
- * One video of the viewer in the in-app player: what the player reports ([receive]) and the commands of the controls and the keys,
- * sent to it through the IFrame API. [started]: it has played, so the web view shows instead of the thumbnail. [error] is the player's
- * error code (-1: it did not load); the viewer then shows why instead of the player. [loaded] is the buffered fraction, [volume] 0–100.
+ * One video of the viewer, as the dock and the keys see it: what the player reports and the commands of the controls. [started]: its
+ * first picture is on screen, so the thumbnail gives way. [error] is the player's error code (-1: it did not load); the viewer then
+ * shows why instead of the player. [loaded] is the buffered fraction, [volume] 0–100. A Steam trailer plays natively
+ * ([NativeVideoPlayer]), a YouTube video in YouTube's IFrame player ([YouTubeVideoPlayer]).
  */
 @Stable
-internal class OverviewVideoPlayer(val videoId: String) {
+internal abstract class OverviewVideoPlayer {
     var started by mutableStateOf(false)
-        private set
+        protected set
     var playing by mutableStateOf(false)
-        private set
+        protected set
     var muted by mutableStateOf(false)
-        private set
+        protected set
     var time by mutableFloatStateOf(0f)
-        private set
+        protected set
     var duration by mutableFloatStateOf(0f)
-        private set
+        protected set
     var loaded by mutableFloatStateOf(0f)
-        private set
+        protected set
     var volume by mutableIntStateOf(100)
-        private set
+        protected set
     var error by mutableStateOf<Int?>(null)
-        private set
+        protected set
+    var ended by mutableStateOf(false)
+        protected set
 
+    /** The app is in front ([value]) or not; leaving it pauses the video, and it stays paused on return. */
+    abstract fun setActive(value: Boolean)
+
+    /** The viewer moved on or closed: the player lets go of everything it holds; no command works after. */
+    abstract fun release()
+
+    abstract fun togglePlay()
+
+    abstract fun pause()
+
+    abstract fun seekBy(seconds: Int)
+
+    /** Jumps to [fraction] of the video (a tap on the progress track). */
+    abstract fun seekTo(fraction: Float)
+
+    abstract fun toggleMute()
+
+    /** Sets the volume (0–100); any volume above 0 turns the sound on. */
+    abstract fun changeVolume(value: Int)
+}
+
+/**
+ * A YouTube video in the in-app player (the fallback for a game without Steam trailers): the page's reports ([receive]) and the
+ * commands, sent to it through the IFrame API. It plays in a window of its own ([OverviewPlayerWindow]); [started]: it has played, so
+ * the web view shows instead of the thumbnail.
+ */
+@Stable
+internal class YouTubeVideoPlayer(val videoId: String) : OverviewVideoPlayer() {
     /** The page can blur behind the dock's glass (CSS `backdrop-filter`); until it says so, and if it cannot, the dock is tinted darker over the video. */
     var glassSupported by mutableStateOf(false)
         private set
 
     /** The page has reported at least once. */
     var heard = false
-        private set
-    var ended by mutableStateOf(false)
         private set
     internal var web: WebView? = null
     private var active = false
@@ -139,7 +168,7 @@ internal class OverviewVideoPlayer(val videoId: String) {
     private var glassScript: String? = null
 
     /** Backgrounding revokes autoplay too, including an iframe whose onReady arrives later. */
-    fun setActive(value: Boolean) {
+    override fun setActive(value: Boolean) {
         active = value && !released
         if (!active) {
             wantsPlayback = false
@@ -152,13 +181,13 @@ internal class OverviewVideoPlayer(val videoId: String) {
         web?.evaluateJavascript("if(window.setPlaybackAllowed){setPlaybackAllowed($active,$wantsPlayback)}", null)
     }
 
-    fun release() {
+    override fun release() {
         setActive(false)
         released = true
         web = null
     }
 
-    fun togglePlay() {
+    override fun togglePlay() {
         if (!active || released || error != null) return
         wantsPlayback = !playing
         if (wantsPlayback && ended) run("player.seekTo(0,true)")
@@ -166,31 +195,29 @@ internal class OverviewVideoPlayer(val videoId: String) {
         applyPlayback()
     }
 
-    fun pause() {
+    override fun pause() {
         wantsPlayback = false
         playing = false
         applyPlayback()
     }
 
-    fun seekBy(seconds: Int) {
+    override fun seekBy(seconds: Int) {
         time = (time + seconds).coerceIn(0f, if (duration > 0f) duration else Float.MAX_VALUE)
         run("player.seekTo(Math.max(0,player.getCurrentTime()+($seconds)),true)")
     }
 
-    /** Jumps to [fraction] of the video (a tap on the progress track). */
-    fun seekTo(fraction: Float) {
+    override fun seekTo(fraction: Float) {
         if (duration <= 0f) return
         time = fraction.coerceIn(0f, 1f) * duration
         run("player.seekTo($time,true)")
     }
 
-    fun toggleMute() {
+    override fun toggleMute() {
         muted = !muted
         run(if (muted) "player.mute()" else "player.unMute()")
     }
 
-    /** Sets the volume (0–100); any volume above 0 turns the sound on. */
-    fun changeVolume(value: Int) {
+    override fun changeVolume(value: Int) {
         val v = value.coerceIn(0, 100)
         volume = v
         volumeSetAt = SystemClock.uptimeMillis()
@@ -253,7 +280,7 @@ internal class OverviewVideoPlayer(val videoId: String) {
 
 /** The player's web view: the page of [youTubePlayerHtml], reporting to [player]. It never takes the focus. */
 @SuppressLint("SetJavaScriptEnabled")
-internal fun playerView(context: Context, player: OverviewVideoPlayer): WebView {
+internal fun playerView(context: Context, player: YouTubeVideoPlayer): WebView {
     val origin = "https://" + context.packageName.lowercase(Locale.ROOT)
     val main = Handler(Looper.getMainLooper())
     return WebView(context).apply {
@@ -289,9 +316,12 @@ private class PlayerBridge(private val onMessage: (String) -> Unit) {
     fun post(message: String) = onMessage(message)
 }
 
-/** Instead of a video the player cannot play: the thumbnail dimmed, why, and nothing to press (videos never leave the app). */
+/**
+ * Instead of a video the player cannot play: the thumbnail dimmed, why, and nothing to press (videos never leave the app). [steam]: a
+ * Steam trailer, which Steam could not deliver; else the YouTube player's [code] tells whether the owner blocks it.
+ */
 @Composable
-internal fun VideoError(code: Int, modifier: Modifier) {
+internal fun VideoError(code: Int, steam: Boolean, modifier: Modifier) {
     val text = TextStyle(color = Color.White, fontFamily = Figtree, fontSize = 22.tpx, textAlign = TextAlign.Center)
     Box(modifier.background(Color.Black.copy(alpha = .62f)), contentAlignment = Alignment.Center) {
         Column(
@@ -305,7 +335,11 @@ internal fun VideoError(code: Int, modifier: Modifier) {
                 style = text.copy(fontFamily = Unbounded, fontWeight = FontWeight.Bold, fontSize = 30.tpx),
             )
             BasicText(
-                stringResource(if (YouTubeEmbeds.blockedByOwner(code)) R.string.overview_video_blocked else R.string.overview_video_failed),
+                stringResource(when {
+                    steam -> R.string.overview_video_failed_steam
+                    YouTubeEmbeds.blockedByOwner(code) -> R.string.overview_video_blocked
+                    else -> R.string.overview_video_failed
+                }),
                 style = text.copy(color = Color.White.copy(alpha = .8f)),
             )
         }

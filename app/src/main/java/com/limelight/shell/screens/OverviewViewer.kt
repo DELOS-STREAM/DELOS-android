@@ -109,8 +109,9 @@ internal class OverviewViewerInput(now: Long = SystemClock.uptimeMillis()) {
 }
 
 /**
- * Full-viewport media. Only the images and overlays animate; a video plays in a window of its own over the shell's
- * ([OverviewPlayerWindow]), never inside the shell's Compose layers, with the thumbnail, the dock and the hint bar composed over it there.
+ * Full-viewport media. A Steam trailer plays natively inside this tree ([NativeVideoSurface]: the zoom, the browse slide and the dock's
+ * glass apply to its moving picture); a YouTube video plays in a window of its own over the shell's ([OverviewPlayerWindow]), never
+ * inside the shell's Compose layers, with the thumbnail, the dock and the hint bar composed over it there.
  */
 @Composable
 internal fun OverviewViewer(
@@ -152,8 +153,11 @@ internal fun OverviewViewer(
     val scope = rememberCoroutineScope()
     val dock = remember { DockState() }
     val player = remember(shown) {
-        media.getOrNull(shown)?.takeIf { it.kind == OverviewModel.MediaKind.VIDEO }?.let { OverviewVideoPlayer(it.id) }
+        media.getOrNull(shown)?.takeIf { it.kind == OverviewModel.MediaKind.VIDEO }?.let { item ->
+            item.stream?.let(::NativeVideoPlayer) ?: YouTubeVideoPlayer(item.id)
+        }
     }
+    val native = player as? NativeVideoPlayer
     val video = player?.takeIf { it.error == null }
     val settled = opened && leaving == null && !request.closing
     val thumbnailAlpha by animateFloatAsState(
@@ -273,9 +277,9 @@ internal fun OverviewViewer(
             shell.overviewViewer = null
         }
     }
-    // Over the playing video the dock's blur is the page's own (OverviewPlayerWindow cannot blur a web view from Compose)
+    // Over the playing YouTube video the dock's blur is the page's own (OverviewPlayerWindow cannot blur a web view from Compose)
     LaunchedEffect(player, overlayShown, dock.dock, dock.close, settled) {
-        val p = player ?: return@LaunchedEffect
+        val p = player as? YouTubeVideoPlayer ?: return@LaunchedEffect
         fun rect(r: Rect, corner: Float) = floatArrayOf(r.left, r.top, r.width, r.height, corner * k)
         p.glass(overlayShown && settled && !dock.dock.isEmpty, listOf(rect(dock.dock, 46f), rect(dock.close, 38f)), 40f * k)
     }
@@ -315,7 +319,7 @@ internal fun OverviewViewer(
                 }
             },
     ) {
-        // Effects belong to this backdrop sibling; the video itself plays in a window of its own over the shell's (OverviewPlayerWindow)
+        // Effects belong to this backdrop sibling; a YouTube video plays in a window of its own over the shell's (OverviewPlayerWindow)
         Box(Modifier.fillMaxSize().graphicsLayer { alpha = scrim.value }
             .backdropBlur(haze, 40f, Color(4, 8, 16).copy(alpha = .55f)))
         // All the viewer draws above the video: here, and again over the video in the player's window while that is there
@@ -324,10 +328,12 @@ internal fun OverviewViewer(
             val pictures = remember { HazeState() }
             val origin = if (inWindow) Offset.Zero else root?.positionInWindow() ?: Offset.Zero
             Box(Modifier.fillMaxSize().hazeSource(pictures)) {
-                // The thumbnail covers the video until state 1 actually reports playing.
+                // The thumbnail covers the video until it plays (a YouTube video: state 1; a Steam trailer: its first frame).
                 listOfNotNull(leaving, shown).forEach { index ->
                     val item = media.getOrNull(index) ?: return@forEach
                     val isLeaving = index == leaving
+                    // A Steam trailer draws under its still here; the still fades, not the whole picture
+                    val trailerHere = !isLeaving && native != null && !inWindow
                     Box(
                         Modifier.fillMaxSize().graphicsLayer {
                             transformOrigin = TransformOrigin(0f, 0f)
@@ -354,22 +360,25 @@ internal fun OverviewViewer(
                                 translationX += drag.x * .6f
                                 translationY += drag.y.coerceAtLeast(0f)
                             }
-                            alpha = a * if (item.kind == OverviewModel.MediaKind.VIDEO) thumbnailAlpha else 1f
+                            alpha = a * if (item.kind == OverviewModel.MediaKind.VIDEO && !trailerHere) thumbnailAlpha else 1f
                         }.background(Color.Black),
                     ) {
+                        // The trailer comes in once the opening or the browse has landed and stays through the closing
+                        if (trailerHere && native != null && (settled || native.started)) NativeVideoSurface(native)
                         val thumb by rememberIgdbImage(item.thumb, (569f * k).toInt())
                         val full by rememberIgdbImage(item.full, (maxOf(fit.width, fit.height) * k).toInt())
                         // A trailer's still fills the stage like the video will (cropped), softly blurred until the video plays and
-                        // crossfades over it; maxresdefault, else (missing or still loading) hqdefault
+                        // crossfades over it; the full picture, else (missing or still loading) the thumbnail
                         val trailer = item.kind == OverviewModel.MediaKind.VIDEO
                         (full ?: thumb)?.let {
-                            Image(it, null, Modifier.fillMaxSize().then(if (trailer) Modifier.blur(16.px) else Modifier),
+                            Image(it, null, Modifier.fillMaxSize().then(if (trailer) Modifier.blur(16.px) else Modifier)
+                                .then(if (trailerHere) Modifier.graphicsLayer { alpha = thumbnailAlpha } else Modifier),
                                 contentScale = if (trailer) ContentScale.Crop else ContentScale.Fit)
                         }
                     }
                 }
             }
-            if (settled && player?.error != null) VideoError(player.error!!, Modifier.fillMaxSize())
+            if (settled && player?.error != null) VideoError(player.error!!, steam = native != null, Modifier.fillMaxSize())
             // Touch: a tap toggles the overlay, a double tap in the left or right third seeks 10 s, a swipe sideways browses and down closes.
             // Mouse: a click plays or pauses. While the overlay is hidden over a playing video, a touch is YouTube's (an ad's Skip): this
             // layer is not there, so the touch reaches the player's surface, and the touch itself brings the overlay back.
@@ -424,7 +433,7 @@ internal fun OverviewViewer(
             }
         }
         aboveVideo(false)
-        if (settled && player != null && player.error == null) {
+        if (settled && player is YouTubeVideoPlayer && player.error == null) {
             OverviewPlayerWindow(player, bounds, pointerHidden = !overlayShown, onPointer = { controls.onInput() }) {
                 Box(Modifier.fillMaxSize()) {
                     aboveVideo(true)

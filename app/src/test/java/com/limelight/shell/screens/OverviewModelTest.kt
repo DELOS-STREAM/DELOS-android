@@ -9,6 +9,9 @@ import com.limelight.shell.data.DetailWebsite
 import com.limelight.shell.data.GameDetails
 import com.limelight.shell.data.IgdbImage
 import com.limelight.shell.data.SimilarGame
+import com.limelight.shell.data.SteamMedia
+import com.limelight.shell.data.SteamMovie
+import com.limelight.shell.data.SteamScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -30,6 +33,7 @@ class OverviewModelTest {
         multiplayer: DetailMultiplayer? = null,
         externalGames: List<DetailExternalGame> = emptyList(),
         storyline: String? = null,
+        steam: SteamMedia? = null,
     ) = GameDetails(
         id = 214337, name = "Hollow Meridian", slug = null, summary = summary, storyline = storyline, firstReleaseDate = 1758153600,
         releaseDates = emptyList(), rating = 82.37, ratingCount = 1284, criticRating = 86.1, criticRatingCount = 42, totalRating = null,
@@ -37,7 +41,7 @@ class OverviewModelTest {
         platforms = emptyList(), companies = companies, ageRatings = ageRatings, screenshots = screenshots, artworks = emptyList(),
         videos = videos, websites = websites, similarGames = similar, franchises = listOf("Meridian"), collections = emptyList(),
         engines = listOf("Unreal Engine 5"), keywords = emptyList(), languages = emptyList(), multiplayer = multiplayer,
-        externalGames = externalGames,
+        externalGames = externalGames, steam = steam,
     )
 
     @Test fun `videos come before the screenshots, with IGDB and YouTube URLs`() {
@@ -48,6 +52,40 @@ class OverviewModelTest {
         assertEquals("https://images.igdb.com/igdb/image/upload/t_screenshot_med/sc1.jpg", media[1].thumb)
         assertEquals("https://images.igdb.com/igdb/image/upload/t_screenshot_huge/sc1.jpg", media[1].full)
         assertEquals(2, media[2].number)
+    }
+
+    private val hls = SteamMovie(1, "Launch Trailer", "https://cdn.steamstatic.com/1/movie.293x165.jpg", "https://cdn.steamstatic.com/1/hls.m3u8",
+        "https://cdn.steamstatic.com/1/dash.mpd", null, null, highlight = true)
+    private val mp4 = SteamMovie(2, "Teaser", "https://cdn.steamstatic.com/2/movie.293x165.jpg", null, null, "https://cdn.steamstatic.com/2/max.mp4",
+        "https://cdn.steamstatic.com/2/max.webm", highlight = false)
+    private val shot = SteamScreenshot(0, "https://cdn.steamstatic.com/ss_a.600x338.jpg", "https://cdn.steamstatic.com/ss_a.1920x1080.jpg")
+
+    @Test fun `Steam's trailers and screenshots replace YouTube and IGDB, with a screenshot as the trailers' poster`() {
+        val media = OverviewModel.media(details(steam = SteamMedia(10, listOf(hls, mp4), listOf(shot))))
+        assertEquals(listOf(OverviewModel.MediaKind.VIDEO, OverviewModel.MediaKind.VIDEO, OverviewModel.MediaKind.SCREENSHOT), media.map { it.kind })
+        assertEquals(listOf("https://cdn.steamstatic.com/1/hls.m3u8", "https://cdn.steamstatic.com/2/max.mp4", null), media.map { it.stream })
+        assertEquals(listOf("1", "2", "0"), media.map { it.id })
+        assertEquals(listOf(1, 2, 1), media.map { it.number })
+        for (trailer in media.take(2)) {
+            assertEquals(shot.thumbnail, trailer.thumb)
+            assertEquals(shot.full, trailer.full)
+        }
+        assertEquals(shot.thumbnail, media[2].thumb)
+        assertEquals(shot.full, media[2].full)
+    }
+
+    @Test fun `each kind falls back on its own when Steam has none of it`() {
+        val noShots = OverviewModel.media(details(steam = SteamMedia(10, listOf(hls), emptyList())))
+        assertEquals(listOf("1", "sc1", "sc2"), noShots.map { it.id })
+        // The poster is then IGDB's first screenshot, never Steam's 293 px still
+        assertEquals("https://images.igdb.com/igdb/image/upload/t_screenshot_med/sc1.jpg", noShots[0].thumb)
+        assertEquals("https://images.igdb.com/igdb/image/upload/t_screenshot_huge/sc1.jpg", noShots[0].full)
+        val noMovies = OverviewModel.media(details(steam = SteamMedia(10, emptyList(), listOf(shot))))
+        assertEquals(listOf("dQw4w9WgXcQ", "0"), noMovies.map { it.id })
+        assertNull(noMovies[0].stream)
+        // Nothing larger at all: Steam's own still
+        val bare = OverviewModel.media(details(screenshots = emptyList(), steam = SteamMedia(10, listOf(hls), emptyList())))
+        assertEquals(hls.thumbnail, bare.single().thumb)
     }
 
     @Test fun `links put the official site first and name the others by IGDB's type`() {

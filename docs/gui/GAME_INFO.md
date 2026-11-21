@@ -478,6 +478,7 @@ Page lookup:
 | The metadata Worker | The game names the app looks up and the client IP address (Cloudflare's request metadata) | No query text, only a short hash on failures |
 | HowLongToBeat | The device's IP and game names; it has no credentials and is still queried directly from the device | |
 | IGDB's image server (`images.igdb.com`) | The device's IP and the image ids of the screenshots and of similar games' covers the overview shows; the images load directly from the device, without credentials | |
+| Steam's CDN (`*.steamstatic.com`) | The device's IP and the trailer and screenshot files the overview shows (their URLs come from the Worker, which asks Steam's public `appdetails` for the game's Steam app); trailers stream from there into the app's own player, without cookies or a Steam login | |
 | YouTube (`i.ytimg.com`, `youtube.com`, `youtube-nocookie.com`) | The device's IP and the video ids whose thumbnails the overview shows, and one oEmbed request per video id (`youtube.com/oembed`, no cookies) that tells whether the video may be embedded. A video that is opened plays in the app's own YouTube player in privacy-enhanced mode (`youtube-nocookie.com`): YouTube sets no cookies before playback starts; once the video plays, YouTube may set cookies and local storage in the app's web view and plays its ads. Nothing is opened in a browser or the YouTube app | |
 
 ## 9. Game overview
@@ -585,7 +586,11 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
      "Show less" button; a 560 px glass facts card (developer, publisher with "self-published", release date,
      ported by, engine, series);
    - **Screenshots and videos** with its count: a full-width carousel of 520 × 292 thumbnails, videos first; each
-     picture lags 7 % behind the carousel's movement (parallax);
+     picture lags 7 % behind the carousel's movement (parallax). Steam's media wins per kind: a game with Steam
+     trailers shows those instead of IGDB's YouTube videos, one with Steam screenshots those instead of IGDB's; each
+     kind falls back alone. Steam's trailer stills are only 293 × 165, so a trailer's tile (and its blurred still in
+     the viewer) is the first screenshot (Steam's 600 × 338 and 1920 × 1080, else IGDB's) with the play badge and the
+     trailer's name;
    - **Details** (glass card, two columns): genres, themes, game modes, perspective, platforms, age ratings with
      descriptors, multiplayer, languages, keywords (5);
    - **Your streaming** (glass card, three columns): the streaming time counting up when the card is first focused,
@@ -633,7 +638,8 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
 
 1. It zooms out of the thumbnail (560 ms) and back into it (440 ms), or fades when the thumbnail is scrolled away. The
    picture fills the stage (a screenshot keeps its aspect ratio, letterboxed); the thumbnail stays until the full picture
-   (`screenshot_huge`, `1080p` on a 4:3 stage) is decoded. The page behind is blurred (40 px, a dark tint).
+   (Steam's 1920 × 1080; IGDB's `screenshot_huge`, `1080p` on a 4:3 stage) is decoded. The page behind is blurred (40 px,
+   a dark tint).
 2. **The dock:** a tall glass dock 64 px from the sides and 28 px above the hint bar (corner 46 px, padding 24/44/30 px):
    a tint of 0.20 over a real 40 px backdrop blur, a top highlight and a hairline. On a video its first row is the
    timeline: the elapsed time, the seek bar (10 px; buffered in white, played in gold; 16 px with its knob when focused,
@@ -674,8 +680,36 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
    the pointer; buttons light up under it.
 9. **Reduced motion:** fades stay; the rises, the focus scale, the ring's glide, the slides and the flash's nudge go.
 
-**Videos** (`OverviewVideo.kt`, `YouTubeEmbeds.kt`). Trailers play only inside the app; nothing opens a browser or the
-YouTube app.
+**Videos** (`OverviewNativeVideo.kt`, `OverviewVideo.kt`, `YouTubeEmbeds.kt`). Trailers play only inside the app; nothing
+opens a browser, Steam or the YouTube app. A game's Steam trailers play natively; YouTube is only the fallback for a game
+without them.
+
+**Steam trailers** (`OverviewNativeVideo.kt`): Media3 ExoPlayer plays the trailer's HLS stream (adaptive H.264), else
+its progressive MP4 or WebM file; there are no ads.
+
+1. Once the viewer has settled on the trailer, the player starts with the sound on at the app's media volume (the dock's
+   slider scales it); its picture is a `TextureView` inside the viewer's own Compose tree, fitted to the stage
+   (letterboxed). The blurred still stays over it until the first frame is drawn and then crossfades away. The zoom,
+   the browse slide and the dock's glass apply to the moving picture: the dock blurs the video itself (Haze, 40 px), as
+   it blurs a screenshot.
+2. The dock drives the player directly: play/pause, ±10 s, the timeline (played, and buffered from the player's
+   buffered position, read every 250 ms), mute and the volume slider; the keys, touch and mouse are those of the dock.
+3. The app going to the background pauses it (it stays paused on return); browsing away or closing the viewer releases
+   the player, its decoder and buffers. A trailer that fails shows the still dimmed with "This video can't be played"
+   and "Steam couldn't load it. Check the connection and try again." (logcat and the diagnostic log, tag
+   `OverviewNativePlayer`, name the player's error).
+4. **TextureView, not SurfaceView** (decided 2026-11-21): a SurfaceView's picture bypasses the app's layers, so the
+   dock's glass over it could only show a flat tint, and the zoom and slides could not move it. Measured on the
+   `delos-layout` emulator (API 33, 1920 × 1080, host GPU), the Hades launch trailer playing for 15 s with the dock up,
+   one run each, the machine under other builds: TextureView 895 frames, 4.6 % janky, 50th/90th/99th percentile 26/40/69 ms,
+   the app's CPU 111 % of one core; SurfaceView 426 frames, 84 % janky, 73/109/150 ms, 150 %. With the dock hidden:
+   TextureView 3.4 % janky (24/36/53 ms), SurfaceView 6.3 % (20/36/200 ms), both 100 % CPU. The overview behind it
+   alone: about 70 % CPU, 23/38/81 ms. The emulator cannot judge performance, so the numbers only show that the
+   TextureView costs nothing visible there; it is not checked on the Odin yet. Memory: playing adds about 65 MB PSS
+   (Java heap 19 → 68 MB, the player's buffers); after close the player is released (`ExoPlayerImpl: Release` in
+   logcat, its 15 threads gone) and once collected the Java heap is back at 26 MB.
+
+**YouTube videos** (the fallback):
 
 1. A video fills the stage under the dock. The dock's glass over it is drawn by the player's page itself: one element
    per glass part with CSS `backdrop-filter: blur(40px) saturate(1.8) brightness(.86)` over a 0.20 tint, placed and
@@ -711,15 +745,20 @@ YouTube app.
 1. The details come from the Worker's `GET /v1/igdb/game-details?id=<igdb id>` (shape:
    [tools/metadata-worker/README.md](../../tools/metadata-worker/README.md), "Game details"). They are fetched when the
    overview opens or after a game has been focused for a second.
-2. They are stored with the game's metadata record (cache schema 7) and refreshed after 7 days; a failure backs off
+2. They are stored with the game's metadata record (cache schema 8; schema 8 added Steam's media, so records of an older
+   version are fetched again once) and refreshed after 7 days; a failure backs off
    30 minutes like the other providers and keeps the stored details. A game IGDB does not know is remembered as
    having no details until the next refresh.
 3. The cover is exactly the library card's image (the user's SteamGridDB choice, else the default card art); the
    game itself needs no IGDB cover. Similar games the user owns show their library card, the others IGDB's
    `cover_big`.
-4. IGDB images load directly from `images.igdb.com`; they are kept in a 150 MB disk cache (`cacheDir/igdb-images`)
-   and a 32 MB memory cache of decoded pictures, decoded no larger than they are drawn. Media images load where they
-   are displayed; opening the overview does not prefetch media for its background.
+4. IGDB images load directly from `images.igdb.com`, Steam's from `*.steamstatic.com`; they are kept in a 150 MB disk
+   cache (`cacheDir/igdb-images`) and a 32 MB memory cache of decoded pictures, decoded no larger than they are drawn.
+   Media images load where they are displayed; opening the overview does not prefetch media for its background.
+5. Steam's media come in the same answer, as its `steam` object (the Steam app is IGDB's Steam external game): the
+   trailers, highlights first, with their HLS, DASH, MP4 and WebM URLs as Steam gives them, and the screenshots with a
+   600 × 338 thumbnail and the 1920 × 1080 picture. The app keeps only https URLs and trailers it can play (HLS, MP4,
+   WebM).
 
 
 ## Settings

@@ -71,6 +71,7 @@ class GameDetailsParserTest {
         assertNull(sparse.criticRating)
         assertEquals(0, sparse.criticRatingCount)
         assertNull(sparse.multiplayer)
+        assertNull(sparse.steam)
         for (list in listOf(sparse.releaseDates, sparse.genres, sparse.platforms, sparse.companies, sparse.ageRatings, sparse.screenshots,
             sparse.artworks, sparse.videos, sparse.websites, sparse.similarGames, sparse.keywords, sparse.languages, sparse.externalGames)) {
             assertTrue(list.isEmpty())
@@ -127,5 +128,42 @@ class GameDetailsParserTest {
         assertEquals("https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1abc.jpg", IgdbImageUrls.image("co1abc", IgdbImageSize.COVER_BIG, true))
         assertEquals("https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", IgdbImageUrls.youtubeThumb("dQw4w9WgXcQ"))
         assertEquals("https://www.youtube.com/watch?v=dQw4w9WgXcQ", IgdbImageUrls.youtubeWatch("dQw4w9WgXcQ"))
+    }
+
+    @Test fun steamMediaIsReadWithHighlightTrailersFirst() {
+        val json = detailsFixture().removeSuffix("}") + """,
+            "steam":{"appId":1562430,
+             "movies":[{"id":2,"name":"Teaser","thumbnail":"https://cdn.steamstatic.com/2/movie.293x165.jpg","mp4":"https://cdn.steamstatic.com/2/movie_max.mp4","webm":"https://cdn.steamstatic.com/2/movie_max.webm"},
+                       {"id":1,"name":"Launch Trailer","thumbnail":"https://cdn.steamstatic.com/1/movie.293x165.jpg","hls":"https://cdn.steamstatic.com/1/hls_264_master.m3u8?t=1","dash":"https://cdn.steamstatic.com/1/dash_h264.mpd?t=1","highlight":true}],
+             "screenshots":[{"id":0,"thumbnail":"https://cdn.steamstatic.com/ss_a.600x338.jpg","full":"https://cdn.steamstatic.com/ss_a.1920x1080.jpg"}]}}
+        """.trimIndent()
+        assertEquals(
+            SteamMedia(
+                1562430,
+                listOf(
+                    SteamMovie(1, "Launch Trailer", "https://cdn.steamstatic.com/1/movie.293x165.jpg", "https://cdn.steamstatic.com/1/hls_264_master.m3u8?t=1",
+                        "https://cdn.steamstatic.com/1/dash_h264.mpd?t=1", null, null, highlight = true),
+                    SteamMovie(2, "Teaser", "https://cdn.steamstatic.com/2/movie.293x165.jpg", null, null,
+                        "https://cdn.steamstatic.com/2/movie_max.mp4", "https://cdn.steamstatic.com/2/movie_max.webm", highlight = false),
+                ),
+                listOf(SteamScreenshot(0, "https://cdn.steamstatic.com/ss_a.600x338.jpg", "https://cdn.steamstatic.com/ss_a.1920x1080.jpg")),
+            ),
+            GameDetailsParser.parse(json)!!.steam,
+        )
+    }
+
+    @Test fun steamEntriesWithoutAPlayableHttpsStreamOrPictureAreDropped() {
+        fun steam(body: String) = GameDetailsParser.parse("""{"id":7,"name":"Game","steam":$body}""")!!.steam
+        val kept = steam("""
+            {"appId":10,
+             "movies":[{"id":1,"dash":"https://cdn.steamstatic.com/1.mpd"},{"id":2,"hls":"http://cdn.steamstatic.com/2.m3u8"},{"hls":"https://x/3.m3u8"},
+                       {"id":4,"hls":"https://cdn.steamstatic.com/4.m3u8","thumbnail":"javascript:x"},{"id":4,"hls":"https://cdn.steamstatic.com/dup.m3u8"}],
+             "screenshots":[{"id":0,"thumbnail":"https://cdn.steamstatic.com/s.jpg"},{"id":1,"full":"https://cdn.steamstatic.com/f.jpg"}]}
+        """.trimIndent())!!
+        assertEquals(listOf(SteamMovie(4, null, null, "https://cdn.steamstatic.com/4.m3u8", null, null, null, false)), kept.movies)
+        assertEquals(listOf(SteamScreenshot(1, null, "https://cdn.steamstatic.com/f.jpg")), kept.screenshots)
+        for (body in listOf("""{"appId":10,"movies":[],"screenshots":[]}""", """{"movies":[{"id":1,"hls":"https://a/b.m3u8"}]}""", "[]", "null")) {
+            assertNull(body, steam(body))
+        }
     }
 }
