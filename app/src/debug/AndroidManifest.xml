@@ -6,4 +6,9 @@
         android:targetPackage="${applicationId}" android:label="Delos PyroWave Vulkan GPU checks" />
     <instrumentation android:name="com.limelight.shell.ui.IconFontInstrumentation"
         android:targetPackage="${applicationId}" android:label="Delos icon centering checks" />
+    <application>
+        <!-- PlayStation Remote Play bench (issue #25), debug builds only -->
+        <activity android:name="com.limelight.ps.PsDebugActivity" android:exported="true"
+            android:label="PS Remote Play (debug)" android:screenOrientation="sensorLandscape" />
+    </application>
 </manifest>

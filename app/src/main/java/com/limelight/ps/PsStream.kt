@@ -1,0 +1,354 @@
+package com.limelight.ps
+
+import android.util.Log
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.SocketTimeoutException
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.security.SecureRandom
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
+
+/** What the stream reports to its user (the debug screen today, the stream activity later). */
+interface PsStreamListener {
+    fun onStreamInfo(width: Int, height: Int, videoHeader: ByteArray, audioHeader: ByteArray?) {}
+    /** A complete Annex-B access unit. */
+    fun onVideoFrame(frame: ByteArray, index: Int) {}
+    fun onAudio(opus: ByteArray, frameIndex: Int) {}
+    fun onRumble(left: Int, right: Int) {}
+    fun onStatus(text: String) {}
+    fun onEnded(reason: String) {}
+}
+
+/**
+ * The stream connection on UDP 9296 (sections 5 and 6): Takion handshake, BIG/BANG with ECDH, STREAMINFO, then AV packets, heartbeats,
+ * congestion reports and input feedback. One instance per session; [start] blocks until BANG, then threads keep it running.
+ */
+class PsStream(
+    private val host: InetAddress,
+    private val target: PsTarget,
+    private val sessionKey: String,
+    private val rpCrypt: RpCrypt,
+    private val request: PsStreamRequest,
+    private val listener: PsStreamListener,
+) : AutoCloseable {
+    private val v12 = target.takionVersion >= 12
+    private val socket = DatagramSocket()
+    private val rng = SecureRandom()
+    private val ownTag = rng.nextInt().let { if (it == 0) 1 else it }
+    private var consoleTag = 0
+    private var sendTsn = ownTag
+    private var expectedTsn = 0
+    private var sendPosition = 0L
+    private var recvPosition = 0L
+    private var gkSend: PsGkCrypt? = null
+    private var gkRecv: PsGkCrypt? = null
+    private val handshakeKey = ByteArray(16).also { rng.nextBytes(it) }
+    private val ecdh = PsEcdh()
+    private val timers: ScheduledExecutorService = Executors.newScheduledThreadPool(2)
+    private val unacked = ConcurrentHashMap<Int, Pair<ByteArray, Int>>()
+    @Volatile private var running = true
+    @Volatile private var bang: PsProtoMessage? = null
+    @Volatile private var streamInfo: PsProtoMessage? = null
+    private val reorder = HashMap<Int, PsTakionPackets.Control>()
+    private val fragments = HashMap<Int, java.io.ByteArrayOutputStream>()
+    private val fragmentType = HashMap<Int, Int>()
+    private val assembler = PsFrameAssembler()
+    private var feedbackSeq = 0
+    private var historySeq = 0
+    private var state = PsControllerState()
+    private val history = ArrayDeque<ByteArray>()
+
+    fun start() {
+        socket.connect(InetSocketAddress(host, 9296))
+        socket.receiveBufferSize = 0x19000 * 4
+        handshake()
+        Thread(::receiveLoop, "ps-takion-rx").apply { isDaemon = true; start() }
+        timers.scheduleWithFixedDelay(::resend, 200, 200, TimeUnit.MILLISECONDS)
+        val json = PsSession.launchSpecJson(target, request, handshakeKey)
+        val big = PsSession.big(target, sessionKey, PsSession.launchSpecEncrypted(rpCrypt, json), ecdh, handshakeKey)
+        sendMessage(1, 0, big)
+        listener.onStatus("BIG sent, waiting for BANG")
+        val until = System.currentTimeMillis() + 5000
+        while (bang == null && running && System.currentTimeMillis() < until) Thread.sleep(10)
+        val b = bang ?: throw PsException("no BANG from the console")
+        if (b.bool(3) != true || b.bool(4) != true) throw PsException("the console refused BIG (key ${b.bool(3)}, version ${b.bool(4)})")
+        val secret = ecdh.sharedSecret(b.bytes(8) ?: throw PsException("BANG without a public key"))
+        gkSend = PsGkCrypt(2, handshakeKey, secret)
+        gkRecv = PsGkCrypt(3, handshakeKey, secret)
+        listener.onStatus("BANG accepted, keys ready")
+        streamInfo?.let(::onStreamInfo)
+        timers.scheduleWithFixedDelay({ sendMessage(1, 0, PsMsg.simple(PsMsg.HEARTBEAT)) }, 1, 1, TimeUnit.SECONDS)
+        timers.scheduleWithFixedDelay(::sendCongestion, 200, 200, TimeUnit.MILLISECONDS)
+        timers.scheduleWithFixedDelay({ sendFeedbackState() }, 200, 200, TimeUnit.MILLISECONDS)
+    }
+
+    // --- Takion ---------------------------------------------------------------------------------------------------------------
+
+    private fun handshake() {
+        socket.soTimeout = 5000
+        val buf = ByteArray(2048)
+        var initAck: PsTakionPackets.Control? = null
+        repeat(3) {
+            if (initAck != null) return@repeat
+            send(PsTakionPackets.init(ownTag))
+            try {
+                val p = DatagramPacket(buf, buf.size); socket.receive(p)
+                PsTakionPackets.parseControl(buf, p.length)?.takeIf { it.chunkType == PsTakionPackets.CHUNK_INIT_ACK }?.let { initAck = it }
+            } catch (_: SocketTimeoutException) {}
+        }
+        val ack = initAck ?: throw PsException("no Takion INIT_ACK")
+        val b = ByteBuffer.wrap(ack.payload)
+        consoleTag = b.int
+        if (consoleTag == 0) throw PsException("INIT_ACK tag 0")
+        expectedTsn = consoleTag
+        val cookie = ack.payload.copyOfRange(16, 48)
+        repeat(3) {
+            send(PsTakionPackets.cookie(consoleTag, cookie))
+            try {
+                while (true) {
+                    val p = DatagramPacket(buf, buf.size); socket.receive(p)
+                    val c = PsTakionPackets.parseControl(buf, p.length) ?: continue
+                    if (c.chunkType == PsTakionPackets.CHUNK_COOKIE_ACK) { socket.soTimeout = 0; return }
+                }
+            } catch (_: SocketTimeoutException) {}
+        }
+        throw PsException("no Takion COOKIE_ACK")
+    }
+
+    private fun send(d: ByteArray) { if (running) runCatching { socket.send(DatagramPacket(d, d.size)) } }
+
+    /** Advances the send key position by s + (s mod 16) and returns the position the packet uses (5.5). */
+    private fun takePosition(s: Int): Long = synchronized(this) {
+        if (gkSend == null) 0L else sendPosition.also { sendPosition += s + (s % 16) }
+    }
+
+    /** Writes the GMAC of a CONTROL datagram (key position field zeroed for the computation, then restored). */
+    private fun macControl(d: ByteArray, position: Long) {
+        val gk = gkSend ?: return
+        val copy = d.copyOf()
+        for (i in 5 until 13) copy[i] = 0
+        gk.gmac(copy, position).copyInto(d, 5)
+    }
+
+    /** Sends a Takion message on [channel] (fragmented, reliable). */
+    fun sendMessage(channel: Int, dataType: Int, message: ByteArray) {
+        val parts = PsTakionPackets.fragments(message, request.mtu)
+        parts.forEachIndexed { i, (flags, data) ->
+            val tsn: Int
+            synchronized(this) { tsn = sendTsn++ }
+            val position = takePosition(data.size)
+            val payload = PsTakionPackets.dataPayload(tsn, channel, if (i == 0) dataType else null, data)
+            val d = PsTakionPackets.control(consoleTag, position.toInt(), PsTakionPackets.CHUNK_DATA, flags, payload)
+            macControl(d, position)
+            unacked[tsn] = d to 0
+            send(d)
+        }
+    }
+
+    private fun resend() {
+        for ((tsn, entry) in unacked) {
+            if (entry.second >= 25) { unacked.remove(tsn); continue }
+            unacked[tsn] = entry.first to entry.second + 1
+            send(entry.first)
+        }
+    }
+
+    private fun receiveLoop() {
+        val buf = ByteArray(0x19000)
+        while (running) {
+            val p = DatagramPacket(buf, buf.size)
+            try { socket.receive(p) } catch (_: Exception) { if (running) continue else return }
+            val type = buf[0].toInt() and 0x0F
+            try {
+                when (type) {
+                    0 -> onControl(buf.copyOf(p.length))
+                    2, 3 -> onAv(buf.copyOf(p.length))
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "packet type $type: ${e.message}")
+            }
+        }
+    }
+
+    private fun extend(low: Int, last: Long): Long {
+        val l = low.toLong() and 0xFFFFFFFFL
+        var candidate = (last and 0xFFFFFFFFL.inv()) or l
+        if (candidate < last - 0x80000000L) candidate += 0x100000000L
+        else if (candidate > last + 0x80000000L && candidate >= 0x100000000L) candidate -= 0x100000000L
+        return candidate
+    }
+
+    private fun onControl(d: ByteArray) {
+        val c = PsTakionPackets.parseControl(d) ?: return
+        if (c.tag != ownTag) return
+        val gk = gkRecv
+        if (gk != null) {
+            val position = extend(c.keyPosition, recvPosition)
+            val copy = d.copyOf(); for (i in 5 until 13) copy[i] = 0
+            if (!gk.gmac(copy, position).contentEquals(d.copyOfRange(5, 9))) { Log.w(TAG, "control MAC mismatch at $position"); return }
+            recvPosition = maxOf(recvPosition, position)
+        }
+        when (c.chunkType) {
+            PsTakionPackets.CHUNK_DATA -> onData(c)
+            PsTakionPackets.CHUNK_DATA_ACK -> {
+                val acked = ByteBuffer.wrap(c.payload).int
+                for (tsn in unacked.keys) if (acked - tsn >= 0) unacked.remove(tsn)
+            }
+        }
+    }
+
+    private fun onData(c: PsTakionPackets.Control) {
+        val tsn = ByteBuffer.wrap(c.payload).int
+        synchronized(reorder) {
+            if (tsn - expectedTsn < 0) { sendAck(expectedTsn - 1); return }
+            if (tsn - expectedTsn >= 16) return
+            reorder[tsn] = c
+            var delivered = false
+            while (true) {
+                val next = reorder.remove(expectedTsn) ?: break
+                deliver(next)
+                expectedTsn++
+                delivered = true
+            }
+            if (delivered) sendAck(expectedTsn - 1)
+        }
+    }
+
+    private fun sendAck(tsn: Int) {
+        val position = takePosition(29)
+        val d = PsTakionPackets.dataAck(consoleTag, position.toInt(), tsn)
+        macControl(d, position)
+        send(d)
+    }
+
+    private fun deliver(c: PsTakionPackets.Control) {
+        val b = ByteBuffer.wrap(c.payload)
+        b.int
+        val channel = b.short.toInt() and 0xFFFF
+        val buffer = fragments[channel]
+        val data: ByteArray
+        if (buffer == null) {
+            fragmentType[channel] = u(c.payload[8])
+            data = c.payload.copyOfRange(9, c.payload.size)
+        } else data = c.payload.copyOfRange(8, c.payload.size)
+        if (c.flags and 1 == 0) { (fragments.getOrPut(channel) { java.io.ByteArrayOutputStream() }).write(data); return }
+        val whole = buffer?.let { it.write(data); fragments.remove(channel); it.toByteArray() } ?: data
+        val dataType = fragmentType.remove(channel) ?: 0
+        when (dataType) {
+            0 -> onMessage(PsProtoMessage(whole))
+            7 -> if (whole.size >= 3) listener.onRumble(u(whole[1]), u(whole[2]))
+        }
+    }
+
+    private fun onMessage(m: PsProtoMessage) {
+        when (m.uint(1)?.toInt()) {
+            PsMsg.BANG -> bang = m.message(3)
+            PsMsg.STREAMINFO -> m.message(15)?.let { if (gkRecv == null) streamInfo = it else onStreamInfo(it) }
+            PsMsg.DISCONNECT -> { listener.onEnded(m.message(10)?.string(1) ?: "disconnected"); close() }
+            PsMsg.CONNECTIONQUALITY -> m.message(17)?.let { listener.onStatus("quality: target ${it.uint(1)} kbit/s, rtt ${it.uint(5)}") }
+        }
+    }
+
+    private fun onStreamInfo(info: PsProtoMessage) {
+        val res = info.messages(1).firstOrNull() ?: return
+        listener.onStreamInfo(res.uint(1)?.toInt() ?: 0, res.uint(2)?.toInt() ?: 0, res.bytes(3) ?: ByteArray(0), info.bytes(2))
+        sendMessage(9, 0, PsMsg.simple(PsMsg.STREAMINFOACK))
+        val controller = PsProtoWriter().bool(2, true).uint(3, if (target.ps5) 6 else 2)
+        sendMessage(1, 0, PsProtoWriter().uint(1, PsMsg.CONTROLLERCONNECTION.toLong()).message(22, controller).toByteArray())
+        val mic = byteArrayOf(1, 16, 0, 0, 0xBB.toByte(), 0x80.toByte(), 0, 0, 1, 0xE0.toByte(), 0, 0, 0, 1)
+        sendMessage(1, 0, PsProtoWriter().uint(1, PsMsg.STREAMINFO.toLong()).message(15, PsProtoWriter().bytes(2, mic)).toByteArray())
+    }
+
+    private fun onAv(d: ByteArray) {
+        val low = ByteBuffer.wrap(d).getInt(0x0E)
+        val position = extend(low, recvPosition)
+        val packet = PsAvParser.parse(d, d.size, v12, gkRecv, position) ?: return
+        recvPosition = maxOf(recvPosition, position)
+        if (packet.video) {
+            for (r in assembler.add(packet)) when (r) {
+                is PsFrameAssembler.Result.Frame -> listener.onVideoFrame(r.data, r.index)
+                is PsFrameAssembler.Result.Lost -> requestIdr(r.from, r.to)
+            }
+            assembler.takeLoss()?.let { (a, b) -> corrupt(a, b) }
+        } else if (packet.audioMarker != 2) {
+            val desc = packet.fecOrAudioDesc
+            val size = desc ushr 8
+            val sources = desc and 0xF
+            for (i in 0 until sources) {
+                val from = i * size
+                if (size > 0 && from + size <= packet.payload.size) listener.onAudio(packet.payload.copyOfRange(from, from + size), packet.frameIndex + i)
+            }
+        }
+    }
+
+    private fun corrupt(from: Int, to: Int) =
+        sendMessage(2, 0, PsProtoWriter().uint(1, PsMsg.CORRUPTFRAME.toLong()).message(6, PsProtoWriter().uint(1, from.toLong()).uint(2, to.toLong())).toByteArray())
+
+    private fun requestIdr(from: Int, to: Int) { corrupt(from, to); sendMessage(2, 0, PsMsg.simple(PsMsg.IDRREQUEST)) }
+
+    private fun sendCongestion() {
+        val gk = gkSend ?: return
+        val received = assembler.unitsReceived.also { assembler.unitsReceived = 0 }
+        val lost = assembler.unitsLost.also { assembler.unitsLost = 0 }
+        val position = takePosition(15)
+        val d = ByteBuffer.allocate(15).order(ByteOrder.BIG_ENDIAN).apply {
+            put(5); putShort(0); putShort(received.coerceAtMost(0xFFFF).toShort()); putShort(lost.coerceAtMost(0xFFFF).toShort()); putInt(0); putInt(0)
+        }.array()
+        gk.gmac(d, position).copyInto(d, 7)
+        ByteBuffer.wrap(d).putInt(11, position.toInt())
+        send(d)
+    }
+
+    // --- Input ----------------------------------------------------------------------------------------------------------------
+
+    /** Sends the new controller state: buttons, triggers and touch as history events, sticks and motion as the state packet. */
+    fun updateController(new: PsControllerState) {
+        val events = PsFeedback.events(state, new)
+        val sticksChanged = new.copy(buttons = 0, l2 = 0, r2 = 0, touches = emptyList()) != state.copy(buttons = 0, l2 = 0, r2 = 0, touches = emptyList())
+        state = new
+        if (events.isNotEmpty()) {
+            synchronized(history) { for (e in events) { history.addFirst(e); historySeq++ } ; while (history.size > 8) history.removeLast() }
+            sendHistory()
+        }
+        if (sticksChanged) sendFeedbackState()
+    }
+
+    private fun sendFeedbackState() {
+        val gk = gkSend ?: return
+        val body = PsFeedback.state(state, v12)
+        sendFeedback(6, (feedbackSeq++) and 0xFFFF, 0, body, gk)
+    }
+
+    private fun sendHistory() {
+        val gk = gkSend ?: return
+        val (count, body) = synchronized(history) { history.size to history.fold(ByteArray(0)) { acc, e -> acc + e } }
+        sendFeedback(1, historySeq and 0xFFFF, count - 1, body, gk)
+    }
+
+    private fun sendFeedback(type: Int, seq: Int, countMinusOne: Int, body: ByteArray, gk: PsGkCrypt) {
+        val position = takePosition(body.size + 16)
+        val enc = body.copyOf()
+        gk.apply(enc, 0, enc.size, position + 16)
+        val d = ByteBuffer.allocate(12 + enc.size).order(ByteOrder.BIG_ENDIAN).apply {
+            put(type.toByte()); putShort(seq.toShort()); put(countMinusOne.toByte()); putInt(position.toInt()); putInt(0); put(enc)
+        }.array()
+        gk.gmac(d, position).copyInto(d, 8)
+        send(d)
+    }
+
+    override fun close() {
+        if (!running) return
+        runCatching { sendMessage(1, 0, PsProtoWriter().uint(1, PsMsg.DISCONNECT.toLong()).message(10, PsProtoWriter().string(1, "Client Disconnecting")).toByteArray()) }
+        running = false
+        timers.shutdownNow()
+        socket.close()
+    }
+
+    companion object { private const val TAG = "PsStream" }
+}

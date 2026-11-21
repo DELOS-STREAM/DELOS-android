@@ -754,6 +754,38 @@ Send every 200 ms.
 
 The console adapts its bitrate to the reported loss. Clamping the reported loss to a maximum (for example 3 % on LAN) keeps the bitrate high on links with sporadic loss; a user setting is advisable [OBS].
 
+### 5.9 Clarifications (2026-11-21, answers to the implementer)
+
+| # | Question | Answer |
+|---|---|---|
+| 1 | Are CONTROL DATA chunk payloads encrypted with the GK keystream? | **No, in both directions.** DATA chunks (protobuf BIG, BANG, STREAMINFO, HEARTBEAT, DISCONNECT, and data types 7, 9, 11) travel as plaintext. After the keys exist they are only authenticated with the GMAC (5.5). The GK keystream is applied only to AV payloads (received), FEEDBACK_STATE, FEEDBACK_HISTORY and microphone AUDIO (sent). The key position of a DATA chunk only feeds the GMAC IV and key index [OBS] |
+| 2 | DATA_ACK? | Same: plaintext, GMAC only, key position zeroed during the MAC computation (it is a CONTROL packet) [OBS] |
+| 3 | PS5 reports `host-request-port: 997`; which port do the requests use? | The reference ignores `host-request-port` and always uses **9295**: UDP SRC3/SRC2 search, TCP registration POST, TCP session init and TCP ctrl. Takion uses 9296 and Senkusha 9297, also fixed [OBS]. What listens on 997 is unknown [UNVERIFIED]. Use 9295. If 9295 refuses on a real PS5, try the reported port as a fallback and record the result in this table |
+| 4 | Does the stream connection work without Senkusha? | **[UNVERIFIED].** The reference always runs Senkusha first. Its fallback values (mtu 1454 in/out, rtt 1 ms, "don't fragment" off) are only used after Senkusha was *attempted* and failed. Whether the console requires a prior Senkusha session is not known. Recommendation: test the skip first, because it is cheap. If BIG gets no BANG, or STREAMINFO never arrives, implement Senkusha (6.4), at least steps 1–3 (protocol request, BIG, BANG) and the disconnect |
+| 5 | Field order of a CONTROL DATA packet sent by the client; tag and MAC rule | Confirmed (below) |
+
+**Answer 5: CONTROL packet sent by the client**, in order:
+
+| Offset | Field |
+|---|---|
+| 0x00 | `00` |
+| 0x01..0x04 | Tag = the **console's** tag from INIT_ACK (BE). It is 0 only in the very first INIT |
+| 0x05..0x08 | GMAC |
+| 0x09..0x0C | Key position, low 32 bits (BE) |
+| 0x0D | Chunk type |
+| 0x0E | Chunk flags |
+| 0x0F..0x10 | Chunk length = payload + 4 (BE) |
+| 0x11.. | Payload (DATA: TSN, channel, 0, data type, data) |
+
+**MAC computation:**
+1. Build the packet with its real key position.
+2. Copy it and set bytes 0x05..0x0C to zero (the MAC **and** the key position).
+3. Compute the GMAC over the whole copy with the key position value (5.5).
+4. Write the 4-byte result to 0x05.
+5. Keep the real key position at 0x09.
+
+The receiver does the same with its received bytes. Before the GK keys exist, the MAC field and the key position are 0 and no MAC is computed.
+
 ## 6. Stream connection state machine (UDP 9296)
 
 ### 6.1 BIG and BANG
