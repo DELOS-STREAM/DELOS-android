@@ -140,12 +140,11 @@ fun rememberTrailerStill(id: String, stream: String?, maxWidthPx: Int): State<Tr
     val images = LocalIgdbImages.current
     val hls = stream != null && ".m3u8" in stream
     val state = remember(images, id, stream, maxWidthPx) {
-        val picture = images.stills.cached(id)?.let { images.cached("file:" + it.path, maxWidthPx) }
-        mutableStateOf(TrailerStill(picture, hls && picture == null))
+        mutableStateOf(TrailerStill(null, hls))
     }
     LaunchedEffect(state) {
         if (!state.value.loading || stream == null) return@LaunchedEffect
-        val file = images.stills.still(id, stream)
+        val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { images.stills.still(id, stream) }
         state.value = TrailerStill(file?.let { images.load("file:" + it.path, maxWidthPx) }, loading = false)
     }
     return state
