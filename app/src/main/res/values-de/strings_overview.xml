@@ -65,7 +65,6 @@
     <string name="overview_in_library">In der Bibliothek</string>
     <string name="overview_not_in_library">%1$s ist nicht in deiner Bibliothek.</string>
     <string name="overview_screenshot">Screenshot %1$d</string>
-    <string name="overview_video_youtube">%1$s · YouTube</string>
     <string name="overview_video">Video</string>
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">Durchsuchen</string>

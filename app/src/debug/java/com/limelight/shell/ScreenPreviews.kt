@@ -70,6 +70,7 @@ import kotlin.math.roundToInt
  * - `boot`, `create_profile`, `pair_pc`: the first-launch screens, and the PC pairing list.
  * - `stream_stats` (`preview_state` full|compact, `preview_position` TOP_LEFT|TOP_RIGHT|BOTTOM_LEFT|BOTTOM_RIGHT): the real statistics panel over the game scene, with fixed numbers.
  * - `stream_osc`, `stream_video`: the stream's own geometry (the real on-screen controls, the video rectangle), see [StreamShapePreview].
+ * - `overview_viewer`: the real viewer with public Hades Steam and YouTube trailers and screenshots (network required).
  * All of them but `loader`, `result`, `stream_stats`, `stream_osc` and `stream_video` run the real `Shell` in a [PreviewWorld] (docs/GUI.md, "Screen previews"); `loader`,
  * `result` and `stream_stats` draw `LaunchScene`, `StreamResultLayer` and `StreamStatsPanel` alone. Any other name is not handled here.
  */
@@ -100,6 +101,7 @@ internal object ScreenPreviews {
             "result" -> resultPreview
             "stream_stats" -> StatsPreview.from(intent)
             "stream_osc", "stream_video" -> StreamShapePreview.from(intent)
+            "overview_viewer" -> { { PreviewTheme { _, _ -> OverviewViewerPreview(intent, shell) } } }
             else -> null
         }
     }

@@ -11,6 +11,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -187,11 +188,13 @@ internal class NativeVideoPlayer(val stream: String) : OverviewVideoPlayer() {
 @Composable
 internal fun NativeVideoSurface(player: NativeVideoPlayer, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        AndroidView(
-            factory = { context -> TextureView(context).also { player.attach(context, it) } },
-            modifier = Modifier.aspectRatio(player.aspect),
-            onRelease = { player.detach(it) },
-        )
+        key(player) {
+            AndroidView(
+                factory = { context -> TextureView(context).also { player.attach(context, it) } },
+                modifier = Modifier.aspectRatio(player.aspect),
+                onRelease = { player.detach(it) },
+            )
+        }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, player) {

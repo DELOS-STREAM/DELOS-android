@@ -73,7 +73,6 @@
     <string name="overview_in_library">V knihovně</string>
     <string name="overview_not_in_library">%1$s není ve tvé knihovně.</string>
     <string name="overview_screenshot">Snímek %1$d</string>
-    <string name="overview_video_youtube">%1$s · YouTube</string>
     <string name="overview_video">Video</string>
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">Procházet</string>

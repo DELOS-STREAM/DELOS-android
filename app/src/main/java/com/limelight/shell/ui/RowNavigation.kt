@@ -198,6 +198,8 @@ internal class RowNavItemNode(var requester: FocusRequester) :
     var skip = false
     private var isFocused = false
 
+    // The window's view stays the same while the node is attached: reading it once here is the intent
+    @android.annotation.SuppressLint("SuspiciousCompositionLocalModifierRead")
     override fun onAttach() {
         var inGrid = false
         var layer: Any? = null

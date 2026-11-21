@@ -31,6 +31,30 @@ class OverviewDockTest {
         assertEquals(DockSlot.NEXT, dockStep(DockSlot.CLOSE, 0, 1, video = false))
     }
 
+    @Test fun `morphing preserves every shared focus stop`() {
+        listOf(DockSlot.CLOSE, DockSlot.PREVIOUS, DockSlot.NEXT).forEach { slot ->
+            assertEquals(slot, dockSurviving(slot, video = false))
+            assertEquals(slot, dockSurviving(slot, video = true))
+        }
+        DockSlot.entries.forEach { assertEquals(it, dockSurviving(it, video = true)) }
+    }
+
+    @Test fun `disappearing video controls hand focus to the nearest surviving edge`() {
+        listOf(DockSlot.SEEK, DockSlot.BACK).forEach {
+            assertEquals(DockSlot.PREVIOUS, dockSurviving(it, video = false))
+        }
+        listOf(DockSlot.PLAY, DockSlot.FORWARD, DockSlot.MUTE, DockSlot.VOLUME).forEach {
+            assertEquals(DockSlot.NEXT, dockSurviving(it, video = false))
+        }
+    }
+
+    @Test fun `media dock and focus ring share the overview settle spring`() {
+        assertEquals(.8f, ViewerSpring.dampingRatio, .0001f)
+        assertEquals(OverviewMotion.stiffness(.6f), ViewerSpring.stiffness, .0001f)
+        assertEquals(ViewerSpring.dampingRatio, DockRingSpring.dampingRatio, .0001f)
+        assertEquals(ViewerSpring.stiffness, DockRingSpring.stiffness, .0001f)
+    }
+
     @Test fun `repeated seeks one way add up, a pause or the other way starts again`() {
         assertEquals(20, seekFlashTotal(10, 1, 1_000, 1, 1_500))
         assertEquals(10, seekFlashTotal(20, 1, 1_000, -1, 1_200))

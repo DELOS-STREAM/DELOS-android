@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.IntRect
@@ -36,6 +37,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.limelight.diag.DiagLog
 import com.limelight.shell.ui.ControllerGlyphs
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 
 /** The log tag of the viewer's player (logcat and the diagnostic log). */
 private const val TAG = "OverviewPlayer"
@@ -57,12 +59,16 @@ internal fun OverviewPlayerWindow(
     bounds: IntRect,
     pointerHidden: Boolean,
     onPointer: () -> Unit,
+    pictureAlpha: () -> Float = { 1f },
+    pictureOffset: () -> Float = { 0f },
     content: @Composable () -> Unit,
 ) {
     val anchor = LocalView.current
     val parent = rememberCompositionContext()
     val currentContent by rememberUpdatedState(content)
     val currentPointer by rememberUpdatedState(onPointer)
+    val currentAlpha by rememberUpdatedState(pictureAlpha)
+    val currentOffset by rememberUpdatedState(pictureOffset)
     val window = remember(anchor, player) { PlayerWindow(anchor, player, parent, { currentPointer() }) { currentContent() } }
     SideEffect {
         window.place(bounds)
@@ -93,6 +99,12 @@ internal fun OverviewPlayerWindow(
         if (!player.heard) player.fail(-1)
     }
     LaunchedEffect(window, player.started) { if (player.started) window.logPlaying() }
+    // View properties update RenderNodes, never the panel's layout or Compose content.
+    LaunchedEffect(window) {
+        snapshotFlow { currentAlpha() to currentOffset() }.collectLatest { (alpha, offset) ->
+            window.picture(alpha, offset)
+        }
+    }
 }
 
 private class PlayerWindow(
@@ -138,6 +150,10 @@ private class PlayerWindow(
         get() = root.pointerHidden
         set(value) { root.pointerHidden = value }
 
+    fun picture(alpha: Float, offset: Float) {
+        web.alpha = alpha
+        web.translationX = offset
+    }
     fun place(bounds: IntRect) {
         if (params.x == bounds.left && params.y == bounds.top && params.width == bounds.width && params.height == bounds.height) return
         params.x = bounds.left

@@ -89,8 +89,6 @@
     <string name="overview_not_in_library">%1$s is not in your library.</string>
     <!-- The screenshot viewer: "Screenshot 3" and a video's name -->
     <string name="overview_screenshot">Screenshot %1$d</string>
-    <!-- %1$s: the video's name -->
-    <string name="overview_video_youtube">%1$s · YouTube</string>
     <string name="overview_video">Video</string>
     <!-- %1$d: how many items, %2$s: the item's name; the item's own number is shown big before this text -->
     <string name="overview_viewer_count">/ %1$d · %2$s</string>

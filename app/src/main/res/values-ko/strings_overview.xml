@@ -61,7 +61,6 @@
     <string name="overview_in_library">라이브러리에 있음</string>
     <string name="overview_not_in_library">%1$s은(는) 라이브러리에 없습니다.</string>
     <string name="overview_screenshot">스크린샷 %1$d</string>
-    <string name="overview_video_youtube">%1$s · YouTube</string>
     <string name="overview_video">동영상</string>
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">둘러보기</string>
