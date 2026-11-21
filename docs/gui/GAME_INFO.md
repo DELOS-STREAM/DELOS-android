@@ -684,8 +684,10 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
    the row's first button: an owner-approved exception to the row-first focus rule. The hint bar shows Seek 10 s (or
    Volume), Play or Pause (or Select), Mute or Sound on, L1 R1 Browse and Back; on a screenshot Select, L1 R1 Browse and
    Back.
-6. **Seek feedback** (borrowed from variant B): a glass wedge of a ring around the picture's centre, on the side of the
-   seek, flashes gold with the seek glyph and the running total: repeated seeks one way within 900 ms count 10, 20, 30…
+6. **Seek feedback:** a gold arc (108° of a 300 px ring, 10 px, open towards the middle) over a soft gold glow, at 22 %
+   or 78 % of the width and 42 % of the height on the side of the seek, with the seek glyph and the running total
+   ("10 s"): repeated seeks one way within 900 ms count 10, 20, 30… Each press nudges it 26 px outward; it settles back
+   in 420 ms, holds 900 ms after the last press and fades out in 180 ms (owner, 2026-11-21: the look of DELOS on iPad).
 7. **Touch:** a tap toggles the dock, a double tap in the left or right third seeks 10 s (with the flash), a swipe
    sideways browses and a swipe down closes; the seek bar and the volume slider take taps and drags. Decision for
    YouTube's own surface: while the dock is hidden over a playing video, the viewer's touch layer is not there, so a tap
