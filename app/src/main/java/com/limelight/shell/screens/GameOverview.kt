@@ -1327,20 +1327,24 @@ private fun MediaSection(
                         .clip(RoundedCornerShape(22.px))
                         .background(colors.surface2),
                 ) {
-                    val image by rememberIgdbImage(item.thumb, (OverviewGaps.MEDIA_W * OverviewGaps.MEDIA_SCALE * k * 1.28f).toInt())
-                    image?.let { bitmap ->
+                    val width = (OverviewGaps.MEDIA_W * OverviewGaps.MEDIA_SCALE * k * OverviewGaps.MEDIA_OVERSCAN).toInt()
+                    val poster by rememberIgdbImage(item.thumb, width)
+                    // A Steam trailer shows its own still once it is made (a frame a sixth of the way in), the shared poster until then
+                    val still by com.limelight.shell.data.rememberTrailerStill(item.id, item.stream.takeIf { item.kind == OverviewModel.MediaKind.VIDEO }, width)
+                    (still ?: poster)?.let { bitmap ->
                         Image(
                             bitmap, null, contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .requiredSize((OverviewGaps.MEDIA_W * 1.28f).px, OverviewGaps.MEDIA_H.px)
+                                // 16:9 like the tile: the picture is enlarged evenly for the parallax, so nothing is cut from it but a thin rim
+                                .requiredSize((OverviewGaps.MEDIA_W * OverviewGaps.MEDIA_OVERSCAN).px, (OverviewGaps.MEDIA_H * OverviewGaps.MEDIA_OVERSCAN).px)
                                 .hazeSource(tileHaze)
                                 .graphicsLayer {
-                                    // Parallax: the picture lags behind the carousel by 7 % of its distance from the middle
+                                    // Parallax: the picture lags behind the carousel by 3.5 % of its distance from the middle (within its 6.5 % rim)
                                     val info = track.layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
                                     val width = track.layoutInfo.viewportSize.width
                                     if (info != null && width > 0) {
                                         val c = info.offset + info.size / 2f - width / 2f
-                                        translationX = -c * .07f
+                                        translationX = (-c * .035f).coerceIn(-size.width * .055f, size.width * .055f)
                                     }
                                 },
                         )

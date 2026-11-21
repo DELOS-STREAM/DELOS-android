@@ -58,6 +58,8 @@ internal object OverviewGaps {
     const val MEDIA_H = 292f
     const val MEDIA_SCALE = 1.06f
     const val MEDIA_PAD = 6f
+    /** A thumbnail's picture is enlarged evenly by this much to leave a rim for its parallax; the viewer's flight matches it. */
+    const val MEDIA_OVERSCAN = 1.13f
     val MEDIA = FocusGap(FocusSpacing.overview(MEDIA_SCALE, MEDIA_PAD), size = MEDIA_W, gap = 60f)
 
     /** Similar games: 260 × 390 covers at 1.06, the ring 6 px out. */

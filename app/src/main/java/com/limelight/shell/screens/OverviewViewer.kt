@@ -70,6 +70,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.min
+import kotlin.math.max
 
 /** The viewer opened on item [index], zooming out of the thumbnail at [from] (root pixels; null: it fades in); [closing]: Back was pressed. */
 internal data class ViewerRequest(val index: Int, val from: Rect?, val closing: Boolean = false)
@@ -203,14 +204,12 @@ internal fun OverviewViewer(
         if (!overlayShown) dock.slot = dockDefault(video != null)
         else dock.slot = dockSurviving(dock.slot, video != null)
     }
-    // The ring glides to the focused stop by a spring (snaps with reduced motion and on its first placement)
+    // The ring sits on the focused stop at once: it does not glide between the dock's controls (owner, 2026-11-21)
     LaunchedEffect(dock) {
         snapshotFlow { dock.bounds[dock.slot]?.let { ringRect(dock.slot, it, k) } }.collectLatest { target ->
             if (target == null) return@collectLatest
-            if (reduced || !dock.ringPlaced) {
-                dock.ringPlaced = true
-                dock.ring.snapTo(target)
-            } else dock.ring.animateTo(target, DockRingSpring)
+            dock.ringPlaced = true
+            dock.ring.snapTo(target)
         }
     }
     LaunchedEffect(request.index) {
@@ -367,11 +366,15 @@ internal fun OverviewViewer(
                             val from = zoomFrom
                             if (fading || from == null || root == null) a *= z
                             else if (z < 1f) {
-                                val scale = min(from.width / (fit.width * k), from.height / (fit.height * k))
+                                // The tile shows its picture filling it and enlarged by the parallax rim (OverviewGaps.MEDIA_OVERSCAN): the
+                                // flight starts and ends at that size, so nothing grows or shrinks as the tile takes over; the rim that
+                                // overhangs the tile fades with the last quarter of the flight
+                                val scale = max(from.width / (fit.width * k), from.height / (fit.height * k)) * OverviewGaps.MEDIA_OVERSCAN
                                 translationX += (from.center.x - fit.width * k * scale / 2f) * (1f - z)
                                 translationY = (from.center.y - fit.height * k * scale / 2f) * (1f - z)
                                 scaleX = Motion.lerp(scale, 1f, z)
                                 scaleY = scaleX
+                                a *= (z * 4f).coerceIn(0f, 1f)
                             }
                             if (item.kind != OverviewModel.MediaKind.VIDEO && !reduced) {
                                 translationX += drag.x * .6f
@@ -384,10 +387,11 @@ internal fun OverviewViewer(
                         if (trailerHere && surface != null && (isLeaving || settled || surface.started)) NativeVideoSurface(surface)
                         val thumb by rememberIgdbImage(item.thumb, (569f * k).toInt())
                         val full by rememberIgdbImage(item.full, (maxOf(fit.width, fit.height) * k).toInt())
-                        // A trailer's still fills the stage like the video will (cropped), softly blurred until the video plays and
-                        // crossfades over it; the full picture, else (missing or still loading) the thumbnail
                         val trailer = item.kind == OverviewModel.MediaKind.VIDEO
-                        (full ?: thumb)?.let {
+                        val still by com.limelight.shell.data.rememberTrailerStill(item.id, item.stream.takeIf { trailer }, (maxOf(fit.width, fit.height) * k).toInt())
+                        // A trailer's still fills the stage like the video will (cropped), softly blurred until the video plays and
+                        // crossfades over it: its own frame when made, else the full picture, else (missing or still loading) the thumbnail
+                        (still ?: full ?: thumb)?.let {
                             Image(it, null, Modifier.fillMaxSize().then(if (trailer) Modifier.blur(16.px) else Modifier)
                                 .then(if (trailerHere) Modifier.graphicsLayer { alpha = if (isLeaving && surface?.started == true) 0f else thumbnailAlpha } else Modifier),
                                 contentScale = if (trailer) ContentScale.Crop else ContentScale.Fit)

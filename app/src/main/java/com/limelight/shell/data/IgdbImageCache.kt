@@ -49,6 +49,9 @@ class IgdbImageCache(context: Context) {
     private val network = Semaphore(4)
     private val prefetching = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    /** The Steam trailers' own stills ([TrailerStills]); their files load here as `file:` URLs. */
+    val stills = TrailerStills(context.applicationContext.cacheDir, http)
+
     /** [url] decoded for [maxWidthPx] when it is already in memory; for the first frame of a screen. */
     fun cached(url: String, maxWidthPx: Int): ImageBitmap? = memory.get(key(url, maxWidthPx))
 
@@ -60,7 +63,8 @@ class IgdbImageCache(context: Context) {
         val key = key(url, maxWidthPx)
         memory.get(key)?.let { return it }
         return try {
-            val bytes = network.withPermit { runInterruptible(Dispatchers.IO) { download(url) } } ?: return null
+            val bytes = if (url.startsWith(FILE)) runInterruptible(Dispatchers.IO) { File(url.removePrefix(FILE)).takeIf { it.isFile }?.readBytes() } ?: return null
+            else network.withPermit { runInterruptible(Dispatchers.IO) { download(url) } } ?: return null
             runInterruptible(Dispatchers.Default) { decode(bytes, maxWidthPx) }?.also { memory.put(key, it) }
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -106,6 +110,7 @@ class IgdbImageCache(context: Context) {
     private fun key(url: String, maxWidthPx: Int) = "$maxWidthPx $url"
 
     private companion object {
+        const val FILE = "file:"
         const val DISK_BYTES = 150L * 1024 * 1024
         /** About ten 1280 x 720 screenshots. */
         const val MEMORY_KIB = 32 * 1024
@@ -120,6 +125,24 @@ fun rememberIgdbImage(url: String?, maxWidthPx: Int): State<ImageBitmap?> {
     val images = LocalIgdbImages.current
     val state = remember(images, url, maxWidthPx) { mutableStateOf(url?.let { images.cached(it, maxWidthPx) }) }
     LaunchedEffect(state) { if (state.value == null && url != null) state.value = images.load(url, maxWidthPx) }
+    return state
+}
+
+/**
+ * A Steam trailer's own still ([TrailerStills]) for movie [id] and its HLS [stream], decoded for [maxWidthPx]: null until it is made
+ * (the carousel shows the trailer's poster meanwhile), and for anything but a Steam HLS trailer.
+ */
+@Composable
+fun rememberTrailerStill(id: String, stream: String?, maxWidthPx: Int): State<ImageBitmap?> {
+    val images = LocalIgdbImages.current
+    val state = remember(images, id, stream, maxWidthPx) {
+        mutableStateOf(images.stills.cached(id)?.let { images.cached("file:" + it.path, maxWidthPx) })
+    }
+    LaunchedEffect(state) {
+        if (state.value != null || stream == null || !stream.contains(".m3u8")) return@LaunchedEffect
+        val file = images.stills.still(id, stream) ?: return@LaunchedEffect
+        state.value = images.load("file:" + file.path, maxWidthPx)
+    }
     return state
 }
 
