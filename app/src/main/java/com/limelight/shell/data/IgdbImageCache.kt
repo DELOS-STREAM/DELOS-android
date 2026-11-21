@@ -128,20 +128,25 @@ fun rememberIgdbImage(url: String?, maxWidthPx: Int): State<ImageBitmap?> {
     return state
 }
 
+/** A Steam trailer's still: its [picture] once made, [loading] while it is being made (false when it cannot be, or for no trailer). */
+data class TrailerStill(val picture: ImageBitmap?, val loading: Boolean)
+
 /**
- * A Steam trailer's own still ([TrailerStills]) for movie [id] and its HLS [stream], decoded for [maxWidthPx]: null until it is made
- * (the carousel shows the trailer's poster meanwhile), and for anything but a Steam HLS trailer.
+ * A Steam trailer's own still ([TrailerStills]) for movie [id] and its HLS [stream], decoded for [maxWidthPx]; for anything but a Steam
+ * HLS trailer nothing, and not loading.
  */
 @Composable
-fun rememberTrailerStill(id: String, stream: String?, maxWidthPx: Int): State<ImageBitmap?> {
+fun rememberTrailerStill(id: String, stream: String?, maxWidthPx: Int): State<TrailerStill> {
     val images = LocalIgdbImages.current
+    val hls = stream != null && ".m3u8" in stream
     val state = remember(images, id, stream, maxWidthPx) {
-        mutableStateOf(images.stills.cached(id)?.let { images.cached("file:" + it.path, maxWidthPx) })
+        val picture = images.stills.cached(id)?.let { images.cached("file:" + it.path, maxWidthPx) }
+        mutableStateOf(TrailerStill(picture, hls && picture == null))
     }
     LaunchedEffect(state) {
-        if (state.value != null || stream == null || !stream.contains(".m3u8")) return@LaunchedEffect
-        val file = images.stills.still(id, stream) ?: return@LaunchedEffect
-        state.value = images.load("file:" + file.path, maxWidthPx)
+        if (!state.value.loading || stream == null) return@LaunchedEffect
+        val file = images.stills.still(id, stream)
+        state.value = TrailerStill(file?.let { images.load("file:" + it.path, maxWidthPx) }, loading = false)
     }
     return state
 }

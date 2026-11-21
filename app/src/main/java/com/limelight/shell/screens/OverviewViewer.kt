@@ -391,7 +391,7 @@ internal fun OverviewViewer(
                         val still by com.limelight.shell.data.rememberTrailerStill(item.id, item.stream.takeIf { trailer }, (maxOf(fit.width, fit.height) * k).toInt())
                         // A trailer's still fills the stage like the video will (cropped), softly blurred until the video plays and
                         // crossfades over it: its own frame when made, else the full picture, else (missing or still loading) the thumbnail
-                        (still ?: full ?: thumb)?.let {
+                        (still.picture ?: full ?: thumb)?.let {
                             Image(it, null, Modifier.fillMaxSize().then(if (trailer) Modifier.blur(16.px) else Modifier)
                                 .then(if (trailerHere) Modifier.graphicsLayer { alpha = if (isLeaving && surface?.started == true) 0f else thumbnailAlpha } else Modifier),
                                 contentScale = if (trailer) ContentScale.Crop else ContentScale.Fit)

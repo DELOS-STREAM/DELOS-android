@@ -1320,9 +1320,10 @@ private fun MediaSection(
                 ) {
                     val width = (OverviewGaps.MEDIA_W * OverviewGaps.MEDIA_SCALE * k * OverviewGaps.MEDIA_OVERSCAN).toInt()
                     val poster by rememberIgdbImage(item.thumb, width)
-                    // A Steam trailer shows its own still once it is made (a frame a sixth of the way in), the shared poster until then
+                    // A Steam trailer shows its own still (a frame a sixth of the way in); while it is being made the tile shows a
+                    // spinner and no picture, and only a still that cannot be made falls back to the shared poster
                     val still by com.limelight.shell.data.rememberTrailerStill(item.id, item.stream.takeIf { item.kind == OverviewModel.MediaKind.VIDEO }, width)
-                    (still ?: poster)?.let { bitmap ->
+                    (if (still.loading) null else still.picture ?: poster)?.let { bitmap ->
                         Image(
                             bitmap, null, contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -1343,7 +1344,10 @@ private fun MediaSection(
                     }
                     Box(Modifier.fillMaxSize().border(1.px, Color.White.copy(alpha = .1f), RoundedCornerShape(22.px)))
                     if (item.kind == OverviewModel.MediaKind.VIDEO) {
-                        Box(Modifier.align(Alignment.Center)) { TrailerPlayBadge(tileHaze, LocalOverviewFocus.current?.focused == "shot$index") }
+                        Box(Modifier.align(Alignment.Center)) {
+                            if (still.loading) com.limelight.shell.ui.Spinner(48f)
+                            else TrailerPlayBadge(tileHaze, LocalOverviewFocus.current?.focused == "shot$index")
+                        }
                         com.limelight.shell.ui.MarqueeContent(
                             key = item.name, bounce = true, active = LocalOverviewFocus.current?.focused == "shot$index",
                             modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 16.px, end = 16.px, bottom = 14.px),
