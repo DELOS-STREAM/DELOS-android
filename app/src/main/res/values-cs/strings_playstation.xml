@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ps_mode_pc">PC</string>
+    <string name="ps_mode_playstation">PlayStation</string>
+    <string name="ps_start_choose_note">Vyber PlayStation, na kterém chceš hrát.</string>
+    <string name="ps_start_pair_note">Spáruj svůj PlayStation a hraj na něm odsud.</string>
+    <string name="ps_pair_new">Přidat konzoli</string>
+    <string name="ps_pair_new_meta">PS5 · Remote Play</string>
+    <string name="ps_console_meta">Spárováno · PS5</string>
+    <string name="ps_console_remove">Odebrat tuto konzoli</string>
+    <string name="ps_console_removed">%1$s odebrána</string>
+    <string name="ps_step_find">Najít konzoli</string>
+    <string name="ps_step_sign_in">Přihlásit se</string>
+    <string name="ps_step_pin">Zadat PIN</string>
+    <string name="ps_find_title">Najdeme tvoji PS5</string>
+    <string name="ps_find_searching">DELOS hledá konzole PlayStation v domácí síti.</string>
+    <string name="ps_find_found">Vyber konzoli ke spárování. Počítače zůstávají zvlášť.</string>
+    <string name="ps_find_none">Žádná konzole neodpověděla. Na PS5 zapni Remote Play: Nastavení › Systém › Remote Play.</string>
+    <string name="ps_find_on">Zapnutá · připravená ke spárování</string>
+    <string name="ps_find_rest">Klidový režim · zapni ji ke spárování</string>
+    <string name="ps_search_again">Hledat znovu</string>
+    <string name="ps_search_meta">Místní síť</string>
+    <string name="ps_sign_in_title">Jednou se přihlas</string>
+    <string name="ps_sign_in_note">Uvnitř DELOS se otevře stránka Sony. Heslo dostane jen Sony; DELOS si uloží ID tvého účtu pro spojení s konzolí.</string>
+    <string name="ps_sign_in_button">Přihlásit se k PlayStation Network</string>
+    <string name="ps_sign_in_failed">Přihlášení selhalo: %1$s</string>
+    <string name="ps_sign_in_keep">Pokračovat s tímto účtem</string>
+    <string name="ps_pin_title">Zadej PIN ze své PS5</string>
+    <string name="ps_pin_note">Na PS5: Nastavení › Systém › Remote Play › Spárovat zařízení. Zadej 8 číslic z televize.</string>
+    <string name="ps_pin_pair">Spárovat %1$s</string>
+    <string name="ps_pin_pairing">Párování…</string>
+    <string name="ps_pin_failed">Párování selhalo: %1$s</string>
+    <string name="ps_paired_title">%1$s je spárovaná</string>
+    <string name="ps_paired_note">Najdeš ji na úvodní obrazovce v režimu PlayStation.</string>
+    <string name="ps_play_now">Hrát</string>
+    <string name="ps_back_to_start">Zpět na úvod</string>
+    <string name="ps_clear">Smazat</string>
+    <string name="ps_connecting">Připojování k %1$s</string>
+    <string name="ps_connect_waking">Probouzím konzoli</string>
+    <string name="ps_connect_session">Spouštím relaci Remote Play</string>
+    <string name="ps_connect_video">Čekám na obraz</string>
+    <string name="ps_connect_failed">Nepodařilo se připojit: %1$s</string>
+</resources>

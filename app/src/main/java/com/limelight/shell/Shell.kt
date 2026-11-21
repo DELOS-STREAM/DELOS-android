@@ -861,6 +861,7 @@ fun Shell(
                             }
                         }
                         is Screen.PairPc -> PairPcScreen(screen, pcs, startup.defaultPc)
+                        is Screen.PairPs -> com.limelight.shell.ps.PsPairScreen(screen)
                         is Screen.Artwork -> ArtworkScreen(screen)
                         is Screen.GameSettings -> GameSettingsScreen(screen, profileStore, appearance)
                         Screen.DebugInfo -> DebugInfoScreen()
@@ -888,7 +889,7 @@ fun Shell(
                     Box(Modifier.graphicsLayer { alpha = barAlpha }) {
                         StatusBar(
                             nav.takeIf { shell.screen.main }, pcName = pc?.name.takeIf { shell.screen.main }, pcOnline = pc?.online == true,
-                            wifi = wifi, battery = battery, clock = clock, brand = shell.screen != Screen.Start,
+                            wifi = wifi, battery = battery, clock = clock,
                             // The game overview goes back with the same button (its own back handler closes it), the dashboard has none
                             onBack = goBack.takeIf { shell.screen.back != null || shell.overviewGame != null },
                         )
@@ -1194,6 +1195,7 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
             is Screen.Boot -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back).takeIf { screen.back != null })
             is Screen.CreateProfile -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             is Screen.PairPc -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back), optionsHint)
+            is Screen.PairPs -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             is Screen.Pin -> listOf(hint(Glyph.B, R.string.shell_hint_cancel))
             Screen.DebugInfo -> adjust + listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             // Like a stream: nothing over the controls

@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
 import kotlin.math.roundToInt
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.content.res.Resources
 import androidx.compose.ui.res.stringResource
 import com.limelight.R
@@ -86,11 +87,28 @@ fun StartScreen(profiles: Profiles, store: ProfileStore, pcs: List<Pc>, startup:
     // The PC the focus is on, for the companion screen's card of it (null on the "Pair a new PC" circle: the welcome or fallback card shows)
     var focusedUuid by remember { mutableStateOf<String?>(null) }
     PublishCompanionPc(paired.firstOrNull { it.uuid == focusedUuid }, PcContext.START, startup.defaultPc)
+    val playStation by com.limelight.shell.ps.PsMode.active.collectAsStateWithLifecycle()
+    // L1 / R1 switch between the PCs and the PlayStation consoles (prototype F), through the shell's shoulder hook
+    androidx.compose.runtime.DisposableEffect(shell) {
+        val handler: (Int) -> Unit = { dir -> com.limelight.shell.ps.PsMode.set(dir > 0) }
+        shell.onShoulder = handler
+        onDispose { if (shell.onShoulder === handler) shell.onShoulder = null }
+    }
     Box(Modifier.fillMaxSize()) {
-        // A compact stage has no room for the chip on the middle next to the status icons: it keeps clear of them (CompactProfileChip)
+        val stage = LocalStage.current
+        val compact = stage.compact
+        // The profile sits in the bottom-left corner, on the hint bar's line: the top-left keeps the DELOS logo, the top centre the mode switch
         profiles.current?.let {
-            if (LocalStage.current.compact) CompactProfileChip(profiles, store)
-            else ProfileChip(profiles, store, Modifier.align(Alignment.TopCenter).padding(top = 44.px))
+            ProfileChip(profiles, store, Modifier.align(Alignment.BottomStart)
+                .padding(start = ((if (compact) Compact.SIDE else 72f) + stage.safe.left).px, bottom = ((if (compact) 12f else 22f) + stage.safe.bottom).px), shrink = compact)
+        }
+        // PC | PlayStation as a tab row with its L1 / R1 badges at the sides, the same component and motion as the Settings tabs; on a full
+        // stage it is centred on the status bar's line (the bar is 104 px, the row 66), on a compact one under the bar
+        com.limelight.shell.ps.PsModeSwitch(playStation, { com.limelight.shell.ps.PsMode.set(it) },
+            y = stage.safe.top + if (compact) Compact.STATUS_BAR + 12f else (104f - SettingsLayout.TABS_HEIGHT) / 2f)
+        if (playStation) {
+            com.limelight.shell.ps.PsStartContent(profiles.current?.name)
+            return@Box
         }
         CenterColumn(gap = 48f) {
             val name = profiles.current?.name
@@ -143,31 +161,7 @@ private fun startMenu(res: Resources, pc: Pc, default: Boolean, actions: DeviceA
     ),
 )
 
-/**
- * The profile chip on a compact stage: on the status bar's line, on the middle of the stage while that leaves 24 px to the status icons
- * (Wi-Fi, battery, clock: [LocalStatusBarEdges] says where they start), else in the middle of the free space left of them; a name too
- * long for that room is cut with an ellipsis. The same rule as the top navigation's ([placeBetween]).
- */
-@Composable
-private fun CompactProfileChip(profiles: Profiles, store: ProfileStore) {
-    val stage = LocalStage.current
-    val edges = LocalStatusBarEdges.current
-    val start = (Compact.SIDE + stage.safe.left).px
-    val fallbackEnd = (stage.stageWidth - Compact.SIDE - stage.safe.right - 360f).px
-    val gap = StatusBarLayout.MIN_GAP.px
-    val top = stage.safe.top.px
-    // The bar is zoomed by the interface scale
-    val bar = (Compact.STATUS_BAR * stage.textScale).px
-    Layout({ ProfileChip(profiles, store, Modifier, shrink = true) }, Modifier.fillMaxSize()) { measurables, constraints ->
-        val from = start.toPx()
-        val to = (edges?.rightStartPx?.takeIf { it >= 0 }?.toFloat() ?: fallbackEnd.toPx()) - gap.toPx()
-        val chip = measurables.first().measure(Constraints(maxWidth = (to - from).roundToInt().coerceAtLeast(0)))
-        val x = placeBetween(from, to, chip.width.toFloat(), constraints.maxWidth / 2f) ?: from
-        layout(constraints.maxWidth, constraints.maxHeight) { chip.place(x.roundToInt(), top.roundToPx() + (bar.roundToPx() - chip.height) / 2) }
-    }
-}
-
-/** The current profile at the top of the start screen; A opens the profiles. [shrink]: a long name is cut to the width the chip gets. */
+/** The current profile in the start screen's bottom-left corner; A opens the profiles. [shrink]: a long name is cut to the width the chip gets. */
 @Composable
 private fun ProfileChip(profiles: Profiles, store: ProfileStore, modifier: Modifier, shrink: Boolean = false) {
     val res = com.limelight.shell.ui.textResources()

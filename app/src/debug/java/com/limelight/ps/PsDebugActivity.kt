@@ -253,11 +253,11 @@ class PsDebugActivity : Activity() {
 
     /** The stream fills the screen: system bars hidden (a swipe shows them for a moment). */
     private fun immersive(on: Boolean) {
-        val c = window.insetsController ?: return
+        val c = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
         if (on) {
-            c.hide(android.view.WindowInsets.Type.systemBars())
-            c.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        } else c.show(android.view.WindowInsets.Type.systemBars())
+            c.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            c.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else c.show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
     }
 
     // Controller → console. The debug bench maps a standard Android gamepad onto the PlayStation layout.

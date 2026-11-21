@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ps_mode_pc">ПК</string>
+    <string name="ps_mode_playstation">PlayStation</string>
+    <string name="ps_start_choose_note">Обери PlayStation, на якій хочеш грати.</string>
+    <string name="ps_start_pair_note">Сполучи свою PlayStation, щоб грати на ній звідси.</string>
+    <string name="ps_pair_new">Додати консоль</string>
+    <string name="ps_pair_new_meta">PS5 · Remote Play</string>
+    <string name="ps_console_meta">Сполучено · PS5</string>
+    <string name="ps_console_remove">Видалити цю консоль</string>
+    <string name="ps_console_removed">%1$s видалено</string>
+    <string name="ps_step_find">Знайти консоль</string>
+    <string name="ps_step_sign_in">Увійти</string>
+    <string name="ps_step_pin">Ввести PIN</string>
+    <string name="ps_find_title">Шукаємо твою PS5</string>
+    <string name="ps_find_searching">DELOS шукає консолі PlayStation у твоїй домашній мережі.</string>
+    <string name="ps_find_found">Обери консоль для сполучення. Твої ПК залишаються окремо.</string>
+    <string name="ps_find_none">Жодна консоль не відповіла. Увімкни Remote Play на PS5: Налаштування › Система › Remote Play.</string>
+    <string name="ps_find_on">Увімкнена · готова до сполучення</string>
+    <string name="ps_find_rest">Режим спокою · увімкни її для сполучення</string>
+    <string name="ps_search_again">Шукати знову</string>
+    <string name="ps_search_meta">Локальна мережа</string>
+    <string name="ps_sign_in_title">Увійди один раз</string>
+    <string name="ps_sign_in_note">Сторінка Sony відкривається всередині DELOS. Пароль отримує лише Sony; DELOS зберігає ID твого облікового запису, щоб сполучити консоль.</string>
+    <string name="ps_sign_in_button">Увійти в PlayStation Network</string>
+    <string name="ps_sign_in_failed">Не вдалося увійти: %1$s</string>
+    <string name="ps_sign_in_keep">Продовжити з цим обліковим записом</string>
+    <string name="ps_pin_title">Введи PIN зі своєї PS5</string>
+    <string name="ps_pin_note">На PS5: Налаштування › Система › Remote Play › Сполучити пристрій. Введи 8 цифр із телевізора.</string>
+    <string name="ps_pin_pair">Сполучити %1$s</string>
+    <string name="ps_pin_pairing">Сполучення…</string>
+    <string name="ps_pin_failed">Не вдалося сполучити: %1$s</string>
+    <string name="ps_paired_title">%1$s сполучено</string>
+    <string name="ps_paired_note">Вона на початковому екрані в режимі PlayStation.</string>
+    <string name="ps_play_now">Грати</string>
+    <string name="ps_back_to_start">Назад на початок</string>
+    <string name="ps_clear">Очистити</string>
+    <string name="ps_connecting">Під’єднання до %1$s</string>
+    <string name="ps_connect_waking">Пробуджую консоль</string>
+    <string name="ps_connect_session">Запускаю сеанс Remote Play</string>
+    <string name="ps_connect_video">Чекаю на зображення</string>
+    <string name="ps_connect_failed">Не вдалося під’єднатися: %1$s</string>
+</resources>

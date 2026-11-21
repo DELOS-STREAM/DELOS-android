@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ps_mode_pc">PC</string>
+    <string name="ps_mode_playstation">PlayStation</string>
+    <string name="ps_start_choose_note">プレイする PlayStation を選んでください。</string>
+    <string name="ps_start_pair_note">PlayStation を登録すると、ここからプレイできます。</string>
+    <string name="ps_pair_new">本体を追加</string>
+    <string name="ps_pair_new_meta">PS5 · Remote Play</string>
+    <string name="ps_console_meta">登録済み · PS5</string>
+    <string name="ps_console_remove">この本体を削除</string>
+    <string name="ps_console_removed">%1$s を削除しました</string>
+    <string name="ps_step_find">本体を探す</string>
+    <string name="ps_step_sign_in">サインイン</string>
+    <string name="ps_step_pin">PIN を入力</string>
+    <string name="ps_find_title">PS5 を探しています</string>
+    <string name="ps_find_searching">DELOS がホームネットワーク内の PlayStation 本体を探しています。</string>
+    <string name="ps_find_found">登録する本体を選んでください。PC とは別に管理されます。</string>
+    <string name="ps_find_none">本体が見つかりません。PS5 でリモートプレイを有効にしてください：設定 › システム › リモートプレイ。</string>
+    <string name="ps_find_on">電源オン · 登録できます</string>
+    <string name="ps_find_rest">レストモード · 電源を入れて登録</string>
+    <string name="ps_search_again">もう一度探す</string>
+    <string name="ps_search_meta">ローカルネットワーク</string>
+    <string name="ps_sign_in_title">一度だけサインイン</string>
+    <string name="ps_sign_in_note">Sony のページが DELOS 内で開きます。パスワードは Sony にのみ送られ、DELOS は本体の登録用にアカウント ID だけを保存します。</string>
+    <string name="ps_sign_in_button">PlayStation Network にサインイン</string>
+    <string name="ps_sign_in_failed">サインインに失敗しました：%1$s</string>
+    <string name="ps_sign_in_keep">このアカウントで続ける</string>
+    <string name="ps_pin_title">PS5 の PIN を入力</string>
+    <string name="ps_pin_note">PS5 で：設定 › システム › リモートプレイ › 機器を登録する。テレビに表示された 8 桁を入力してください。</string>
+    <string name="ps_pin_pair">%1$s を登録</string>
+    <string name="ps_pin_pairing">登録中…</string>
+    <string name="ps_pin_failed">登録に失敗しました：%1$s</string>
+    <string name="ps_paired_title">%1$s を登録しました</string>
+    <string name="ps_paired_note">PlayStation モードのスタート画面に表示されます。</string>
+    <string name="ps_play_now">今すぐプレイ</string>
+    <string name="ps_back_to_start">スタートに戻る</string>
+    <string name="ps_clear">クリア</string>
+    <string name="ps_connecting">%1$s に接続中</string>
+    <string name="ps_connect_waking">本体を起動しています</string>
+    <string name="ps_connect_session">リモートプレイのセッションを開始しています</string>
+    <string name="ps_connect_video">映像を待っています</string>
+    <string name="ps_connect_failed">接続できませんでした：%1$s</string>
+</resources>

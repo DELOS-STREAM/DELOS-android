@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ps_mode_pc">PC</string>
+    <string name="ps_mode_playstation">PlayStation</string>
+    <string name="ps_start_choose_note">Escolha o PlayStation em que quer jogar.</string>
+    <string name="ps_start_pair_note">Pareie seu PlayStation para jogar nele daqui.</string>
+    <string name="ps_pair_new">Adicionar console</string>
+    <string name="ps_pair_new_meta">PS5 · Remote Play</string>
+    <string name="ps_console_meta">Pareado · PS5</string>
+    <string name="ps_console_remove">Remover este console</string>
+    <string name="ps_console_removed">%1$s removido</string>
+    <string name="ps_step_find">Encontrar console</string>
+    <string name="ps_step_sign_in">Entrar</string>
+    <string name="ps_step_pin">Digitar PIN</string>
+    <string name="ps_find_title">Vamos encontrar seu PS5</string>
+    <string name="ps_find_searching">O DELOS procura consoles PlayStation na sua rede doméstica.</string>
+    <string name="ps_find_found">Escolha o console para parear. Seus PCs ficam separados.</string>
+    <string name="ps_find_none">Nenhum console respondeu. Ative o Remote Play no PS5: Configurações › Sistema › Remote Play.</string>
+    <string name="ps_find_on">Ligado · pronto para parear</string>
+    <string name="ps_find_rest">Modo de descanso · ligue para parear</string>
+    <string name="ps_search_again">Procurar de novo</string>
+    <string name="ps_search_meta">Rede local</string>
+    <string name="ps_sign_in_title">Entre uma vez</string>
+    <string name="ps_sign_in_note">A página da Sony abre dentro do DELOS. Sua senha vai só para a Sony; o DELOS guarda o ID da sua conta para vincular o console.</string>
+    <string name="ps_sign_in_button">Entrar na PlayStation Network</string>
+    <string name="ps_sign_in_failed">Falha ao entrar: %1$s</string>
+    <string name="ps_sign_in_keep">Continuar com esta conta</string>
+    <string name="ps_pin_title">Digite o PIN do seu PS5</string>
+    <string name="ps_pin_note">No PS5: Configurações › Sistema › Remote Play › Parear dispositivo. Digite os 8 dígitos mostrados na TV.</string>
+    <string name="ps_pin_pair">Parear %1$s</string>
+    <string name="ps_pin_pairing">Pareando…</string>
+    <string name="ps_pin_failed">Falha ao parear: %1$s</string>
+    <string name="ps_paired_title">%1$s está pareado</string>
+    <string name="ps_paired_note">Ele está na sua tela inicial, no modo PlayStation.</string>
+    <string name="ps_play_now">Jogar agora</string>
+    <string name="ps_back_to_start">Voltar ao início</string>
+    <string name="ps_clear">Limpar</string>
+    <string name="ps_connecting">Conectando a %1$s</string>
+    <string name="ps_connect_waking">Acordando o console</string>
+    <string name="ps_connect_session">Iniciando a sessão de Remote Play</string>
+    <string name="ps_connect_video">Aguardando a imagem</string>
+    <string name="ps_connect_failed">Não foi possível conectar: %1$s</string>
+</resources>

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -128,11 +129,20 @@ fun Backdrop(appearance: Appearance, colors: DelosColors, hero: GameArt?, modifi
         // The game's colors come from its cover (the game background's while the cover's are unknown)
         val known = matching && (HeroBitmaps.coverKnown(hero.id) || HeroBitmaps.huesKnown(hero.id))
         val gameHues = if (matching) HeroBitmaps.gameColors(hero.id) else null
-        AnimatedBackground(
-            appearance, colors, gameHues = gameHues,
-            // A game whose colors are not worked out yet keeps the previous game's, so nothing flashes in between
-            gamePending = matching && !known, heroActive = heroOn,
-        )
+        // The PlayStation mode has its own background in place of the user's kind; the two cross-fade when the mode changes,
+        // and the hidden one is not composed at all
+        val playStation by com.limelight.shell.ps.PsMode.active.collectAsState()
+        val psAlpha by animateFloatAsState(if (playStation) 1f else 0f, tween(if (appearance.reducedMotion) 0 else 700), label = "psBackground")
+        if (psAlpha < 1f) {
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = 1f - psAlpha }) {
+                AnimatedBackground(
+                    appearance, colors, gameHues = gameHues,
+                    // A game whose colors are not worked out yet keeps the previous game's, so nothing flashes in between
+                    gamePending = matching && !known, heroActive = heroOn,
+                )
+            }
+        }
+        if (psAlpha > 0f) com.limelight.shell.ps.PlayStationBackground(appearance.reducedMotion, Modifier.graphicsLayer { alpha = psAlpha })
         Box(Modifier.fillMaxSize().drawBehind { drawVignette(colors.scrim) })
     }
 }

@@ -300,7 +300,9 @@ private fun ShellTheme(store: AppearanceStore, feedback: Feedback, content: @Com
     val appearance by store.appearance.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val systemHue = remember { systemAccentHue(context) }
-    val colors = animateDelosColors(delosColors(appearance, systemHue))
+    // The PlayStation mode turns DELOS blue (the colors cross-fade like any palette change)
+    val playStation by com.limelight.shell.ps.PsMode.active.collectAsStateWithLifecycle()
+    val colors = animateDelosColors(if (playStation) com.limelight.shell.ps.playStationColors() else delosColors(appearance, systemHue))
     val view = LocalView.current
     DisposableEffect(view) {
         // Compose plays the system click on every focus move; Delos has its own UI sounds

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ps_mode_pc">PC</string>
+    <string name="ps_mode_playstation">PlayStation</string>
+    <string name="ps_start_choose_note">Elige la PlayStation en la que quieres jugar.</string>
+    <string name="ps_start_pair_note">Vincula tu PlayStation para jugar en ella desde aquí.</string>
+    <string name="ps_pair_new">Añadir consola</string>
+    <string name="ps_pair_new_meta">PS5 · Remote Play</string>
+    <string name="ps_console_meta">Vinculada · PS5</string>
+    <string name="ps_console_remove">Quitar esta consola</string>
+    <string name="ps_console_removed">%1$s quitada</string>
+    <string name="ps_step_find">Buscar consola</string>
+    <string name="ps_step_sign_in">Iniciar sesión</string>
+    <string name="ps_step_pin">Introducir PIN</string>
+    <string name="ps_find_title">Busquemos tu PS5</string>
+    <string name="ps_find_searching">DELOS busca consolas PlayStation en tu red doméstica.</string>
+    <string name="ps_find_found">Elige la consola que quieres vincular. Tus PC siguen aparte.</string>
+    <string name="ps_find_none">Ninguna consola respondió. Activa Remote Play en la PS5: Ajustes › Sistema › Remote Play.</string>
+    <string name="ps_find_on">Encendida · lista para vincular</string>
+    <string name="ps_find_rest">Modo de reposo · enciéndela para vincular</string>
+    <string name="ps_search_again">Buscar de nuevo</string>
+    <string name="ps_search_meta">Red local</string>
+    <string name="ps_sign_in_title">Inicia sesión una vez</string>
+    <string name="ps_sign_in_note">La página de Sony se abre dentro de DELOS. Tu contraseña solo va a Sony; DELOS guarda el ID de tu cuenta para vincular la consola.</string>
+    <string name="ps_sign_in_button">Iniciar sesión en PlayStation Network</string>
+    <string name="ps_sign_in_failed">Error al iniciar sesión: %1$s</string>
+    <string name="ps_sign_in_keep">Continuar con esta cuenta</string>
+    <string name="ps_pin_title">Introduce el PIN de tu PS5</string>
+    <string name="ps_pin_note">En la PS5: Ajustes › Sistema › Remote Play › Vincular dispositivo. Introduce los 8 dígitos que aparecen en la TV.</string>
+    <string name="ps_pin_pair">Vincular %1$s</string>
+    <string name="ps_pin_pairing">Vinculando…</string>
+    <string name="ps_pin_failed">Error al vincular: %1$s</string>
+    <string name="ps_paired_title">%1$s está vinculada</string>
+    <string name="ps_paired_note">Está en tu pantalla de inicio, en el modo PlayStation.</string>
+    <string name="ps_play_now">Jugar ahora</string>
+    <string name="ps_back_to_start">Volver al inicio</string>
+    <string name="ps_clear">Borrar</string>
+    <string name="ps_connecting">Conectando con %1$s</string>
+    <string name="ps_connect_waking">Despertando la consola</string>
+    <string name="ps_connect_session">Iniciando la sesión de Remote Play</string>
+    <string name="ps_connect_video">Esperando la imagen</string>
+    <string name="ps_connect_failed">No se pudo conectar: %1$s</string>
+</resources>

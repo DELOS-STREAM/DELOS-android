@@ -91,7 +91,7 @@ internal fun contentKind(screen: Screen): ContentKind = when (screen) {
     Screen.Profile -> ContentKind.PROFILE
     is Screen.CreateProfile -> ContentKind.CREATE_PROFILE
     is Screen.Boot -> ContentKind.BOOT
-    Screen.SettingsSearch, Screen.OscPreview -> ContentKind.FALLBACK
+    Screen.SettingsSearch, Screen.OscPreview, is Screen.PairPs -> ContentKind.FALLBACK
 }
 
 /** The title of a screen for the fallback page (the name of the screen on the main panel). */
@@ -101,6 +101,7 @@ internal fun screenTitle(screen: Screen): Int = when (screen) {
     Screen.Start -> R.string.companion_screen_start
     Screen.Devices -> R.string.devices_title
     is Screen.PairPc -> R.string.pairing_pc_title
+    is Screen.PairPs -> R.string.ps_pair_new
     is Screen.Pin -> R.string.companion_screen_pairing
     Screen.Settings -> R.string.companion_screen_settings
     Screen.SettingsSearch -> R.string.companion_screen_settings_search
@@ -120,6 +121,7 @@ internal fun screenPurpose(screen: Screen): Int = when (screen) {
     Screen.Start -> R.string.companion_purpose_start
     Screen.Devices -> R.string.companion_purpose_devices
     is Screen.PairPc -> R.string.companion_purpose_pair_pc
+    is Screen.PairPs -> R.string.ps_find_found
     is Screen.Pin -> R.string.companion_purpose_pin
     Screen.Settings -> R.string.companion_purpose_settings
     Screen.SettingsSearch -> R.string.companion_purpose_settings_search

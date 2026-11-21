@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ps_mode_pc">PC</string>
+    <string name="ps_mode_playstation">PlayStation</string>
+    <string name="ps_start_choose_note">选择要游玩的 PlayStation。</string>
+    <string name="ps_start_pair_note">配对你的 PlayStation，即可在这里游玩。</string>
+    <string name="ps_pair_new">添加主机</string>
+    <string name="ps_pair_new_meta">PS5 · Remote Play</string>
+    <string name="ps_console_meta">已配对 · PS5</string>
+    <string name="ps_console_remove">移除此主机</string>
+    <string name="ps_console_removed">已移除 %1$s</string>
+    <string name="ps_step_find">查找主机</string>
+    <string name="ps_step_sign_in">登录</string>
+    <string name="ps_step_pin">输入 PIN</string>
+    <string name="ps_find_title">正在查找你的 PS5</string>
+    <string name="ps_find_searching">DELOS 正在家庭网络中查找 PlayStation 主机。</string>
+    <string name="ps_find_found">选择要配对的主机。你的 PC 保持独立。</string>
+    <string name="ps_find_none">没有主机响应。请在 PS5 上开启遥控游玩：设置 › 系统 › 遥控游玩。</string>
+    <string name="ps_find_on">已开机 · 可以配对</string>
+    <string name="ps_find_rest">待机模式 · 开机后配对</string>
+    <string name="ps_search_again">重新查找</string>
+    <string name="ps_search_meta">本地网络</string>
+    <string name="ps_sign_in_title">登录一次</string>
+    <string name="ps_sign_in_note">Sony 的页面会在 DELOS 内打开。密码只发送给 Sony；DELOS 只保存你的账号 ID 用于连接主机。</string>
+    <string name="ps_sign_in_button">登录 PlayStation Network</string>
+    <string name="ps_sign_in_failed">登录失败：%1$s</string>
+    <string name="ps_sign_in_keep">使用此账号继续</string>
+    <string name="ps_pin_title">输入 PS5 上的 PIN</string>
+    <string name="ps_pin_note">在 PS5 上：设置 › 系统 › 遥控游玩 › 配对设备。输入电视上显示的 8 位数字。</string>
+    <string name="ps_pin_pair">配对 %1$s</string>
+    <string name="ps_pin_pairing">正在配对…</string>
+    <string name="ps_pin_failed">配对失败：%1$s</string>
+    <string name="ps_paired_title">%1$s 已配对</string>
+    <string name="ps_paired_note">它会显示在 PlayStation 模式的开始画面上。</string>
+    <string name="ps_play_now">立即游玩</string>
+    <string name="ps_back_to_start">返回开始</string>
+    <string name="ps_clear">清除</string>
+    <string name="ps_connecting">正在连接 %1$s</string>
+    <string name="ps_connect_waking">正在唤醒主机</string>
+    <string name="ps_connect_session">正在启动遥控游玩会话</string>
+    <string name="ps_connect_video">正在等待画面</string>
+    <string name="ps_connect_failed">无法连接：%1$s</string>
+</resources>

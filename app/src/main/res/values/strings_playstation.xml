@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PlayStation Remote Play (issue #25). English only while the feature lives on its branch; translations before it merges. -->
+<resources>
+    <string name="ps_mode_pc">PC</string>
+    <string name="ps_mode_playstation">PlayStation</string>
+    <string name="ps_start_choose_note">Choose the PlayStation to play on.</string>
+    <string name="ps_start_pair_note">Pair your PlayStation to play it here.</string>
+    <string name="ps_pair_new">Add console</string>
+    <string name="ps_pair_new_meta">PS5 · Remote Play</string>
+    <string name="ps_console_meta">Paired · PS5</string>
+    <string name="ps_console_remove">Remove this console</string>
+    <string name="ps_console_removed">%1$s removed</string>
+    <string name="ps_step_find">Find console</string>
+    <string name="ps_step_sign_in">Sign in</string>
+    <string name="ps_step_pin">Enter PIN</string>
+    <string name="ps_find_title">Let\u2019s find your PS5</string>
+    <string name="ps_find_searching">DELOS looks for PlayStation consoles on your home network.</string>
+    <string name="ps_find_found">Choose the console to pair. Your PCs stay separate.</string>
+    <string name="ps_find_none">No console answered. Turn on Remote Play on the PS5: Settings › System › Remote Play.</string>
+    <string name="ps_find_on">On · ready to pair</string>
+    <string name="ps_find_rest">Rest mode · turn it on to pair</string>
+    <string name="ps_search_again">Search again</string>
+    <string name="ps_search_meta">Local network</string>
+    <string name="ps_sign_in_title">Sign in once</string>
+    <string name="ps_sign_in_note">Sony\u2019s own page opens inside DELOS. Your password goes only to Sony; DELOS keeps your account ID to link the console.</string>
+    <string name="ps_sign_in_button">Sign in to PlayStation Network</string>
+    <string name="ps_sign_in_failed">Sign-in failed: %1$s</string>
+    <string name="ps_sign_in_keep">Continue with this account</string>
+    <string name="ps_pin_title">Enter the PIN from your PS5</string>
+    <string name="ps_pin_note">On the PS5: Settings › System › Remote Play › Pair Device. Enter the 8 digits shown on the TV.</string>
+    <string name="ps_pin_pair">Pair %1$s</string>
+    <string name="ps_pin_pairing">Pairing…</string>
+    <string name="ps_pin_failed">Pairing failed: %1$s</string>
+    <string name="ps_paired_title">%1$s is paired</string>
+    <string name="ps_paired_note">It is on your start screen in PlayStation mode.</string>
+    <string name="ps_play_now">Play now</string>
+    <string name="ps_back_to_start">Back to start</string>
+    <string name="ps_clear">Clear</string>
+    <string name="ps_connecting">Connecting to %1$s</string>
+    <string name="ps_connect_waking">Waking the console</string>
+    <string name="ps_connect_session">Starting the Remote Play session</string>
+    <string name="ps_connect_video">Waiting for the picture</string>
+    <string name="ps_connect_failed">Could not connect: %1$s</string>
+</resources>

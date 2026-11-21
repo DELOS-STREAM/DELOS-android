@@ -730,3 +730,4 @@ mac_magic_mouse_smart_zoom = delos-mac-magic-mouse-smart-zoom
 mac_magic_mouse_mission_control = delos-mac-magic-mouse-mission-control
 mac_magic_mouse_swipe_left = delos-mac-magic-mouse-swipe-left
 mac_magic_mouse_swipe_right = delos-mac-magic-mouse-swipe-right
+console_ps5 = delos-console-ps5

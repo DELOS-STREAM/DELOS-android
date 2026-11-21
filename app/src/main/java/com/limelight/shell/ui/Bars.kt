@@ -106,13 +106,11 @@ fun StatusBar(
     battery: BatteryStatus?,
     clock: String,
     modifier: Modifier = Modifier,
-    /** False where the screen shows something else in the corner (the start screen's profile). */
-    brand: Boolean = true,
     onBack: (() -> Unit)? = null,
 ) {
     val stage = LocalStage.current
     if (stage.compact) {
-        CompactStatusBar(nav, pcName, pcOnline, wifi, battery, clock, modifier, brand, onBack)
+        CompactStatusBar(nav, pcName, pcOnline, wifi, battery, clock, modifier, onBack)
         return
     }
     val colors = LocalDelosColors.current
@@ -121,12 +119,10 @@ fun StatusBar(
     Box(modifier.fillMaxWidth().padding(top = safe.top.px).height(104.px).padding(start = 72.px + safe.left.px, end = 72.px + safe.right.px)) {
         Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {
             StatusBarBack(onBack)
-            if (brand) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
-                    LogoMark()
-                    BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
-                    if (pcName != null) PcPill(pcName, pcOnline)
-                }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
+                LogoMark()
+                BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
+                if (pcName != null) PcPill(pcName, pcOnline)
             }
         }
         if (nav != null) TopNav(nav, Modifier.align(Alignment.Center))
@@ -191,7 +187,7 @@ private fun StatusCluster(
  */
 @Composable
 private fun CompactStatusBar(
-    nav: List<NavButton>?, pcName: String?, pcOnline: Boolean, wifi: WifiStatus, battery: BatteryStatus?, clock: String, modifier: Modifier, brand: Boolean,
+    nav: List<NavButton>?, pcName: String?, pcOnline: Boolean, wifi: WifiStatus, battery: BatteryStatus?, clock: String, modifier: Modifier,
     onBack: (() -> Unit)?,
 ) {
     val colors = LocalDelosColors.current
@@ -212,7 +208,7 @@ private fun CompactStatusBar(
         val left = subcompose("left") {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StatusBarBack(onBack)
-                if (brand) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
                     LogoMark()
                     if (wordmark) BasicText("DELOS", style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx, letterSpacing = .14.em))
                     if (pcName != null) PcDot(pcName, pcOnline)

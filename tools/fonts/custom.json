@@ -1688,5 +1688,10 @@
     "codepoint": "F151",
     "regular": "mac/outline/magic-mouse-swipe-right.svg",
     "fill": "mac/solid/magic-mouse-swipe-right.svg"
+  },
+  "delos-console-ps5": {
+    "codepoint": "F152",
+    "regular": "console/b-swept-wing-regular.svg",
+    "fill": "console/b-swept-wing-fill.svg"
   }
 }

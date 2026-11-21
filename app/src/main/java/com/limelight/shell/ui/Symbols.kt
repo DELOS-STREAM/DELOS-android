@@ -709,4 +709,5 @@ object Symbols {
     const val MAC_MAGIC_MOUSE_MISSION_CONTROL = "\uF14F"
     const val MAC_MAGIC_MOUSE_SWIPE_LEFT = "\uF150"
     const val MAC_MAGIC_MOUSE_SWIPE_RIGHT = "\uF151"
+    const val CONSOLE_PS5 = "\uF152"
 }
