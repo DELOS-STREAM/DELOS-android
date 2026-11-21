@@ -76,6 +76,7 @@
     <string name="overview_video_unavailable">この動画は再生できません</string>
     <string name="overview_video_blocked">所有者が他のアプリでの再生を許可していません。</string>
     <string name="overview_video_failed">YouTube で読み込めませんでした。接続を確認して、もう一度お試しください。</string>
+    <string name="overview_video_failed_steam">Steam から読み込めませんでした。接続を確認して、もう一度お試しください。</string>
     <string name="overview_previous">前へ</string>
     <string name="overview_next">次へ</string>
     <string name="overview_loading">ゲーム情報を読み込み中…</string>

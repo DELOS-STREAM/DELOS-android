@@ -84,6 +84,7 @@
     <string name="overview_video_unavailable">Impossible de lire cette vidéo</string>
     <string name="overview_video_blocked">Son propriétaire n\'autorise pas sa lecture dans d\'autres applications.</string>
     <string name="overview_video_failed">YouTube n\'a pas pu la charger. Vérifie la connexion et réessaie.</string>
+    <string name="overview_video_failed_steam">Steam n\'a pas pu la charger. Vérifie la connexion et réessaie.</string>
     <string name="overview_previous">Précédent</string>
     <string name="overview_next">Suivant</string>
     <string name="overview_loading">Chargement des infos du jeu…</string>

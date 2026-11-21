@@ -84,6 +84,7 @@
     <string name="overview_video_unavailable">Não é possível reproduzir este vídeo</string>
     <string name="overview_video_blocked">O proprietário não permite reproduzi-lo em outros apps.</string>
     <string name="overview_video_failed">O YouTube não conseguiu carregá-lo. Verifique a conexão e tente de novo.</string>
+    <string name="overview_video_failed_steam">A Steam não conseguiu carregá-lo. Verifique a conexão e tente de novo.</string>
     <string name="overview_previous">Anterior</string>
     <string name="overview_next">Próximo</string>
     <string name="overview_loading">Carregando info do jogo…</string>

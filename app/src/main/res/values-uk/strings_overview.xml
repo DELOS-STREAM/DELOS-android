@@ -88,6 +88,7 @@
     <string name="overview_video_unavailable">Це відео неможливо відтворити</string>
     <string name="overview_video_blocked">Його власник не дозволяє відтворювати його в інших застосунках.</string>
     <string name="overview_video_failed">YouTube не зміг його завантажити. Перевір з\'єднання і спробуй ще раз.</string>
+    <string name="overview_video_failed_steam">Steam не зміг його завантажити. Перевір з\'єднання і спробуй ще раз.</string>
     <string name="overview_previous">Назад</string>
     <string name="overview_next">Далі</string>
     <string name="overview_loading">Завантаження інформації…</string>
