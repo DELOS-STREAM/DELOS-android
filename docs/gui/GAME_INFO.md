@@ -528,9 +528,10 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    - the info row rises 90 px out and fades, on the same spring;
    - the cover flies from the card's on-screen rectangle (with its focus scale or its dragged position) into the
      340 × 510 slot of the header on a spring of response 0.62 s, damping 0.74 (a 3.2 % overshoot, its peak 461 ms
-     in), through a midpoint 30 px above the straight line and 4 % larger, the corner going from 27.4 to 30 px. Past the
-     slot the frame stays centred on it and grows by the overshoot, so the slot is never uncovered; the corner and the
-     crossfade are clamped. Only its frame changes shape (the wide first card's turns portrait): the pictures in it keep
+     in), through a midpoint 30 px above the straight line and 4 % larger, the corner going from 27.4 to 30 px. Its place
+     follows the spring past the slot and back (owner, 2026-11-21): along the way it arrived, 1.6 times the spring's
+     overshoot of the straight distance (about 5 %), softly capped at 40 px (`cap × tanh(raw / cap)`); its size, the
+     corner and the crossfade read the clamped progress and never pass the slot's. Only its frame changes shape (the wide first card's turns portrait): the pictures in it keep
      their proportions, cropped to the frame, and the card as the row drew it (its own art, a wide card's too, the current
      frame of its animation, its badge) crossfades into the header's cover over the first 60 % of the way; the card's
      focus ring flies with it and fades;
@@ -559,7 +560,8 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
 6. **Closing** (B, Esc, Back, Up from the header, the round back button, or pulling the page down 150 px at its top):
    the card takes the focus again and the hint bar shows the dashboard's hints, the page scrolls to its top (420 ms),
    then everything reverses: the cover flies back into its card on a spring of response 0.55 s, damping 0.78 (2 %
-   overshoot, growing about the card's place; the closing clock runs 700 ms, until it is within 0.2 %), the page sinks
+   overshoot; its place passes the card along the way it arrives by 2.5 times that, about 5 % of the distance, capped at
+   40 px, at the card's size; the closing clock runs 700 ms, until it is within 0.2 %), the page sinks
    120 px and fades (560 ms ease-in-out), the header's parts leave first (240 ms). The dashboard comes back with the
    cover, as on the iPad: the other covers and the info row return together on the cover's closing spring and land
    with it. A close during the opening interrupts it: the cover's spring turns back from its current position and

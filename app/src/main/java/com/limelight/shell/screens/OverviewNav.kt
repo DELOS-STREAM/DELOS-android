@@ -291,8 +291,10 @@ internal object OverviewMotion {
      * moves and changes its shape (a wide card's into the portrait slot): the picture in it keeps its proportions ([fillScale]).
      * (0, 0) and the slot's size is the cover at rest in its slot.
      *
-     * A spring passes its end a little: past either end the frame stays where it lands and grows about its centre by the overshoot
-     * (never shrinks, so neither the slot nor the card's place is ever uncovered), and its corner stays the end's.
+     * A spring passes its end a little (owner, 2026-11-21): the frame's place follows it, travelling past the end along the way it
+     * arrived and coming back, by [OVERSHOOT_IN] (into the slot) or [OVERSHOOT_OUT] (back onto the card) times the spring's overshoot
+     * of the straight distance, softly capped at [OVERSHOOT_CAP] stage pixels ([overshootPx]). Its size and corner read the progress
+     * clamped to the flight: they never pass the end's.
      */
     fun cover(progress: Float, from: Rect, to: Rect, arcPx: Float): Frame {
         val p = progress.coerceIn(0f, 1f)
@@ -320,14 +322,34 @@ internal object OverviewMotion {
             w = Motion.lerp(mw, to.width, f)
             h = Motion.lerp(mh, to.height, f)
         }
-        val grow = abs(progress - p)
-        if (grow > 0f) {
-            x -= w * grow / 2f
-            y -= h * grow / 2f
-            w *= 1f + grow
-            h *= 1f + grow
+        val over = progress - p
+        if (over != 0f) {
+            // Past the slot: on along the way from the midpoint into it; past the card: on along the way from the midpoint onto it
+            val dx = if (over > 0f) -mx else ax - mx
+            val dy = if (over > 0f) -my else ay - my
+            val len = sqrt(dx * dx + dy * dy)
+            if (len > 0f) {
+                val shift = overshootPx(over, sqrt(ax * ax + ay * ay), arcPx / ARC)
+                x += dx / len * shift
+                y += dy / len * shift
+            }
         }
         return Frame(Rect(x, y, x + w, y + h), Motion.lerp(FROM_CORNER, TO_CORNER, p))
+    }
+
+    /** How far past the end the frame travels: the springs' overshoot of 3.2 % (in) and 2 % (out) shows as about 5 % of the distance. */
+    const val OVERSHOOT_IN = 1.6f
+    const val OVERSHOOT_OUT = 2.5f
+    const val OVERSHOOT_CAP = 40f
+
+    /**
+     * The frame's travel past its end (screen pixels) for the progress [over] beyond it (positive: past the slot) on a flight of
+     * [distance] screen pixels, [k] screen pixels per stage pixel: soft-capped at [OVERSHOOT_CAP], so a long flight never swings far.
+     */
+    fun overshootPx(over: Float, distance: Float, k: Float): Float {
+        val raw = abs(over) * (if (over > 0f) OVERSHOOT_IN else OVERSHOOT_OUT) * distance
+        val cap = OVERSHOOT_CAP * k
+        return if (cap <= 0f) 0f else cap * tanh(raw / cap)
     }
 
     /** The one scale at which a picture of [w] × [h] fills a frame of [frameW] × [frameH], cropped (`object-fit: cover`). */

@@ -207,20 +207,41 @@ class OverviewNavTest {
         assertTrue((OverviewMotion.CLOSE_SETTLE..2000).all { abs(OverviewMotion.closeSpring(it.toFloat()) - 1f) < .002f })
     }
 
-    @Test fun `past its end the cover grows about the slot and never uncovers it`() {
+    @Test fun `the flying cover's place passes its end once by about 5 percent while its size never passes the end's`() {
         val card = r(150f, 520f, 316.5f, 474.75f)
         val slot = r(150f, 150f, 340f, 510f)
-        val over = OverviewMotion.cover(1.038f, card, slot, 30f)
-        assertEquals(340f * 1.038f, over.rect.width, 1e-2f)
-        assertEquals(510f * 1.038f, over.rect.height, 1e-2f)
-        assertEquals(340f / 2f, over.rect.center.x, 1e-3f)
-        assertEquals(510f / 2f, over.rect.center.y, 1e-3f)
-        assertEquals(OverviewMotion.TO_CORNER, over.corner, 0f)
-        // Back past the card: it grows about the card's place
-        val start = OverviewMotion.cover(0f, card, slot, 30f).rect
-        val under = OverviewMotion.cover(-.015f, card, slot, 30f).rect
-        assertEquals(start.center.x, under.center.x, 1e-3f)
-        assertEquals(start.width * 1.015f, under.width, 1e-2f)
+        val distance = 370f
+        fun excursions(values: List<Float>) = values.zipWithNext().count { (a, b) -> a <= 0f && b > 0f }
+        // Opening: past the slot the frame rises above it (its top above 0) and comes back, exactly once (a twentieth of a pixel counts)
+        val opening = (0..2000).map { OverviewMotion.spring(it.toFloat(), OverviewMotion.FLIGHT_OPEN_RESPONSE, OverviewMotion.FLIGHT_OPEN_DAMPING) }
+        val upFrames = opening.map { OverviewMotion.cover(it, card, slot, 30f) }
+        val above = upFrames.map { -it.rect.top - .05f }
+        assertEquals(1, excursions(above))
+        assertTrue(-upFrames.minOf { it.rect.top } / distance in 0.04f..0.06f)
+        upFrames.forEachIndexed { i, f ->
+            if (opening[i] >= 1f) {
+                assertEquals(340f, f.rect.width, 1e-3f)
+                assertEquals(510f, f.rect.height, 1e-3f)
+                assertEquals(OverviewMotion.TO_CORNER, f.corner, 0f)
+            }
+        }
+        assertEquals(0f, upFrames.last().rect.top, .05f)
+        // Closing: past the card the frame sinks below it and comes back, exactly once, at the card's size
+        val closing = (0..2000).map { 1f - OverviewMotion.closeSpring(it.toFloat()) }
+        val downFrames = closing.map { OverviewMotion.cover(it, card, slot, 30f) }
+        val below = downFrames.map { it.rect.top - (card.top - slot.top) - .05f }
+        assertEquals(1, excursions(below))
+        assertTrue((downFrames.maxOf { it.rect.top } - (card.top - slot.top)) / distance in 0.04f..0.06f)
+        downFrames.forEachIndexed { i, f ->
+            if (closing[i] <= 0f) {
+                assertEquals(card.width, f.rect.width, 1e-3f)
+                assertEquals(card.height, f.rect.height, 1e-3f)
+                assertEquals(OverviewMotion.FROM_CORNER, f.corner, 0f)
+            }
+        }
+        // A long flight never swings more than the cap
+        assertTrue(OverviewMotion.overshootPx(.05f, 5000f, 1f) <= OverviewMotion.OVERSHOOT_CAP)
+        assertEquals(0f, OverviewMotion.overshootPx(0f, 400f, 1f), 0f)
     }
 
     @Test fun `a closing that interrupts the opening leaves from where the parts are`() {
