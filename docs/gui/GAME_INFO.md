@@ -503,22 +503,30 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    The hint bar does not repeat it: the chip on the cover is the only place that names it. It stays clear of the hint
    bar, whose library note ("LIBRARY · N apps on <PC>") shows as on any other game.
 3. A swipe up needs vertical intent (Compose's vertical touch slop, so the row's horizontal scroll and the side-menu swipe
-   keep working). The cover follows the finger with resistance (`lift = max(dy, -260) × 0.55`, growing up to
-   1.155) and opens past 40 px of lift; the flight starts where the finger left it.
+   keep working). The cover follows the finger on a rubber band (`OverviewMotion.drag`): 0.6 of the finger's travel at
+   first, less and less towards a cap, `lift = cap × (1 − e^(−0.6 × travel / cap))`. The cap keeps the cover, grown to
+   its largest (the focus scale + 0.03), 14 px under the row's top edge: the row draws in an offscreen layer for its
+   edge fades, which would cut anything above it (about 57 px at the standard 90 px row padding, at most 120 px). Over
+   the second half of the way to the cap the cover fades to 0.7 instead of reaching the edge. Inside it the art zooms
+   up to 7 % and drifts up to 12 px down, against the lift, and the chip's two chevrons fill from the bottom (each rises
+   to its top, lights fully and grows bolder) as the finger nears the 72 px of travel that opens the overview when it
+   lets go. The flight starts where the finger left the cover, at its opacity (whole by 30 % of the way), with the
+   cover's speed (`OverviewMotion.flightVelocity`); the closing lands on the card at rest. Let go earlier, the cover
+   springs back on the settle spring.
 4. **Opening** (`OverviewMotion`, all transforms and opacity, read while drawing). The card stays in its row until the
    overview's first layout knows the header's slot; then the flight takes over from it, at its place. The motion runs on
    a clock that advances at most 33 ms per frame (`SteadyFrameClock`): the overview's first frames are its heaviest, and
    on the frame clock itself they used to swallow most of the motion (the cover landed in the first frame that moved).
-   A slow frame now holds the motion back instead of skipping it. Springs (owner, 2026-11-20) are given as a response
-   (the period of the undamped oscillation) and a damping ratio, the same numbers on every platform (stiffness =
-   (2π / response)²); everything that lands does so with one small, gentle settle, never a second bounce, and opacity,
-   corners and crossfades never overshoot:
+   A slow frame now holds the motion back instead of skipping it. Springs (owner, 2026-11-20, retuned 2026-11-21) are
+   given as a response (the period of the undamped oscillation) and a damping ratio, the same numbers on every platform
+   (stiffness = (2π / response)²); everything that lands does so with one gentle settle, never a second bounce, and
+   opacity, corners and crossfades never overshoot. The timeline is the prototype's (a.html):
    - the other covers lift away one after another: 160 px + 30 px per cover of distance up, to 0.92, fading, on the
-     settle spring (response 0.45 s, damping 0.78: 2 % overshoot) 34 ms apart by distance (the home clock runs 465 ms
+     settle spring (response 0.6 s, damping 0.8: 1.5 % overshoot) 45 ms apart by distance (the home clock runs 620 ms
      plus the stagger);
    - the info row rises 90 px out and fades, on the same spring;
    - the cover flies from the card's on-screen rectangle (with its focus scale or its dragged position) into the
-     340 × 510 slot of the header on a spring of response 0.42 s, damping 0.72 (a 3.8 % overshoot, its peak 303 ms
+     340 × 510 slot of the header on a spring of response 0.62 s, damping 0.74 (a 3.2 % overshoot, its peak 461 ms
      in), through a midpoint 30 px above the straight line and 4 % larger, the corner going from 27.4 to 30 px. Past the
      slot the frame stays centred on it and grows by the overshoot, so the slot is never uncovered; the corner and the
      crossfade are clamped. Only its frame changes shape (the wide first card's turns portrait): the pictures in it keep
@@ -527,20 +535,21 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
      focus ring flies with it and fades;
    - the name flies from the dashboard's name to the header's on the settle spring; a SteamGridDB logo does not fly: the
      dashboard's fades out where it is over the first 40 % of the flight and the header's fades in at its own place over
-     the last 50 % (the flight counts as 585 ms opening, 480 ms closing); when the dashboard showed the other kind, the
+     the last 50 % (the flight counts as 780 ms opening, 640 ms closing); when the dashboard showed the other kind, the
      header's title rises in like its other parts;
-   - the page rises from 120 px below on the settle spring, the header's parts rise 18 px on it, 36 ms apart, after
-     195 ms (the cue after 375 ms); each tag and the HDR badge pops in from 0.9 (response 0.4 s, damping 0.7) as its row
-     rises, 36 ms apart;
-   - the backdrop's own layers fade in over 675 ms;
-   - 285 ms in (or when the details arrive later) the critics' and players' rings fill on a spring of response 0.7 s,
-     damping 0.6, 90 ms apart, the number counting with the arc and the ring growing from 0.92 with it. The arc passes
-     its score once, softly capped at 6 % (it would swing 9.5 %), and comes back from its peak without passing the score
-     again; the number never shows more than 100. The age rating's badge pops in from 0.9 after the second ring (90 ms
-     later, response 0.4 s, damping 0.7).
+   - the page rises from 120 px below on the settle spring, the header's parts rise 18 px on it, 46 ms apart, after
+     260 ms (the cue, the sixth part, after 500 ms, so at 730 ms); each tag and the HDR badge pops in from 0.9 (response
+     0.5 s, damping 0.7: 4.6 % of the pop) as its row rises, 46 ms apart;
+   - the backdrop's own layers fade in over 900 ms;
+   - 380 ms in (or when the details arrive later) the critics' and players' rings fill, 90 ms apart, the ring growing
+     from 0.92 with its arc. The arc fills on a slow, round spring of response 1.0 s, damping 0.55, peaking about 0.6 s
+     in: it passes its score once, softly capped at 8 % (it would swing 12.6 %; it shows 7.3 %), comes back from its
+     peak without passing the score again (a critically damped return at the spring's own rate) and rests on it exactly
+     1.6 s in. The number does not overshoot: it counts up to the score on a plain ease-out over 1.1 s. The age
+     rating's badge pops in from 0.9 after the second ring (90 ms later, response 0.5 s, damping 0.7).
 
-   The opening counts as over (the ring appears, the sections below compose) after 1005 ms: the cue's 375 ms plus five
-   36 ms steps plus 450 ms of its settle.
+   The opening counts as over (the ring appears, the sections below compose) after 1340 ms: the cue's 500 ms plus five
+   46 ms steps plus 610 ms of its settle.
 5. Nothing delays a control: Play has the focus from the first frame and the page takes input while it enters. The
    gold ring appears once the opening is over, for every input: a finger's first tap only focuses (focus first), so
    the focused part shows its ring and its focus growth after a tap too. The sections below the header compose once
@@ -548,13 +557,17 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    bottom edge, and Down reaches them from then on.
 6. **Closing** (B, Esc, Back, Up from the header, the round back button, or pulling the page down 150 px at its top):
    the card takes the focus again and the hint bar shows the dashboard's hints, the page scrolls to its top (420 ms),
-   then everything reverses: the cover flies back into its card on a spring of response 0.36 s, damping 0.80 (1.5 %
-   overshoot, growing about the card's place), the page sinks 120 px and fades (420 ms ease-in-out), the header's parts
-   leave first (180 ms). The dashboard comes back with the cover, as on the iPad: the other covers and the info row
-   return together on the cover's closing spring and land with it. A close during the opening interrupts it: the
-   cover's spring turns back from its current position and velocity (when the page did not have to scroll first), and
-   every other part (the dashboard's covers, the page, the header's parts, the name, the logos) leaves from where the
-   opening left it, so nothing jumps. The page leaves composition one frame after the motion's last one.
+   then everything reverses: the cover flies back into its card on a spring of response 0.55 s, damping 0.78 (2 %
+   overshoot, growing about the card's place; the closing clock runs 700 ms, until it is within 0.2 %), the page sinks
+   120 px and fades (560 ms ease-in-out), the header's parts leave first (240 ms). The dashboard comes back with the
+   cover, as on the iPad: the other covers and the info row return together on the cover's closing spring and land
+   with it. A close during the opening interrupts it: the cover's spring turns back from its current position and
+   velocity (when the page did not have to scroll first), and every other part (the dashboard's covers, the page, the
+   header's parts, the name, the logos) leaves from where the opening left it, so nothing jumps. A pull down hands
+   over the same way: the page follows the finger at 0.45 of its travel and the cover shrinks about its top-left corner
+   (`1 − pull / 2400`); let go past 150 px, the flight back leaves from that shrunk cover where the page put it
+   (`OverviewMotion.releaseSlot`) with the cover's speed at that moment. The page leaves composition one frame after
+   the motion's last one.
 7. **Reduced motion** keeps short fades and drops every spring and transform: the cover and the title fade in place
    (280 ms), nothing lifts, rises, drifts, pops or bobs, the rings are full at once and fade in (280 ms), the focus ring
    jumps.

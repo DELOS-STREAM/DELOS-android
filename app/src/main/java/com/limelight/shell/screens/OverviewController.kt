@@ -8,6 +8,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Rect
 import com.limelight.shell.data.App
@@ -15,6 +16,7 @@ import com.limelight.shell.ui.Motion
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
@@ -100,6 +102,22 @@ internal class OverviewController(private val scope: CoroutineScope) {
     var from: Rect? = null
         private set
 
+    /** The card's rectangle at rest, where the closing lands ([from] without a finger's lift); null: [from]. */
+    var back: Rect? = null
+        private set
+
+    /** The card's opacity when the overview opened (a finger lifting it far fades it, [OverviewMotion.drag]): the flight starts from it. */
+    var fromAlpha = 1f
+        private set
+
+    /** The header's cover slot on screen (root pixels, the page at rest) and the flight's arc there, known once it is placed ([placeCover]). */
+    private var slot: Rect? = null
+    private var arcPx = 0f
+
+    /** How far the cover had flown when the closing began ([OverviewMotion.closingFrom]); read while drawing. */
+    var closeStart = 1f
+        private set
+
     /** The dashboard's title (text or logo) when the overview opened; null when it was not laid out (the title then rises like the header). */
     var title: TitleSource? = null
         private set
@@ -152,8 +170,10 @@ internal class OverviewController(private val scope: CoroutineScope) {
     /** The overview is up and nothing moves: the focus ring shows. */
     val settled: Boolean get() = app != null && !opening && !leaving
 
-    /** The header's cover has its slot (see [coverPlaced]). */
-    fun placeCover() {
+    /** The header's cover has its [slot] (see [coverPlaced]); the flight's arc is [arcPx] screen pixels ([OverviewMotion.ARC]). */
+    fun placeCover(slot: Rect, arcPx: Float) {
+        this.slot = slot
+        this.arcPx = arcPx
         coverPlaced = true
     }
 
@@ -164,10 +184,15 @@ internal class OverviewController(private val scope: CoroutineScope) {
     }
 
     /**
-     * Opens [app]'s overview: the card at [from] flies into the header. [homeTotal] is how long the dashboard's covers take to lift
-     * away ([OverviewMotion.homeTotal]). [instant]: everything in place at once (the overview is shown again after the app settings).
+     * Opens [app]'s overview: the card at [from] flies into the header, landing back at [back] when it closes. [homeTotal] is how long
+     * the dashboard's covers take to lift away ([OverviewMotion.homeTotal]). A finger that let go of the card (at [fromAlpha]) while it
+     * moved [velocityY] screen pixels per second hands that speed to the flight. [instant]: everything in place at once (the overview is
+     * shown again after the app settings).
      */
-    fun open(app: App, from: Rect?, title: TitleSource?, homeTotal: Int, reduced: Boolean, instant: Boolean = false) {
+    fun open(
+        app: App, from: Rect?, title: TitleSource?, homeTotal: Int, reduced: Boolean, instant: Boolean = false,
+        back: Rect? = from, velocityY: Float = 0f, fromAlpha: Float = 1f,
+    ) {
         if (this.app != null) return
         // Reset before publishing the session: a reopened page must never draw the previous closing clock.
         clock = Animatable(if (instant) openTotal(reduced).toFloat() else 0f)
@@ -175,12 +200,16 @@ internal class OverviewController(private val scope: CoroutineScope) {
         flight = Animatable(if (instant) 1f else 0f)
         this.app = app
         this.from = from
+        this.back = back
+        this.fromAlpha = fromAlpha
         this.title = title
         this.reduced = reduced
         leaving = false
         closing = false
         opening = !instant
         coverPlaced = instant
+        slot = null
+        closeStart = 1f
         interruptedAt = Float.MAX_VALUE
         job = motion {
             if (instant) {
@@ -191,7 +220,15 @@ internal class OverviewController(private val scope: CoroutineScope) {
             clock.snapTo(0f)
             val log = logFrames("open")
             launch { home.animateTo(homeTotal.toFloat(), tween(max(1, homeTotal - home.value.toInt()), easing = LinearEasing)) }
-            val cover = launch { flight.animateTo(1f, if (reduced) tween(Motion.FADE) else OverviewMotion.FlightOpen) }
+            // The finger's speed carries on once the slot is known (the overview's first layout)
+            val cover = launch {
+                if (reduced) flight.animateTo(1f, tween(Motion.FADE))
+                else {
+                    val to = if (velocityY != 0f && from != null) snapshotFlow { coverPlaced }.first { it }.let { slot } else null
+                    val v = if (to != null && from != null) OverviewMotion.flightVelocity(velocityY, from, to, arcPx, opening = true) else 0f
+                    flight.animateTo(1f, OverviewMotion.FlightOpen, initialVelocity = v)
+                }
+            }
             val total = openTotal(reduced)
             clock.animateTo(total.toFloat(), tween(total, easing = LinearEasing))
             cover.join()
@@ -202,16 +239,22 @@ internal class OverviewController(private val scope: CoroutineScope) {
 
     /**
      * Closes the overview: waits for the opening, runs [prepare] (the dashboard takes back the focus and the hints, the page scrolls
-     * back to its top), then reverses every motion; the overview leaves composition once the card is back in its row.
+     * back to its top), then reverses every motion; the overview leaves composition once the card is back in its row. A finger that
+     * pulled the page down [slotShift] screen pixels hands the cover's speed ([velocityY], screen pixels per second, down positive) to
+     * the flight back.
      */
-    fun close(prepare: suspend () -> Unit) {
+    fun close(velocityY: Float = 0f, slotShift: Float = 0f, prepare: suspend () -> Unit) {
         if (app == null || leaving) return
         leaving = true
         val opened = job
         job = motion {
             // Interruptible: the opening stops where it is; the cover's spring turns back from its current position and velocity, the
             // other parts leave from where the opening left them ([interruptedAt])
-            val velocity = flight.velocity
+            val from = from
+            val to = slot?.translate(0f, slotShift)
+            val handOff = if (reduced || from == null || to == null) 0f
+            else OverviewMotion.flightVelocity(velocityY, from, to, arcPx, opening = false)
+            val velocity = flight.velocity + handOff
             if (opening) interruptedAt = clock.value
             opened?.cancel()
             opening = false
@@ -219,6 +262,7 @@ internal class OverviewController(private val scope: CoroutineScope) {
             prepare()
             // The page had to scroll back to its top first: the cover stood still meanwhile
             val turn = if (System.nanoTime() - before < SteadyFrameClock.MAX_STEP_NANOS) velocity else 0f
+            closeStart = flight.value
             clock.snapTo(0f)
             closing = true
             coroutineScope {
@@ -245,6 +289,8 @@ internal class OverviewController(private val scope: CoroutineScope) {
         fun openTotal(reduced: Boolean): Int =
             if (reduced) OverviewMotion.CUE_DELAY + 5 * OverviewMotion.HEADER_STAGGER + Motion.FADE else OverviewMotion.OPEN_TOTAL
 
-        fun closeTotal(reduced: Boolean): Int = if (reduced) Motion.FADE else maxOf(OverviewMotion.FLIGHT_OUT, OverviewMotion.PAGE_OUT, OverviewMotion.BACKDROP_OUT)
+        /** The closing clock: every part has left and the flight's spring has landed on the card ([OverviewMotion.CLOSE_SETTLE]). */
+        fun closeTotal(reduced: Boolean): Int =
+            if (reduced) Motion.FADE else maxOf(OverviewMotion.FLIGHT_OUT, OverviewMotion.PAGE_OUT, OverviewMotion.BACKDROP_OUT, OverviewMotion.CLOSE_SETTLE)
     }
 }

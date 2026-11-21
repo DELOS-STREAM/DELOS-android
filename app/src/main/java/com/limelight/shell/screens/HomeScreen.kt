@@ -172,6 +172,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import kotlinx.coroutines.Job
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.layout
@@ -374,8 +376,23 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
     val titleProbe = remember { TitleProbe() }
     // The focused card as the row draws it (its image, its animation's current frame, its badge), recorded for the overview's flight
     val cardLayer = rememberGraphicsLayer()
-    // The focused cover dragged up by a finger (stage pixels, negative: up), and the nudge of Down on a game without an overview
+    // The focused cover dragged up by a finger (its travel in stage pixels, negative: up; the cover follows on a rubber band,
+    // OverviewMotion.drag), and the nudge of Down on a game without an overview
     var lift by remember { mutableStateOf(0f) }
+    // Lifting the cover zooms its art; after a release the art settles back from where it was (inside the flight's copy of the card too)
+    val artSettle = remember { Animatable(0f) }
+    // How far the cover may lift: the row draws in an offscreen layer (its edge fades) that would cut it at its top edge
+    val dragCap = OverviewMotion.dragCap(if (compact) COMPACT_ROW_PAD else HomeStandard.ROW_PAD, covers.height)
+    // A finger that lets go without opening: the cover springs back from where it is
+    val liftBack = remember { arrayOfNulls<Job>(1) }
+    val settleLift = {
+        liftBack[0]?.cancel()
+        liftBack[0] = scope.launch {
+            Animatable(lift).animateTo(0f, spring(OverviewMotion.SETTLE_DAMPING, OverviewMotion.stiffness(OverviewMotion.SETTLE_RESPONSE))) { lift = value }
+        }
+    }
+    // How far the focused cover's art zooms and drifts (0…1), read while drawing
+    val artLift = remember(dragCap) { { max(OverviewMotion.drag(lift, dragCap).progress, artSettle.value) } }
     val nudge = remember { Animatable(0f) }
     val touchDemo = remember { Animatable(0f) }
     val touchKind = ControllerGlyphs.kind
@@ -400,27 +417,39 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
             }
         }
     }
-    val openOverview: (App) -> Unit = { app ->
+    // [velocityY]: a finger let go of the cover moving this fast (screen pixels per second, positive: down)
+    fun openOverview(app: App, velocityY: Float = 0f) {
         if (overview.app == null && shell.layer == null) {
-            val (dy, scale) = OverviewMotion.drag(lift)
-            val from = tileCoordinates[app.id]?.takeIf { it.isAttached }?.rootRect()?.let { r ->
-                // The cover's focus scale grows the wide first cover to the left (about its right edge), the others about their middle;
-                // a finger's lift scales the whole item about its middle on top of it (OverviewMotion.drag)
+            val drag = OverviewMotion.drag(lift, dragCap)
+            val r = tileCoordinates[app.id]?.takeIf { it.isAttached }?.rootRect()
+            // The cover's focus scale grows the wide first cover to the left (about its right edge), the others about their middle;
+            // a finger's lift scales the whole item about its middle on top of it (OverviewMotion.drag)
+            fun place(r: Rect, dy: Float, scale: Float): Rect {
                 val f = TILE_FOCUS_SCALE
                 val x0 = if (apps.indexOf(app) == 0) r.right else r.center.x
                 val c = r.center
                 fun x(edge: Float) = c.x + (x0 + (edge - x0) * f - c.x) * (scale / f)
                 fun y(edge: Float) = c.y + (edge - c.y) * scale + dy * k
-                Rect(x(r.left), y(r.top), x(r.right), y(r.bottom))
+                return Rect(x(r.left), y(r.top), x(r.right), y(r.bottom))
             }
+            val from = r?.let { place(it, drag.lift, drag.scale) }
+            // The closing lands on the card at rest, where it is once the finger's lift is gone
+            val back = r?.let { place(it, 0f, TILE_FOCUS_SCALE) }
             val title = titleProbe.coordinates?.takeIf { it.isAttached }?.let { c -> TitleSource(c.rootRect(), titleProbe.fontSize) }
             val index = apps.indexOf(app).coerceAtLeast(0)
             val reduced = appearance.reducedMotion
             feedback.play(Cue.OPEN)
             shell.overviewGame = homeKey(pc, app)
             val distance = rowState.layoutInfo.visibleItemsInfo.maxOfOrNull { abs(it.index - index) } ?: 0
-            overview.open(app, from, title, OverviewMotion.homeTotal(distance, reduced), reduced)
-            lift = 0f
+            overview.open(app, from, title, OverviewMotion.homeTotal(distance, reduced), reduced, back = back, velocityY = velocityY, fromAlpha = drag.alpha)
+            if (lift < 0f) scope.launch {
+                // The lifted card stays where the flight leaves it until the overview's cover has taken its place, then rests hidden;
+                // its art settles back on the way
+                artSettle.snapTo(drag.progress)
+                launch { artSettle.animateTo(0f, spring(OverviewMotion.SETTLE_DAMPING, OverviewMotion.stiffness(OverviewMotion.SETTLE_RESPONSE))) }
+                snapshotFlow { overview.coverPlaced || overview.app == null }.first { it }
+                lift = 0f
+            }
         }
     }
     // Back from the app settings: the overview is there again, without the flight
@@ -460,6 +489,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
         GameTile(
             pc, app, index = index,
             flight = cardLayer.takeIf { index == focusedIndex },
+            lift = artLift.takeIf { index == focusedIndex },
             custom = app.id in customGames,
             badge = when {
                 app.running -> TileBadge.RUNNING
@@ -582,37 +612,50 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                             .onGloballyPositioned { tileCoordinates[app.id] = it }
                             .graphicsLayer {
                                 // The other covers lift away one after another as the overview opens; the focused one is the cover that flies
-                                if (overview.app != null) {
-                                    // The card hides once the overview's cover has taken its place (OverviewController.coverPlaced)
-                                    if (isFocused) alpha = if (overview.coverPlaced) 0f else 1f else {
-                                        val distance = abs(i - focusedIndex)
-                                        val (dy, scale, a) = OverviewMotion.homeCover(overview.homeAway(distance), distance, reducedMotion)
-                                        translationY = dy * k
-                                        scaleX = scale
-                                        scaleY = scale
-                                        alpha = a
-                                    }
+                                if (overview.app != null && !isFocused) {
+                                    val distance = abs(i - focusedIndex)
+                                    val (dy, scale, a) = OverviewMotion.homeCover(overview.homeAway(distance), distance, reducedMotion)
+                                    translationY = dy * k
+                                    scaleX = scale
+                                    scaleY = scale
+                                    alpha = a
                                 } else if (isFocused) {
-                                    // A finger lifting the cover (with resistance), or Down's nudge on a game without an overview
-                                    val (dy, scale) = OverviewMotion.drag(lift)
+                                    // A finger lifting the cover (a rubber band under the row's edge, fading near its cap), or Down's nudge
+                                    // on a game without an overview. Opening, the card stays where the finger left it until the overview's
+                                    // cover has taken its place (OverviewController.coverPlaced), then hides
+                                    val drag = OverviewMotion.drag(lift, dragCap)
                                     val n = nudge.value
-                                    translationY = (dy + touchDemo.value) * k + Motion.CHEVRON_BUMP * k * (if (n < .5f) n * 2f else (1f - n) * 2f)
-                                    scaleX = scale / TILE_FOCUS_SCALE
-                                    scaleY = scale / TILE_FOCUS_SCALE
+                                    translationY = (drag.lift + touchDemo.value) * k + Motion.CHEVRON_BUMP * k * (if (n < .5f) n * 2f else (1f - n) * 2f)
+                                    scaleX = drag.scale / TILE_FOCUS_SCALE
+                                    scaleY = drag.scale / TILE_FOCUS_SCALE
+                                    alpha = if (overview.app != null && overview.coverPlaced) 0f else drag.alpha
+                                    // Each draw call fades by itself: an offscreen layer would cut the cover's focus growth, ring and glow at
+                                    // the item's bounds
+                                    compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.ModulateAlpha
                                 }
                             }
                             .then(
-                                if (isFocused && hasOverview(app)) Modifier.pointerInput(app.id) {
-                                    // Swiping the focused cover up opens its overview: it follows the finger, then flies on from there
+                                if (isFocused && hasOverview(app)) Modifier.pointerInput(app.id, dragCap) {
+                                    // Swiping the focused cover up opens its overview: it follows the finger on a rubber band, then flies on
+                                    // from there at the speed it had
                                     var travel = 0f
+                                    val tracker = VelocityTracker()
                                     detectVerticalDragGestures(
-                                        onDragStart = { travel = 0f },
-                                        onDragEnd = {
-                                            if (OverviewMotion.drag(lift).first < OverviewMotion.DRAG_OPENS) openOverview(app) else lift = 0f
+                                        onDragStart = {
+                                            travel = 0f
+                                            tracker.resetTracking()
+                                            liftBack[0]?.cancel()
                                         },
-                                        onDragCancel = { lift = 0f },
+                                        onDragEnd = {
+                                            if (lift <= -OverviewMotion.DRAG_OPENS) {
+                                                openOverview(app, tracker.calculateVelocity().y * OverviewMotion.dragSlope(lift, dragCap))
+                                            }
+                                            if (overview.app == null) settleLift()
+                                        },
+                                        onDragCancel = { settleLift() },
                                     ) { change, amount ->
                                         travel += amount
+                                        tracker.addPosition(change.uptimeMillis, Offset(0f, travel))
                                         if (travel < 0f || lift < 0f) {
                                             change.consume()
                                             lift = travel.coerceAtMost(0f) / k
@@ -627,7 +670,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                             // "Game info" on the focused cover's lower edge: it never covers the hint bar's library note below the row
                             if (isFocused) GameInfoHint(
                                 visible = hasOverview(app) && overview.app == null,
-                                lift = { lift },
+                                progress = { (-lift / OverviewMotion.DRAG_OPENS).coerceIn(0f, 1f) },
                                 onOpen = { openOverview(app) },
                                 // Above the cover, which a focus look lifts to z 1 (focusEffects)
                                 modifier = Modifier.align(Alignment.BottomCenter).zIndex(2f),
@@ -975,10 +1018,11 @@ internal fun CardArt(pc: Pc, app: App, modifier: Modifier) {
  * The "Game info" chip on the focused cover's lower edge (docs/gui/GAME_INFO.md, "Game overview"), in the dark glass of the cover's
  * badges so it reads over any art, drawn for the input in use: the D-pad's down cap for a controller, the ↓ key for a keyboard, a small
  * arrow up for a finger (swipe the cover up), a clickable arrow down for a mouse. A finger or a mouse can tap or click it. It fades
- * out while the overview is open and for a game without one.
+ * out while the overview is open and for a game without one. A finger lifting the cover fills the arrow's chevrons ([progress]: 1 where
+ * letting go opens the overview).
  */
 @Composable
-private fun GameInfoHint(visible: Boolean, lift: () -> Float, onOpen: () -> Unit, modifier: Modifier) {
+private fun GameInfoHint(visible: Boolean, progress: () -> Float, onOpen: () -> Unit, modifier: Modifier) {
     val kind = ControllerGlyphs.kind
     val k = LocalStage.current.dpPerPx * LocalDensity.current.density
     val shown by animateFloatAsState(if (visible) 1f else 0f, tween(Motion.FADE, easing = Motion.Ease), label = "gameInfoHint")
@@ -989,8 +1033,7 @@ private fun GameInfoHint(visible: Boolean, lift: () -> Float, onOpen: () -> Unit
         modifier
             .padding(bottom = 22.px)
             .graphicsLayer {
-                // A finger lifting the cover fades the chip as it goes
-                alpha = shown * (1f + lift() / 60f).coerceIn(0f, 1f)
+                alpha = shown
                 translationY = 8f * k * (1f - slide)
             }
             .clip(CircleShape)
@@ -1016,7 +1059,7 @@ private fun GameInfoHint(visible: Boolean, lift: () -> Float, onOpen: () -> Unit
         when (kind) {
             InputKind.CONTROLLER -> Bob(down = true) { GlyphButton(Glyph.DPAD_DOWN, 32) }
             InputKind.KEYBOARD -> Bob(down = true) { GlyphButton(Glyph.Cap(InputCap.ARROW_DOWN), 32) }
-            InputKind.TOUCH -> SwipeUpCue(visible)
+            InputKind.TOUCH -> SwipeUpCue(visible, progress)
             InputKind.POINTER -> Bob(down = true) { Symbol(Symbols.EXPAND_MORE, 24.tpx, Color.White, filled = true) }
         }
         BasicText(
@@ -1029,10 +1072,11 @@ private fun GameInfoHint(visible: Boolean, lift: () -> Float, onOpen: () -> Unit
 /**
  * A finger under two stacked upward chevrons (build/play-effect-proto/swipe-cue.html): each chevron rises 5 → -7 px and fades
  * .25 → 1 → .25 over 1.8 s ease-in-out, the upper one .18 s later. Drawn in one canvas whose clock runs only while it shows;
- * reduced motion keeps it still (the upper chevron at .6).
+ * reduced motion keeps it still (the upper chevron at .6). A finger lifting the cover fills them from the bottom ([progress]): each
+ * rises to its top, lights fully and grows bolder, the lower one over the first half, the upper one over the second.
  */
 @Composable
-private fun SwipeUpCue(visible: Boolean) {
+private fun SwipeUpCue(visible: Boolean, progress: () -> Float) {
     val reduced = com.limelight.shell.ui.LocalReducedMotion.current
     val k = LocalStage.current.dpPerPx * LocalDensity.current.density
     val accent = LocalDelosColors.current.accent
@@ -1048,14 +1092,16 @@ private fun SwipeUpCue(visible: Boolean) {
     val rise = remember { CubicBezierEasing(.42f, 0f, .58f, 1f) }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy((-4).px)) {
         Spacer(Modifier.size(26.px, 30.px).drawBehind {
-            val stroke = 3f * k
             val arm = 9f * k
+            val lifted = progress()
             for (i in 0..1) {
                 // 45 % of the cycle up, the rest back down (CSS keyframes 0 / 45 / 100 % with ease-in-out per segment)
                 val t = ((clock.value - i * 180f) / SWIPE_CUE_MS).let { it - kotlin.math.floor(it) }
                 val p = if (reduced) .5f else if (t < .45f) rise.transform(t / .45f) else 1f - rise.transform((t - .45f) / .55f)
-                val alpha = if (reduced) (if (i == 1) .6f else 1f) else .25f + .75f * p
-                val dy = if (reduced) 0f else Motion.lerp(5f, -7f, p) * k
+                val fill = (lifted * 2f - i).coerceIn(0f, 1f)
+                val alpha = Motion.lerp(if (reduced) (if (i == 1) .6f else 1f) else .25f + .75f * p, 1f, fill)
+                val dy = Motion.lerp(if (reduced) 0f else Motion.lerp(5f, -7f, p), -7f, fill) * k
+                val stroke = Motion.lerp(3f, 4.5f, fill) * k
                 val cy = (if (i == 0) 20f else 8f) * k + dy
                 val cx = size.width / 2f
                 val color = accent.copy(alpha = alpha)
@@ -1130,6 +1176,8 @@ private fun GameTile(
     index: Int,
     /** The focused cover records what it draws here (inside its corners, before its focus scale), the overview's flight draws it. */
     flight: GraphicsLayer?,
+    /** The focused cover lifted by a finger: how far (0…1, read while drawing); its art zooms and drifts against the lift. */
+    lift: (() -> Float)?,
     /** The game has custom per-game settings: a small icon in the top-right corner. */
     custom: Boolean,
     badge: TileBadge?,
@@ -1226,7 +1274,18 @@ private fun GameTile(
     ) {
         // The picture (still and animated) records itself for the glass on it, only while it carries some (a badge, a corner pill, the spinner,
         // the focused cover's Game info chip): a cover without glass is no extra layer
-        Box(Modifier.matchParentSize().then(if (focused || badge != null || custom || hidden || artwork.isBusy(pc, app)) Modifier.coverArtSource() else Modifier)) {
+        val stage = LocalStage.current
+        Box(
+            Modifier.matchParentSize()
+                .then(if (focused || badge != null || custom || hidden || artwork.isBusy(pc, app)) Modifier.coverArtSource() else Modifier)
+                .then(if (lift != null) Modifier.graphicsLayer {
+                    val l = lift()
+                    val zoom = 1f + OverviewMotion.ART_ZOOM * l
+                    scaleX = zoom
+                    scaleY = zoom
+                    translationY = OverviewMotion.ART_PARALLAX * l * stage.dpPerPx * density
+                } else Modifier),
+        ) {
             Crossfade(shown, animationSpec = tween(400), label = "cover") { img ->
                 if (img != null) {
                     CoverImage(img, app.name, Modifier.fillMaxSize(), coverFilter)

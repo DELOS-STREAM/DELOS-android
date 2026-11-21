@@ -324,13 +324,16 @@ internal fun GameOverview(
         sectionsIn.animateTo(1f, tween(Motion.FADE, easing = Motion.Ease))
     }
 
+    // How far a finger has pulled the page down at its top (screen pixels)
+    var pull by remember { mutableStateOf(0f) }
     // Closing: the page scrolls back to its top first, then every motion reverses. The card takes the focus back as the motion
-    // begins: its focus look (scale, ring) settles while it is still hidden, so it is in place when the cover lands on it
-    val close: () -> Unit = {
+    // begins: its focus look (scale, ring) settles while it is still hidden, so it is in place when the cover lands on it. A finger
+    // that pulled the page down hands its speed ([velocityY], screen pixels per second of the cover) to the flight
+    val close: (Float) -> Unit = { velocityY ->
         if (!controller.leaving) {
             feedback.play(Cue.BACK)
             focus.alpha.let { a -> scope.launch { a.animateTo(0f, tween(200)) } }
-            controller.close {
+            controller.close(velocityY, slotShift = pull * OverviewMotion.PULL_FOLLOW) {
                 onLeaving()
                 if (scroll.value > 1) scroll.animateScrollTo(0, tween(if (reduced) 0 else 420, easing = OverviewMotion.InOut))
             }
@@ -339,7 +342,7 @@ internal fun GameOverview(
     val currentClose by rememberUpdatedState(close)
     // Back while the overview is already leaving is swallowed: it must not reach the dashboard (and leave the app)
     BackHandler(enabled = controller.app != null) {
-        if (viewer != null) viewer = viewer?.copy(closing = true) else currentClose()
+        if (viewer != null) viewer = viewer?.copy(closing = true) else currentClose(0f)
     }
     // The viewer keeps the items it opened with, so its indices hold while a video drops out of the carousel; these map them back
     val viewerMedia = remember(viewer != null) { media }
@@ -385,8 +388,7 @@ internal fun GameOverview(
         runCatching { playRequester.requestFocus() }
     }
 
-    // Pulling the page down at its top follows the finger; far enough closes
-    var pull by remember { mutableStateOf(0f) }
+    // Pulling the page down at its top ([pull], declared above) follows the finger; far enough closes, the cover flying on from where the finger left it
     val pullConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -408,7 +410,7 @@ internal fun GameOverview(
 
             override suspend fun onPreFling(available: Velocity): Velocity {
                 if (pull <= 0f) return Velocity.Zero
-                if (pull / k > OverviewMotion.PULL_CLOSES) currentClose()
+                if (pull / k > OverviewMotion.PULL_CLOSES) currentClose(available.y * OverviewMotion.PULL_FOLLOW)
                 else Animatable(pull).animateTo(0f, tween(500, easing = com.limelight.shell.ui.EaseSpring)) { pull = value }
                 if (!controller.leaving) pull = 0f
                 return available
@@ -472,7 +474,7 @@ internal fun GameOverview(
                 val next = focus.navigator.move(from, direction, focus.navTargets(r))
                 if (next != null) runCatching { focus.targets[next]?.requester?.requestFocus() }
                 // Up from the header goes back to the dashboard, the natural reverse of Down
-                else if (direction == NavDirection.UP && parts[from]?.section == HEAD) currentClose()
+                else if (direction == NavDirection.UP && parts[from]?.section == HEAD) currentClose(0f)
                 true
             },
     ) {
@@ -502,7 +504,7 @@ internal fun GameOverview(
                 ) {
                     // The ring draws in a layer of its own over the page: its glide and the carousels scrolling under it redraw
                     // only that layer, never re-record the whole page
-                    Box(Modifier.fillMaxWidth().graphicsLayer { translationY = pull * .45f }) {
+                    Box(Modifier.fillMaxWidth().graphicsLayer { translationY = pull * OverviewMotion.PULL_FOLLOW }) {
                     Column(
                         Modifier
                             .fillMaxWidth()
@@ -542,7 +544,7 @@ internal fun GameOverview(
                                     }
                                     OverviewModel.Section.SIMILAR -> SimilarSection(details!!, pc, library, similarRow, parts, onPartFocused, { hovered = true }, coverArt) { owned, name ->
                                         if (owned != null) {
-                                            currentClose()
+                                            currentClose(0f)
                                             onJump(owned)
                                         }
                                         else shell.showToast(res.getString(R.string.overview_not_in_library, name), Symbols.INFO)
@@ -578,7 +580,7 @@ internal fun GameOverview(
                     .size(72.px)
                     .overviewGlass(pageHaze, 36f)
                     .semantics { contentDescription = res.getString(R.string.shell_hint_back) }
-                    .pointerInput(Unit) { detectTapGestures { currentClose() } },
+                    .pointerInput(Unit) { detectTapGestures { currentClose(0f) } },
                 contentAlignment = Alignment.Center,
             ) { Symbol(Symbols.ARROW_BACK, 34.tpx, colors.text) }
         }
@@ -695,11 +697,14 @@ private fun Header(
             Box(
                 Modifier
                     .size(COVER_W.px, COVER_H.px)
-                    // Where the slot is on screen: it does not move while the cover flies (the page is at its top, nothing lays out).
-                    // Known, the flight takes over from the dashboard's card
+                    // Where the slot is on screen with the page at rest: it does not move while the cover flies (the page is at its top,
+                    // nothing lays out). A finger's pull moves it by the page's translation, which the closing adds itself. Known, the
+                    // flight takes over from the dashboard's card
                     .onGloballyPositioned {
-                        pose.slot = it.rootRect()
-                        controller.placeCover()
+                        if (pull() != 0f) return@onGloballyPositioned
+                        val slot = it.rootRect()
+                        pose.slot = slot
+                        controller.placeCover(slot, OverviewMotion.ARC * k)
                     }
                     // The flying ring redraws every frame: in a layer of its own, so the header around it is not recorded again
                     .graphicsLayer()
@@ -1652,7 +1657,8 @@ private class CoverPose {
         frameWidth = w
         frameHeight = h
         val from = controller.from
-        val to = slot
+        // Closing, where a finger's pull left the slot (the page's translation)
+        val to = if (controller.closing) slot?.translate(0f, pulled * OverviewMotion.PULL_FOLLOW) else slot
         val moving = controller.opening || controller.closing
         if (controller.reduced) {
             alpha = when {
@@ -1662,7 +1668,11 @@ private class CoverPose {
             }
         } else if (moving && from != null && to != null && to.width > 0f && w > 0f) {
             val p = controller.flight.value
-            val f = OverviewMotion.cover(p, from, to, OverviewMotion.ARC * k)
+            // A closing leaves from the cover as a finger let it go (shrunk in its slot) and lands on the card at rest
+            val f = if (controller.closing) OverviewMotion.cover(
+                p, OverviewMotion.closingFrom(p, controller.closeStart, from, controller.back ?: from),
+                OverviewMotion.releaseSlot(to, OverviewMotion.pulledScale(pulled / k)), OverviewMotion.ARC * k,
+            ) else OverviewMotion.cover(p, from, to, OverviewMotion.ARC * k)
             // Screen pixels in the cover's own (1 unless something above the page scales it)
             val r = w / to.width
             val fw = f.rect.width * r
@@ -1676,6 +1686,7 @@ private class CoverPose {
             frameWidth = fw / s
             frameHeight = fh / s
             card = OverviewMotion.cardShown(p)
+            if (!controller.closing) alpha = OverviewMotion.flightAlpha(p, controller.fromAlpha)
             shape = FrameShape(frameLeft, frameTop, frameWidth, frameHeight, f.corner * k * r / s)
             return this
         } else if (moving && from != null) {
@@ -1683,7 +1694,7 @@ private class CoverPose {
             alpha = 0f
         } else {
             // Pulled down by a finger at the top, the cover shrinks a little
-            scale = 1f - min(pulled / k, 300f) / 2400f
+            scale = OverviewMotion.pulledScale(pulled / k)
         }
         shape = rest ?: RoundedCornerShape(OverviewMotion.TO_CORNER * k).also { rest = it }
         return this
