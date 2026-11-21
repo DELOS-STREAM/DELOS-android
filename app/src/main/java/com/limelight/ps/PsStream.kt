@@ -295,7 +295,8 @@ class PsStream(
     private fun sendCongestion() {
         val gk = gkSend ?: return
         val received = assembler.unitsReceived.also { assembler.unitsReceived = 0 }
-        val lost = assembler.unitsLost.also { assembler.unitsLost = 0 }
+        // Sporadic Wi-Fi loss is reported as at most 3 %: FEC hides it, and a higher figure makes the console drop its bitrate (5.8)
+        val lost = assembler.unitsLost.also { assembler.unitsLost = 0 }.coerceAtMost(received * 3 / 100)
         val position = takePosition(15)
         val d = ByteBuffer.allocate(15).order(ByteOrder.BIG_ENDIAN).apply {
             put(5); putShort(0); putShort(received.coerceAtMost(0xFFFF).toShort()); putShort(lost.coerceAtMost(0xFFFF).toShort()); putInt(0); putInt(0)

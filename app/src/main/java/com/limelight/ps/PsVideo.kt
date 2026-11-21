@@ -86,11 +86,15 @@ class PsFrameAssembler {
 
     private var flushedIndex = -1
 
+    /** Units expected and received for the frame being counted; settled when the next frame starts, so late parities count. */
+    private var statTotal = 0
+    private var statReceived = 0
+
     /** Adds a unit; returns a finished frame or a loss range when one becomes known. */
     fun add(p: PsAvPacket): List<Result> {
         val out = ArrayList<Result>()
-        // Late units (parities) of a frame that is already out
-        if (p.frameIndex == flushedIndex) return out
+        // Late units (parities) of a frame that is already out still count as received
+        if (p.frameIndex == flushedIndex) { statReceived++; return out }
         if (p.frameIndex != frameIndex) {
             if (frameIndex >= 0 && received > 0) flush()?.let { out += it }
             begin(p)
@@ -98,12 +102,17 @@ class PsFrameAssembler {
         if (p.unitIndex >= units.size || p.payload.size > unitSize || units[p.unitIndex] != null) return out
         units[p.unitIndex] = p.payload.copyOf(unitSize)
         received++
+        statReceived++
         // S units of any kind are enough: missing sources come back from the parities
         if (received >= sources) flush()?.let { out += it }
         return out
     }
 
     private fun begin(p: PsAvPacket) {
+        unitsReceived += statReceived
+        unitsLost += maxOf(0, statTotal - statReceived)
+        statTotal = p.unitsInFrame
+        statReceived = 0
         val previous = lastComplete
         frameIndex = p.frameIndex
         fec = p.fecOrAudioDesc
@@ -124,8 +133,6 @@ class PsFrameAssembler {
         frameIndex = -1
         flushedIndex = idx
         val missingSources = (0 until sources).count { units[it] == null }
-        unitsReceived += received
-        unitsLost += maxOf(0, units.size - received)
         var recovered = false
         if (missingSources > 0) {
             if (!PsFec.decode(units, sources, units.size - sources)) return Result.Lost(idx, idx)

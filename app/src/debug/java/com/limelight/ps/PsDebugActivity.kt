@@ -107,7 +107,7 @@ class PsDebugActivity : Activity() {
         say("Saved console: ${prefs.getString("nickname", "none")}")
     }
 
-    private fun say(text: String) = runOnUiThread { log.append("$text\n") }
+    private fun say(text: String) { android.util.Log.i("PsBench", text); runOnUiThread { log.append("$text\n") } }
 
     private fun broadcast(): InetAddress = InetAddress.getByName("255.255.255.255")
 
@@ -202,25 +202,44 @@ class PsDebugActivity : Activity() {
         override fun onAudio(opus: ByteArray, frameIndex: Int) { audio?.play(opus, frameIndex) }
     }
 
+    /** Frames waiting for a decoder input buffer; the codec runs asynchronously, so the network thread never waits for it. */
+    private val pending = java.util.concurrent.LinkedBlockingQueue<Pair<ByteArray, Int>>()
+    private val freeInputs = java.util.concurrent.LinkedBlockingQueue<Int>()
+    private var framesShown = 0
+    private var statsAt = 0L
+
     private fun startDecoder(holder: SurfaceHolder, width: Int, height: Int, header: ByteArray) {
         if (codec != null) return
         val format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_HEVC, width, height)
         format.setInteger(MediaFormat.KEY_LOW_LATENCY, 1)
-        codec = MediaCodec.createDecoderByType(MediaFormat.MIMETYPE_VIDEO_HEVC).apply {
-            configure(format, holder.surface, null, 0)
-            start()
-        }
-        feed(header, MediaCodec.BUFFER_FLAG_CODEC_CONFIG)
+        format.setInteger(MediaFormat.KEY_PRIORITY, 0)
+        val c = MediaCodec.createDecoderByType(MediaFormat.MIMETYPE_VIDEO_HEVC)
+        c.setCallback(object : MediaCodec.Callback() {
+            override fun onInputBufferAvailable(codec: MediaCodec, index: Int) { freeInputs.add(index); pump() }
+            override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: MediaCodec.BufferInfo) {
+                codec.releaseOutputBuffer(index, true)
+                framesShown++
+                val now = System.nanoTime()
+                if (now - statsAt > 2_000_000_000L) { say("shown ${framesShown / 2} fps"); framesShown = 0; statsAt = now }
+            }
+            override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) { say("decoder error: ${e.diagnosticInfo}") }
+            override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {}
+        })
+        c.configure(format, holder.surface, null, 0)
+        codec = c
+        pending.add(header to MediaCodec.BUFFER_FLAG_CODEC_CONFIG)
+        c.start()
     }
 
-    private fun feed(data: ByteArray, flags: Int = 0) {
+    private fun feed(data: ByteArray, flags: Int = 0) { pending.add(data to flags); pump() }
+
+    @Synchronized
+    private fun pump() {
         val c = codec ?: return
-        runCatching {
-            val i = c.dequeueInputBuffer(10_000)
-            if (i >= 0) { c.getInputBuffer(i)!!.apply { clear(); put(data) }; c.queueInputBuffer(i, 0, data.size, System.nanoTime() / 1000, flags) }
-            val info = MediaCodec.BufferInfo()
-            var o = c.dequeueOutputBuffer(info, 0)
-            while (o >= 0) { c.releaseOutputBuffer(o, true); o = c.dequeueOutputBuffer(info, 0) }
+        while (pending.isNotEmpty() && freeInputs.isNotEmpty()) {
+            val (data, flags) = pending.poll() ?: return
+            val i = freeInputs.poll() ?: return
+            runCatching { c.getInputBuffer(i)!!.apply { clear(); put(data) }; c.queueInputBuffer(i, 0, data.size, System.nanoTime() / 1000, flags) }
         }
     }
 
