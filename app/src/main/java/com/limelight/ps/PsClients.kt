@@ -29,7 +29,7 @@ internal object PsHttp {
             if (b.size >= 4 && b[b.size - 4] == '\r'.code.toByte() && b[b.size - 3] == '\n'.code.toByte() && b[b.size - 2] == '\r'.code.toByte() && b[b.size - 1] == '\n'.code.toByte()) break
             if (b.size > 16384) throw java.io.IOException("response header too long")
         }
-        val lines = buf.toString(Charsets.ISO_8859_1).split("\r\n")
+        val lines = String(buf.toByteArray(), Charsets.ISO_8859_1).split("\r\n")
         val status = Regex("""^HTTP/1\.[01] (\d{3})""").find(lines.first())?.groupValues?.get(1)?.toInt() ?: throw java.io.IOException("bad status line: ${lines.first()}")
         val headers = lines.drop(1).mapNotNull { l -> l.indexOf(':').takeIf { it > 0 }?.let { l.substring(0, it).trim().lowercase() to l.substring(it + 1).trim() } }.toMap()
         return PsHttpResponse(status, headers, ByteArray(0))
