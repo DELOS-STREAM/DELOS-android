@@ -86,6 +86,7 @@ and the texts of the app. A rule changes only by a change of this file that the 
 | R3 | The release build is built, linted and smoke-tested on a device before the tag. | Minification and signing only run in the release variant. | CI "Build release APKs"; release checklist |
 | R4 | Versions follow [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) against the public API declared in [VERSIONING.md](VERSIONING.md#public-api). | A version number that follows no rule tells the user nothing about an update. | Release checklist |
 | R5 | `CHANGELOG.md` follows [Keep a Changelog 1.0.0](https://keepachangelog.com/en/1.0.0/): `[Unreleased]` on top, versions newest first with ISO dates, only the headings Added, Changed, Deprecated, Removed, Fixed and Security, a comparison link per version. | Users read one predictable list per version. | Review; release checklist |
+| R6 | A changelog entry is factual and half-technical but short: one or two sentences per change that an average player understands (what changed and what it means when playing); every change is listed, technical detail only where the player needs it (owner, 2026-11-21). | Players read the changelog; the long 1.2.0 entries were too much. | Review; release checklist |
 
 ## 8. Code
 
