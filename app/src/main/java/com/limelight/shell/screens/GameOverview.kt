@@ -305,10 +305,13 @@ internal fun GameOverview(
     val reduced by rememberUpdatedState(reducedMotion)
 
     val screenshotSize = if (stage.stageHeight > 1200f) IgdbImageSize.HD_1080 else IgdbImageSize.SCREENSHOT_HUGE
-    // Videos play only in the app: one YouTube will not embed is left out (YouTubeEmbeds), the moment that is known
+    // Videos play only in the app: a YouTube video YouTube will not embed is left out (YouTubeEmbeds), the moment that is known;
+    // Steam's trailers play natively
     val allMedia = remember(details, screenshotSize) { details?.let { OverviewModel.media(it, screenshotSize) }.orEmpty() }
-    LaunchedEffect(allMedia) { YouTubeEmbeds.check(allMedia.filter { it.kind == OverviewModel.MediaKind.VIDEO }.map { it.id }) }
-    val media by remember(allMedia) { derivedStateOf { allMedia.filter { it.kind != OverviewModel.MediaKind.VIDEO || YouTubeEmbeds.playable(it.id) } } }
+    LaunchedEffect(allMedia) { YouTubeEmbeds.check(allMedia.filter { it.kind == OverviewModel.MediaKind.VIDEO && it.stream == null }.map { it.id }) }
+    val media by remember(allMedia) {
+        derivedStateOf { allMedia.filter { it.kind != OverviewModel.MediaKind.VIDEO || it.stream != null || YouTubeEmbeds.playable(it.id) } }
+    }
     val links = remember(details, candidate) { details?.let { OverviewModel.links(it, candidate?.steamAppIds.orEmpty()) }.orEmpty() }
     val sections = remember(details, links, media) { OverviewModel.sections(details, links, media) }
 

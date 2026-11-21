@@ -26,7 +26,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 /**
- * The game overview's IGDB screenshots, artworks and covers and its YouTube thumbnails ([IgdbImageUrls]). The files sit in an HTTP
+ * The game overview's IGDB screenshots, artworks and covers, Steam's screenshots and its YouTube thumbnails ([IgdbImageUrls]). The files sit in an HTTP
  * disk cache of [DISK_BYTES] (cache/igdb-images, least recently used dropped first) keyed by URL, which names the image id and
  * size; an image of an id and size never changes, so every answer is kept as long as the disk allows. Decoded bitmaps are kept
  * in memory per URL and width.

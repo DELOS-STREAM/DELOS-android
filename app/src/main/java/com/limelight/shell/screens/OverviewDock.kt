@@ -175,8 +175,9 @@ internal fun ringRect(slot: DockSlot, bounds: Rect, k: Float): Rect = when (slot
  * The viewer's overlay, variant A · Dock (build/player-proto/a.html): a tall translucent glass dock along the bottom with the timeline
  * (elapsed, buffered and played, remaining), then the count and title left, the transport centred and the sound right; on a screenshot
  * the transport is previous, a page indicator and next. A glass close button sits top right. [overlay] is the overlay's visibility
- * (0–1, read in draw and layer blocks only); [cover] how much a Compose picture lies under the dock (the thumbnail before the video
- * plays: its blur is Compose's, over the playing video it is the page's own, [OverviewVideoPlayer.glass]).
+ * (0–1, read in draw and layer blocks only); [cover] how much a Compose picture lies under the dock (the thumbnail before a YouTube
+ * video plays: its blur is Compose's, over the playing YouTube video it is the page's own, [YouTubeVideoPlayer.glass]; a Steam trailer
+ * plays in the viewer's own tree, so Compose blurs it too).
  */
 @Composable
 internal fun ViewerDock(
@@ -302,7 +303,7 @@ private fun DockGlass(haze: HazeState, inWindow: Boolean, player: OverviewVideoP
         alpha = .6f
     })
     Box(modifier.graphicsLayer { alpha = overlay() * cover() }.clip(shape).backdropBlur(haze, 40f, tint.copy(alpha = .2f)))
-    if (inWindow && player?.glassSupported != true) Box(modifier.graphicsLayer { alpha = overlay() * (1f - cover()) }.clip(shape).background(tint.copy(alpha = .45f)))
+    if (inWindow && (player as? YouTubeVideoPlayer)?.glassSupported != true) Box(modifier.graphicsLayer { alpha = overlay() * (1f - cover()) }.clip(shape).background(tint.copy(alpha = .45f)))
     Box(
         modifier.graphicsLayer { alpha = overlay() }
             .background(Brush.verticalGradient(0f to Color.White.copy(alpha = .1f), .3f to Color.White.copy(alpha = .02f), 1f to Color.Transparent), shape)

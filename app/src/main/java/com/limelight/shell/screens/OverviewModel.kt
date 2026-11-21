@@ -26,19 +26,53 @@ internal object OverviewModel {
 
     enum class MediaKind { VIDEO, SCREENSHOT }
 
-    /** One item of the carousel and the viewer: a video's YouTube id or a screenshot's IGDB image id, its [thumb] and its [full] picture. */
-    data class Media(val kind: MediaKind, val id: String, val name: String?, val thumb: String, val full: String, val number: Int)
+    /**
+     * One item of the carousel and the viewer: its [thumb] (carousel) and [full] picture (viewer; a trailer's still until it plays). A
+     * video is a Steam trailer when it has a [stream] (HLS, else a progressive file, played natively; [id] is Steam's movie id) and a
+     * YouTube video otherwise ([id] is the YouTube id); a screenshot's [id] is Steam's or IGDB's.
+     */
+    data class Media(
+        val kind: MediaKind,
+        val id: String,
+        val name: String?,
+        val thumb: String,
+        val full: String,
+        val number: Int,
+        val stream: String? = null,
+    )
 
-    /** Videos first, then the screenshots (the prototype's order); [screenshotSize] is the viewer's picture (`screenshot_huge` on a 1080p stage). */
-    fun media(details: GameDetails, screenshotSize: IgdbImageSize = IgdbImageSize.SCREENSHOT_HUGE): List<Media> =
-        details.videos.mapIndexed { i, video ->
-            Media(MediaKind.VIDEO, video.videoId, video.name, IgdbImageUrls.youtubeThumb(video.videoId), IgdbImageUrls.youtubeStill(video.videoId), i + 1)
-        } + details.screenshots.mapIndexed { i, shot ->
-            Media(
-                MediaKind.SCREENSHOT, shot.imageId, null,
-                IgdbImageUrls.image(shot.imageId, IgdbImageSize.SCREENSHOT_MED), IgdbImageUrls.image(shot.imageId, screenshotSize), i + 1,
-            )
+    /**
+     * Videos first, then the screenshots (the prototype's order). Steam's media wins per kind: its trailers replace the YouTube videos
+     * and its screenshots IGDB's whenever Steam has any of that kind. Steam's own trailer stills are only 293 × 165, too small for a
+     * tile, so a trailer shows the first screenshot (Steam's, else IGDB's) as its poster. [screenshotSize] is the viewer's IGDB picture
+     * (`screenshot_huge` on a 1080p stage); Steam's screenshots are 600 × 338 in the carousel and 1920 × 1080 in the viewer.
+     */
+    fun media(details: GameDetails, screenshotSize: IgdbImageSize = IgdbImageSize.SCREENSHOT_HUGE): List<Media> {
+        val steamShots = details.steam?.screenshots.orEmpty()
+        val poster = steamShots.firstOrNull()?.let { (it.thumbnail ?: it.full) to it.full }
+            ?: details.screenshots.firstOrNull()?.let {
+                IgdbImageUrls.image(it.imageId, IgdbImageSize.SCREENSHOT_MED) to IgdbImageUrls.image(it.imageId, screenshotSize)
+            }
+        val trailers = details.steam?.movies.orEmpty().mapNotNull { movie ->
+            val stream = movie.hls ?: movie.mp4 ?: movie.webm ?: return@mapNotNull null
+            val (thumb, full) = poster ?: movie.thumbnail?.let { it to it } ?: return@mapNotNull null
+            Media(MediaKind.VIDEO, movie.id.toString(), movie.name, thumb, full, 0, stream)
         }
+        val videos = trailers.ifEmpty {
+            details.videos.map { video ->
+                Media(MediaKind.VIDEO, video.videoId, video.name, IgdbImageUrls.youtubeThumb(video.videoId), IgdbImageUrls.youtubeStill(video.videoId), 0)
+            }
+        }
+        val screenshots = steamShots.map { Media(MediaKind.SCREENSHOT, it.id.toString(), null, it.thumbnail ?: it.full, it.full, 0) }.ifEmpty {
+            details.screenshots.map { shot ->
+                Media(
+                    MediaKind.SCREENSHOT, shot.imageId, null,
+                    IgdbImageUrls.image(shot.imageId, IgdbImageSize.SCREENSHOT_MED), IgdbImageUrls.image(shot.imageId, screenshotSize), 0,
+                )
+            }
+        }
+        return videos.mapIndexed { i, item -> item.copy(number = i + 1) } + screenshots.mapIndexed { i, item -> item.copy(number = i + 1) }
+    }
 
     enum class LinkKind { OFFICIAL, STEAM, STORE, WIKI, VIDEO, OTHER }
 

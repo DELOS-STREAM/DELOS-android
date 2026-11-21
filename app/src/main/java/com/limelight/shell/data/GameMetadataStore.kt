@@ -459,7 +459,8 @@ class GameMetadataStore internal constructor(
     private data class CachedMetadata(val schema: Int, val data: GameMetadata)
 
     private companion object {
-        const val CACHE_SCHEMA = 7
+        /** 8: the details carry Steam's trailers and screenshots (`steam`); older files are fetched again once. */
+        const val CACHE_SCHEMA = 8
         const val LIBRARY_CONCURRENCY = 2
         const val KEY_GENRES = "metadata_filter_genres"
         const val KEY_THEMES = "metadata_filter_themes"

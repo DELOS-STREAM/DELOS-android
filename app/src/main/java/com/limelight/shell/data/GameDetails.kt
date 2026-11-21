@@ -51,6 +51,30 @@ data class DetailMultiplayer(
 @Immutable
 data class DetailExternalGame(val uid: String, val source: Int)
 
+/**
+ * One Steam trailer: [hls] (HLS master playlist), else [mp4] or [webm] (one progressive file), what the app plays; [dash] is listed for
+ * completeness. [thumbnail] is Steam's 293 × 165 still. Steam's newer answers carry only HLS and DASH, older ones only the files.
+ */
+@Immutable
+data class SteamMovie(
+    val id: Long,
+    val name: String?,
+    val thumbnail: String?,
+    val hls: String?,
+    val dash: String?,
+    val mp4: String?,
+    val webm: String?,
+    val highlight: Boolean,
+)
+
+/** One Steam screenshot: [thumbnail] 600 × 338, [full] 1920 × 1080. */
+@Immutable
+data class SteamScreenshot(val id: Long, val thumbnail: String?, val full: String)
+
+/** The game's Steam store media (the Worker's `steam` object): highlight trailers first. */
+@Immutable
+data class SteamMedia(val appId: Long, val movies: List<SteamMovie>, val screenshots: List<SteamScreenshot>)
+
 /** The game overview's IGDB data: the Worker's `v1/igdb/game-details` object (tools/metadata-worker/README.md, "Game details"). */
 @Immutable
 data class GameDetails(
@@ -90,12 +114,14 @@ data class GameDetails(
     val languages: List<String>,
     val multiplayer: DetailMultiplayer?,
     val externalGames: List<DetailExternalGame>,
+    /** Null when the game has no Steam match or Steam lists no media. */
+    val steam: SteamMedia? = null,
 )
 
 /**
  * Reads the Worker's game-details JSON. A missing or mistyped scalar becomes null (0 / false for counts and flags), a missing list
  * empty, and a list entry lacking what identifies it is dropped. Image and video ids that could not be put in a URL and links that
- * are not http(s) are dropped too, because the app builds URLs from them and opens them.
+ * are not http(s) are dropped too, because the app builds URLs from them and opens them; Steam's media URLs must be https.
  */
 object GameDetailsParser {
     private val mediaId = "[A-Za-z0-9_-]+".toRegex()
@@ -169,7 +195,25 @@ object GameDetailsParser {
                 val uid = entry.string("uid") ?: return@objects null
                 entry.int("source")?.let { DetailExternalGame(uid, it) }
             },
+            steam = game.member("steam")?.takeIf { it.isJsonObject }?.asJsonObject?.let(::steam),
         )
+    }
+
+    private fun steam(steam: JsonObject): SteamMedia? {
+        val appId = steam.long("appId")?.takeIf { it > 0 } ?: return null
+        val movies = steam.objects("movies") { entry ->
+            val id = entry.long("id")?.takeIf { it >= 0 } ?: return@objects null
+            val movie = SteamMovie(
+                id, entry.string("name"), entry.https("thumbnail"),
+                entry.https("hls"), entry.https("dash"), entry.https("mp4"), entry.https("webm"), entry.flag("highlight"),
+            )
+            movie.takeIf { it.hls != null || it.mp4 != null || it.webm != null }
+        }.distinctBy { it.id }.sortedByDescending { it.highlight }
+        val screenshots = steam.objects("screenshots") { entry ->
+            val id = entry.long("id")?.takeIf { it >= 0 } ?: return@objects null
+            entry.https("full")?.let { SteamScreenshot(id, entry.https("thumbnail"), it) }
+        }.distinctBy { it.id }
+        return SteamMedia(appId, movies, screenshots).takeIf { movies.isNotEmpty() || screenshots.isNotEmpty() }
     }
 
     private fun JsonObject.member(name: String): JsonElement? = get(name)?.takeUnless { it.isJsonNull }
@@ -193,6 +237,8 @@ object GameDetailsParser {
     private fun JsonObject.flag(name: String): Boolean = primitive(name)?.takeIf { it.isBoolean }?.asBoolean ?: false
 
     private fun JsonObject.mediaId(name: String): String? = string(name)?.takeIf { mediaId.matches(it) }
+
+    private fun JsonObject.https(name: String): String? = string(name)?.takeIf { it.startsWith("https://") && ' ' !in it }
 
     private fun JsonObject.array(name: String): List<JsonElement> = member(name)?.takeIf { it.isJsonArray }?.asJsonArray?.toList().orEmpty()
 

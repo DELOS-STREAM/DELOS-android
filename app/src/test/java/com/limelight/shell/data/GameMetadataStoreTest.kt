@@ -186,8 +186,8 @@ class GameMetadataStoreTest {
         val outdated = app(31, "Outdated")
         fun record(schema: Int) =
             """{"schema":$schema,"data":{"candidate":{"id":10,"name":"Game","genres":[{"id":12,"name":"RPG"}],"themes":[{"id":19,"name":"Horror"}]},"updatedAt":$now}}"""
-        fileOf(current).apply { parentFile!!.mkdirs(); writeText(record(7)) }
-        fileOf(outdated).writeText(record(6))
+        fileOf(current).apply { parentFile!!.mkdirs(); writeText(record(8)) }
+        fileOf(outdated).writeText(record(7))
         val providers = FakeProviders().apply { proxyAvailable = false }
         val store = newStore(providers)
         assertTrue(store.genres(pc, listOf(current)).isEmpty())
@@ -200,7 +200,7 @@ class GameMetadataStoreTest {
     @Test fun builtInOperationsLeavePreExistingCacheFilesUntouched() = runBlocking {
         val builtIns = builtIns()
         val cached = builtIns.associateWith { builtIn ->
-            """{"schema":7,"data":{"candidate":{"id":10,"name":"Game","genres":[{"id":12,"name":"RPG"}]},"hdr":{"support":"HDR"},"updatedAt":$now}}"""
+            """{"schema":8,"data":{"candidate":{"id":10,"name":"Game","genres":[{"id":12,"name":"RPG"}]},"hdr":{"support":"HDR"},"updatedAt":$now}}"""
                 .also { content -> fileOf(builtIn).apply { parentFile!!.mkdirs(); writeText(content) } }
         }
         val providers = FakeProviders()
@@ -799,13 +799,14 @@ class GameMetadataStoreTest {
 
     @Test fun corruptOrForeignCacheFilesAreIgnoredAndReplacedByAFreshLookup() = runBlocking {
         // Schema 3 records were classified by the old HDR/matching rules; schema 4 records carry no themes; schema 5 records
-        // carry no Steam tags; schema 6 records carry no overview details. All are looked up again.
+        // carry no Steam tags; schema 6 records carry no overview details; schema 7 details carry no Steam media. All are looked up again.
         for (content in listOf("{ not json", "", """{"schema":1,"data":{"candidate":{"id":1,"name":"Old"}}}""",
             """{"schema":3,"data":{"candidate":{"id":1,"name":"Old"},"updatedAt":$now}}""",
             """{"schema":4,"data":{"candidate":{"id":7,"name":"Game"},"updatedAt":$now}}""",
             """{"schema":5,"data":{"candidate":{"id":7,"name":"Game","steamAppIds":[100]},"updatedAt":$now}}""",
             """{"schema":6,"data":{"candidate":{"id":7,"name":"Game","steamAppIds":[100]},"updatedAt":$now}}""",
-            """{"schema":7,"data":{"candidate":{"id":1}}}""")) {
+            """{"schema":7,"data":{"candidate":{"id":7,"name":"Game","steamAppIds":[100]},"updatedAt":$now}}""",
+            """{"schema":8,"data":{"candidate":{"id":1}}}""")) {
             fileOf(game).apply { parentFile!!.mkdirs(); writeText(content) }
             val providers = FakeProviders().apply { onSearch = { listOf(candidate) } }
             val store = newStore(providers)
@@ -818,7 +819,7 @@ class GameMetadataStoreTest {
     @Test fun aCacheRecordMissingFieldsIsUsableWithoutCrashingAndKeepsUnknownHdrUnknown() = runBlocking {
         fileOf(game).apply {
             parentFile!!.mkdirs()
-            writeText("""{"schema":7,"data":{"candidate":{"id":7,"name":"Game"},"updatedAt":$now}}""")
+            writeText("""{"schema":8,"data":{"candidate":{"id":7,"name":"Game"},"updatedAt":$now}}""")
         }
         val providers = FakeProviders()
         val store = newStore(providers)
@@ -835,7 +836,7 @@ class GameMetadataStoreTest {
     @Test fun aRecordStampedInTheFutureIsRefreshedInsteadOfTrustedForever() = runBlocking {
         fileOf(game).apply {
             parentFile!!.mkdirs()
-            writeText("""{"schema":7,"data":{"candidate":{"id":7,"name":"Game"},"updatedAt":${now + 30 * day}}}""")
+            writeText("""{"schema":8,"data":{"candidate":{"id":7,"name":"Game"},"updatedAt":${now + 30 * day}}}""")
         }
         val providers = FakeProviders().apply { onSearch = { listOf(candidate) } }
         newStore(providers).ensure(pc, game)
