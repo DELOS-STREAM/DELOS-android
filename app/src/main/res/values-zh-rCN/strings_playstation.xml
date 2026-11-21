@@ -7,6 +7,8 @@
     <string name="ps_pair_new">添加主机</string>
     <string name="ps_pair_new_meta">PS5 · Remote Play</string>
     <string name="ps_console_meta">已配对 · PS5</string>
+    <string name="ps_rename_title">重命名主机</string>
+    <string name="ps_rename_note">新名称只在此设备的 DELOS 中使用。留空则使用主机自己的名称（%1$s）。</string>
     <string name="ps_console_remove">移除此主机</string>
     <string name="ps_console_removed">已移除 %1$s</string>
     <string name="ps_step_find">查找主机</string>

@@ -7,6 +7,8 @@
     <string name="ps_pair_new">Додати консоль</string>
     <string name="ps_pair_new_meta">PS5 · Remote Play</string>
     <string name="ps_console_meta">Сполучено · PS5</string>
+    <string name="ps_rename_title">Перейменувати консоль</string>
+    <string name="ps_rename_note">Нова назва діє лише в DELOS на цьому пристрої. Залиш порожнім для власної назви консолі (%1$s).</string>
     <string name="ps_console_remove">Видалити цю консоль</string>
     <string name="ps_console_removed">%1$s видалено</string>
     <string name="ps_step_find">Знайти консоль</string>

@@ -7,6 +7,8 @@
     <string name="ps_pair_new">Adicionar console</string>
     <string name="ps_pair_new_meta">PS5 · Remote Play</string>
     <string name="ps_console_meta">Pareado · PS5</string>
+    <string name="ps_rename_title">Renomear console</string>
+    <string name="ps_rename_note">O novo nome só é usado no DELOS neste aparelho. Deixe vazio para o nome do próprio console (%1$s).</string>
     <string name="ps_console_remove">Remover este console</string>
     <string name="ps_console_removed">%1$s removido</string>
     <string name="ps_step_find">Encontrar console</string>

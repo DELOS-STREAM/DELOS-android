@@ -8,6 +8,8 @@
     <string name="ps_pair_new">Add console</string>
     <string name="ps_pair_new_meta">PS5 · Remote Play</string>
     <string name="ps_console_meta">Paired · PS5</string>
+    <string name="ps_rename_title">Rename console</string>
+    <string name="ps_rename_note">The new name is only used in DELOS on this device. Leave it empty for the console\'s own name (%1$s).</string>
     <string name="ps_console_remove">Remove this console</string>
     <string name="ps_console_removed">%1$s removed</string>
     <string name="ps_step_find">Find console</string>

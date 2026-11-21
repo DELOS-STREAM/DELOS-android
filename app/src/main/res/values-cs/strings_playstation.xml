@@ -7,6 +7,8 @@
     <string name="ps_pair_new">Přidat konzoli</string>
     <string name="ps_pair_new_meta">PS5 · Remote Play</string>
     <string name="ps_console_meta">Spárováno · PS5</string>
+    <string name="ps_rename_title">Přejmenovat konzoli</string>
+    <string name="ps_rename_note">Nový název se používá jen v DELOS na tomto zařízení. Nech prázdné pro vlastní název konzole (%1$s).</string>
     <string name="ps_console_remove">Odebrat tuto konzoli</string>
     <string name="ps_console_removed">%1$s odebrána</string>
     <string name="ps_step_find">Najít konzoli</string>

@@ -7,6 +7,8 @@
     <string name="ps_pair_new">本体を追加</string>
     <string name="ps_pair_new_meta">PS5 · Remote Play</string>
     <string name="ps_console_meta">登録済み · PS5</string>
+    <string name="ps_rename_title">本体の名前を変更</string>
+    <string name="ps_rename_note">新しい名前はこのデバイスの DELOS でのみ使われます。空欄にすると本体の名前（%1$s）に戻ります。</string>
     <string name="ps_console_remove">この本体を削除</string>
     <string name="ps_console_removed">%1$s を削除しました</string>
     <string name="ps_step_find">本体を探す</string>

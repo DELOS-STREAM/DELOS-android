@@ -64,11 +64,17 @@ class PsConsoleStore(context: Context) {
 
     fun remove(id: String) = save(flow.value.filter { it.id != id })
 
+    /** Names the console [id] in DELOS; a blank name goes back to the console's own name (its nickname from pairing). */
+    fun rename(id: String, name: String) = save(flow.value.map { c ->
+        if (c.id != id) c else c.copy(name = name.trim().ifEmpty { c.console.nickname ?: c.name })
+    })
+
     private fun save(list: List<PsConsole>) {
         val enc = Base64.getEncoder()
         val array = JSONArray()
         for (c in list) array.put(JSONObject().put("id", c.id).put("name", c.name).put("address", c.address).put("target", c.console.target.name)
-            .put("regist", enc.encodeToString(c.console.registKey)).put("morning", enc.encodeToString(c.console.morning)).put("mac", enc.encodeToString(c.console.mac)))
+            .put("regist", enc.encodeToString(c.console.registKey)).put("morning", enc.encodeToString(c.console.morning)).put("mac", enc.encodeToString(c.console.mac))
+            .put("nickname", c.console.nickname ?: c.name))
         prefs.edit().putString("list", array.toString()).apply()
         flow.value = list
     }
@@ -90,7 +96,7 @@ class PsConsoleStore(context: Context) {
                 val o = array.getJSONObject(i)
                 PsConsole(o.getString("id"), o.getString("name"), o.getString("address"), PsRegisteredConsole(
                     PsTarget.valueOf(o.getString("target")), dec.decode(o.getString("regist")), dec.decode(o.getString("morning")),
-                    dec.decode(o.getString("mac")), o.getString("name"), null))
+                    dec.decode(o.getString("mac")), o.optString("nickname", o.getString("name")), null))
             }
         }.getOrDefault(emptyList())
     }

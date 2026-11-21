@@ -107,6 +107,23 @@ fun PsStartContent(profileName: String?) {
     val shell = LocalShell.current
     val res = textResources()
     val store = remember { PsConsoleStore.get(context) }
+    val tracker = com.limelight.shell.LocalFocusTracker.current
+    val feedback = com.limelight.shell.ui.LocalFeedback.current
+    // The same rename dialog as a PC's: the name is used in DELOS only; empty goes back to the console's own name
+    fun rename(c: PsConsole) {
+        feedback.play(Cue.OPEN)
+        shell.openLayer(com.limelight.shell.Layer.Dialog(com.limelight.shell.DialogSpec(
+            res.getString(R.string.ps_rename_title),
+            res.getString(R.string.ps_rename_note, c.console.nickname ?: c.name),
+            listOf(com.limelight.shell.DialogField(Symbols.EDIT, initial = c.name, maxLength = 24)),
+            res.getString(R.string.devices_rename_action),
+        ) { (name) ->
+            store.rename(c.id, name)
+            feedback.play(Cue.SELECT)
+            shell.showToast(res.getString(R.string.devices_rename_done_toast, name.trim().ifEmpty { c.console.nickname ?: c.name }), Symbols.CHECK_CIRCLE)
+            true
+        }), tracker)
+    }
     val consoles by store.consoles.collectAsStateWithLifecycle()
     val first = remember { FocusRequester() }
     InitialFocus(first, consoles.size)
@@ -123,6 +140,7 @@ fun PsStartContent(profileName: String?) {
                     modifier = if (i == 0) Modifier.focusRequester(first) else Modifier,
                     meta = stringResource(R.string.ps_console_meta), big = true, selected = i == 0,
                     contextMenu = ContextMenu(c.name, below = true, items = listOf(
+                        MenuItem(Symbols.EDIT, res.getString(R.string.devices_menu_rename)) { rename(c) },
                         MenuItem(Symbols.CLOSE, res.getString(R.string.ps_console_remove)) {
                             store.remove(c.id)
                             shell.showToast(res.getString(R.string.ps_console_removed, c.name), Symbols.CHECK_CIRCLE)
