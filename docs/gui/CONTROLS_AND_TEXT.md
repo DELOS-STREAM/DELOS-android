@@ -381,7 +381,7 @@ interface scale). The component is `MarqueeText` / `MarqueeContent` in `shell/ui
 
 | Test | What it enforces |
 |---|---|
-| `InputKindTest` | The input kind after event sequences (touch, click, key, button, stick, connect, disconnect), as DELOS for Apple tests them. |
+| `InputKindTest` | The input kind after event sequences (touch, click, key, button, stick, connect, disconnect). |
 | `HintKindsTest` | The hints and pill glyphs for each input kind, and the visibility rules. |
 | `ImeShiftTest` | The arithmetic of the keyboard-avoidance shift (`ImeShift`). |
 | `MarqueeMotionTest` | `MarqueeMotion.bounceOffset`, the motion of a row that goes to its end and back. |
