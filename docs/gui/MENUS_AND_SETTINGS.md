@@ -325,7 +325,7 @@ A tap is not the A button on a settings row ([#92](https://github.com/DELOS-STRE
 
 ### 7.2 Options list
 
-The list is the **contextual popover**: the stream menu's popover card (glass, one outline with its caret; `cardCaretPath` in `ui/CardCaret.kt`, `paintPopoverGlass` in `StreamMenuPopover.kt`) grown out of the tapped row, on both platforms (the iPad has the same). It is not a context menu: it has no header.
+The list is the **contextual popover**: the stream menu's popover card (glass, one outline with its caret; `cardCaretPath` in `ui/CardCaret.kt`, `paintPopoverGlass` in `StreamMenuPopover.kt`) grown out of the tapped row. It is not a context menu: it has no header.
 
 | Element | Value |
 |---|---|
@@ -749,7 +749,7 @@ right, right. Then it rests.
 
 The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verified).
 
-Touch on settings rows ([7.1](#71-touch) to [7.3](#73-slider-popup)): the unit tests cover the rules and the arithmetic, not the look. Not verified on a device: the position and look of the contextual card (caret, motion) against the iPad's, the size of the slider popup's controls under a finger, the on-screen keyboard lifting the slider popup (also in the stream menu's window), a hold on the ◀ and ▶ buttons, and the popups in the stream menu.
+Touch on settings rows ([7.1](#71-touch) to [7.3](#73-slider-popup)): the unit tests cover the rules and the arithmetic, not the look. Not verified on a device: the position and look of the contextual card (caret, motion), the size of the slider popup's controls under a finger, the on-screen keyboard lifting the slider popup (also in the stream menu's window), a hold on the ◀ and ▶ buttons, and the popups in the stream menu.
 
 Side menu by touch ([14](#14-side-menu-by-touch)): `SideMenuSwipeTest` covers the decisions only. Not verified on a device: the panel following the finger, the rubber band, the settle spring, the scrim during a drag, and the exclusion band with gesture navigation.
 
