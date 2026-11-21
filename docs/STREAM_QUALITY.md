@@ -53,6 +53,40 @@ on a local network. The state is information for the user, who can then change t
 not refuse a stream whose video or audio is in clear and has no setting that forces encryption. The security
 model as a whole is in [SECURITY.md](../SECURITY.md).
 
+## Phase lock
+
+**Phase lock** (`frame_pacing=phase-lock`, persisted mode ID 5) precedes Fast V-Sync in the
+settings, per-app settings and stream-menu lists. The default remains Latency; existing mode IDs
+and stored values are unchanged. Phase lock and Fast V-Sync take precedence over Balanced LFR.
+Neither choice is offered for PyroWave's separate native Vulkan path.
+
+`PhaseLockPacer` is an allocation-free timing model, not a codec or presentation implementation.
+Its consumer supplies monotonic presentation and CPU deadlines, the refresh period, measured
+remaining rendering work and the expected arrival time of the next decoded frame. The latest
+safe drawing time is the earlier deadline minus rendering work and a 0.5 ms guard, capped before
+the next callback. Unknown rendering work permits drawing an available frame immediately, but
+never parking for an unmeasured budget. An expired budget is not clamped forward to the current time.
+
+For a new refresh, an available frame yields `DRAW`; otherwise a predicted arrival within that
+budget yields `PARK`. A frame arriving by the parked deadline can still join that refresh. A late
+arrival or deadline expiry yields `EXPIRE`, never a submission into the expired refresh. Duplicate
+callbacks cannot submit twice to the same target. Reset clears the timing epoch and counters.
+The caller retains ownership of its newest decoded buffer and decides whether to keep it for
+the next refresh; `EXPIRE` does not itself discard a buffer.
+
+The MediaCodec/SGSR consumer must serialize the model's primitive state, copy the chosen target
+while serialized, then perform codec/EGL release outside that lock. It must supply actual refresh
+deadlines and measured rendering work, wake parked decisions on either frame arrival or deadline,
+and reset on flush, recovery and display reattachment. Timestamped codec release alone does not
+schedule an SGSR swap: the GL presentation path must honor the same budget.
+
+The pure fake-clock tests cover parking, same-refresh arrival, deadline equality, expiry,
+duplicate callbacks, unknown measurements and reset. Decision counters are not measured panel
+presentations or repeats. Device acceptance requires comparable Fast V-Sync/Phase lock runs on
+the Odin: identical stream/display rates and SGSR settings, decoder-to-present timing, late and
+repeated refreshes, dropped frames, and CPU/GPU work after warm-up. No latency advantage is
+established by the timing-model tests alone.
+
 ## Fast V-Sync and asynchronous decoding
 
 **Fast V-Sync (Nano Pacer)** is a separate `frame_pacing` choice; the existing default remains Latency.

@@ -6,7 +6,7 @@
     <string name="help_seekbar_metered_bitrate_kbps">Бітрейт у мережі з лімітом трафіку (мобільні дані, деякі точки доступу). 0 — чверть звичайного бітрейту.</string>
     <string name="help_frame_pacing">Режими Warp можуть працювати не на кожному пристрої.</string>
     <string name="help_checkbox_async_decode">Зворотні виклики MediaCodec замість опитування. Лише H.264, HEVC і AV1. Вимкни, якщо декодування нестабільне.</string>
-    <string name="help_pref_low_latency_frame_balance">Збалансований frame pacing, який частіше опитує декодер. Перекриває інший frame pacing MediaCodec, крім Fast V-Sync. Залежить від пристрою.</string>
+    <string name="help_pref_low_latency_frame_balance">Збалансований frame pacing, який частіше опитує декодер. Перекриває інший frame pacing MediaCodec, крім Fast V-Sync і фазової синхронізації. Залежить від пристрою.</string>
     <string name="help_checkbox_ultra_low_latency">Додаткові параметри низької затримки MediaCodec. Виграш залежить від чипа й драйвера. Вимкни, якщо відео нестабільне.</string>
     <string name="help_checkbox_use_virtual_display">Просить Vibepollo або Apollo створити віртуальний екран ПК із потрібними роздільною здатністю й FPS. Потрібна підтримка хоста.</string>
     <string name="help_checkbox_auto_orientation">Запускає стрім у поточній портретній або альбомній орієнтації пристрою. Робочий стіл ПК не обертається.</string>
@@ -119,6 +119,7 @@
     <string name="help_frame_pacing_smoothness">Рівна подача; додає буферизацію й затримку.</string>
     <string name="help_frame_pacing_warp">Просить удвічі більше FPS (з 60 до 120); показує найновіший кадр.</string>
     <string name="help_frame_pacing_warp2">Просить вчетверо більше FPS (з 60 до 240).</string>
+    <string name="help_frame_pacing_phase_lock">Очікує запізнілі кадри до останнього безпечного моменту рендерингу для наступного оновлення екрана. Лише MediaCodec.</string>
     <string name="help_frame_pacing_fast_vsync">Синхронізує з меншим із FPS і частоти оновлення. Лише MediaCodec.</string>
     <string name="help_video_format_auto">Вибирає H.264 або HEVC. AV1 і PyroWave треба вибирати вручну.</string>
     <string name="help_video_format_forceav1">Ефективний на низьких бітрейтах. Потрібне кодування AV1 на хості й декодування тут.</string>
@@ -171,6 +172,7 @@
     <string name="help_note_pyrowave_recommends">PyroWave радить тут %1$d Mbps.</string>
     <string name="help_note_lfr_balanced">LFR увімкнено: використано Збалансований.</string>
     <string name="help_note_fast_vsync_lfr">Fast V-Sync перекриває LFR.</string>
+    <string name="help_note_phase_lock_lfr">Фазова синхронізація перекриває LFR.</string>
     <string name="help_note_not_with_pyrowave">Не використовується з PyroWave.</string>
     <string name="help_note_needs_pyrowave">Потрібен кодек PyroWave.</string>
     <string name="help_note_hdr_420">HDR увімкнено: використано 4:2:0.</string>

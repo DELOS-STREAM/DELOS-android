@@ -72,6 +72,8 @@ object SettingsHelp {
             key == "seekbar_bitrate_kbps" -> pyroWaveRecommendedBitrateKbps(values)?.let {
                 res.getString(R.string.help_note_pyrowave_recommends, it / 1000)
             }.orEmpty()
+            key == "frame_pacing" && values["pref_low_latency_frame_balance"] == true && values[key] == "phase-lock" ->
+                res.getString(R.string.help_note_phase_lock_lfr)
             key == "frame_pacing" && values["pref_low_latency_frame_balance"] == true && values[key] != "fast-vsync" ->
                 res.getString(R.string.help_note_lfr_balanced)
             key == "frame_pacing" && values["pref_low_latency_frame_balance"] == true && values[key] == "fast-vsync" ->

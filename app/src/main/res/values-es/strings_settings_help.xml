@@ -6,7 +6,7 @@
     <string name="help_seekbar_metered_bitrate_kbps">Bitrate en una red de datos limitados (datos móviles, algunos puntos de acceso). Con 0 se usa una cuarta parte del bitrate normal.</string>
     <string name="help_frame_pacing">Los modos Warp pueden no funcionar en todos los dispositivos.</string>
     <string name="help_checkbox_async_decode">Callbacks de MediaCodec en lugar de sondeo. Solo H.264, HEVC y AV1. Desactívalo si la decodificación es inestable.</string>
-    <string name="help_pref_low_latency_frame_balance">Frame pacing equilibrado que sondea el decodificador con más frecuencia. Sustituye al resto del pacing de MediaCodec salvo Fast V-Sync. Depende del dispositivo.</string>
+    <string name="help_pref_low_latency_frame_balance">Frame pacing equilibrado que sondea el decodificador con más frecuencia. Sustituye al resto del pacing de MediaCodec salvo Fast V-Sync y Bloqueo de fase. Depende del dispositivo.</string>
     <string name="help_checkbox_ultra_low_latency">Opciones extra de baja latencia de MediaCodec. La mejora depende del chip y del controlador. Desactívalo si el vídeo es inestable.</string>
     <string name="help_checkbox_use_virtual_display">Pide a Vibepollo o Apollo una pantalla virtual del PC con la resolución y los FPS solicitados. Requiere compatibilidad del host.</string>
     <string name="help_checkbox_auto_orientation">Inicia el stream con la orientación vertical u horizontal actual del dispositivo. El escritorio del PC no se gira.</string>
@@ -119,6 +119,7 @@
     <string name="help_frame_pacing_smoothness">Entrega constante; añade búfer y latencia.</string>
     <string name="help_frame_pacing_warp">Pide el doble de FPS (60 → 120); muestra el fotograma más reciente.</string>
     <string name="help_frame_pacing_warp2">Pide cuatro veces los FPS (60 → 240).</string>
+    <string name="help_frame_pacing_phase_lock">Espera fotogramas tardíos hasta el último momento seguro de renderizado de la siguiente actualización. Solo MediaCodec.</string>
     <string name="help_frame_pacing_fast_vsync">Se sincroniza con el menor de FPS y frecuencia de actualización. Solo MediaCodec.</string>
     <string name="help_video_format_auto">Elige H.264 o HEVC. AV1 y PyroWave hay que seleccionarlos.</string>
     <string name="help_video_format_forceav1">Eficiente con bitrates bajos. Requiere codificación AV1 en el host y decodificación aquí.</string>
@@ -171,6 +172,7 @@
     <string name="help_note_pyrowave_recommends">PyroWave recomienda aquí %1$d Mbps.</string>
     <string name="help_note_lfr_balanced">LFR está activado: se usa Equilibrado.</string>
     <string name="help_note_fast_vsync_lfr">Fast V-Sync sustituye a LFR.</string>
+    <string name="help_note_phase_lock_lfr">Bloqueo de fase sustituye a LFR.</string>
     <string name="help_note_not_with_pyrowave">No se usa con PyroWave.</string>
     <string name="help_note_needs_pyrowave">Requiere el códec PyroWave.</string>
     <string name="help_note_hdr_420">HDR está activado: se usa 4:2:0.</string>

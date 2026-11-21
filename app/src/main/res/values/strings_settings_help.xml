@@ -14,7 +14,7 @@
     <string name="help_seekbar_metered_bitrate_kbps">Bitrate on a metered network (mobile data, some hotspots). 0 uses a quarter of the normal bitrate.</string>
     <string name="help_frame_pacing">Warp modes may not work on every device.</string>
     <string name="help_checkbox_async_decode">MediaCodec callbacks instead of polling. H.264, HEVC and AV1 only. Turn off if decoding is unstable.</string>
-    <string name="help_pref_low_latency_frame_balance">Balanced pacing that polls the decoder more often. Overrides other MediaCodec pacing except Fast V-Sync. Device-dependent.</string>
+    <string name="help_pref_low_latency_frame_balance">Balanced pacing that polls the decoder more often. Overrides other MediaCodec pacing except Fast V-Sync and Phase lock. Device-dependent.</string>
     <string name="help_checkbox_ultra_low_latency">Extra MediaCodec low-latency options. Gain depends on chip and driver. Turn off if video is unstable.</string>
     <string name="help_checkbox_use_virtual_display">Asks Vibepollo or Apollo for a virtual PC display at the requested resolution and FPS. Needs host support.</string>
     <string name="help_checkbox_auto_orientation">Starts the stream in the device\'s current portrait or landscape orientation. The PC desktop is not rotated.</string>
@@ -128,6 +128,7 @@
     <string name="help_frame_pacing_smoothness">Steady delivery; adds buffering and latency.</string>
     <string name="help_frame_pacing_warp">Requests twice the FPS (60 → 120); shows the newest frame.</string>
     <string name="help_frame_pacing_warp2">Requests four times the FPS (60 → 240).</string>
+    <string name="help_frame_pacing_phase_lock">Waits for late frames until the safe rendering deadline of the next refresh. MediaCodec only.</string>
     <string name="help_frame_pacing_fast_vsync">Syncs to the lower of FPS and refresh. MediaCodec only.</string>
     <string name="help_video_format_auto">Picks H.264 or HEVC. AV1 and PyroWave need selecting.</string>
     <string name="help_video_format_forceav1">Efficient at low bitrates. Needs AV1 encode on the host and decode here.</string>
@@ -186,6 +187,7 @@
     <!-- LFR: the Low-latency Frame Balance setting; Balanced: a frame pacing choice -->
     <string name="help_note_lfr_balanced">LFR is enabled: Balanced used.</string>
     <string name="help_note_fast_vsync_lfr">Fast V-Sync overrides LFR.</string>
+    <string name="help_note_phase_lock_lfr">Phase lock overrides LFR.</string>
     <string name="help_note_not_with_pyrowave">Not used with PyroWave.</string>
     <string name="help_note_needs_pyrowave">Needs the PyroWave codec.</string>
     <string name="help_note_hdr_420">HDR is on: 4:2:0 used.</string>

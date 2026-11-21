@@ -47,7 +47,8 @@ class StreamSettingsStore(val catalog: SettingsCatalog, private val settings: ()
         // Sharpen only never scales, so there is no supersampling quality to choose
         if (spec.key == "list_sgsr_supersampling_level" &&
             UpscalerMode.fromValue(state.value["list_sgsr_quality"] as? String) == UpscalerMode.SHARPEN_ONLY) return false
-        if (spec.key == "pref_low_latency_frame_balance" && state.value["frame_pacing"] == "fast-vsync") return false
+        if (spec.key == "pref_low_latency_frame_balance" &&
+            (state.value["frame_pacing"] == "fast-vsync" || state.value["frame_pacing"] == "phase-lock")) return false
         if (spec.key == "seekbar_gyro_smoothing" && !gyroSourceEnabled(Build.VERSION.SDK_INT, state.value)) return false
         fun dependencyEnabled(key: String?, seen: Set<String>): Boolean {
             if (key == null) return true

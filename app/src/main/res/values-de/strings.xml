@@ -233,6 +233,7 @@
     <string name="pacing_balanced">Ausgewogen</string>
     <string name="pacing_balanced_alt">Ausgewogen mit FPS-Limit</string>
     <string name="pacing_smoothness">Flüssigstes Video</string>
+    <string name="pacing_phase_lock">Phasensynchronisation</string>
     <string name="pacing_fast_vsync">Schnelles V-Sync (Nano Pacer)</string>
 
     <string name="title_async_decode">Asynchrones Decodieren</string>

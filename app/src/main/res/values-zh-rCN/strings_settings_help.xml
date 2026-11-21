@@ -8,7 +8,7 @@
     <string name="help_seekbar_metered_bitrate_kbps">按流量计费网络（移动数据、部分热点）下的码率。0 表示使用常规码率的四分之一。</string>
     <string name="help_frame_pacing">Warp 模式可能无法在所有设备上使用。</string>
     <string name="help_checkbox_async_decode">使用 MediaCodec 回调代替轮询。仅限 H.264、HEVC 和 AV1。解码不稳定时请关闭。</string>
-    <string name="help_pref_low_latency_frame_balance">均衡的帧节奏，会更频繁地轮询解码器。除 Fast V-Sync 外，会覆盖其他 MediaCodec 帧节奏。效果因设备而异。</string>
+    <string name="help_pref_low_latency_frame_balance">均衡的帧节奏，会更频繁地轮询解码器。除 Fast V-Sync 和相位锁定外，会覆盖其他 MediaCodec 帧节奏。效果因设备而异。</string>
     <string name="help_checkbox_ultra_low_latency">额外的 MediaCodec 低延迟选项。收益取决于芯片和驱动。画面不稳定时请关闭。</string>
     <string name="help_checkbox_use_virtual_display">向 Vibepollo 或 Apollo 请求一个符合所需分辨率和 FPS 的 PC 虚拟显示器。需要电脑端支持。</string>
     <string name="help_checkbox_auto_orientation">按设备当前的竖屏或横屏方向启动串流。PC 桌面不会旋转。</string>
@@ -122,6 +122,7 @@
     <string name="help_frame_pacing_smoothness">稳定输出；会增加缓冲和延迟。</string>
     <string name="help_frame_pacing_warp">请求两倍 FPS（60 至 120）；显示最新一帧。</string>
     <string name="help_frame_pacing_warp2">请求四倍 FPS（60 至 240）。</string>
+    <string name="help_frame_pacing_phase_lock">等待延迟帧，直到下一次刷新的安全渲染截止时间。仅限 MediaCodec。</string>
     <string name="help_frame_pacing_fast_vsync">与 FPS 和刷新率中较低者同步。仅限 MediaCodec。</string>
     <string name="help_video_format_auto">自动选择 H.264 或 HEVC。AV1 和 PyroWave 需要手动选择。</string>
     <string name="help_video_format_forceav1">低码率下效率高。需要电脑端支持 AV1 编码，且本机支持 AV1 解码。</string>
@@ -180,6 +181,7 @@
     <!-- LFR: the Low-latency Frame Balance setting; Balanced: a frame pacing choice -->
     <string name="help_note_lfr_balanced">已启用 LFR：使用均衡。</string>
     <string name="help_note_fast_vsync_lfr">Fast V-Sync 会覆盖 LFR。</string>
+    <string name="help_note_phase_lock_lfr">相位锁定会覆盖 LFR。</string>
     <string name="help_note_not_with_pyrowave">PyroWave 下不使用。</string>
     <string name="help_note_needs_pyrowave">需要 PyroWave 编解码器。</string>
     <string name="help_note_hdr_420">HDR 已开启：使用 4:2:0。</string>

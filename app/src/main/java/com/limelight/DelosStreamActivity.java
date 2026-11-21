@@ -581,8 +581,10 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
         // LFR (low latency frame balance) is a variant of Balanced frame pacing that presents
         // queued frames at the next vsync and polls the decoder more often
-        // Delos: Fast V-Sync owns pacing when selected; LFR is a separate Balanced variant.
-        boolean useLfr = prefConfig.preferLowerDelays && prefConfig.framePacing != PreferenceConfiguration.FRAME_PACING_FAST_VSYNC;
+        // Fast V-Sync and Phase lock own pacing; LFR is a separate Balanced variant.
+        boolean useLfr = prefConfig.preferLowerDelays &&
+                prefConfig.framePacing != PreferenceConfiguration.FRAME_PACING_FAST_VSYNC &&
+                prefConfig.framePacing != PreferenceConfiguration.FRAME_PACING_PHASE_LOCK;
         decoderRenderer.setPreferLowerDelays(useLfr);
         if (useLfr) {
             decoderRenderer.setPreferLowerDelaysTimeoutUs(500);
