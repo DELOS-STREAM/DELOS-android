@@ -119,7 +119,7 @@
     <string name="help_frame_pacing_smoothness">일정하게 전달해요. 버퍼링과 지연이 늘어나요.</string>
     <string name="help_frame_pacing_warp">FPS를 두 배로 요청하고(60 → 120) 최신 프레임을 표시해요.</string>
     <string name="help_frame_pacing_warp2">FPS를 네 배로 요청해요 (60 → 240).</string>
-    <string name="help_frame_pacing_phase_lock">늦은 프레임을 위해 화면 갱신마다 기다려요. MediaCodec에서만 사용해요.</string>
+    <string name="help_frame_pacing_phase_lock">늦은 프레임을 위해 화면 갱신마다 기다려요.</string>
     <string name="help_frame_pacing_fast_vsync">FPS와 주사율 중 낮은 쪽에 동기화해요. MediaCodec에서만 사용해요.</string>
     <string name="help_video_format_auto">H.264 또는 HEVC를 골라요. AV1과 PyroWave는 직접 선택해야 해요.</string>
     <string name="help_video_format_forceav1">낮은 비트레이트에서 효율적이에요. 호스트의 AV1 인코딩과 이 기기의 디코딩이 필요해요.</string>

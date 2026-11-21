@@ -128,7 +128,7 @@
     <string name="help_frame_pacing_smoothness">Steady delivery; adds buffering and latency.</string>
     <string name="help_frame_pacing_warp">Requests twice the FPS (60 → 120); shows the newest frame.</string>
     <string name="help_frame_pacing_warp2">Requests four times the FPS (60 → 240).</string>
-    <string name="help_frame_pacing_phase_lock">Holds each refresh for a late frame. MediaCodec only.</string>
+    <string name="help_frame_pacing_phase_lock">Holds each refresh for a frame that is just late.</string>
     <string name="help_frame_pacing_fast_vsync">Syncs to the lower of FPS and refresh. MediaCodec only.</string>
     <string name="help_video_format_auto">Picks H.264 or HEVC. AV1 and PyroWave need selecting.</string>
     <string name="help_video_format_forceav1">Efficient at low bitrates. Needs AV1 encode on the host and decode here.</string>

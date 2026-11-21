@@ -121,7 +121,7 @@
     <string name="help_frame_pacing_smoothness">Rovnoměrné doručování; přidává buffering a latenci.</string>
     <string name="help_frame_pacing_warp">Požádá o dvojnásobek FPS (60 → 120); zobrazí nejnovější snímek.</string>
     <string name="help_frame_pacing_warp2">Požádá o čtyřnásobek FPS (60 → 240).</string>
-    <string name="help_frame_pacing_phase_lock">Pozdrží každé obnovení kvůli opožděnému snímku. Jen MediaCodec.</string>
+    <string name="help_frame_pacing_phase_lock">Pozdrží každé obnovení kvůli opožděnému snímku.</string>
     <string name="help_frame_pacing_fast_vsync">Synchronizuje na nižší z FPS a obnovovací frekvence. Jen MediaCodec.</string>
     <string name="help_video_format_auto">Vybere H.264 nebo HEVC. AV1 a PyroWave je potřeba vybrat ručně.</string>
     <string name="help_video_format_forceav1">Efektivní při nízkém bitrate. Vyžaduje kódování AV1 v PC a dekódování tady.</string>

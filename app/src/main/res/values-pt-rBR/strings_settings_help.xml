@@ -119,7 +119,7 @@
     <string name="help_frame_pacing_smoothness">Entrega estável; adiciona buffer e latência.</string>
     <string name="help_frame_pacing_warp">Pede o dobro de FPS (60 → 120); mostra o quadro mais recente.</string>
     <string name="help_frame_pacing_warp2">Pede quatro vezes os FPS (60 → 240).</string>
-    <string name="help_frame_pacing_phase_lock">Segura cada atualização para um quadro atrasado. Só MediaCodec.</string>
+    <string name="help_frame_pacing_phase_lock">Segura cada atualização para um quadro atrasado.</string>
     <string name="help_frame_pacing_fast_vsync">Sincroniza com o menor entre FPS e taxa de atualização. Só MediaCodec.</string>
     <string name="help_video_format_auto">Escolhe H.264 ou HEVC. AV1 e PyroWave precisam ser selecionados.</string>
     <string name="help_video_format_forceav1">Eficiente em bitrates baixos. Requer codificação AV1 no PC e decodificação aqui.</string>

@@ -122,7 +122,7 @@
     <string name="help_frame_pacing_smoothness">稳定输出；会增加缓冲和延迟。</string>
     <string name="help_frame_pacing_warp">请求两倍 FPS（60 至 120）；显示最新一帧。</string>
     <string name="help_frame_pacing_warp2">请求四倍 FPS（60 至 240）。</string>
-    <string name="help_frame_pacing_phase_lock">为迟到的帧推迟每次刷新。仅限 MediaCodec。</string>
+    <string name="help_frame_pacing_phase_lock">为迟到的帧推迟每次刷新。</string>
     <string name="help_frame_pacing_fast_vsync">与 FPS 和刷新率中较低者同步。仅限 MediaCodec。</string>
     <string name="help_video_format_auto">自动选择 H.264 或 HEVC。AV1 和 PyroWave 需要手动选择。</string>
     <string name="help_video_format_forceav1">低码率下效率高。需要电脑端支持 AV1 编码，且本机支持 AV1 解码。</string>

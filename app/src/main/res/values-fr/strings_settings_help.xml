@@ -118,7 +118,7 @@
     <string name="help_frame_pacing_smoothness">Livraison régulière ; ajoute de la mise en tampon et de la latence.</string>
     <string name="help_frame_pacing_warp">Demande deux fois les FPS (60 → 120) ; affiche l’image la plus récente.</string>
     <string name="help_frame_pacing_warp2">Demande quatre fois les FPS (60 → 240).</string>
-    <string name="help_frame_pacing_phase_lock">Retient chaque rafraîchissement pour une image tardive. MediaCodec uniquement.</string>
+    <string name="help_frame_pacing_phase_lock">Retient chaque rafraîchissement pour une image tardive.</string>
     <string name="help_frame_pacing_fast_vsync">Synchronise sur le plus bas des FPS et de la fréquence d’écran. MediaCodec uniquement.</string>
     <string name="help_video_format_auto">Choisit H.264 ou HEVC. AV1 et PyroWave doivent être sélectionnés.</string>
     <string name="help_video_format_forceav1">Efficace à bas débit. Nécessite l’encodage AV1 sur le PC et le décodage ici.</string>
