@@ -455,7 +455,7 @@ internal fun OverviewViewer(
             if (settled && player?.error != null) VideoError(player.error!!, steam = native != null, Modifier.fillMaxSize())
             // Touch: a tap toggles the overlay, a double tap in the left or right third seeks 5 s, a swipe sideways carries the item and
             // brings the next one in, a swipe down closes. Trackpad: a two-finger swipe sideways (a horizontal scroll) does the same.
-            // Mouse: a click plays or pauses. While the overlay is hidden over a playing video, a touch is YouTube's (an ad's Skip): this
+            // Mouse: a click is a tap (Play is the dock's button; owner, 2026-11-21). While the overlay is hidden over a playing video, a touch is YouTube's (an ad's Skip): this
             // layer is not there, so the touch reaches the player's surface, and the touch itself brings the overlay back.
             val passThrough = inWindow && video != null && !overlayShown
             val browseScroll = remember { BrowseScroll() }
@@ -476,7 +476,6 @@ internal fun OverviewViewer(
                             },
                         ) {
                             when {
-                                ControllerGlyphs.kind == InputKind.POINTER -> { controls.onInput(); video?.let { feedback.play(Cue.SELECT); it.togglePlay() } }
                                 revealTap -> controls.onInput()
                                 else -> controls.hide(currentHold)
                             }

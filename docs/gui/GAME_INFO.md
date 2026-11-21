@@ -699,7 +699,7 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
    to the dock. A tap that brings the dock back never hides it again.
    A paused or ended video and a dragged slider also prevent a picture tap from hiding the dock. Closing during a
    sideways slide wins over its eventual index update; that completion cannot reopen the viewer.
-8. **Mouse and trackpad:** moving shows the dock; a click on the picture plays or pauses; hovering the seek bar shows the
+8. **Mouse and trackpad:** moving shows the dock; a click on the picture shows or hides the dock as a tap does (Play is the dock's button; owner, 2026-11-21); hovering the seek bar shows the
    time under the pointer; buttons light up under it. A horizontal scroll (a trackpad's two-finger swipe, a tilt
    wheel) carries the item as a finger does; a 120 ms pause in the scrolling lets it go (owner, 2026-11-21).
 9. **Reduced motion:** fades stay; the rises, the focus scale, the ring's glide, the slides and the flash's nudge go.
