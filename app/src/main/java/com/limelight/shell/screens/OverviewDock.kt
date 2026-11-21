@@ -246,13 +246,26 @@ internal fun ViewerDock(
                 look = ButtonLook.GLASS, alpha = overlay, onClick = onClose)
         }
         val bottom = 120f + stage.safe.bottom
-        // Measure both endpoints once. Only these layer blocks read the spring; no animated
-        // dimensions, composition reads or whole-dock layout work are needed on a frame.
+        // Measure both endpoints once. Only these layer blocks read the spring; the one exception is the glass, which takes
+        // the morph's size itself (a scaled glass would squash its rounded corners) inside the video frame's box.
         Layout(
             modifier = Modifier.fillMaxSize(),
             content = {
-                Box(Modifier.pointerInput(Unit) { detectTapGestures { } }) {
-                    DockGlass(haze, inWindow, player, 46f, overlay, cover, Modifier.matchParentSize())
+                Box {
+                    Box(
+                        Modifier
+                            .layout { measurable, constraints ->
+                                // The video frame is this box; the screenshot's is 128 px narrower and 150 px tall
+                                val p = if (reduced) { if (video) 1f else 0f } else state.morph.value
+                                val w = constraints.maxWidth - 128f * k * (1f - p)
+                                val h = 150f * k + 98f * k * p
+                                val placeable = measurable.measure(Constraints.fixed(w.roundToInt().coerceAtLeast(0), h.roundToInt().coerceAtLeast(0)))
+                                layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
+                            }
+                            .pointerInput(Unit) { detectTapGestures { } },
+                    ) {
+                        DockGlass(haze, inWindow, player, 46f, overlay, cover, Modifier.matchParentSize())
+                    }
                 }
                 Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.px)) {
                     BasicText((shown + 1).toString(), Modifier.alignByBaseline(),
@@ -369,11 +382,11 @@ internal fun ViewerDock(
                         translationY = from.top + (to.top - from.top) * p + if (reduced) 0f else (1f - overlay()) * 30f * k
                         transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
                         alpha = overlay()
+                        // Each draw call fades by itself: an offscreen layer (a partly faded one) would cut Play's glow and the
+                        // focus look at the control's bounds while the dock morphs
+                        compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.ModulateAlpha
                         when (index) {
-                            0 -> {
-                                scaleX = (from.width + (to.width - from.width) * p) / to.width
-                                scaleY = (from.height + (to.height - from.height) * p) / to.height
-                            }
+                            0 -> Unit
                             in 2..6 -> {
                                 alpha *= bounded
                                 if (!reduced) scaleY = .6f + .4f * p

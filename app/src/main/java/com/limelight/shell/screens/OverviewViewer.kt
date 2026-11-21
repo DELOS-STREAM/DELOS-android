@@ -133,6 +133,9 @@ internal fun OverviewViewer(
     val feedback = LocalFeedback.current
     val k = stageUnit()
     val fit = remember(stage.stageWidth, stage.stageHeight) { viewerFit(stage.stageWidth, stage.stageHeight) }
+    // A horizontal scroll's step in pixels (a tilt-wheel notch; a trackpad sends fractions of it)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scrollStep = remember(context) { android.view.ViewConfiguration.get(context).scaledHorizontalScrollFactor }
     val shell = LocalShell.current
     val kind = ControllerGlyphs.kind
     val localInput = remember { OverviewViewerInput() }
@@ -152,6 +155,11 @@ internal fun OverviewViewer(
     var direction by remember { mutableIntStateOf(1) }
     val change = remember { Animatable(1f) }
     var drag by remember { mutableStateOf(Offset.Zero) }
+    // A sideways swipe (a finger, a trackpad's two fingers) carries the item with it (pixels) and brings the one beside it in from
+    // that side; [sliding] while it lasts, [slidIn] when a finished swipe brought the new item into place already
+    val slide = remember { Animatable(0f) }
+    var sliding by remember { mutableStateOf(false) }
+    var slidIn by remember { mutableStateOf(false) }
     var opened by remember { mutableStateOf(false) }
     val currentRequest by rememberUpdatedState(request)
     val scope = rememberCoroutineScope()
@@ -216,6 +224,17 @@ internal fun OverviewViewer(
     LaunchedEffect(request.index) {
         if (request.index == shown) return@LaunchedEffect
         controls.onInput()
+        if (slidIn) {
+            // The swipe has the new item in place: the two swap where they are, with nothing more to animate
+            direction = if (request.index > shown) 1 else -1
+            player?.release()
+            shown = request.index
+            slide.snapTo(0f)
+            change.snapTo(1f)
+            slidIn = false
+            sliding = false
+            return@LaunchedEffect
+        }
         direction = if (request.index > shown) 1 else -1
         leavingPlayer?.release()
         leavingPlayer = player
@@ -244,6 +263,30 @@ internal fun OverviewViewer(
         if (currentRequest.closing || index !in media.indices || index == shown) return
         feedback.play(Cue.MOVE)
         onIndex(index)
+    }
+    /** The item follows a sideways swipe of [x] pixels; past either end only a quarter of it, a rubber band. */
+    fun follow(x: Float) {
+        controls.onInput()
+        sliding = true
+        val next = shown + if (x < 0f) 1 else -1
+        scope.launch { slide.snapTo(if (next in media.indices) x else x * .25f) }
+    }
+    /** A sideways swipe let go at [x]: past 90 px the item slides out and the one beside it in, then they swap; else it springs back. */
+    fun endSlide(x: Float) {
+        controls.onInput()
+        val next = shown + if (x < 0f) 1 else -1
+        val width = fit.width * k
+        scope.launch {
+            if (next in media.indices && abs(x) > 90f * k && !currentRequest.closing) {
+                if (!reduced) slide.animateTo(-(if (x < 0f) 1f else -1f) * (width + SLIDE_GAP * k), tween(260, easing = EaseOut))
+                slidIn = true
+                feedback.play(Cue.MOVE)
+                onIndex(next)
+            } else {
+                slide.animateTo(0f, if (reduced) tween(0) else ViewerSpring)
+                sliding = false
+            }
+        }
     }
     fun seek(side: Int) {
         val v = video ?: return
@@ -377,10 +420,8 @@ internal fun OverviewViewer(
                                 scaleY = scaleX
                                 a *= (z * 4f).coerceIn(0f, 1f)
                             }
-                            if (item.kind != OverviewModel.MediaKind.VIDEO && !reduced) {
-                                translationX += drag.x * .6f
-                                translationY += drag.y.coerceAtLeast(0f)
-                            }
+                            if (item.kind != OverviewModel.MediaKind.VIDEO && !reduced) translationY += drag.y.coerceAtLeast(0f)
+                            translationX += slide.value
                             alpha = a * if (item.kind == OverviewModel.MediaKind.VIDEO && !trailerHere) thumbnailAlpha else 1f
                         }.background(Color.Black),
                     ) {
@@ -399,10 +440,21 @@ internal fun OverviewViewer(
                         }
                     }
                 } }
+                // The items a sideways swipe brings in, one on each side of the current one
+                if (sliding) for (side in listOf(-1, 1)) {
+                    val item = media.getOrNull(shown + side) ?: continue
+                    key(shown + side) {
+                        Box(
+                            Modifier.fillMaxSize().graphicsLayer {
+                                translationX = slide.value + side * (size.width + SLIDE_GAP * k)
+                            }.background(Color.Black),
+                        ) { ViewerPicture(item, fit, k) }
+                    }
+                }
             }
             if (settled && player?.error != null) VideoError(player.error!!, steam = native != null, Modifier.fillMaxSize())
-            // Touch: a tap toggles the overlay, a double tap in the left or right third seeks 5 s, a swipe sideways browses and down closes.
-            // Trackpad: a two-finger swipe sideways (a horizontal scroll) browses, once per swipe.
+            // Touch: a tap toggles the overlay, a double tap in the left or right third seeks 5 s, a swipe sideways carries the item and
+            // brings the next one in, a swipe down closes. Trackpad: a two-finger swipe sideways (a horizontal scroll) does the same.
             // Mouse: a click plays or pauses. While the overlay is hidden over a playing video, a touch is YouTube's (an ad's Skip): this
             // layer is not there, so the touch reaches the player's surface, and the touch itself brings the overlay back.
             val passThrough = inWindow && video != null && !overlayShown
@@ -431,39 +483,56 @@ internal fun OverviewViewer(
                         }
                     }
                     .pointerInput(shown) {
+                        // The swipe's axis is decided by its first move: sideways it carries the item, downwards it pulls to close
+                        var sideways: Boolean? = null
+                        var travel = 0f
                         detectDragGestures(
+                            onDragStart = { sideways = null; travel = 0f },
                             onDragEnd = {
                                 val d = drag / k
                                 drag = Offset.Zero
                                 when {
+                                    sideways == true -> endSlide(travel)
                                     d.y > 120f && abs(d.y) > abs(d.x) -> onCloseRequest()
-                                    d.x < -90f -> go(shown + 1)
-                                    d.x > 90f -> go(shown - 1)
                                 }
                             },
-                            onDragCancel = { drag = Offset.Zero },
-                        ) { change, amount -> change.consume(); drag += amount; controls.onInput() }
+                            onDragCancel = {
+                                drag = Offset.Zero
+                                if (sideways == true) endSlide(0f)
+                            },
+                        ) { change, amount ->
+                            change.consume()
+                            if (sideways == null) sideways = abs(amount.x) > abs(amount.y)
+                            if (sideways == true) {
+                                travel += amount.x
+                                follow(travel)
+                            } else {
+                                drag += amount
+                                controls.onInput()
+                            }
+                        }
                     }
                     .pointerInput(shown) {
-                        // A horizontal scroll (a trackpad's two-finger swipe, a mouse's tilt wheel) browses once per swipe: the rest of
-                        // the swipe and its momentum, until the scrolling pauses, do nothing more (kept across items: [browseScroll])
+                        // A horizontal scroll (a trackpad's two-finger swipe, a mouse's tilt wheel) carries the item like a finger; a pause
+                        // in the scrolling lets it go (kept across items: [browseScroll])
                         val s = browseScroll
                         awaitPointerEventScope {
                             while (true) {
-                                val event = awaitPointerEvent()
+                                val event = if (s.active) withTimeoutOrNull(BROWSE_SCROLL_PAUSE_MS) { awaitPointerEvent() } else awaitPointerEvent()
+                                if (event == null) {
+                                    s.active = false
+                                    endSlide(-s.sum)
+                                    s.sum = 0f
+                                    continue
+                                }
                                 if (event.type != PointerEventType.Scroll) continue
                                 val change = event.changes.firstOrNull() ?: continue
                                 val d = change.scrollDelta
-                                if (change.uptimeMillis - s.last > BROWSE_SCROLL_PAUSE_MS) { s.sum = 0f; s.fired = false }
-                                s.last = change.uptimeMillis
                                 if (abs(d.x) <= abs(d.y)) continue
                                 change.consume()
-                                controls.onInput()
-                                s.sum += d.x
-                                if (!s.fired && abs(s.sum) >= BROWSE_SCROLL_STEPS) {
-                                    s.fired = true
-                                    go(if (s.sum > 0f) shown + 1 else shown - 1)
-                                }
+                                s.active = true
+                                s.sum += d.x * scrollStep
+                                follow(-s.sum)
                             }
                         }
                     })
@@ -485,7 +554,7 @@ internal fun OverviewViewer(
         if (webPlayer != null && webPlayer.error == null) {
             OverviewPlayerWindow(webPlayer, bounds, pointerHidden = !overlayShown, onPointer = { controls.onInput() },
                 pictureAlpha = { if (webPlayer === leavingPlayer) 1f - change.value.coerceIn(0f, 1f) else 1f },
-                pictureOffset = { if (!reduced && webPlayer === leavingPlayer) -direction * bounds.width * .04f * change.value else 0f },
+                pictureOffset = { if (!reduced && webPlayer === leavingPlayer) -direction * bounds.width * .04f * change.value else slide.value },
             ) {
                 Box(Modifier.fillMaxSize()) {
                     aboveVideo(true)
@@ -503,15 +572,27 @@ private val VIEWER_KEYS = setOf(
     Key.ButtonY, Key.M, Key.Spacebar,
 )
 
-/** A horizontal scroll that browses the viewer: its running sum, its last event and whether this swipe browsed already. */
+/** A horizontal scroll carrying the viewer's item: its sideways travel so far (pixels) and whether one is going on. */
 private class BrowseScroll {
     var sum = 0f
-    var last = 0L
-    var fired = false
+    var active = false
 }
 
-/** A pause in the scrolling this long ends a swipe and its momentum (milliseconds). */
-private const val BROWSE_SCROLL_PAUSE_MS = 250L
+/** A pause in the scrolling this long lets a trackpad's swipe go (milliseconds). */
+private const val BROWSE_SCROLL_PAUSE_MS = 120L
 
-/** How much horizontal scroll browses: about one tilt-wheel notch, a short two-finger swipe. */
-private const val BROWSE_SCROLL_STEPS = 1f
+/** The gap between the viewer's item and the one a swipe brings in beside it (stage pixels). */
+private const val SLIDE_GAP = 40f
+
+/** The picture of an item a swipe brings in beside the current one: a trailer's still (blurred, as before it plays) or the screenshot. */
+@Composable
+private fun ViewerPicture(item: OverviewModel.Media, fit: Rect, k: Float) {
+    val trailer = item.kind == OverviewModel.MediaKind.VIDEO
+    val thumb by rememberIgdbImage(item.thumb, (569f * k).toInt())
+    val full by rememberIgdbImage(item.full, (maxOf(fit.width, fit.height) * k).toInt())
+    val still by com.limelight.shell.data.rememberTrailerStill(item.id, item.stream.takeIf { trailer }, (maxOf(fit.width, fit.height) * k).toInt())
+    (still.picture ?: full ?: thumb)?.let {
+        Image(it, null, Modifier.fillMaxSize().then(if (trailer) Modifier.blur(16.px) else Modifier),
+            contentScale = if (trailer) ContentScale.Crop else ContentScale.Fit)
+    }
+}

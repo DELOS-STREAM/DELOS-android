@@ -689,13 +689,15 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
    ("5 s"): repeated seeks one way within 900 ms count 5, 10, 15… Each press nudges it 26 px outward; it settles back
    in 420 ms, holds 900 ms after the last press and fades out in 180 ms (owner, 2026-11-21: the look of DELOS on iPad).
 7. **Touch:** a tap toggles the dock, a double tap in the left or right third seeks 5 s (with the flash), a swipe
-   sideways browses and a swipe down closes; the seek bar and the volume slider take taps and drags. Decision for
+   sideways carries the item with the finger and brings the next or previous one in from that side under the dock (let go
+   past 90 px it slides into place, else it springs back; past either end it gives a quarter), and a swipe down closes;
+   the seek bar and the volume slider take taps and drags. Decision for
    YouTube's own surface: while the dock is hidden over a playing video, the viewer's touch layer is not there, so a tap
    reaches the player (an ad's Skip, its links) and the same touch brings the dock back; with the dock up, taps belong
    to the dock. A tap that brings the dock back never hides it again.
 8. **Mouse and trackpad:** moving shows the dock; a click on the picture plays or pauses; hovering the seek bar shows the
    time under the pointer; buttons light up under it. A horizontal scroll (a trackpad's two-finger swipe, a tilt
-   wheel) browses once per swipe, to the next item when the content scrolls right (owner, 2026-11-21).
+   wheel) carries the item as a finger does; a 120 ms pause in the scrolling lets it go (owner, 2026-11-21).
 9. **Reduced motion:** fades stay; the rises, the focus scale, the ring's glide, the slides and the flash's nudge go.
 
 **Videos** (`OverviewNativeVideo.kt`, `OverviewVideo.kt`, `YouTubeEmbeds.kt`). Trailers play only inside the app; nothing
