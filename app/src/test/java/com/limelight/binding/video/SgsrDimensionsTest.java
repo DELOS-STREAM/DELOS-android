@@ -67,4 +67,28 @@ public class SgsrDimensionsTest {
         assertTrue(SgsrDimensions.isNativeInput(1920, 1080, 1920 + SgsrDimensions.NATIVE_TOLERANCE, 1080));
         assertFalse(SgsrDimensions.isNativeInput(1920, 1080, 1920 + SgsrDimensions.NATIVE_TOLERANCE + 1, 1080));
     }
+
+    // The flow reads each level through its own size: these must be the sizes GLES gives the mip levels
+    @Test
+    public void pyramidLevelsHalveRoundedDown() {
+        int[] expected = {1079, 539, 269, 134};
+        for (int level = 0; level < expected.length; level++) {
+            assertEquals(expected[level], SgsrDimensions.pyramidSize(1079, level));
+        }
+        assertEquals(1, SgsrDimensions.pyramidSize(4, 3));
+    }
+
+    @Test
+    public void flowGridCoversEveryPixelOfItsLevel() {
+        int[] grid = {135, 68, 34, 17};
+        int[] groups = {17, 9, 5, 3};
+        for (int level = 0; level < grid.length; level++) {
+            assertEquals(grid[level], SgsrDimensions.flowGrid(1080, level));
+            assertEquals(groups[level], SgsrDimensions.flowGroups(1080, level));
+            assertTrue(SgsrDimensions.flowGrid(1080, level) * 8 >= SgsrDimensions.pyramidSize(1080, level));
+            assertTrue(SgsrDimensions.flowGroups(1080, level) * 8 >= SgsrDimensions.flowGrid(1080, level));
+        }
+        assertEquals(240, SgsrDimensions.flowGrid(1920, 0));
+        assertEquals(30, SgsrDimensions.flowGroups(1920, 0));
+    }
 }

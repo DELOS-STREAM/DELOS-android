@@ -50,6 +50,21 @@ final class SgsrDimensions {
                 Math.abs(sourceHeight - presentationHeight) <= NATIVE_TOLERANCE;
     }
 
+    /** One side of the luma pyramid's `level`, as GLES sizes a mip level (rounded down, never below 1). */
+    static int pyramidSize(int size, int level) {
+        return Math.max(1, size >> level);
+    }
+
+    /** Cells of the optical flow along one side at `level`: one per 8 pixels of that level, the last one partial. */
+    static int flowGrid(int size, int level) {
+        return (pyramidSize(size, level) + 7) / 8;
+    }
+
+    /** Compute groups (8 cells each) that cover the flow grid along one side at `level`. */
+    static int flowGroups(int size, int level) {
+        return (flowGrid(size, level) + 7) / 8;
+    }
+
     private static int even(int value) {
         return value & ~1;
     }

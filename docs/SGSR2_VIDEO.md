@@ -43,14 +43,20 @@ presentation. It shares the current GPU image and never requests a CPU pixel cop
 
 ### Stages
 
-1. Analysis luma. The stage renders analysis luma into an R8 texture and generates a four-level pyramid. Current
+1. Analysis luma. The stage renders analysis luma, smoothed by a 3×3 binomial filter, into an R8 texture and
+   generates a four-level pyramid; the texture's minification filter selects the mip level a shader names. Current
    and previous luma ping-pong. Matching uses encoded RGB-derived luma; the actual picture stays FP16 for HDR.
 2. Backward flow. The stage computes **pyramidal Lucas-Kanade backward flow** (current → previous) on an 8-pixel
-   grid, with up to six refinement iterations per level and floating-point subpixel propagation.
+   grid in the inverse compositional form, with up to six refinement iterations per level and floating-point
+   subpixel propagation. A finer level starts from twice the coarser motion, or from zero motion where that
+   matches the cell better.
 3. Forward flow. The stage computes independent forward flow (previous → current). Motion includes the camera
-   and objects. Tensor conditioning, photometric residual, bounds and forward/backward consistency control trust.
-4. Scene change. Large frame changes are detected from a conservative GPU 8x8 luma comparison. The stage resets
-   rather than reusing uncertain history. This is a heuristic, not proof that every game scene cut is recognized.
+   and objects. History is trusted where forward and backward flow agree (full trust up to 0.1 px of disagreement,
+   none from 0.5 px) and the previous position is inside the picture. Flat areas and straight edges keep their
+   history: the flow along them is uncertain, but every position along them holds the same picture.
+4. Scene change. Large frame changes are detected by comparing the mean luma of 8×8 blocks at the pyramid's
+   coarsest level (threshold 0.08). The stage resets rather than reusing uncertain history. This is a heuristic,
+   not proof that every game scene cut is recognized.
 5. Reconstruction. The stage reconstructs into ping-pong RGBA16F output textures using the adapted Qualcomm SGSR 2
    two-pass-FS upscale shader.
    - Its engine Convert stage is replaced by estimated total flow and history rejection.
@@ -513,6 +519,7 @@ not new measurements. Exact formulas and operation order are source observations
 | Fixed temporal footprint | Both video implementations use the `distanceSquared*0.25` Lanczos footprint rather than the engine's scale/depth-dependent bias. | Wider support than the engine default at common upscale ratios can smooth detail. GLES intentionally fixed it after measured zero-jitter instability; restoring the official term without rerunning the ramp/phase fixture would repeat a known risk. |
 | Tighter reconstruction bounds | Video reconstruction clamps to the actual neighborhood rather than the old fragment shader's `±0.075` allowance. Official compute/Unity variants also differ in their clamp margin/domain. | Suppresses bright/dark outlines but limits edge overshoot. Less ringing is not necessarily more recovered detail or the sharpest-looking result. |
 | Native temporal kernel is not identical to GLES | Native centers its 3×3 taps on `floor(uv*inputSize-0.5)`; GLES uses `floor(uv*inputSize)`. Native uses YCoCg history bounds even in regular Video, a 0.12 current-weight floor and residual-driven rejection; GLES regular Video uses an RGB variance box and limits trusted history to at most 75%. | Tap selection can differ by one source pixel for part of an upscale phase. History smoothing/rejection differs too. Shared mode names do not establish pixel parity; compare phase sweeps, mirrored edges and moving fine detail before choosing a policy. |
+| Native history trust is not identical to GLES | GLES trusts history from forward/backward flow agreement alone (0.1 to 0.5 px) and, in Quality, rejects luma outside the range of the four previous texels. Native still multiplies in the structure tensor's conditioning and `exp(-32*residual)` of the patch. | Native rejects history on flat areas, straight edges and codec noise where GLES keeps it. Whether native should follow is undecided; neither is verified on game video. |
 | Quality is video-specific | The extra Activate pass uses confidence, forward/backward consistency and luma change, not official depth separation, pre-transparent color and luma-history bit packing. Its YCoCg center/extent clipping is not an unchanged three-pass SGSR 2 port. | Can reduce colored history contamination but cannot reproduce the engine's disocclusion/reactive information. The corrected GLES gate is described below. |
 | HDR working domain | The video filter blends encoded PQ directly. The official three-pass compute path has its own packed/tonemapped YCoCg and pre-exposure contract; the fragment and Unity variants are not one universal HDR pipeline. | Do not claim full HDR equivalence to the engine sample. Exposure changes/highlights need actual HDR comparisons; matrix/range correctness alone is insufficient. |
 | Extra resampling | GLES first resolves the external texture through the actual SurfaceTexture transform with linear sampling. Near native-size input, both renderers can reconstruct at 4/3× or 2× internal resolution and linearly resolve to presentation size. | A crop/producer transform can prevent a perfectly 1:1 copy. A 2× linear resolve averages a 2×2 footprint; 4/3× has phase-dependent weights. This can reduce aliasing **and** attenuate detail. A supersampled output is not additional source information. |

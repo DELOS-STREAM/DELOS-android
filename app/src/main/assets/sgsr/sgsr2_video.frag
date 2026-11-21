@@ -59,15 +59,18 @@ void main()
 
     highp ivec2 InputPos = ivec2(Jitteruv * renderSize);
 
-    // RG = current-to-previous source-pixel flow; B = residual; A = confidence.
-    vec4 backward=textureLod(MotionDepthClipAlphaBuffer,flowUv(Jitteruv),0.0);
-    vec2 rawPrevious=Jitteruv+backward.xy*renderSizeRcp;
-    vec4 forward=textureLod(ForwardFlow,flowUv(rawPrevious),0.0);
-    float consistency=length(backward.xy+forward.xy);
-    float confidence=min(backward.w,forward.w)*exp(-consistency*1.5);
+    // RG = current-to-previous source-pixel flow. History is trusted where the forward flow at the
+    // previous position leads back here: a disagreement above a tenth of a pixel is an occlusion or
+    // a wrong match. Flat areas and straight edges keep full trust (the flow along them is
+    // uncertain, but every position along them holds the same picture); what differs from the
+    // current picture is still clipped to its neighbourhood below.
+    vec2 backward=textureLod(MotionDepthClipAlphaBuffer,flowUv(Jitteruv),0.0).xy;
+    vec2 rawPrevious=Jitteruv+backward*renderSizeRcp;
+    vec2 forward=textureLod(ForwardFlow,flowUv(rawPrevious),0.0).xy;
+    float confidence=1.0-smoothstep(0.1,0.5,length(backward+forward));
     if(any(lessThan(rawPrevious,vec2(0.0)))||any(greaterThan(rawPrevious,vec2(1.0)))) confidence=0.0;
     float frameReset=max(reset,textureLod(SceneChange,vec2(0.5),0.0).r);
-    highp vec3 mda=vec3(-2.0*backward.xy*renderSizeRcp,1.0-confidence);
+    highp vec3 mda=vec3(-2.0*backward*renderSizeRcp,1.0-confidence);
     highp vec2 Motion = mda.xy;
 
     highp vec2 PrevUV;
