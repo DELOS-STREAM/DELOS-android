@@ -94,13 +94,13 @@
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">Browse</string>
     <!-- The video player of the viewer: the hint bar (Left/Right seek, A, Y) and its buttons -->
-    <string name="overview_hint_seek">Seek 10 s</string>
+    <string name="overview_hint_seek">Seek 5 s</string>
     <string name="overview_hint_play">Play</string>
     <string name="overview_hint_pause">Pause</string>
     <string name="overview_hint_mute">Mute</string>
     <string name="overview_hint_unmute">Sound on</string>
-    <string name="overview_video_back">Back 10 seconds</string>
-    <string name="overview_video_forward">Forward 10 seconds</string>
+    <string name="overview_video_back">Back 5 seconds</string>
+    <string name="overview_video_forward">Forward 5 seconds</string>
     <string name="overview_video_volume">Volume</string>
     <!-- A video the YouTube player cannot play: the title, then why -->
     <string name="overview_video_unavailable">This video can\'t be played</string>

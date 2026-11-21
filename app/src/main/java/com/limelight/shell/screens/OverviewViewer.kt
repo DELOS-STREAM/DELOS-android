@@ -247,7 +247,7 @@ internal fun OverviewViewer(
     fun seek(side: Int) {
         val v = video ?: return
         feedback.play(Cue.MOVE)
-        v.seekBy(10 * side)
+        v.seekBy(SEEK_STEP * side)
         scope.launch { dock.flash(side) }
     }
     fun activate(slot: DockSlot) {

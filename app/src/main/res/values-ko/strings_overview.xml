@@ -64,13 +64,13 @@
     <string name="overview_video">동영상</string>
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">둘러보기</string>
-    <string name="overview_hint_seek">10초 이동</string>
+    <string name="overview_hint_seek">5초 이동</string>
     <string name="overview_hint_play">재생</string>
     <string name="overview_hint_pause">일시정지</string>
     <string name="overview_hint_mute">음소거</string>
     <string name="overview_hint_unmute">음소거 해제</string>
-    <string name="overview_video_back">10초 뒤로</string>
-    <string name="overview_video_forward">10초 앞으로</string>
+    <string name="overview_video_back">5초 뒤로</string>
+    <string name="overview_video_forward">5초 앞으로</string>
     <string name="overview_video_volume">볼륨</string>
     <string name="overview_video_unavailable">이 동영상을 재생할 수 없습니다</string>
     <string name="overview_video_blocked">소유자가 다른 앱에서의 재생을 허용하지 않습니다.</string>
