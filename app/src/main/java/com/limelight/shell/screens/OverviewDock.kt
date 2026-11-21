@@ -273,10 +273,12 @@ internal fun ViewerDock(
                         item.kind == OverviewModel.MediaKind.VIDEO -> item.name ?: stringResource(R.string.overview_video)
                         else -> stringResource(R.string.overview_screenshot, item.number)
                     }
+                    // The count stays put ("/ 12 ·"); only a title too long for the column scrolls
+                    val titleStyle = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 28.tpx)
+                    BasicText(stringResource(R.string.overview_viewer_count, media.size, "").trimEnd(), Modifier.alignByBaseline(),
+                        style = titleStyle, maxLines = 1, softWrap = false)
                     com.limelight.shell.ui.MarqueeContent(name, Modifier.weight(1f).alignByBaseline(), active = !reduced, bounce = true) {
-                        BasicText(stringResource(R.string.overview_viewer_count, media.size, name),
-                            style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 28.tpx),
-                            maxLines = 1, softWrap = false)
+                        BasicText(name, style = titleStyle, maxLines = 1, softWrap = false)
                     }
                 }
                 Box { retained?.let { SeekRow(state, it, focused(DockSlot.SEEK)) } }
