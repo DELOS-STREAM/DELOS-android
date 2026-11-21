@@ -6,7 +6,7 @@
     <string name="help_seekbar_metered_bitrate_kbps">종량제 네트워크(모바일 데이터, 일부 핫스팟)에서의 비트레이트예요. 0이면 일반 비트레이트의 4분의 1을 사용해요.</string>
     <string name="help_frame_pacing">Warp 모드는 일부 기기에서 작동하지 않을 수 있어요.</string>
     <string name="help_checkbox_async_decode">폴링 대신 MediaCodec 콜백을 사용해요. H.264, HEVC, AV1에만 적용돼요. 디코딩이 불안정하면 꺼 주세요.</string>
-    <string name="help_pref_low_latency_frame_balance">디코더를 더 자주 폴링하는 균형 페이싱이에요. Fast V-Sync를 제외한 다른 MediaCodec 페이싱보다 우선해요. 기기에 따라 달라요.</string>
+    <string name="help_pref_low_latency_frame_balance">디코더를 더 자주 폴링하는 균형 페이싱이에요. Fast V-Sync와 위상 동기화를 제외한 다른 MediaCodec 페이싱보다 우선해요. 기기에 따라 달라요.</string>
     <string name="help_checkbox_ultra_low_latency">MediaCodec의 추가 저지연 옵션이에요. 효과는 칩과 드라이버에 따라 달라요. 영상이 불안정하면 꺼 주세요.</string>
     <string name="help_checkbox_use_virtual_display">Vibepollo 또는 Apollo에 요청한 해상도와 FPS의 가상 PC 디스플레이를 요청해요. 호스트가 지원해야 해요.</string>
     <string name="help_checkbox_auto_orientation">기기의 현재 세로 또는 가로 방향으로 스트림을 시작해요. PC 데스크톱은 회전되지 않아요.</string>
@@ -119,6 +119,7 @@
     <string name="help_frame_pacing_smoothness">일정하게 전달해요. 버퍼링과 지연이 늘어나요.</string>
     <string name="help_frame_pacing_warp">FPS를 두 배로 요청하고(60 → 120) 최신 프레임을 표시해요.</string>
     <string name="help_frame_pacing_warp2">FPS를 네 배로 요청해요 (60 → 240).</string>
+    <string name="help_frame_pacing_phase_lock">늦은 프레임을 위해 화면 갱신마다 기다려요. MediaCodec에서만 사용해요.</string>
     <string name="help_frame_pacing_fast_vsync">FPS와 주사율 중 낮은 쪽에 동기화해요. MediaCodec에서만 사용해요.</string>
     <string name="help_video_format_auto">H.264 또는 HEVC를 골라요. AV1과 PyroWave는 직접 선택해야 해요.</string>
     <string name="help_video_format_forceav1">낮은 비트레이트에서 효율적이에요. 호스트의 AV1 인코딩과 이 기기의 디코딩이 필요해요.</string>
@@ -171,6 +172,7 @@
     <string name="help_note_pyrowave_recommends">PyroWave는 여기서 %1$d Mbps를 권장해요.</string>
     <string name="help_note_lfr_balanced">LFR이 켜져 있어요: 균형을 사용해요.</string>
     <string name="help_note_fast_vsync_lfr">Fast V-Sync가 LFR보다 우선해요.</string>
+    <string name="help_note_phase_lock_lfr">위상 동기화가 LFR보다 우선해요.</string>
     <string name="help_note_not_with_pyrowave">PyroWave에서는 사용하지 않아요.</string>
     <string name="help_note_needs_pyrowave">PyroWave 코덱이 필요해요.</string>
     <string name="help_note_hdr_420">HDR이 켜져 있어요: 4:2:0을 사용해요.</string>

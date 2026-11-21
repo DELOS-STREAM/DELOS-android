@@ -65,7 +65,9 @@ data class SettingsCapabilities(
         "video_format" -> spec.choices.filter {
             (it.value != "forceh265" || hevc) && (it.value != "forceav1" || av1) && (it.value != "pyrowave" || pyroWave)
         }
-        "frame_pacing" -> if (values["video_format"] == "pyrowave") spec.choices.filter { it.value != "fast-vsync" } else spec.choices
+        "frame_pacing" -> if (values["video_format"] == "pyrowave") spec.choices.filter {
+            it.value != "fast-vsync" && it.value != "phase-lock"
+        } else spec.choices
         // The classic array repeats a formatted label; make the five stored layouts distinguishable.
         // A selection that matches no preset (Advanced edits in the Debug lab) stays visible instead of looking unset
         "list_rumble_feel" -> if (values[spec.key] == "CUSTOM") spec.choices + SettingChoice(res.getString(R.string.settings_choice_custom), "CUSTOM") else spec.choices

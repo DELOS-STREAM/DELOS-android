@@ -7,7 +7,7 @@
     <string name="help_seekbar_metered_bitrate_kbps">Bitrate v měřené síti (mobilní data, některé hotspoty). Hodnota 0 použije čtvrtinu běžného bitrate.</string>
     <string name="help_frame_pacing">Režimy Warp nemusí fungovat na každém zařízení.</string>
     <string name="help_checkbox_async_decode">Zpětná volání MediaCodec místo dotazování. Jen pro H.264, HEVC a AV1. Vypni, pokud je dekódování nestabilní.</string>
-    <string name="help_pref_low_latency_frame_balance">Vyvážený pacing, který se dekodéru dotazuje častěji. Přebíjí ostatní pacing MediaCodec kromě Fast V-Sync. Závisí na zařízení.</string>
+    <string name="help_pref_low_latency_frame_balance">Vyvážený pacing, který se dekodéru dotazuje častěji. Přebíjí ostatní pacing MediaCodec kromě Fast V-Sync a fázového zámku. Závisí na zařízení.</string>
     <string name="help_checkbox_ultra_low_latency">Další volby MediaCodec pro nízkou latenci. Přínos závisí na čipu a ovladači. Vypni, pokud je video nestabilní.</string>
     <string name="help_checkbox_use_virtual_display">Požádá Vibepollo nebo Apollo o virtuální displej PC s požadovaným rozlišením a FPS. Vyžaduje podporu v PC.</string>
     <string name="help_checkbox_auto_orientation">Spustí stream v aktuální orientaci zařízení na výšku nebo na šířku. Plocha PC se neotáčí.</string>
@@ -121,6 +121,7 @@
     <string name="help_frame_pacing_smoothness">Rovnoměrné doručování; přidává buffering a latenci.</string>
     <string name="help_frame_pacing_warp">Požádá o dvojnásobek FPS (60 → 120); zobrazí nejnovější snímek.</string>
     <string name="help_frame_pacing_warp2">Požádá o čtyřnásobek FPS (60 → 240).</string>
+    <string name="help_frame_pacing_phase_lock">Pozdrží každé obnovení kvůli opožděnému snímku. Jen MediaCodec.</string>
     <string name="help_frame_pacing_fast_vsync">Synchronizuje na nižší z FPS a obnovovací frekvence. Jen MediaCodec.</string>
     <string name="help_video_format_auto">Vybere H.264 nebo HEVC. AV1 a PyroWave je potřeba vybrat ručně.</string>
     <string name="help_video_format_forceav1">Efektivní při nízkém bitrate. Vyžaduje kódování AV1 v PC a dekódování tady.</string>
@@ -175,6 +176,7 @@
     <string name="help_note_pyrowave_recommends">PyroWave tady doporučuje %1$d Mbps.</string>
     <string name="help_note_lfr_balanced">LFR je zapnuto: používá se Vyvážený.</string>
     <string name="help_note_fast_vsync_lfr">Fast V-Sync přebíjí LFR.</string>
+    <string name="help_note_phase_lock_lfr">Fázový zámek přebíjí LFR.</string>
     <string name="help_note_not_with_pyrowave">S PyroWave se nepoužívá.</string>
     <string name="help_note_needs_pyrowave">Vyžaduje kodek PyroWave.</string>
     <string name="help_note_hdr_420">HDR je zapnuto: používá se 4:2:0.</string>

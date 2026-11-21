@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 import org.jcodec.codecs.h264.H264Utils;
 import org.jcodec.codecs.h264.io.model.SeqParameterSet;
@@ -44,6 +45,9 @@ import android.os.SystemClock;
 import android.util.Range;
 import android.view.Choreographer;
 import android.view.Surface;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements Choreographer.FrameCallback {
     // Latency profile: favor minimal end-to-end delay over absolute smoothness.
@@ -177,6 +181,19 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         @Override public int nextOutputIndex(BufferInfo info, int timeoutUs) { return dequeueOutput(info, timeoutUs); }
         @Override public void releaseOutputBuffer(int index, boolean render) { videoDecoder.releaseOutputBuffer(index, render); }
     };
+    // Phase lock (#115): the Choreographer thread publishes refresh deadlines into phaseLock (its monitor is the short
+    // state lock), the renderer thread holds the newest decoded frame and releases it outside that lock.
+    private final PhaseLockDriver phaseLock = new PhaseLockDriver();
+    private final PhaseLockDriver.Snapshot phaseSnapshot = new PhaseLockDriver.Snapshot();
+    // Renderer thread only; codec recovery forgets the buffer while that thread is quiesced
+    private int phaseHeldIndex = -1;
+    private long phaseHeldPtsUs, phaseHeldDequeueNs;
+    private PhaseLockFrameCallback phaseFrameCallback;
+    private Object phaseVsyncCallback;
+    // Fast V-Sync/Phase lock comparison figures (DelosPacing); null unless debug build or performance overlay
+    private volatile PacingStats pacingStats;
+    private final long[] phaseCounters = new long[PhaseLockDriver.C_COUNT];
+    private final long[] phaseCountersLogged = new long[PhaseLockDriver.C_COUNT];
 
     private boolean needsSpsBitstreamFixup, isExynos4;
     private boolean adaptivePlayback, directSubmit, fusedIdrFrame;
@@ -744,6 +761,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                 videoDecoder.setOutputSurface(renderer.getDecoderSurface());
                 arrival.didRedirect();
                 updateFrameRenderedListener();
+                phaseLock.reset();
             }
             renderer.attachArrivalOutput();
             return true;
@@ -769,6 +787,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                 videoDecoder.setOutputSurface(target);
                 arrival.didRestoreDirect(lastTimestampUs, System.nanoTime());
                 updateFrameRenderedListener();
+                phaseLock.reset();
             }
         } finally {
             finishLaunchSurfaceChange();
@@ -820,6 +839,13 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     }
 
     private final MediaCodec.OnFrameRenderedListener frameRenderedListener = (codec, ptsUs, timeNs) -> {
+        // Direct output: timeNs is the frame's presentation, the end of the pacing figures
+        PacingStats stats = pacingStats;
+        if (stats != null && sgsr == null) {
+            stats.onPresented(ptsUs, timeNs);
+            // Kept live only for the figures: the startup bookkeeping below is done, skip its monitor
+            if (firstCodecFrameRendered && directLaunchArrival == null && !USE_FRAME_RENDER_TIME) return;
+        }
         synchronized (codecRecoveryMonitor) {
             if (codec != videoDecoder || stopping) return;
             DirectLaunchArrival arrival = directLaunchArrival;
@@ -840,7 +866,8 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || videoDecoder == null || !decoderStarted) return;
         DirectLaunchArrival arrival = directLaunchArrival;
         boolean handover = arrival != null && (arrival.isRedirected() || arrival.isAwaitingDirectFrame());
-        boolean enabled = USE_FRAME_RENDER_TIME || !firstCodecFrameRendered || handover;
+        boolean enabled = USE_FRAME_RENDER_TIME || !firstCodecFrameRendered || handover
+                || (pacingStats != null && sgsr == null);
         if (frameRenderedListenerEnabled != null && frameRenderedListenerEnabled == enabled) return;
         videoDecoder.setOnFrameRenderedListener(enabled ? frameRenderedListener : null, null);
         frameRenderedListenerEnabled = enabled;
@@ -956,9 +983,13 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         if (sgsrFailed && sgsr != null) { sgsr.close(); sgsr = null; }
         // Stage timestamps cost a few stores per frame: only while the overlay shows them or in debug builds
         if ((BuildConfig.DEBUG || prefs.enablePerfOverlay) && latency == null) latency = new LatencyStages();
+        if ((BuildConfig.DEBUG || prefs.enablePerfOverlay) && pacingStats == null && isPhaseOrFastVsync()) {
+            pacingStats = new PacingStats();
+        }
         if (sgsr != null) {
             sgsr.setLatencyStages(latency);
             sgsr.setOverloadListener(this::onUpscalerOverload);
+            sgsr.setPresentAtFrameTimestamp(prefs.framePacing == PreferenceConfiguration.FRAME_PACING_PHASE_LOCK);
         }
         DirectLaunchArrival arrival = directLaunchArrival;
         // Error publication may race recovery; keep OES until its EGL detach is confirmed.
@@ -1537,6 +1568,9 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             }
             synchronized (codecRecoveryMonitor) {
                 nanoPacer.reset();
+                // The held buffer dies with the flush/reset; the renderer thread is quiesced and holds no reference
+                phaseLock.reset();
+                phaseHeldIndex = -1;
                 if (useAsyncCodec) asyncCodec.quiesceAndRelease(videoDecoder, asyncRelease);
                 // Input and output buffers are invalidated by stop() and reset().
                 nextInputBuffer = null;
@@ -1904,7 +1938,8 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     }
 
     private void startChoreographerThread() {
-        if (prefs.framePacing != PreferenceConfiguration.FRAME_PACING_BALANCED) {
+        final boolean phaseLocked = prefs.framePacing == PreferenceConfiguration.FRAME_PACING_PHASE_LOCK;
+        if (prefs.framePacing != PreferenceConfiguration.FRAME_PACING_BALANCED && !phaseLocked) {
             // Not using Choreographer in this pacing mode
             return;
         }
@@ -1918,9 +1953,163 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         choreographerHandler.post(new Runnable() {
             @Override
             public void run() {
-                Choreographer.getInstance().postFrameCallback(MediaCodecDecoderRenderer.this);
+                if (!phaseLocked) {
+                    Choreographer.getInstance().postFrameCallback(MediaCodecDecoderRenderer.this);
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    PhaseLockVsyncCallback callback = new PhaseLockVsyncCallback();
+                    phaseVsyncCallback = callback;
+                    Choreographer.getInstance().postVsyncCallback(callback);
+                } else {
+                    phaseFrameCallback = new PhaseLockFrameCallback();
+                    Choreographer.getInstance().postFrameCallback(phaseFrameCallback);
+                }
             }
         });
+    }
+
+    private static final long PHASE_IDLE_WAIT_NS = 16_666_667L;
+    private static final long PHASE_FRAME_WAIT_MAX_US = 50_000L;
+
+    @SuppressWarnings("deprecation")
+    private android.view.Display streamDisplay() {
+        return activity.getWindowManager().getDefaultDisplay();
+    }
+
+    private static long displayPeriodNs(android.view.Display display) {
+        float hz = display.getRefreshRate();
+        return hz > 1f ? (long) (1_000_000_000.0 / hz) : PHASE_IDLE_WAIT_NS;
+    }
+
+    /** The SGSR output stage's frame-to-swap time, 0 for direct output. */
+    private long sgsrWorkNs() {
+        SgsrRenderer current = sgsr;
+        return current != null ? (long) (current.getFrameToSwapMs() * 1_000_000f) : 0L;
+    }
+
+    private boolean isPhaseOrFastVsync() {
+        return prefs.framePacing == PreferenceConfiguration.FRAME_PACING_PHASE_LOCK ||
+                prefs.framePacing == PreferenceConfiguration.FRAME_PACING_FAST_VSYNC;
+    }
+
+    /** Choreographer thread, after a refresh was published: wake a renderer thread waiting for it, take part in recovery. */
+    private void afterPhaseLockRefresh() {
+        Thread renderer = rendererThread;
+        if (renderer != null) LockSupport.unpark(renderer);
+        doCodecRecoveryIfRequired(CR_FLAG_CHOREOGRAPHER);
+    }
+
+    /** Phase lock refreshes without FrameData (before Android 13): the callback's vsync plus a period, the display's deadline. */
+    private final class PhaseLockFrameCallback implements Choreographer.FrameCallback {
+        @Override
+        public void doFrame(long frameTimeNanos) {
+            if (stopping) return;
+            android.view.Display display = streamDisplay();
+            long periodNs = displayPeriodNs(display);
+            long presentNs = PhaseLockDriver.legacyPresentationNs(frameTimeNanos, display.getAppVsyncOffsetNanos(), periodNs);
+            phaseLock.publishRefresh(presentNs,
+                    PhaseLockDriver.legacyDeadlineNs(presentNs, display.getPresentationDeadlineNanos()), periodNs);
+            afterPhaseLockRefresh();
+            Choreographer.getInstance().postFrameCallback(this);
+        }
+    }
+
+    /** Phase lock refreshes from the platform's frame timelines: expected presentation and deadline per timeline. */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private final class PhaseLockVsyncCallback implements Choreographer.VsyncCallback {
+        private final long[] presentNs = new long[8];
+        private final long[] deadlineNs = new long[8];
+
+        @Override
+        public void onVsync(@NonNull Choreographer.FrameData data) {
+            if (stopping) return;
+            Choreographer.FrameTimeline[] timelines = data.getFrameTimelines();
+            long preferredVsyncId = data.getPreferredFrameTimeline().getVsyncId();
+            int count = Math.min(timelines.length, presentNs.length);
+            int preferred = 0;
+            for (int i = 0; i < count; i++) {
+                presentNs[i] = timelines[i].getExpectedPresentationTimeNanos();
+                deadlineNs[i] = timelines[i].getDeadlineNanos();
+                if (timelines[i].getVsyncId() == preferredVsyncId) preferred = i;
+            }
+            phaseLock.publishTimelines(presentNs, deadlineNs, count, preferred, displayPeriodNs(streamDisplay()), sgsrWorkNs());
+            afterPhaseLockRefresh();
+            Choreographer.getInstance().postVsyncCallback(this);
+        }
+    }
+
+    /**
+     * One Phase lock step on the renderer thread: take every decoded frame that is ready (the newest is held, older
+     * ones are dropped), ask the model under its lock, then release or wait outside it. A parked refresh waits in the
+     * codec for a frame until its latest drawing time; a held frame waits (parked thread, no spin) until the
+     * Choreographer thread publishes the next refresh; with neither, the codec is waited on as in the other modes.
+     */
+    private void phaseLockStep(BufferInfo info) {
+        final long stepNs = System.nanoTime();
+        if (useAsyncCodec) asyncCodec.drainNoRenderReleaseQueue(videoDecoder, asyncRelease);
+        int index;
+        while ((index = dequeueOutput(info, 0)) >= 0 || index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+            holdPhaseLockOutput(info, index);
+        }
+        final PhaseLockDriver.Snapshot decision = phaseSnapshot;
+        phaseLock.decide(phaseHeldIndex >= 0, sgsrWorkNs(), decision);
+        switch (decision.action) {
+            case DRAW:
+                releasePhaseLocked(decision, stepNs);
+                break;
+            case WAIT_FRAME: {
+                long remainingNs = decision.latestNs - System.nanoTime();
+                if (remainingNs > 0) {
+                    int timeoutUs = (int) Math.min((remainingNs + 999) / 1000, PHASE_FRAME_WAIT_MAX_US);
+                    holdPhaseLockOutput(info, dequeueOutput(info, timeoutUs));
+                }
+                break;
+            }
+            default:
+                if (phaseHeldIndex >= 0) {
+                    LockSupport.parkNanos(this, decision.periodNs > 0 ? decision.periodNs : PHASE_IDLE_WAIT_NS);
+                } else {
+                    holdPhaseLockOutput(info, dequeueOutput(info, getOutputDequeueTimeoutUs()));
+                }
+        }
+    }
+
+    /** A dequeue result: a frame becomes the held one (the previous one is dropped), a format change is applied. */
+    private void holdPhaseLockOutput(BufferInfo info, int index) {
+        if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+            handleOutputFormatChanged();
+            return;
+        }
+        if (index < 0) return;
+        final long nowNs = System.nanoTime();
+        numFramesOut++;
+        int previous = phaseHeldIndex;
+        phaseHeldIndex = index;
+        phaseHeldPtsUs = info.presentationTimeUs;
+        phaseHeldDequeueNs = nowNs;
+        phaseLock.onFrameDequeued(nowNs);
+        if (previous >= 0) {
+            videoDecoder.releaseOutputBuffer(previous, false);
+            PacingStats stats = pacingStats;
+            if (stats != null) stats.onDrop();
+        }
+    }
+
+    /** Releases the held frame for the decided refresh, outside the phase-lock state lock, and measures the work. */
+    private void releasePhaseLocked(PhaseLockDriver.Snapshot decision, long stepNs) {
+        final int index = phaseHeldIndex;
+        final long ptsUs = phaseHeldPtsUs;
+        final long dequeueNs = phaseHeldDequeueNs;
+        phaseHeldIndex = -1;
+        videoDecoder.releaseOutputBuffer(index, decision.releaseTimestampNs);
+        final long doneNs = System.nanoTime();
+        // From the frame (or the wake-up for its refresh) to the release's return: the budget a refresh must leave
+        if (!decision.forced) phaseLock.onReleased(doneNs - Math.max(dequeueNs, stepNs));
+        PacingStats stats = pacingStats;
+        if (stats != null) stats.onRelease(ptsUs, dequeueNs, decision.forced ? doneNs : decision.targetNs, doneNs, decision.periodNs);
+        recordPacing(dequeueNs);
+        activeWindowVideoStats.totalFramesRendered++;
+        frameTimes.add(doneNs);
+        updateDecodeLatencyStats(ptsUs, dequeueNs);
     }
 
     private void startRendererThread()
@@ -1936,6 +2125,12 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                 int tryAgainStreak = 0;
                 while (!stopping) {
                     try {
+                        // Delos: Phase lock (#115) owns its own dequeue, wait and release
+                        if (prefs.framePacing == PreferenceConfiguration.FRAME_PACING_PHASE_LOCK) {
+                            phaseLockStep(info);
+                            continue;
+                        }
+
                         // Latency mode: show the newest decoded frame as soon as it is ready
                         if (prefs.framePacing == PreferenceConfiguration.FRAME_PACING_MIN_LATENCY &&
                                 renderNewestFrameNow(info)) {
@@ -1967,6 +2162,8 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                                 // Get the last output buffer in the queue
                                 while ((outIndex = dequeueOutput(info, 0)) >= 0) {
                                     videoDecoder.releaseOutputBuffer(lastIndex, false);
+                                    PacingStats dropStats = pacingStats;
+                                    if (dropStats != null) dropStats.onDrop();
 
                                     numFramesOut++;
 
@@ -1985,11 +2182,20 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                                     nanoLatest.index = lastIndex;
                                     nanoLatest.ptsUs = presentationTimeUs;
                                     nanoLatest.dequeueNs = dequeueNs;
-                                    numFramesOut += nanoPacer.waitAndDrainLatest(info, nanoLatest, nanoCallbacks);
+                                    int drained = nanoPacer.waitAndDrainLatest(info, nanoLatest, nanoCallbacks);
+                                    numFramesOut += drained;
                                     lastIndex = nanoLatest.index;
                                     presentationTimeUs = nanoLatest.ptsUs;
                                     dequeueNs = nanoLatest.dequeueNs;
-                                    videoDecoder.releaseOutputBuffer(lastIndex, System.nanoTime());
+                                    final long releaseNs = System.nanoTime();
+                                    videoDecoder.releaseOutputBuffer(lastIndex, releaseNs);
+                                    PacingStats stats = pacingStats;
+                                    if (stats != null) {
+                                        for (int i = 0; i < drained; i++) stats.onDrop();
+                                        long targetNs = nanoPacer.lastTargetNs();
+                                        stats.onRelease(presentationTimeUs, dequeueNs, targetNs != 0L ? targetNs : releaseNs,
+                                                releaseNs, displayPeriodNs(streamDisplay()));
+                                    }
                                 }
                                 else if (prefs.framePacing == PreferenceConfiguration.FRAME_PACING_MAX_SMOOTHNESS ||
                                         prefs.framePacing == PreferenceConfiguration.FRAME_PACING_CAP_FPS) {
@@ -2046,6 +2252,26 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         rendererThread.setName("Video - Renderer (MediaCodec)");
         rendererThread.setPriority(Thread.NORM_PRIORITY + 2);
         rendererThread.start();
+    }
+
+    /** The once-a-second DelosPacing line (input thread): the shared figures, plus Phase lock's decision counters. */
+    private void logPacingWindow(PacingStats pacing) {
+        final boolean phaseLocked = prefs.framePacing == PreferenceConfiguration.FRAME_PACING_PHASE_LOCK;
+        String extra = null;
+        if (phaseLocked) {
+            phaseLock.counters(phaseCounters);
+            extra = "draws=" + (phaseCounters[PhaseLockDriver.C_DRAWS] - phaseCountersLogged[PhaseLockDriver.C_DRAWS]) +
+                    " parks=" + (phaseCounters[PhaseLockDriver.C_PARKS] - phaseCountersLogged[PhaseLockDriver.C_PARKS]) +
+                    " expires=" + (phaseCounters[PhaseLockDriver.C_EXPIRES] - phaseCountersLogged[PhaseLockDriver.C_EXPIRES]) +
+                    " skipped=" + (phaseCounters[PhaseLockDriver.C_SKIPPED] - phaseCountersLogged[PhaseLockDriver.C_SKIPPED]) +
+                    " forced=" + (phaseCounters[PhaseLockDriver.C_FORCED] - phaseCountersLogged[PhaseLockDriver.C_FORCED]) +
+                    " work=" + (phaseCounters[PhaseLockDriver.C_WORK_NS] < 0 ? "unmeasured"
+                            : PacingStats.ms(phaseCounters[PhaseLockDriver.C_WORK_NS])) +
+                    " sgsr->swap=" + PacingStats.ms(sgsrWorkNs());
+            System.arraycopy(phaseCounters, 0, phaseCountersLogged, 0, PhaseLockDriver.C_COUNT);
+        }
+        android.util.Log.i(PacingStats.TAG, pacing.drainWindow(phaseLocked ? "phase-lock" : "fast-vsync", sgsr == null,
+                System.nanoTime(), displayPeriodNs(streamDisplay()), extra));
     }
 
     /** The pacing stage: from the frame leaving the codec ({@code dequeueNs}) to its release to the output. */
@@ -2225,6 +2451,10 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
 
                     // Deregister the frame callback (if registered)
                     Choreographer.getInstance().removeFrameCallback(MediaCodecDecoderRenderer.this);
+                    if (phaseFrameCallback != null) Choreographer.getInstance().removeFrameCallback(phaseFrameCallback);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && phaseVsyncCallback != null) {
+                        Choreographer.getInstance().removeVsyncCallback((Choreographer.VsyncCallback) phaseVsyncCallback);
+                    }
                 }
             });
         }
@@ -2450,6 +2680,8 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             LatencyStages stages = latency;
             LatencyStages.Summary latencySummary = stages != null ? stages.summarize() : null;
             if (latencySummary != null && BuildConfig.DEBUG) android.util.Log.d(LatencyStages.TAG, latencySummary.describe());
+            PacingStats pacing = pacingStats;
+            if (pacing != null) logPacingWindow(pacing);
             if (prefs.enablePerfOverlay) {
                 VideoStats lastTwo = new VideoStats();
                 lastTwo.add(lastWindowVideoStats);

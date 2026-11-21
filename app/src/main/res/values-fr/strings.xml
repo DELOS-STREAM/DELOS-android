@@ -211,6 +211,7 @@
     <string name="pacing_balanced">Équilibré</string>
     <string name="pacing_balanced_alt">Équilibré avec limite FPS</string>
     <string name="pacing_smoothness">Vidéo la plus fluide</string>
+    <string name="pacing_phase_lock">Verrouillage de phase</string>
     <string name="pacing_fast_vsync">V-Sync rapide (Nano Pacer)</string>
 
     <string name="title_async_decode">Décodage asynchrone</string>
