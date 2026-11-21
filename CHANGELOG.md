@@ -10,6 +10,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-21
+_A clearer update card that opens straight from Check now. 1.3.1 was skipped: its tag points at a commit that was never released._
+
 ### Changed
 - **Update card**: the offer of a new version sits in the centre of the screen, wider, with a deep shadow and over a blur of what lies behind it, like the problem report card. Both cards slightly dim the screen behind them and lose the A and B icons on their buttons.
 - **Check now**: when it finds a new version, the update card opens at once over Settings instead of waiting until you return to the home screen.
@@ -392,7 +395,8 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 ### Removed
 - **Dead-code removal**: SBS 3D, performance logging and other dead code.
 
-[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.0...v1.3.2
 [1.3.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.0.0...v1.1.0
