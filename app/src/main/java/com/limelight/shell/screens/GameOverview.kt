@@ -282,7 +282,6 @@ internal fun GameOverview(
     val scroll = rememberScrollState()
     val track = rememberLazyListState()
     val similarRow = rememberLazyListState()
-    val pageHaze = remember { HazeState() }
     // The shell's background haze: this page is a source over the background in it (z 1), so the top bar and the screenshot viewer,
     // which float over the page, blur what lies under them now (the background, the page as it scrolls and moves), not a picture
     // of the dashboard
@@ -487,8 +486,11 @@ internal fun GameOverview(
             },
     ) {
         Box(Modifier.fillMaxSize().hazeSource(viewerHaze, zIndex = 1f)) {
-            OverviewBackdrop(controller, shell.hero, scroll::value, reducedMotion, pageHaze, maxOf(DEEP_BLUR, dashboardBlur))
-            CompositionLocalProvider(LocalOverviewFocus provides focus, LocalBackdropHaze provides pageHaze, LocalBringIntoViewSpec provides OverviewNoAutoScroll) {
+            OverviewBackdrop(controller, shell.hero, scroll::value, reducedMotion, maxOf(DEEP_BLUR, dashboardBlur))
+            // The page's glass is tinted, not blurred: its backdrop is blurred already, and a blur of it per pill, chip and card
+            // rendered the playing hero again for each of them every frame (#113). The top bar, over the sharp contour lines, keeps
+            // its blur (the shell's own source, outside this provider).
+            CompositionLocalProvider(LocalOverviewFocus provides focus, LocalBackdropHaze provides null, LocalBringIntoViewSpec provides OverviewNoAutoScroll) {
                 Box(
                     Modifier
                         .fillMaxSize()
@@ -1763,10 +1765,10 @@ private class FrameShape(private val left: Float, private val top: Float, privat
 /**
  * The page's backdrop keeps the dashboard's hero ([BackdropMirror]), at the user's blur and playing when animated.
  * The scroll crossfades a deeply blurred layer of that hero over it (opacity only, no animated blur radius), drifting
- * slower than the page and zooming a little. Browsing media never changes this source. It supplies the page's glass ([haze]).
+ * slower than the page and zooming a little. Browsing media never changes this source.
  */
 @Composable
-private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, scroll: () -> Int, reduced: Boolean, haze: HazeState, deepBlur: Int) {
+private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, scroll: () -> Int, reduced: Boolean, deepBlur: Int) {
     val colors = LocalDelosColors.current
     val k = stageUnit()
     val stage = LocalStage.current
@@ -1787,7 +1789,6 @@ private fun OverviewBackdrop(controller: OverviewController, hero: GameArt?, scr
         Modifier
             .fillMaxSize()
             .onGloballyPositioned { anchor[0] = it }
-            .hazeSource(haze)
             // Its opacity applies to each layer as it draws: the background it fades over is the same picture, so no offscreen copy
             // of the whole screen is needed while it fades in and out
             .graphicsLayer { alpha = enter(); compositingStrategy = CompositingStrategy.ModulateAlpha }
