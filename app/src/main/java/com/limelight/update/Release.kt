@@ -56,6 +56,7 @@ object ReleaseNotes {
     private val link = Regex("""!?\[([^\]]*)]\([^)]*\)""")
     private val heading = Regex("""^#{1,6}\s*""")
     private val bullet = Regex("""^[-*+]\s+""")
+    private val emphasis = Regex("""(?<![\w*_])([*_])(?![\s*_])(.+?)(?<![\s*_])\1(?![\w*_])""")
 
     /** The first [MAX_LINES] non-empty lines of [markdown] without Markdown marks, each cut at [MAX_LINE_CHARS]; empty when there are none. */
     fun summary(markdown: String): String = markdown.replace(comment, "").lines().asSequence()
@@ -64,5 +65,5 @@ object ReleaseNotes {
         .joinToString("\n")
 
     private fun plain(line: String): String = line.trim().replace(heading, "").replace(bullet, "• ")
-        .replace(link, "$1").replace("**", "").replace("__", "").replace("`", "").trim()
+        .replace(link, "$1").replace("**", "").replace("__", "").replace("`", "").replace(emphasis, "$2").trim()
 }

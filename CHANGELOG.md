@@ -10,6 +10,14 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Changed
+- **Update card**: the offer of a new version sits in the centre of the screen, wider, with a deep shadow and over a blur of what lies behind it, like the problem report card. Both cards slightly dim the screen behind them and lose the A and B icons on their buttons.
+- **Check now**: when it finds a new version, the update card opens at once over Settings instead of waiting until you return to the home screen.
+
+### Fixed
+- **Update and problem cards** keep the D-pad on their buttons; before, a press could move the focus to the screen behind them.
+- **Update card** shows the release's italic summary line without its Markdown underscores.
+
 ## [1.3.0] - 2026-11-21
 _Game info with Steam trailers and a screenshot viewer, Phase lock frame pacing, a smoother interface on Android handhelds, and mouse, trackpad and keyboard everywhere._
 

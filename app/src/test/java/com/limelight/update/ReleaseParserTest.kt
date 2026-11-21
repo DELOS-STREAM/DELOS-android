@@ -56,4 +56,10 @@ class ReleaseParserTest {
         assertTrue(long.endsWith("…"))
         assertFalse(ReleaseNotes.summary("a\nb\nc\nd\ne").contains("d"))
     }
+
+    @Test fun theItalicThemeLineLosesItsMarks() {
+        assertEquals("Game info, Phase lock and more.", ReleaseNotes.summary("_Game info, Phase lock and more._"))
+        assertEquals("A smoother interface", ReleaseNotes.summary("*A smoother interface*"))
+        assertEquals("keeps snake_case_names", ReleaseNotes.summary("keeps snake_case_names"))
+    }
 }

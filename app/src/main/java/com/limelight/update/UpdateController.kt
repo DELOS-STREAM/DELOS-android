@@ -89,6 +89,10 @@ class UpdateController(
 ) {
     private val mutableState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val state: StateFlow<UpdateState> get() = mutableState
+    private val mutableRequested = MutableStateFlow(false)
+
+    /** True while the current offer came from Check now: the user asked, so the shell shows the card over Settings too. */
+    val requested: StateFlow<Boolean> get() = mutableRequested
     private var job: Job? = null
 
     /** Removes what an earlier run left in the cache (a download that was interrupted, an APK after its install). */
@@ -97,19 +101,22 @@ class UpdateController(
     /** The check on app start: silent unless there is something to offer, and hidden for 3 days after "Later". */
     fun checkInBackground(): Job = scope.launch {
         val result = withContext(io) { checker().check(force = false) }
-        if (result is CheckResult.Available && !hiddenByLater(result.candidate)) offer(result.candidate)
+        if (result is CheckResult.Available && !hiddenByLater(result.candidate)) offer(result.candidate, requested = false)
     }
 
-    /** Settings > About > Check now: asks GitHub whatever the last check was; an offer shows even after "Later". */
+    /** Settings > About > Check now: asks GitHub whatever the last check was; an offer shows even after "Later", at once. */
     suspend fun checkNow(): CheckResult {
         val result = withContext(io) { checker().check(force = true) }
-        if (result is CheckResult.Available) offer(result.candidate)
+        if (result is CheckResult.Available) offer(result.candidate, requested = true)
         return result
     }
 
-    private fun offer(candidate: UpdateCandidate) {
+    private fun offer(candidate: UpdateCandidate, requested: Boolean) {
         // A download or install in progress is not interrupted by a check
-        if (!mutableState.value.busy()) mutableState.value = UpdateState.Offer(candidate)
+        if (!mutableState.value.busy()) {
+            mutableState.value = UpdateState.Offer(candidate)
+            mutableRequested.value = requested
+        }
     }
 
     private fun hiddenByLater(candidate: UpdateCandidate) =
@@ -122,6 +129,7 @@ class UpdateController(
         if (current.busy()) return
         store.later(candidate.tag, UpdateSchedule.laterUntil(clock()))
         mutableState.value = UpdateState.Idle
+        mutableRequested.value = false
     }
 
     /** "Update": checks the permission, then downloads and verifies; the install follows through [installVerified]. */

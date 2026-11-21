@@ -51,13 +51,13 @@ this device. The checksum file is requested only when a newer release with the A
 
 ### Offer card
 
-`shell/ui/UpdateOfferCard.kt` is built from the parts of the problem report card (`ProblemOfferCard`), in the top right
-corner: the glass card, accent disc, title and sentence, `PillButton`s with the A and B glyphs and the same pop-in motion. It is not a
-dialog; nothing is dimmed. No new visual element was added except a thin progress bar built from the card's own colors.
+`shell/ui/UpdateOfferCard.kt` is built from the parts of the problem report card (`ProblemOfferCard`), centred on the screen
+with the same 936 px width over a real blur of what lies under it: the glass card, accent disc, title and sentence, `PillButton`s without controller glyphs and the same pop-in motion. While it shows, the D-pad stays on its buttons. It is not a
+dialog: the screen behind is dimmed a little (`OfferScrim`) and stays usable by touch; the card has the deep shadow of the game info panels (`offerShadow`). No new visual element was added except a thin progress bar built from the card's own colors.
 
 | Rule | Value |
 |---|---|
-| Where | The start screen and the home screen, never over a layer, the portal, the launch loader or the stream result, never during a stream, and not while the problem card is shown (it comes first) |
+| Where | The start screen and the home screen; an offer found by **Check now** also shows over Settings at once (`UpdateController.requested`). Never over a layer, the portal, the launch loader or the stream result, never during a stream, and not while the problem card is shown (it comes first) |
 | Title | `Delos <version> is available` |
 | Text | The first three lines of the release notes as plain text (`ReleaseNotes`) |
 | A | **Update**; focus starts here |

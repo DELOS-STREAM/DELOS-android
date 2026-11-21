@@ -204,8 +204,9 @@ fun Shell(
     // The same background, recorded for a page that continues it over the dashboard (the game overview)
     val backdropMirror = rememberBackdropMirror()
     var blurSource by remember { mutableStateOf(false) }
-    // The glass cards over the screen (the problem offer, the button capture) blur what lies under them through the same source as the layers
-    val screenGlass = shell.layer != null || shell.portal != null || shell.picker != null || shell.buttonCapture != null || (shell.offerShown && shell.problem != null)
+    // The glass cards over the screen (the problem offer, the update offer, the button capture) blur what lies under them through the same source as the layers
+    var updateGlass by remember { mutableStateOf(false) }
+    val screenGlass = shell.layer != null || shell.portal != null || shell.picker != null || shell.buttonCapture != null || (shell.offerShown && shell.problem != null) || updateGlass
     LaunchedEffect(screenGlass) {
         if (screenGlass) {
             blurSource = true
@@ -359,8 +360,12 @@ fun Shell(
     val updates = remember { Updates.controller(appContext) }
     val updateState by updates.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { updates.checkInBackground() }
-    val updateShown = updateState !is UpdateState.Idle && shell.problem == null && (shell.screen == Screen.Home || shell.screen == Screen.Start) &&
+    val updateRequested by updates.requested.collectAsStateWithLifecycle()
+    // A background offer waits for the start or home screen; an offer from Check now shows over Settings at once
+    val updateScreen = shell.screen == Screen.Home || shell.screen == Screen.Start || (updateRequested && (shell.screen == Screen.Settings || shell.screen == Screen.SettingsSearch))
+    val updateShown = updateState !is UpdateState.Idle && shell.problem == null && updateScreen &&
         shell.layer == null && shell.portal == null && shell.launch == null && shell.result == null
+    LaunchedEffect(updateShown) { updateGlass = updateShown }
     // The verified file goes to the system installer only while the card shows, so Android's prompt never lands on a stream or a loader
     LaunchedEffect(updateShown, updateState) { if (updateShown && updateState is UpdateState.Verified) updates.installVerified() }
     // Back from the system page where the user allowed installing: the update goes on
@@ -985,7 +990,7 @@ fun Shell(
             )
             ProblemOfferCard(if (shell.offerShown) shell.problem else null, haze, appearance.reducedMotion, onReport = { reportProblem(ReportMode.UPLOAD) }, onSaveToDownloads = { reportProblem(ReportMode.DOWNLOADS) }, onDismiss = ::dismissProblem)
             UpdateOfferCard(
-                if (updateShown) updateState else null, appearance.reducedMotion,
+                if (updateShown) updateState else null, haze, appearance.reducedMotion,
                 onUpdate = { updates.accept() }, onAllow = updates::openPermissionSettings, onCancel = ::updateBack, onLater = ::updateBack,
             )
             // The second panel of a dual-screen device shows the launch, the portal, the result and the problem too, with the callbacks of these layers

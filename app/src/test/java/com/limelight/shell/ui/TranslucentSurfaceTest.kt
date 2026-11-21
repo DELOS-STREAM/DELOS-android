@@ -80,6 +80,7 @@ class TranslucentSurfaceTest {
             Allowed("StreamStats.kt", ".background(Color.Black.copy(alpha = .7f))", "over the stream's video: the darker tint"),
             // Full-screen dims and veils (scrims)
             Allowed("ui/ButtonCapture.kt", ".background(colors.scrim)", "full-screen scrim under the card"),
+            Allowed("ui/ProblemOfferCard.kt", "Color.Black.copy(alpha = OFFER_SCRIM)", "full-screen dim under the offer cards"),
             Allowed("ui/PortalOverlay.kt", "colors.bg.copy(alpha = .45f)", "full-screen dim of the portal"),
             Allowed("screens/ArtworkScreen.kt", "Color(0x73050A14)", "full-screen scrim under the filter sheet"),
             Allowed("screens/ArtworkScreen.kt", "Color(0x99050A14)), contentAlignment", "loading veil over the whole tile"),
