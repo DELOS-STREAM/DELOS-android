@@ -101,9 +101,9 @@ internal fun OverviewTag(icon: String?, label: String, look: TagLook = TagLook.P
 }
 
 /**
- * A rating ring (`.rating`): the arc fills and the number counts up on the ring's spring ([OverviewMotion.ring]) as [millis] (the
- * ratings' clock) runs, ring [index] of the row, read while drawing; the ring grows into place with them. [value] null draws the empty
- * track with a dash. The label and [sub] stand beside it.
+ * A rating ring (`.rating`): the arc fills on the ring's spring ([OverviewMotion.ring]) and the number counts up without overshooting
+ * ([OverviewMotion.ringCount]) as [millis] (the ratings' clock) runs, ring [index] of the row, read while drawing; the ring grows into
+ * place with its arc. [value] null draws the empty track with a dash. The label and [sub] stand beside it.
  */
 @Composable
 internal fun RatingRing(
@@ -129,12 +129,13 @@ internal fun RatingRing(
                     val radius = size * k / 2f - 8f * k
                     val topLeft = Offset(this.size.width / 2f - radius, this.size.height / 2f - radius)
                     drawCircle(Color.White.copy(alpha = .1f), radius, style = Stroke(stroke))
-                    val fill = OverviewMotion.ring(millis(), index, reduced)
+                    val t = millis()
+                    val fill = OverviewMotion.ring(t, index, reduced)
                     if (value != null && fill > 0f) {
                         val sweep = min(360f, 360f * value.toFloat() / 100f * fill)
                         drawArc(color, -90f, sweep, false, topLeft, Size(radius * 2f, radius * 2f), style = Stroke(stroke, cap = StrokeCap.Round))
                     }
-                    val text = if (value == null) "\u2014" else OverviewMotion.ringNumber(value, fill).toString()
+                    val text = if (value == null) "\u2014" else OverviewMotion.ringNumber(value, OverviewMotion.ringCount(t, index, reduced)).toString()
                     val layout = measurer.measure(text, valueStyle)
                     drawText(layout, topLeft = Offset((this.size.width - layout.size.width) / 2f, (this.size.height - layout.size.height) / 2f))
                 },

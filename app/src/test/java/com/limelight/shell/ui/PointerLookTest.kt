@@ -89,4 +89,17 @@ class PointerLookTest {
         // Held longer than the squeeze: at once
         assertEquals(0L, Motion.pressLandsIn(400))
     }
+
+    @Test fun `a drag or scroll that consumes the finger's move lets go of the press`() {
+        fun move(consumed: Boolean, to: Float = 40f) = androidx.compose.ui.input.pointer.PointerInputChange(
+            id = androidx.compose.ui.input.pointer.PointerId(1), uptimeMillis = 16, position = androidx.compose.ui.geometry.Offset(10f, to),
+            pressed = true, previousUptimeMillis = 0, previousPosition = androidx.compose.ui.geometry.Offset(10f, 60f), previousPressed = true,
+            isInitiallyConsumed = false,
+        ).also { if (consumed) it.consume() }
+        // A drag took the move: the squeeze lets go (the move counts although the change is consumed)
+        assertTrue(scrollTookOver(move(consumed = true)))
+        // The finger moved but nobody took it (it may still be a tap), or a consumed change without a move: the press holds
+        assertFalse(scrollTookOver(move(consumed = false)))
+        assertFalse(scrollTookOver(move(consumed = true, to = 60f)))
+    }
 }

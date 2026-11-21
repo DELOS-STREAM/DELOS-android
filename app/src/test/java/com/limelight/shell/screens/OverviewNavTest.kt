@@ -154,7 +154,7 @@ class OverviewNavTest {
     @Test fun `the other covers lift away one after another and reduced motion only fades them`() {
         fun cover(millis: Float, distance: Int, reduced: Boolean) =
             OverviewMotion.homeCover(OverviewMotion.homeAway(millis, distance, reduced), distance, reduced)
-        // 100 ms in, the neighbour has begun to lift; the cover four away waits for its 136 ms
+        // 100 ms in, the neighbour has begun to lift; the cover four away waits for its 180 ms
         val near = cover(100f, 1, reduced = false)
         val far = cover(100f, 4, reduced = false)
         assertTrue(near.first < 0f)
@@ -177,28 +177,34 @@ class OverviewNavTest {
     }
 
     @Test fun `closing brings the dashboard back with the cover, from where the opening left it, without a jump`() {
-        // Fully away: every part comes back together on the closing flight's spring and has landed when the flight back ends
+        // Fully away: every part comes back together on the closing flight's spring and has landed when the closing clock ends
+        val end = OverviewController.closeTotal(reduced = false)
+        assertEquals(OverviewMotion.CLOSE_SETTLE, end)
         assertEquals(1f, OverviewMotion.homeBack(0f, 1f, reduced = false), 0f)
-        assertEquals(0f, OverviewMotion.homeBack(OverviewMotion.FLIGHT_OUT.toFloat(), 1f, reduced = false), .002f)
-        // It settles: a 1.5 % swing past home at most, and the dashboard's covers stay opaque
-        val deepest = (0..OverviewMotion.FLIGHT_OUT step 4).minOf { OverviewMotion.homeBack(it.toFloat(), 1f, reduced = false) }
-        assertTrue(deepest < 0f && deepest > -.016f)
+        assertEquals(0f, OverviewMotion.homeBack(end.toFloat(), 1f, reduced = false), .002f)
+        // It settles: a 2 % swing past home at most, and the dashboard's covers stay opaque
+        val deepest = (0..end step 4).minOf { OverviewMotion.homeBack(it.toFloat(), 1f, reduced = false) }
+        assertTrue(deepest < 0f && deepest > -.021f)
         assertEquals(1f, OverviewMotion.homeCover(deepest, 1, reduced = false).third, 0f)
         // A closing that interrupts the opening starts where the parts are, and never pushes them further away first
         assertEquals(.3f, OverviewMotion.homeBack(0f, .3f, reduced = false), 0f)
-        assertTrue((0..OverviewMotion.FLIGHT_OUT step 8).all { OverviewMotion.homeBack(it.toFloat(), .3f, reduced = false) <= .3f })
+        assertTrue((0..end step 8).all { OverviewMotion.homeBack(it.toFloat(), .3f, reduced = false) <= .3f })
     }
 
     @Test fun `springs overshoot once by the agreed amounts`() {
         fun peak(response: Float, damping: Float) = (0..2000).maxOf { OverviewMotion.spring(it.toFloat(), response, damping) } - 1f
-        assertEquals(0f, OverviewMotion.spring(0f, .42f, .72f), 0f)
-        // Open flight about 3.8 %, close flight 1.5 %, the settle spring 2 %
-        assertEquals(.038f, peak(OverviewMotion.FLIGHT_OPEN_RESPONSE, OverviewMotion.FLIGHT_OPEN_DAMPING), .002f)
-        assertEquals(.015f, peak(OverviewMotion.FLIGHT_CLOSE_RESPONSE, OverviewMotion.FLIGHT_CLOSE_DAMPING), .002f)
-        assertEquals(.02f, peak(OverviewMotion.SETTLE_RESPONSE, OverviewMotion.SETTLE_DAMPING), .002f)
+        assertEquals(0f, OverviewMotion.spring(0f, .62f, .74f), 0f)
+        // Open flight about 3.2 %, close flight 2 %, the settle spring 1.5 %, a chip 4.6 %
+        assertEquals(.032f, peak(OverviewMotion.FLIGHT_OPEN_RESPONSE, OverviewMotion.FLIGHT_OPEN_DAMPING), .002f)
+        assertEquals(.020f, peak(OverviewMotion.FLIGHT_CLOSE_RESPONSE, OverviewMotion.FLIGHT_CLOSE_DAMPING), .002f)
+        assertEquals(.015f, peak(OverviewMotion.SETTLE_RESPONSE, OverviewMotion.SETTLE_DAMPING), .002f)
+        assertEquals(.046f, peak(OverviewMotion.CHIP_RESPONSE, OverviewMotion.CHIP_DAMPING), .002f)
         // The flight's spring matches the closed form: stiffness (2π / response)²
-        assertEquals(223.8f, OverviewMotion.stiffness(OverviewMotion.FLIGHT_OPEN_RESPONSE), .1f)
-        assertEquals(304.6f, OverviewMotion.stiffness(OverviewMotion.FLIGHT_CLOSE_RESPONSE), .1f)
+        assertEquals(102.7f, OverviewMotion.stiffness(OverviewMotion.FLIGHT_OPEN_RESPONSE), .1f)
+        assertEquals(130.5f, OverviewMotion.stiffness(OverviewMotion.FLIGHT_CLOSE_RESPONSE), .1f)
+        // Every settling part has landed (within 1 %) by SETTLE, and the closing flight (within 0.2 %) by CLOSE_SETTLE
+        assertEquals(1f, OverviewMotion.settle(OverviewMotion.SETTLE.toFloat()), .01f)
+        assertTrue((OverviewMotion.CLOSE_SETTLE..2000).all { abs(OverviewMotion.closeSpring(it.toFloat()) - 1f) < .002f })
     }
 
     @Test fun `past its end the cover grows about the slot and never uncovers it`() {
@@ -229,21 +235,24 @@ class OverviewNavTest {
         assertEquals(0f, OverviewMotion.leave(OverviewMotion.LEAVE.toFloat(), reduced = false, from = .5f).second, 0f)
     }
 
-    @Test fun `the rings overshoot at most 6 percent once, 90 ms apart, and never show more than 100`() {
+    @Test fun `each ring's arc overshoots about 8 percent once, 90 ms apart, and settles without a second bounce`() {
         val fills = (0..OverviewMotion.RATINGS_TOTAL).map { OverviewMotion.ring(it.toFloat(), 0, reduced = false) }
         val top = fills.max()
-        assertTrue(top > 1.05f && top <= 1f + OverviewMotion.RING_OVERSHOOT)
-        // From its peak it comes back without passing the target again: one bounce
+        assertTrue(top > 1.06f && top <= 1f + OverviewMotion.RING_OVERSHOOT)
+        // Sampled every millisecond the curve has exactly one local maximum: it rises, peaks once and comes back without passing
+        // the target again
+        val peaks = fills.zipWithNext { a, b -> b - a }.zipWithNext().count { (rise, fall) -> rise > 0f && fall <= 0f }
+        assertEquals(1, peaks)
         val peakAt = fills.indexOf(top)
-        assertTrue(fills.drop(peakAt).zipWithNext().all { (a, b) -> b <= a + 1e-6f })
         assertTrue(fills.drop(peakAt).all { it >= 1f })
-        assertEquals(1f, fills.last(), .002f)
+        // A round, slow arc: the peak comes about 0.6 s in, and it rests exactly on its score once settled
+        assertTrue(peakAt in 550..650)
+        assertEquals(1f, fills.last(), 0f)
+        assertEquals(1f, OverviewMotion.ring(OverviewMotion.RING_SETTLE.toFloat(), 0, reduced = false), 0f)
+        assertEquals(1f, OverviewMotion.ring(OverviewMotion.RING_SETTLE - 1f, 0, reduced = false), .002f)
         // The second ring starts 90 ms later
         assertEquals(0f, OverviewMotion.ring(OverviewMotion.RING_STAGGER.toFloat(), 1, reduced = false), 0f)
         assertTrue(OverviewMotion.ring(OverviewMotion.RING_STAGGER + 50f, 1, reduced = false) > 0f)
-        // A 98 rating overshoots the arc but its number stops at 100
-        assertEquals(100L, OverviewMotion.ringNumber(98.0, top))
-        assertEquals(98L, OverviewMotion.ringNumber(98.0, 1f))
         // The ring grows into place with its arc, from 0.92
         assertEquals(OverviewMotion.RING_FROM_SCALE, OverviewMotion.ringScale(0f, reduced = false), 0f)
         // Reduced motion: full at once, a short fade, no growth
@@ -253,7 +262,21 @@ class OverviewNavTest {
         assertEquals(1f, OverviewMotion.ringAlpha(Motion.FADE.toFloat(), reduced = true), 1e-4f)
     }
 
-    @Test fun `chips pop in from 0·9 with a small overshoot`() {
+    @Test fun `a ring's number counts up on a plain ease-out to its score, never past it`() {
+        val counts = (0..OverviewMotion.RATINGS_TOTAL).map { OverviewMotion.ringCount(it.toFloat(), 1, reduced = false) }
+        assertTrue(counts.zipWithNext().all { (a, b) -> b >= a })
+        assertTrue(counts.all { it in 0f..1f })
+        assertEquals(0f, OverviewMotion.ringCount(OverviewMotion.RING_STAGGER.toFloat(), 1, reduced = false), 0f)
+        assertEquals(1f, OverviewMotion.ringCount((OverviewMotion.RING_STAGGER + OverviewMotion.RING_COUNT).toFloat(), 1, reduced = false), 0f)
+        // Ease-out: past the halfway mark at half the time
+        assertTrue(OverviewMotion.ringCount(OverviewMotion.RING_COUNT / 2f, 0, reduced = false) > .6f)
+        // A 98 never shows more than 98, and lands on it
+        assertTrue(counts.all { OverviewMotion.ringNumber(98.0, it) <= 98L })
+        assertEquals(98L, OverviewMotion.ringNumber(98.0, counts.last()))
+        assertEquals(1f, OverviewMotion.ringCount(0f, 0, reduced = true), 0f)
+    }
+
+    @Test fun `chips pop in from 0·9 with a gentle overshoot`() {
         assertEquals(OverviewMotion.CHIP_FROM_SCALE, OverviewMotion.chip(0f, reduced = false), 0f)
         val top = (0..1000).maxOf { OverviewMotion.chip(it.toFloat(), reduced = false) }
         assertTrue(top > 1f && top < 1.006f)
@@ -266,7 +289,7 @@ class OverviewNavTest {
         val f = OverviewMotion.FLIGHT_IN.toFloat()
         assertEquals(1f, OverviewMotion.logoLeaving(0f, opening = true), 0f)
         assertEquals(0f, OverviewMotion.logoLeaving(f * .4f, opening = true), 1e-4f)
-        // 585 ms is odd: the fade in starts at the whole millisecond
+        // The fade in starts at the whole millisecond
         assertEquals(0f, OverviewMotion.logoArriving((f * .5f).toInt().toFloat(), opening = true), 1e-4f)
         assertEquals(1f, OverviewMotion.logoArriving(f, opening = true), 1e-4f)
         // Closing: the header's logo leaves over the first 40 % of the flight back, the dashboard's arrives over its last half
@@ -291,7 +314,7 @@ class OverviewNavTest {
         assertEquals(seen[3], seen[4])
     }
 
-    @Test fun `the header's parts rise 36 ms apart after their delay and land with a settle`() {
+    @Test fun `the header's parts rise one after another after their delay and land with a settle`() {
         val start = OverviewMotion.HEADER_DELAY + OverviewMotion.HEADER_STAGGER
         val (before, hidden) = OverviewMotion.rise(start.toFloat(), OverviewMotion.HEADER_DELAY, 1, reduced = false)
         assertEquals(18f, before, 1e-4f)
@@ -308,14 +331,77 @@ class OverviewNavTest {
         assertEquals(1f, faded, 1e-4f)
     }
 
-    @Test fun `a cover dragged up follows with resistance and opens past the threshold`() {
-        assertEquals(0f, OverviewMotion.drag(40f).first, 0f)
-        val (lift, scale) = OverviewMotion.drag(-100f)
-        assertEquals(-55f, lift, 1e-4f)
-        assertEquals(1.055f + 55f / 1400f, scale, 1e-4f)
-        assertEquals(-143f, OverviewMotion.drag(-1000f).first, 1e-3f)
-        assertTrue(OverviewMotion.drag(-80f).first < OverviewMotion.DRAG_OPENS)
-        assertTrue(OverviewMotion.drag(-60f).first > OverviewMotion.DRAG_OPENS)
+    @Test fun `a cover dragged up follows on a rubber band, at most 60 percent of the finger and never past its cap`() {
+        val cap = OverviewMotion.dragCap(90f, 450f)
+        assertEquals(90f - 450f * (OverviewMotion.DRAG_GROW + HomeCompact.FOCUS_SCALE - 1f) / 2f - OverviewMotion.DRAG_MARGIN, cap, 1e-3f)
+        assertEquals(OverviewMotion.CoverDrag(0f, HomeCompact.FOCUS_SCALE, 1f, 0f), OverviewMotion.drag(40f, cap))
+        assertEquals(0f, OverviewMotion.drag(-100f, 0f).lift, 0f)
+        val drags = (0..2000).map { OverviewMotion.drag(-it.toFloat(), cap) }
+        drags.forEachIndexed { finger, d ->
+            assertTrue(-d.lift <= OverviewMotion.DRAG_RATIO * finger + 1e-3f)
+            assertTrue(-d.lift <= cap)
+            // Grown to its scale about its middle, the cover's top stays the margin under the row's edge (90 px above its place)
+            assertTrue(90f + d.lift - 450f * (d.scale - 1f) / 2f >= OverviewMotion.DRAG_MARGIN - 1e-3f)
+            assertTrue(d.alpha in (1f - OverviewMotion.DRAG_FADE - 1e-4f)..1f)
+        }
+        assertTrue(drags.zipWithNext().all { (a, b) -> b.lift <= a.lift && b.progress >= a.progress && b.alpha <= a.alpha + 1e-6f })
+        // Nearly the whole finger at first; near the cap the cover hardly moves, and it fades only in the second half
+        assertEquals(-OverviewMotion.DRAG_RATIO * 10f, OverviewMotion.drag(-10f, cap).lift, .6f)
+        assertEquals(cap, -drags.last().lift, .01f * cap)
+        assertEquals(1f, OverviewMotion.drag(-cap, cap).alpha, 0f)
+        assertEquals(1f - OverviewMotion.DRAG_FADE, drags.last().alpha, .01f)
+        // The slope is the band's derivative: a finger's speed times it is the cover's
+        for (finger in listOf(0f, 40f, 120f)) {
+            val numeric = (OverviewMotion.drag(-(finger + .5f), cap).lift - OverviewMotion.drag(-(finger - .5f).coerceAtLeast(0f), cap).lift) /
+                -(finger + .5f - (finger - .5f).coerceAtLeast(0f))
+            assertEquals(numeric, OverviewMotion.dragSlope(-finger, cap), .01f)
+        }
+    }
+
+    private fun assertRect(expected: Rect, actual: Rect) {
+        assertEquals(expected.left, actual.left, 1e-3f)
+        assertEquals(expected.top, actual.top, 1e-3f)
+        assertEquals(expected.right, actual.right, 1e-3f)
+        assertEquals(expected.bottom, actual.bottom, 1e-3f)
+    }
+
+    @Test fun `a finger's release hands the cover's place and speed to the flight's spring`() {
+        val card = r(150f, 560f, 316.5f, 474.75f)
+        val slot = r(150f, 150f, 340f, 510f)
+        val arc = 30f
+        fun top(p: Float, to: Rect = slot) = OverviewMotion.cover(p, card, to, arc).rect.top
+        // Closing: the frame's top moves down as the progress falls; 600 px/s down is that many px/s of the frame's top
+        val down = OverviewMotion.flightVelocity(600f, card, slot, arc, opening = false)
+        assertTrue(down < 0f)
+        assertEquals(600f, (top(.999f) - top(1f)) / -.001f * down, 1f)
+        // Opening: a finger moving up hands the frame's speed at the card's end
+        val up = OverviewMotion.flightVelocity(-500f, card, slot, arc, opening = true)
+        assertTrue(up > 0f)
+        assertEquals(-500f, (top(.001f) - top(0f)) / .001f * up, 1f)
+        // Only motion along the way carries over, and never faster than the cap
+        assertEquals(0f, OverviewMotion.flightVelocity(-600f, card, slot, arc, opening = false), 0f)
+        assertEquals(0f, OverviewMotion.flightVelocity(500f, card, slot, arc, opening = true), 0f)
+        assertEquals(-OverviewMotion.MAX_HANDOFF, OverviewMotion.flightVelocity(1e6f, card, slot, arc, opening = false), 0f)
+        assertEquals(0f, OverviewMotion.flightVelocity(600f, slot, slot, 0f, opening = false), 0f)
+        // The pulled cover (shrunk about its slot's top-left corner) is exactly where the closing flight starts, and it still lands on the card
+        val s = OverviewMotion.pulledScale(200f)
+        assertEquals(1f - 200f / 2400f, s, 1e-6f)
+        assertEquals(1f, OverviewMotion.pulledScale(0f), 0f)
+        val start = OverviewMotion.cover(1f, card, OverviewMotion.releaseSlot(slot, s), arc).rect
+        assertRect(Rect(0f, 0f, 340f * s, 510f * s), start)
+        val landed = OverviewMotion.cover(0f, card, OverviewMotion.releaseSlot(slot, s), arc).rect
+        assertEquals(card.left - slot.left, landed.left, 1e-3f)
+        assertEquals(card.top - slot.top, landed.top, 1e-3f)
+        assertEquals(card.width, landed.width, 1e-3f)
+        // A card a finger had lifted: the closing leaves from it and lands on the card at rest
+        val lifted = card.translate(0f, -40f)
+        assertRect(lifted, OverviewMotion.closingFrom(.6f, .6f, lifted, card))
+        assertRect(card, OverviewMotion.closingFrom(0f, .6f, lifted, card))
+        assertEquals(card.top - 20f, OverviewMotion.closingFrom(.3f, .6f, lifted, card).top, 1e-3f)
+        assertRect(card, OverviewMotion.closingFrom(1f, 1f, card, card))
+        // A card that faded under the finger flies on from its opacity and is whole by 30 % of the way
+        assertEquals(.8f, OverviewMotion.flightAlpha(0f, .8f), 0f)
+        assertEquals(1f, OverviewMotion.flightAlpha(.3f, .8f), 0f)
     }
 
     @Test fun `count-ups ease out over 1300 ms after their delay`() {

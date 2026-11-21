@@ -26,7 +26,8 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChanged
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.positionChangedIgnoreConsumed
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -114,13 +115,19 @@ fun Modifier.pressInput(pulse: PressPulse): Modifier = pointerInput(pulse) {
                     tapped = true
                     break
                 }
-                if (change.isConsumed && change.positionChanged()) break
+                if (scrollTookOver(change)) break
             }
         } finally {
             pulse.up(tapped)
         }
     }
 }
+
+/**
+ * A scroll or a drag took the gesture over: it consumed the finger's move. ([positionChanged][androidx.compose.ui.input.pointer.positionChanged]
+ * reports no move for a consumed change, so it cannot tell.)
+ */
+internal fun scrollTookOver(change: PointerInputChange): Boolean = change.isConsumed && change.positionChangedIgnoreConsumed()
 
 /**
  * The press of every interactive element (docs/GUI.md, "Motion"): squeezes it to [Motion.PRESS_SCALE] while [pulse] is pressed, from

@@ -194,28 +194,32 @@ internal data class BackdropDepth(val sharp: Float, val deep: Float, val shade: 
  * The opening and closing motion of the overview (the prototype's `A.open`, `A.close` and `homeOut`), as pure functions of the time
  * since the motion began, so every frame is reproducible and tested (`OverviewNavTest`).
  *
- * Springs (owner, 2026-11-20) are given as a response (the period of the undamped oscillation, seconds) and a damping ratio, the same
- * numbers on every platform; a spring's stiffness is (2π / response)². The cover's flight runs on a real spring ([FlightOpen],
- * [FlightClose]) so a close reverses it from its position and velocity; everything else that lands uses the step response of the
- * settle spring ([settle]), so it lands with the same gentle settle. Opacity never overshoots: it reads a spring clamped to 0…1.
+ * Springs (owner, 2026-11-20, retuned 2026-11-21) are given as a response (the period of the undamped oscillation, seconds) and a
+ * damping ratio, the same numbers on every platform; a spring's stiffness is (2π / response)². The cover's flight runs on a real
+ * spring ([FlightOpen], [FlightClose]) so a close reverses it from its position and velocity, and a finger hands its release over to it
+ * ([flightVelocity], [releaseSlot]); everything else that lands uses the step response of the settle spring ([settle]), so it lands
+ * with the same gentle settle. Opacity never overshoots: it reads a spring clamped to 0…1. The timeline is the prototype's (a.html).
  */
 internal object OverviewMotion {
     /** The screenshot viewer's zoom (`--ease-flight`) and the closing `ease-in-out`. */
     val Flight = CubicBezierEasing(.2f, .9f, .25f, 1f)
     val InOut = CubicBezierEasing(.65f, 0f, .35f, 1f)
 
-    /** The cover's flight into the header: a visible but small overshoot (3.8 %), its peak 303 ms in. */
-    const val FLIGHT_OPEN_RESPONSE = .42f
-    const val FLIGHT_OPEN_DAMPING = .72f
+    /** The cover's flight into the header: one gentle overshoot (3.2 %), its peak 461 ms in. */
+    const val FLIGHT_OPEN_RESPONSE = .62f
+    const val FLIGHT_OPEN_DAMPING = .74f
 
-    /** The cover's flight back into its card: 1.5 % overshoot. */
-    const val FLIGHT_CLOSE_RESPONSE = .36f
-    const val FLIGHT_CLOSE_DAMPING = .8f
+    /** The cover's flight back into its card: 2 % overshoot. */
+    const val FLIGHT_CLOSE_RESPONSE = .55f
+    const val FLIGHT_CLOSE_DAMPING = .78f
 
-    /** The title, the page, the header's parts and the dashboard's covers and info row: 2 % overshoot, within about 1 % by [SETTLE]. */
-    const val SETTLE_RESPONSE = .45f
-    const val SETTLE_DAMPING = .78f
-    const val SETTLE = 450
+    /** The closing flight's spring is within 0.2 % of the card by then: the closing clock runs at least this long. */
+    const val CLOSE_SETTLE = 700
+
+    /** The title, the page, the header's parts and the dashboard's covers and info row: 1.5 % overshoot, within about 1 % by [SETTLE]. */
+    const val SETTLE_RESPONSE = .6f
+    const val SETTLE_DAMPING = .8f
+    const val SETTLE = 610
 
     /** The stiffness of a spring of [response] seconds (unit mass). */
     fun stiffness(response: Float): Float = (2f * PI.toFloat() / response).let { it * it }
@@ -223,29 +227,29 @@ internal object OverviewMotion {
     val FlightOpen = androidx.compose.animation.core.spring<Float>(FLIGHT_OPEN_DAMPING, stiffness(FLIGHT_OPEN_RESPONSE), visibilityThreshold = .0005f)
     val FlightClose = androidx.compose.animation.core.spring<Float>(FLIGHT_CLOSE_DAMPING, stiffness(FLIGHT_CLOSE_RESPONSE), visibilityThreshold = .0005f)
 
-    /** How long the flight counts for the logos' crossfade ([logoLeaving], [logoArriving]) and the closing clock (0.75 × the former 780 and 640 ms). */
-    const val FLIGHT_IN = 585
-    const val FLIGHT_OUT = 480
+    /** How long the flight counts for the logos' crossfade ([logoLeaving], [logoArriving]) and the closing clock (a.html: 780 and 640 ms). */
+    const val FLIGHT_IN = 780
+    const val FLIGHT_OUT = 640
     const val PAGE_RISE = 120f
-    const val PAGE_OUT = 420
-    const val BACKDROP_IN = 675
-    const val BACKDROP_OUT = 480
+    const val PAGE_OUT = 560
+    const val BACKDROP_IN = 900
+    const val BACKDROP_OUT = 640
 
     /** A part of the header leaving while the overview closes ([leave]). */
-    const val LEAVE = 180
+    const val LEAVE = 240
 
     /** The rings start [RATINGS_DELAY] after the opening began ([ring]); the streaming stats count up over [COUNT_UP] ([countUp]). */
-    const val RATINGS_DELAY = 285
+    const val RATINGS_DELAY = 380
     const val COUNT_UP = 1300
 
     /** The other covers lift away one after another, [HOME_STAGGER] apart by distance from the focused one; [HOME_OUT] each. */
-    const val HOME_OUT = 465
-    const val HOME_STAGGER = 34
+    const val HOME_OUT = 620
+    const val HOME_STAGGER = 45
 
-    /** The header's parts rise after [HEADER_DELAY], the cue under it after [CUE_DELAY], [HEADER_STAGGER] apart. */
-    const val HEADER_DELAY = 195
-    const val CUE_DELAY = 375
-    const val HEADER_STAGGER = 36
+    /** The header's parts rise after [HEADER_DELAY], the cue under it (the sixth part, so at 730 ms) after [CUE_DELAY], [HEADER_STAGGER] apart. */
+    const val HEADER_DELAY = 260
+    const val CUE_DELAY = 500
+    const val HEADER_STAGGER = 46
 
     /** A cover flies [ARC] stage pixels above the straight line at its midpoint, [MID_SCALE] times as big. */
     const val ARC = 30f
@@ -422,36 +426,46 @@ internal object OverviewMotion {
     }
 
     /**
-     * The score rings (owner, 2026-11-20): each fills on a spring of [RING_RESPONSE] s and [RING_DAMPING], [RING_STAGGER] ms after the
-     * one before. Its one overshoot is softly capped at [RING_OVERSHOOT] of the target, and from its peak it comes back without passing
-     * the target again (a critically damped return at the spring's own rate), so the count never bounces twice.
+     * The score rings (owner, 2026-11-21): each arc fills on a slow, round spring of [RING_RESPONSE] s and [RING_DAMPING],
+     * [RING_STAGGER] ms after the one before. Its one overshoot is softly capped at [RING_OVERSHOOT] of the target, and from its peak it
+     * comes back without passing the target again (a critically damped return at the spring's own rate), so it never bounces twice.
+     * The number does not overshoot: it counts up on a plain ease-out over [RING_COUNT] ([ringCount]).
      */
-    const val RING_RESPONSE = .7f
-    const val RING_DAMPING = .6f
-    const val RING_OVERSHOOT = .06f
+    const val RING_RESPONSE = 1f
+    const val RING_DAMPING = .55f
+    const val RING_OVERSHOOT = .08f
     const val RING_STAGGER = 90
     const val RING_FROM_SCALE = .92f
+    const val RING_COUNT = 1100
 
-    /** The age rating and the tags pop in on a small spring, from [CHIP_FROM_SCALE]. */
-    const val CHIP_RESPONSE = .4f
+    /** The arc is within 0.2 % of its score this long after it began: it rests there exactly from then on. */
+    const val RING_SETTLE = 1600
+
+    /** The age rating and the tags pop in on a gentle spring, from [CHIP_FROM_SCALE]. */
+    const val CHIP_RESPONSE = .5f
     const val CHIP_DAMPING = .7f
     const val CHIP_FROM_SCALE = .9f
 
     /** The ratings' clock: both rings and the age rating ([RING_STAGGER] × 2 after the first) have landed. */
-    const val RATINGS_TOTAL = 2 * RING_STAGGER + 1300
+    const val RATINGS_TOTAL = 2 * RING_STAGGER + RING_SETTLE
 
     private val ringW = 2f * PI.toFloat() / RING_RESPONSE
     private val ringPeakMillis = PI.toFloat() / (ringW * sqrt(1f - RING_DAMPING * RING_DAMPING)) * 1000f
     private val ringPeak = spring(ringPeakMillis, RING_RESPONSE, RING_DAMPING) - 1f
 
-    /** How full ring [index] is (of its score; up to 1 + [RING_OVERSHOOT]) [millis] after the ratings began. Reduced motion: full. */
+    /** How full ring [index]'s arc is (of its score; up to 1 + [RING_OVERSHOOT]) [millis] after the ratings began. Reduced motion: full. */
     fun ring(millis: Float, index: Int, reduced: Boolean): Float {
         if (reduced) return 1f
         val t = millis - index * RING_STAGGER
+        if (t >= RING_SETTLE) return 1f
         val over = if (t <= ringPeakMillis) spring(t, RING_RESPONSE, RING_DAMPING) - 1f
         else ((t - ringPeakMillis) / 1000f * ringW).let { ringPeak * (1f + it) * exp(-it) }
         return if (over <= 0f) 1f + over else 1f + RING_OVERSHOOT * tanh(over / RING_OVERSHOOT)
     }
+
+    /** How far ring [index]'s number has counted (0…1, never past it) [millis] after the ratings began: a plain ease-out. */
+    fun ringCount(millis: Float, index: Int, reduced: Boolean): Float =
+        if (reduced) 1f else Motion.progress(millis - index * RING_STAGGER, 0, RING_COUNT, Motion.EaseOutCss)
 
     /** A ring's scale at fill [fill] ([ring]): it grows into place with its arc. */
     fun ringScale(fill: Float, reduced: Boolean): Float = if (reduced) 1f else Motion.lerp(RING_FROM_SCALE, 1f, fill)
@@ -459,22 +473,98 @@ internal object OverviewMotion {
     /** A ring's opacity [millis] after the ratings began: reduced motion fades it in, otherwise it is there from the start. */
     fun ringAlpha(millis: Float, reduced: Boolean): Float = if (reduced) Motion.progress(millis, 0, Motion.FADE, Motion.Ease) else 1f
 
-    /** The number a ring of [score] shows at fill [fill]: counting with the arc, never above 100. */
-    fun ringNumber(score: Double, fill: Float): Long = min(100L, Math.round(score * fill))
+    /** The number a ring of [score] shows at count [count] ([ringCount]). */
+    fun ringNumber(score: Double, count: Float): Long = Math.round(score * count.coerceIn(0f, 1f))
 
     /** A chip's scale [millis] after its pop began. */
     fun chip(millis: Float, reduced: Boolean): Float =
         if (reduced) 1f else Motion.lerp(CHIP_FROM_SCALE, 1f, spring(millis, CHIP_RESPONSE, CHIP_DAMPING))
 
-    /** The cover dragged up by a finger [dy] stage pixels (negative: up): its lift with resistance and its grown scale. */
-    fun drag(dy: Float): Pair<Float, Float> {
-        val lift = max(min(dy, 0f), -260f) * .55f
-        return lift to 1.055f + min(-lift, 140f) / 1400f
+    /**
+     * The focused cover lifted by a finger ([drag]): [lift] stage pixels (negative: up), its [scale] (the focus scale, grown a little),
+     * its [alpha] and how far it is towards its cap ([progress], 0…1: the art's zoom and the cue's chevrons follow it).
+     */
+    data class CoverDrag(val lift: Float, val scale: Float, val alpha: Float, val progress: Float)
+
+    /** A finger lifts the cover at most [DRAG_RATIO] of its travel (the rubber band's slope at the start), less and less towards the cap. */
+    const val DRAG_RATIO = .6f
+
+    /** The cover grows by [DRAG_GROW] and fades by [DRAG_FADE] at its cap (the fade begins halfway there). */
+    const val DRAG_GROW = .03f
+    const val DRAG_FADE = .3f
+
+    /** The lifted cover stays this far under the row's top edge (its focus ring and glow), at most [DRAG_MAX] above its place. */
+    const val DRAG_MARGIN = 14f
+    const val DRAG_MAX = 120f
+
+    /**
+     * How far the cover may lift (stage pixels) when the row has [rowPad] above a cover [coverHeight] high: everything above the row's
+     * edge would be cut (the row draws in an offscreen layer for its edge fades), so the cover, grown to its largest, stays under it.
+     */
+    fun dragCap(rowPad: Float, coverHeight: Float): Float =
+        (rowPad - coverHeight * (HomeCompact.FOCUS_SCALE + DRAG_GROW - 1f) / 2f - DRAG_MARGIN).coerceIn(0f, DRAG_MAX)
+
+    /** The cover dragged by a finger [finger] stage pixels (negative: up) under a lift of at most [cap] ([dragCap]): a rubber band. */
+    fun drag(finger: Float, cap: Float): CoverDrag {
+        val d = max(-finger, 0f)
+        if (cap <= 0f || d == 0f) return CoverDrag(0f, HomeCompact.FOCUS_SCALE, 1f, 0f)
+        val progress = 1f - exp(-DRAG_RATIO * d / cap)
+        val fade = ((progress - .5f) / .5f).coerceIn(0f, 1f).let { it * it * (3f - 2f * it) }
+        return CoverDrag(-cap * progress, HomeCompact.FOCUS_SCALE + DRAG_GROW * progress, 1f - DRAG_FADE * fade, progress)
     }
 
-    /** A drag that lifted the cover this far opens the overview when released. */
-    const val DRAG_OPENS = -40f
+    /** How fast the dragged cover moves per finger speed at [finger] ([drag]'s slope): [DRAG_RATIO] at first, then less. */
+    fun dragSlope(finger: Float, cap: Float): Float = if (cap <= 0f) 0f else DRAG_RATIO * exp(-DRAG_RATIO * max(-finger, 0f) / cap)
+
+    /** Inside the lifted cover the art zooms by [ART_ZOOM] and drifts [ART_PARALLAX] stage pixels down, against the lift (at its cap). */
+    const val ART_ZOOM = .07f
+    const val ART_PARALLAX = 12f
+
+    /** The flying cover's opacity at [progress] of the opening when the card left at [fromAlpha] ([CoverDrag.alpha]): full by 30 %. */
+    fun flightAlpha(progress: Float, fromAlpha: Float): Float = Motion.lerp(fromAlpha, 1f, (progress / .3f).coerceIn(0f, 1f))
+
+    /** A finger that has dragged the cover up this far (stage pixels) opens the overview when it lets go. */
+    const val DRAG_OPENS = 72f
 
     /** Pulling the page down at its top this far closes the overview when released. */
     const val PULL_CLOSES = 150f
+
+    /** The page pulled down [pull] stage pixels moves [PULL_FOLLOW] of it; the cover shrinks about its top-left corner ([pulledScale]). */
+    const val PULL_FOLLOW = .45f
+
+    fun pulledScale(pull: Float): Float = 1f - pull.coerceIn(0f, 300f) / 2400f
+
+    /** A finger's hand-off moves the flight at most this fast (progress per second). */
+    const val MAX_HANDOFF = 6f
+
+    /**
+     * The flight's velocity (progress per second) that carries on a cover a finger let go of while it moved [velocityY] screen pixels
+     * per second (positive: down), at the flight's [opening] end (progress 0, the card [from]) or its closing one (1, the slot [to]):
+     * the speed of the frame's top along the flight's first or last segment ([cover]). Only motion along the way carries over.
+     */
+    fun flightVelocity(velocityY: Float, from: Rect, to: Rect, arcPx: Float, opening: Boolean): Float {
+        val ay = from.top - to.top
+        // d(top) / d(progress): from the card to the lifted midpoint, or from the midpoint into the slot
+        val slope = -(ay + if (opening) 2f * arcPx else -2f * arcPx)
+        if (abs(slope) < 1f) return 0f
+        val v = velocityY / slope
+        return if (opening) v.coerceIn(0f, MAX_HANDOFF) else v.coerceIn(-MAX_HANDOFF, 0f)
+    }
+
+    /** Where the closing flight leaves from when a finger let go of the cover shrunk to [scale] about its [slot]'s top-left corner. */
+    fun releaseSlot(slot: Rect, scale: Float): Rect =
+        if (scale == 1f) slot else Rect(slot.left, slot.top, slot.left + slot.width * scale, slot.top + slot.height * scale)
+
+    /**
+     * The card the closing flight heads for at [progress]: where the opening left ([from], where a finger had lifted it) at the
+     * progress the closing began at ([start]), turning into the card at rest ([back]) on the way, so it lands where the card is.
+     */
+    fun closingFrom(progress: Float, start: Float, from: Rect, back: Rect): Rect {
+        if (start <= 0f || from == back) return back
+        val t = (progress / start).coerceIn(0f, 1f)
+        return Rect(
+            Motion.lerp(back.left, from.left, t), Motion.lerp(back.top, from.top, t),
+            Motion.lerp(back.right, from.right, t), Motion.lerp(back.bottom, from.bottom, t),
+        )
+    }
 }
