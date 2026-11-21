@@ -36,4 +36,17 @@ final class SgsrPacing {
         if (leadNs <= 0L || targetNs <= nowNs) return targetNs;
         return Math.max(targetNs - leadNs, nowNs);
     }
+
+    /** A frame timestamp further ahead than this is not a refresh target (a stale or foreign clock): present now. */
+    static final long MAX_PRESENT_AHEAD_NS = 100_000_000L;
+
+    /**
+     * Phase lock: the EGL presentation time of a frame released with {@code frameTimestampNs} (its target refresh,
+     * half a period early, see {@link PhaseLockDriver#releaseTimestampNs}). A timestamp already due, or implausibly far
+     * ahead, presents at once.
+     */
+    static long presentationTimeNs(long frameTimestampNs, long nowNs) {
+        long ahead = frameTimestampNs - nowNs;
+        return ahead > 0 && ahead <= MAX_PRESENT_AHEAD_NS ? frameTimestampNs : nowNs;
+    }
 }

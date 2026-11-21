@@ -119,7 +119,7 @@
     <string name="help_frame_pacing_smoothness">Entrega constante; añade búfer y latencia.</string>
     <string name="help_frame_pacing_warp">Pide el doble de FPS (60 → 120); muestra el fotograma más reciente.</string>
     <string name="help_frame_pacing_warp2">Pide cuatro veces los FPS (60 → 240).</string>
-    <string name="help_frame_pacing_phase_lock">Espera fotogramas tardíos hasta el último momento seguro de renderizado de la siguiente actualización. Solo MediaCodec.</string>
+    <string name="help_frame_pacing_phase_lock">Retiene cada actualización para un fotograma tardío. Solo MediaCodec.</string>
     <string name="help_frame_pacing_fast_vsync">Se sincroniza con el menor de FPS y frecuencia de actualización. Solo MediaCodec.</string>
     <string name="help_video_format_auto">Elige H.264 o HEVC. AV1 y PyroWave hay que seleccionarlos.</string>
     <string name="help_video_format_forceav1">Eficiente con bitrates bajos. Requiere codificación AV1 en el host y decodificación aquí.</string>

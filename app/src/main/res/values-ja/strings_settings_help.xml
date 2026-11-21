@@ -119,7 +119,7 @@
     <string name="help_frame_pacing_smoothness">安定して配信しますが、バッファリングと遅延が増えます。</string>
     <string name="help_frame_pacing_warp">FPSを2倍（60 → 120）要求し、最新のフレームを表示します。</string>
     <string name="help_frame_pacing_warp2">FPSを4倍（60 → 240）要求します。</string>
-    <string name="help_frame_pacing_phase_lock">次のリフレッシュに間に合う安全な描画期限まで、遅れたフレームを待ちます。MediaCodecのみ。</string>
+    <string name="help_frame_pacing_phase_lock">遅れたフレームのために各リフレッシュを待たせます。MediaCodecのみ。</string>
     <string name="help_frame_pacing_fast_vsync">FPSとリフレッシュレートの低いほうに同期します。MediaCodecのみ。</string>
     <string name="help_video_format_auto">H.264またはHEVCを自動で選びます。AV1とPyroWaveは、選択が必要です。</string>
     <string name="help_video_format_forceav1">低ビットレートで効率的です。ホストでのAV1エンコードと、この端末でのデコードが必要です。</string>

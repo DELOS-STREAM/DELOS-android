@@ -128,7 +128,7 @@
     <string name="help_frame_pacing_smoothness">Gleichmäßige Lieferung; erhöht Pufferung und Latenz.</string>
     <string name="help_frame_pacing_warp">Fordert doppelte FPS an (60 → 120); zeigt das neueste Bild.</string>
     <string name="help_frame_pacing_warp2">Fordert vierfache FPS an (60 → 240).</string>
-    <string name="help_frame_pacing_phase_lock">Wartet bis zum spätesten sicheren Renderzeitpunkt der nächsten Bildwiederholung auf verspätete Frames. Nur MediaCodec.</string>
+    <string name="help_frame_pacing_phase_lock">Hält jede Bildwiederholung für ein verspätetes Bild zurück. Nur MediaCodec.</string>
     <string name="help_frame_pacing_fast_vsync">Synchronisiert auf den niedrigeren Wert aus FPS und Wiederholrate. Nur MediaCodec.</string>
     <string name="help_video_format_auto">Wählt H.264 oder HEVC. AV1 und PyroWave müssen gewählt werden.</string>
     <string name="help_video_format_forceav1">Effizient bei niedrigen Bitraten. Erfordert AV1-Encoding am Host und Decoding hier.</string>

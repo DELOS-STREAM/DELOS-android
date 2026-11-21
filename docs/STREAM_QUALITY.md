@@ -74,18 +74,55 @@ callbacks cannot submit twice to the same target. Reset clears the timing epoch 
 The caller retains ownership of its newest decoded buffer and decides whether to keep it for
 the next refresh; `EXPIRE` does not itself discard a buffer.
 
-The MediaCodec/SGSR consumer must serialize the model's primitive state, copy the chosen target
-while serialized, then perform codec/EGL release outside that lock. It must supply actual refresh
-deadlines and measured rendering work, wake parked decisions on either frame arrival or deadline,
-and reset on flush, recovery and display reattachment. Timestamped codec release alone does not
-schedule an SGSR swap: the GL presentation path must honor the same budget.
+### Runtime wiring
 
-The pure fake-clock tests cover parking, same-refresh arrival, deadline equality, expiry,
-duplicate callbacks, unknown measurements and reset. Decision counters are not measured panel
-presentations or repeats. Device acceptance requires comparable Fast V-Sync/Phase lock runs on
-the Odin: identical stream/display rates and SGSR settings, decoder-to-present timing, late and
-repeated refreshes, dropped frames, and CPU/GPU work after warm-up. No latency advantage is
-established by the timing-model tests alone.
+`MediaCodecDecoderRenderer` drives the model through `PhaseLockDriver`, whose monitor is the
+phase-lock state lock: every call holds it for a few assignments and never touches a codec,
+Surface or EGL object.
+
+- **Choreographer thread** ("Video - Choreographer", also Balanced's): on Android 13+ a
+  `VsyncCallback` reads the frame timelines and publishes the earliest one whose deadline still
+  leaves the work budget, the guard and 0.5 ms of wake-up slack (the preferred one when none
+  does). Older versions use the frame callback: hardware vsync (frame time minus the app vsync
+  offset) plus a period as the presentation, and the display's presentation deadline before it
+  as the CPU deadline. The period is the display's refresh rate. It then unparks the renderer
+  thread and takes part in codec recovery like Balanced's callback.
+- **Renderer thread** owns every output buffer. Each step drains the ready outputs (the newest is
+  held, older ones are released unrendered and counted as drops), asks the driver for a decision,
+  then acts outside the lock: `DRAW` releases the held buffer with `releaseOutputBuffer(index,
+  target − period/2)` (SurfaceFlinger shows a buffer at the first refresh whose expected present
+  is not before its timestamp, so half a period pins it to the target refresh); a parked refresh
+  waits in `dequeueOutputBuffer` until the latest drawing time; a held frame waiting for the next
+  refresh parks the thread until the Choreographer thread unparks it; with neither, the codec is
+  waited on as in the other modes. `EXPIRE` keeps the held buffer for the next refresh; after two
+  expiries in a row it is released at once ("forced"), so a wake-up that is systematically late
+  cannot freeze the picture.
+- **Inputs**: the work budget is a slowly decaying peak of the measured time from the frame (or
+  the wake-up for its refresh) to the return of the release, plus SGSR's frame-to-swap time, at
+  most half a period; the expected arrival is the decoder output cadence (smoothed interval,
+  stalls ignored, unknown after two silent intervals).
+- **SGSR**: the codec's release timestamp becomes the SurfaceTexture timestamp; with Phase lock the
+  SDR swap passes it to `eglPresentationTimeANDROID` (now if already due or more than 100 ms
+  ahead). The HDR SurfaceControl output presents as soon as the GL thread is done.
+- **Reset**: codec flush/restart/reset (the held buffer is forgotten while the renderer thread is
+  quiesced) and every output-surface change of the stream arrival.
+
+### Measuring against Fast V-Sync
+
+Debug builds (or the performance overlay) log one `DelosPacing` line a second in both Fast V-Sync
+and Phase lock (`adb logcat -s DelosPacing DelosLatency`): released and dropped frames; with
+direct output also presented frames (the codec's frame-rendered callback), repeated refreshes
+(elapsed refreshes minus presented frames), late frames (presented more than half a refresh after
+their target; Fast V-Sync's target is Nano Pacer's), unshown frames (released but replaced before
+the display), the presentation offset to the target, submit-to-present and decoder-to-present
+times. With SGSR the presentation figures come from `DelosLatency` (`avail->present`). Phase lock
+adds its decisions per second (draws, parks, expires, skipped and forced refreshes) and the work
+budget. Decision counters are not measured panel presentations.
+
+The pure fake-clock tests cover the model, the driver's decision order, timeline choice, budget,
+cadence, forced release and the statistics. Device acceptance requires comparable Fast V-Sync and
+Phase lock runs on the Odin: identical stream/display rates and SGSR settings, after warm-up. No
+latency advantage is established by the tests alone.
 
 ## Fast V-Sync and asynchronous decoding
 
