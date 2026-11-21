@@ -283,26 +283,5 @@ fun <K : Any> ColumnScope.SideMenuScroll(navigation: FocusedListNavigation<K>, c
 private const val GLOW_SIDE = 40f
 private const val GLOW_VERTICAL = 56f
 
-/** Profile header of the side menu (`.side-head`). */
-@Composable
-fun SideMenuHeader(avatar: @Composable BoxScope.() -> Unit, name: String, status: String) {
-    val colors = LocalDelosColors.current
-    Column(Modifier.staggerEntrance()) {
-        Row(
-            Modifier.padding(start = 12.px, end = 12.px, bottom = 24.px),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(20.px),
-        ) {
-            Box(Modifier.size(72.px).clip(CircleShape), contentAlignment = Alignment.Center, content = avatar)
-            Column {
-                BasicText(name, style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 28.tpx))
-                BasicText(status, style = TextStyle(color = colors.text3, fontFamily = Figtree, fontSize = 20.tpx))
-            }
-        }
-        Box(Modifier.fillMaxWidth().height(1.px).background(colors.line))
-        Box(Modifier.height(14.px))
-    }
-}
-
 /** Soft gradient used behind the side menu avatar placeholder. */
 fun avatarBrush(hue: Float): Brush = Brush.linearGradient(listOf(hsl(hue, 80f, 60f), hsl(hue + 40f, 70f, 40f)))

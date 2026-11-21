@@ -23,6 +23,8 @@
     <string name="shell_side_not_connected">Nepřipojeno</string>
     <string name="shell_side_connected">Připojeno k %1$s</string>
     <string name="shell_side_offline">%1$s je offline</string>
+    <string name="shell_side_pc_streaming">Streamuje</string>
+    <string name="shell_side_pc_connecting">Připojování</string>
     <string name="shell_side_show_hidden">Zobrazit skryté aplikace</string>
     <string name="shell_side_hidden_on">Skryté: %1$d · %2$s</string>
     <string name="shell_side_hidden_on_this_pc">Skryté: %1$d na tomto PC</string>

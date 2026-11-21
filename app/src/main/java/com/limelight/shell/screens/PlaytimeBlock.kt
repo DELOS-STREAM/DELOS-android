@@ -190,14 +190,15 @@ internal fun StatRow(texts: PlaytimeTexts, fit: PlaytimeFit, height: Dp) {
 }
 
 private const val EYEBROW_LINE = 14f
-private const val VALUE_LINE = 30f
+internal const val VALUE_LINE = 30f
 
+/** The small caps label over a stat; [shadow] is the block's own over the art (none on a card, the side menu's). */
 @Composable
-private fun Eyebrow(text: String, color: Color) {
+internal fun Eyebrow(text: String, color: Color, shadow: Shadow? = TEXT_SHADOW) {
     BasicText(
         text,
         style = TextStyle(
-            color = color, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 13.tpx, letterSpacing = .16.em, shadow = TEXT_SHADOW,
+            color = color, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 13.tpx, letterSpacing = .16.em, shadow = shadow,
             lineHeight = EYEBROW_LINE.tpx, lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
         ),
         modifier = Modifier.padding(end = (EYEBROW_TRAIL * LocalStage.current.textScale).px),
@@ -206,8 +207,8 @@ private fun Eyebrow(text: String, color: Color) {
 }
 
 @Composable
-private fun valueStyle(color: Color, size: Int, weight: FontWeight) = TextStyle(
-    color = color, fontFamily = Figtree, fontWeight = weight, fontSize = size.tpx, fontFeatureSettings = "tnum", shadow = TEXT_SHADOW,
+internal fun valueStyle(color: Color, size: Int, weight: FontWeight, shadow: Shadow? = TEXT_SHADOW) = TextStyle(
+    color = color, fontFamily = Figtree, fontWeight = weight, fontSize = size.tpx, fontFeatureSettings = "tnum", shadow = shadow,
     lineHeight = VALUE_LINE.tpx,
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
 )
@@ -220,7 +221,7 @@ private val TEXT_SHADOW = Shadow(Color.Black.copy(alpha = .6f), Offset(0f, 2f), 
  * transparent over [BAR_FADE] of its length at the top and at the bottom. It is centred on the block's content by its row.
  */
 @Composable
-private fun StatDivider() {
+internal fun StatDivider() {
     val scale = LocalStage.current.textScale
     val solid = LocalDelosColors.current.accent.copy(alpha = .7f)
     val brush = Brush.verticalGradient(0f to Color.Transparent, BAR_FADE to solid, 1f - BAR_FADE to solid, 1f to Color.Transparent)

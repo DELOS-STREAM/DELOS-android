@@ -130,7 +130,10 @@ import com.limelight.shell.ui.SettingRow
 import com.limelight.shell.ui.FocusedListNavigation
 import com.limelight.shell.ui.focusedListRow
 import com.limelight.shell.ui.rememberFocusedListNavigation
-import com.limelight.shell.ui.SideMenuHeader
+import com.limelight.shell.screens.SideMenuHeader
+import com.limelight.shell.screens.SidePc
+import com.limelight.shell.screens.SidePcState
+import com.limelight.shell.screens.rememberProfilePlaytime
 import com.limelight.shell.ui.SideMenuLayer
 import com.limelight.shell.ui.SideMenuScroll
 import com.limelight.shell.ui.px
@@ -906,11 +909,8 @@ fun Shell(
                         SideMenuHeader(
                             avatar = { profile?.let { AvatarBadge(it.look, 72f, 40f) } },
                             name = profile?.name ?: "Delos", // l10n-ignore
-                            status = when {
-                                pc == null -> res.getString(R.string.shell_side_not_connected)
-                                pc.online -> res.getString(R.string.shell_side_connected, pc.name)
-                                else -> res.getString(R.string.shell_side_offline, pc.name)
-                            },
+                            pc = pc?.let { SidePc(it.name, SidePcState.of(it, connecting = shell.launch?.pc?.uuid == it.uuid)) },
+                            playtime = rememberProfilePlaytime(profileStore),
                         )
                     },
                 ) { first ->

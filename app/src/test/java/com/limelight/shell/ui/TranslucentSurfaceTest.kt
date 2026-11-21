@@ -84,6 +84,7 @@ class TranslucentSurfaceTest {
             Allowed("screens/ArtworkScreen.kt", "Color(0x73050A14)", "full-screen scrim under the filter sheet"),
             Allowed("screens/ArtworkScreen.kt", "Color(0x99050A14)), contentAlignment", "loading veil over the whole tile"),
             Allowed("screens/OverviewVideo.kt", "Color.Black.copy(alpha = .62f)", "veil over the whole video thumbnail"),
+            Allowed("screens/SideMenuHeader.kt", ".background(colors.surface)", "the streaming card inside the side menu's glass panel (no blur nested in a blur)"),
             // Dividers, tracks, bar segments, dots
             Allowed("ui/ContextMenuLayer.kt", "height(1.px).background(Color.White.copy(alpha = .10f))", "divider"),
             Allowed("screens/InfoBar.kt", "width(2.px).height(28.px)", "divider"),

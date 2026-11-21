@@ -19,6 +19,8 @@
     <string name="shell_side_not_connected">Não conectado</string>
     <string name="shell_side_connected">Conectado a %1$s</string>
     <string name="shell_side_offline">%1$s está offline</string>
+    <string name="shell_side_pc_streaming">Transmitindo</string>
+    <string name="shell_side_pc_connecting">Conectando</string>
     <string name="shell_side_show_hidden">Mostrar apps ocultos</string>
     <string name="shell_side_hidden_on">Ocultos em %2$s: %1$d</string>
     <string name="shell_side_hidden_on_this_pc">Ocultos neste PC: %1$d</string>

@@ -29,6 +29,8 @@
     <string name="shell_side_connected">Verbunden mit %1$s</string>
     <!-- %1$s: PC name -->
     <string name="shell_side_offline">%1$s ist offline</string>
+    <string name="shell_side_pc_streaming">Streamt</string>
+    <string name="shell_side_pc_connecting">Verbinden</string>
     <string name="shell_side_show_hidden">Ausgeblendete Apps zeigen</string>
     <!-- %1$d: number of hidden games, %2$s: PC name -->
     <string name="shell_side_hidden_on">%1$d ausgeblendet auf %2$s</string>

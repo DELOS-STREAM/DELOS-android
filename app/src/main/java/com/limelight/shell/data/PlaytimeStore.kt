@@ -28,6 +28,20 @@ class PlaytimeStore(
         return Playtime(prefs.getLong(totalKey(pcUuid, appId), 0L), prefs.getLong(lastKey(pcUuid, appId), 0L))
     }
 
+    /** A profile's whole streaming time (the side menu's summary): every app's total on every PC added up, and the latest of their last-streamed times. */
+    fun total(profileId: String?): Playtime {
+        var total = 0L
+        var last = 0L
+        for ((key, value) in prefsFor(profileId).all) {
+            if (value !is Long) continue
+            when {
+                key.startsWith(LAST_PREFIX) -> last = maxOf(last, value)
+                key.startsWith(TOTAL_PREFIX) -> total += value.coerceAtLeast(0L)
+            }
+        }
+        return Playtime(total, last)
+    }
+
     /** Adds [millis] to one app's total, stamps its last-streamed time and tells the observers. */
     fun add(key: PlaytimeKey, millis: Long) {
         if (millis <= 0) return
@@ -46,7 +60,10 @@ class PlaytimeStore(
     internal companion object {
         private val revision = MutableStateFlow(0)
         private fun uuidOf(pcUuid: String) = UUID.nameUUIDFromBytes(pcUuid.toByteArray(Charsets.UTF_8))
-        fun totalKey(pcUuid: String, appId: Int) = "ui_playtime_${uuidOf(pcUuid)}_$appId"
-        fun lastKey(pcUuid: String, appId: Int) = "ui_playtime_last_${uuidOf(pcUuid)}_$appId"
+        // A total's key never starts with the last-streamed prefix: the PC part is a UUID, never "last"
+        private const val TOTAL_PREFIX = "ui_playtime_"
+        private const val LAST_PREFIX = "ui_playtime_last_"
+        fun totalKey(pcUuid: String, appId: Int) = "$TOTAL_PREFIX${uuidOf(pcUuid)}_$appId"
+        fun lastKey(pcUuid: String, appId: Int) = "$LAST_PREFIX${uuidOf(pcUuid)}_$appId"
     }
 }

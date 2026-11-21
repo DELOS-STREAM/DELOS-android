@@ -53,6 +53,20 @@ class PlaytimeStoreTest {
         assertEquals(40_000L, store.playtime("p1", "pc", 2).totalMillis)
     }
 
+    @Test fun aProfilesTotalAddsEveryAppOnEveryPcAndKeepsTheLatestTime() {
+        assertEquals(Playtime.NONE, store.total("t1"))
+        wall = 2_000
+        store.add(PlaytimeKey("t1", "pc", 1), 90_000)
+        wall = 1_000
+        store.add(PlaytimeKey("t1", "pc", 2), 30_000)
+        store.add(PlaytimeKey("t1", "other", 1), 600_000)
+        // Another profile stays apart
+        wall = 9_000
+        store.add(PlaytimeKey("t2", "pc", 1), 45_000)
+        assertEquals(Playtime(720_000, 2_000), store.total("t1"))
+        assertEquals(Playtime(45_000, 9_000), store.total("t2"))
+    }
+
     @Test fun theTotalAndTheTimestampHaveTheirOwnKeys() {
         assertNotEquals(PlaytimeStore.totalKey("pc", 7), PlaytimeStore.lastKey("pc", 7))
         assertTrue(PlaytimeStore.lastKey("pc", 7).startsWith("ui_playtime_last_"))

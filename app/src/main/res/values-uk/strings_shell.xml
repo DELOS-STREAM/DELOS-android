@@ -19,6 +19,8 @@
     <string name="shell_side_not_connected">Не підключено</string>
     <string name="shell_side_connected">Підключено до %1$s</string>
     <string name="shell_side_offline">%1$s не в мережі</string>
+    <string name="shell_side_pc_streaming">Трансляція</string>
+    <string name="shell_side_pc_connecting">Підключення</string>
     <string name="shell_side_show_hidden">Показати приховані застосунки</string>
     <string name="shell_side_hidden_on">Прихованих на %2$s: %1$d</string>
     <string name="shell_side_hidden_on_this_pc">Прихованих на цьому ПК: %1$d</string>

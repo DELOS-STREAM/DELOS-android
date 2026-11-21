@@ -29,6 +29,9 @@
     <string name="shell_side_connected">Connected to %1$s</string>
     <!-- %1$s: PC name -->
     <string name="shell_side_offline">%1$s is offline</string>
+    <!-- Side menu header: the connected PC's live state next to its name -->
+    <string name="shell_side_pc_streaming">Streaming</string>
+    <string name="shell_side_pc_connecting">Connecting</string>
     <string name="shell_side_show_hidden">Show hidden apps</string>
     <!-- %1$d: number of hidden games, %2$s: PC name -->
     <string name="shell_side_hidden_on">%1$d hidden on %2$s</string>
