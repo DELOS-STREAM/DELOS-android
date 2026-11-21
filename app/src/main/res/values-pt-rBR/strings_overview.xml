@@ -73,6 +73,7 @@
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">Navegar</string>
     <string name="overview_hint_seek">Pular 5 s</string>
+    <string name="overview_seek_total">%d s</string>
     <string name="overview_hint_play">Reproduzir</string>
     <string name="overview_hint_pause">Pausar</string>
     <string name="overview_hint_mute">Silenciar</string>

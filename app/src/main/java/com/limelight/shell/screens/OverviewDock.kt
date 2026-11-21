@@ -42,6 +42,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -180,13 +181,6 @@ internal class DockState(video: Boolean = false) {
     }
 }
 
-/** Records a control's bounds in viewer pixels ([origin]: the viewer's position in this window). */
-private fun Modifier.dockBounds(state: DockState, slot: DockSlot, origin: Offset): Modifier = onGloballyPositioned {
-    if (slot == DockSlot.CLOSE) {
-        val r = it.boundsInWindow().translate(-origin)
-        if (state.bounds[slot] != r) state.bounds[slot] = r
-    }
-}
 
 /** The rectangle the focus ring hugs for [slot]: buttons grow with their 1.08 focus scale, the sliders keep a margin. */
 internal fun ringRect(slot: DockSlot, bounds: Rect, k: Float): Rect = when (slot) {
@@ -238,11 +232,15 @@ internal fun ViewerDock(
         // Close: a glass button top right
         Box(
             Modifier.align(Alignment.TopEnd).padding(top = 40.px, end = 56.px)
-                .onGloballyPositioned { val r = it.boundsInWindow().translate(-origin); if (state.close != r) state.close = r }
+                .onGloballyPositioned {
+                    val r = it.boundsInWindow().translate(-origin)
+                    if (state.close != r) state.close = r
+                    if (state.bounds[DockSlot.CLOSE] != r) state.bounds[DockSlot.CLOSE] = r
+                }
                 .graphicsLayer { if (!reduced) translationY = -(1f - overlay()) * 14f * k },
         ) {
             DockGlass(haze, inWindow, player, 38f, overlay, cover, Modifier.matchParentSize())
-            DockButton(state, DockSlot.CLOSE, Symbols.CLOSE, 76f, stringResource(R.string.shell_hint_close), focused(DockSlot.CLOSE), origin, reduced,
+            DockButton(state, DockSlot.CLOSE, Symbols.CLOSE, 76f, stringResource(R.string.shell_hint_close), focused(DockSlot.CLOSE), reduced,
                 look = ButtonLook.GLASS, alpha = overlay, onClick = onClose)
         }
         val bottom = 120f + stage.safe.bottom
@@ -275,30 +273,32 @@ internal fun ViewerDock(
                         item.kind == OverviewModel.MediaKind.VIDEO -> item.name ?: stringResource(R.string.overview_video)
                         else -> stringResource(R.string.overview_screenshot, item.number)
                     }
+                    // The count stays put ("/ 12 ·"); only a title too long for the column scrolls
+                    val titleStyle = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 28.tpx)
+                    BasicText(stringResource(R.string.overview_viewer_count, media.size, "").trimEnd(), Modifier.alignByBaseline(),
+                        style = titleStyle, maxLines = 1, softWrap = false)
                     com.limelight.shell.ui.MarqueeContent(name, Modifier.weight(1f).alignByBaseline(), active = !reduced, bounce = true) {
-                        BasicText(stringResource(R.string.overview_viewer_count, media.size, name),
-                            style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 28.tpx),
-                            maxLines = 1, softWrap = false)
+                        BasicText(name, style = titleStyle, maxLines = 1, softWrap = false)
                     }
                 }
-                Box { retained?.let { SeekRow(state, it, focused(DockSlot.SEEK), origin) } }
+                Box { retained?.let { SeekRow(state, it, focused(DockSlot.SEEK)) } }
                 Box {
                     retained?.let {
                         DockButton(state, DockSlot.BACK, Symbols.PLAYER_SEEK_BACK, 92f, stringResource(R.string.overview_video_back),
-                            focused(DockSlot.BACK), origin, reduced, ten = true, enabled = video) { onActivate(DockSlot.BACK) }
+                            focused(DockSlot.BACK), reduced, showsStep = true, enabled = video) { onActivate(DockSlot.BACK) }
                     }
                 }
                 Box {
                     retained?.let {
                         DockButton(state, DockSlot.PLAY, if (it.playing) Symbols.PLAYER_PAUSE else Symbols.PLAYER_PLAY, 124f,
                             stringResource(if (it.playing) R.string.overview_hint_pause else R.string.overview_hint_play),
-                            focused(DockSlot.PLAY), origin, reduced, look = ButtonLook.ACCENT, enabled = video) { onActivate(DockSlot.PLAY) }
+                            focused(DockSlot.PLAY), reduced, look = ButtonLook.ACCENT, enabled = video) { onActivate(DockSlot.PLAY) }
                     }
                 }
                 Box {
                     retained?.let {
                         DockButton(state, DockSlot.FORWARD, Symbols.PLAYER_SEEK_FORWARD, 92f, stringResource(R.string.overview_video_forward),
-                            focused(DockSlot.FORWARD), origin, reduced, ten = true, enabled = video) { onActivate(DockSlot.FORWARD) }
+                            focused(DockSlot.FORWARD), reduced, showsStep = true, enabled = video) { onActivate(DockSlot.FORWARD) }
                     }
                 }
                 Box {
@@ -312,16 +312,16 @@ internal fun ViewerDock(
                             }
                             DockButton(state, DockSlot.MUTE, icon, 72f,
                                 stringResource(if (p.muted) R.string.overview_hint_unmute else R.string.overview_hint_mute),
-                                focused(DockSlot.MUTE), origin, reduced, enabled = video) { onActivate(DockSlot.MUTE) }
-                            VolumeSlider(state, p, focused(DockSlot.VOLUME), origin)
+                                focused(DockSlot.MUTE), reduced, enabled = video) { onActivate(DockSlot.MUTE) }
+                            VolumeSlider(state, p, focused(DockSlot.VOLUME))
                         }
                     }
                 }
                 Box { PageDots(media, shown, reduced, enabled = !video, onGo = onGo) }
                 DockButton(state, DockSlot.PREVIOUS, Symbols.PLAYER_PREVIOUS, 76f, stringResource(R.string.overview_previous),
-                    focused(DockSlot.PREVIOUS), origin, reduced, enabled = shown > 0) { onGo(shown - 1) }
+                    focused(DockSlot.PREVIOUS), reduced, enabled = shown > 0) { onGo(shown - 1) }
                 DockButton(state, DockSlot.NEXT, Symbols.PLAYER_NEXT, 76f, stringResource(R.string.overview_next),
-                    focused(DockSlot.NEXT), origin, reduced, enabled = shown < media.lastIndex) { onGo(shown + 1) }
+                    focused(DockSlot.NEXT), reduced, enabled = shown < media.lastIndex) { onGo(shown + 1) }
             },
         ) { measurables, constraints ->
             val w = constraints.maxWidth.toFloat()
@@ -430,7 +430,7 @@ private enum class ButtonLook { PLAIN, ACCENT, GLASS }
 
 /**
  * A round button of the dock, [size] stage pixels. Its glyph is centred by its ink, not its font box: the ink's bounds centre (the play
- * triangle: its ink centroid, the usual optical nudge to the right) sits on the button's centre ([CenteredGlyph]). [ten]: the seek
+ * triangle: its ink centroid, the usual optical nudge to the right) sits on the button's centre ([CenteredGlyph]). [showsStep]: the seek
  * arrows carry the drawn [SEEK_STEP]. Focused: 1.08 by a spring, a lighter fill, the Fill glyph.
  */
 @Composable
@@ -441,16 +441,16 @@ private fun DockButton(
     size: Float,
     description: String,
     focused: Boolean,
-    origin: Offset,
     reduced: Boolean,
     look: ButtonLook = ButtonLook.PLAIN,
-    ten: Boolean = false,
+    showsStep: Boolean = false,
     enabled: Boolean = true,
     alpha: () -> Float = { 1f },
     onClick: () -> Unit,
 ) {
     val colors = LocalDelosColors.current
     val press = rememberPressPulse()
+    val currentClick by rememberUpdatedState(onClick)
     val scale by animateFloatAsState(if (focused && !reduced) 1.08f else 1f, spring(dampingRatio = .6f, stiffness = 220f), label = "dockButton")
     val fill = when (look) {
         ButtonLook.ACCENT -> colors.accent
@@ -460,7 +460,6 @@ private fun DockButton(
     val ink = if (look == ButtonLook.ACCENT) colors.onAccent else colors.text
     Box(
         Modifier
-            .dockBounds(state, slot, origin)
             .size(size.px)
             .graphicsLayer {
                 this.alpha = alpha() * if (enabled) 1f else .35f
@@ -479,11 +478,11 @@ private fun DockButton(
             .background(fill)
             .then(if (look == ButtonLook.PLAIN) Modifier.border(1.px, Color.White.copy(alpha = .12f), CircleShape) else Modifier)
             .semantics { contentDescription = description }
-            .pointerInput(onClick, enabled) { detectTapGestures { if (enabled) press.afterSqueeze(onClick) } },
+            .pointerInput(enabled) { detectTapGestures { if (enabled) press.afterSqueeze { currentClick() } } },
     ) {
-        val glyph = size * if (ten) .62f else .44f
+        val glyph = size * if (showsStep) .62f else .44f
         CenteredGlyph(icon, glyph, ink, filled = focused, centroid = icon == Symbols.PLAYER_PLAY, modifier = Modifier.fillMaxSize())
-        if (ten) CenteredText(SEEK_STEP.toString(), size * .19f, ink, Modifier.fillMaxSize())
+        if (showsStep) CenteredText(SEEK_STEP.toString(), size * .19f, ink, Modifier.fillMaxSize())
     }
 }
 
@@ -578,12 +577,12 @@ private fun DrawScope.drawCentered(paint: Paint, text: String, face: Typeface, p
 
 /** The timeline row: the elapsed time, the seek bar (buffered and played), the remaining time. */
 @Composable
-private fun SeekRow(state: DockState, player: OverviewVideoPlayer, focused: Boolean, origin: Offset) {
+private fun SeekRow(state: DockState, player: OverviewVideoPlayer, focused: Boolean) {
     val colors = LocalDelosColors.current
     val time = TextStyle(color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 22.tpx, fontFeatureSettings = "tnum")
     Row(Modifier.fillMaxWidth().height(52.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(22.px)) {
         BasicText(videoTime(player.time), Modifier.width(104.px), style = time.copy(textAlign = TextAlign.End))
-        SeekBar(state, player, focused, origin, Modifier.weight(1f))
+        SeekBar(state, player, focused, Modifier.weight(1f))
         BasicText("-" + videoTime((player.duration - player.time).coerceAtLeast(0f)), Modifier.width(104.px), style = time) // l10n-ignore
     }
 }
@@ -593,7 +592,7 @@ private fun SeekRow(state: DockState, player: OverviewVideoPlayer, focused: Bool
  * thickens with the focus, a drag or the hover, and shows its knob then (always for a finger).
  */
 @Composable
-private fun SeekBar(state: DockState, player: OverviewVideoPlayer, focused: Boolean, origin: Offset, modifier: Modifier) {
+private fun SeekBar(state: DockState, player: OverviewVideoPlayer, focused: Boolean, modifier: Modifier) {
     val colors = LocalDelosColors.current
     val k = stageUnit()
     var drag by remember { mutableStateOf<Float?>(null) }
@@ -604,7 +603,6 @@ private fun SeekBar(state: DockState, player: OverviewVideoPlayer, focused: Bool
     val knob by animateFloatAsState(if (active || touch) 1f else 0f, spring(dampingRatio = .55f, stiffness = 400f), label = "seekKnob")
     Box(
         modifier.height(44.px)
-            .dockBounds(state, DockSlot.SEEK, origin)
             .semantics { contentDescription = videoTime(player.time) }
             .pointerInput(player) { detectTapGestures { o -> if (size.width > 0) player.seekTo(o.x / size.width) } }
             .pointerInput(player) {
@@ -667,14 +665,13 @@ private fun Modifier.layoutCentredAt(fraction: Float): Modifier = layout { measu
 
 /** The volume: a 170 px slider; a tap or a drag sets it, Left/Right on a controller step it by 10. */
 @Composable
-private fun VolumeSlider(state: DockState, player: OverviewVideoPlayer, focused: Boolean, origin: Offset) {
+private fun VolumeSlider(state: DockState, player: OverviewVideoPlayer, focused: Boolean) {
     val colors = LocalDelosColors.current
     val k = stageUnit()
     val knob by animateFloatAsState(if (focused) 1.25f else 1f, spring(dampingRatio = .55f, stiffness = 400f), label = "volumeKnob")
     val description = stringResource(R.string.overview_video_volume)
     Box(
         Modifier.size(170.px, 44.px)
-            .dockBounds(state, DockSlot.VOLUME, origin)
             .semantics { contentDescription = description }
             .pointerInput(player) { detectTapGestures { o -> player.changeVolume((o.x / size.width * 100f).roundToInt()) } }
             .pointerInput(player) {
@@ -780,6 +777,7 @@ internal fun SeekFlash(state: DockState, reduced: Boolean) {
     val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG) }
     val regular = DockFonts.regular(context)
     val unbounded = DockFonts.unbounded(context)
+    val total = stringResource(R.string.overview_seek_total, state.flashTotal)
     Canvas(Modifier.fillMaxSize()) {
         val ms = state.flash.value
         val side = state.flashSide
@@ -799,6 +797,6 @@ internal fun SeekFlash(state: DockState, reduced: Boolean) {
         )
         val icon = if (side < 0) Symbols.PLAYER_SEEK_BACK else Symbols.PLAYER_SEEK_FORWARD
         drawCentered(paint, icon, regular, 48f * k * stage.textScale, colors.text.copy(alpha = a), centroid = false, at = c + Offset(0f, -22f * k))
-        drawCentered(paint, "${state.flashTotal} s", unbounded, 30f * k * stage.textScale, colors.text.copy(alpha = a), centroid = false, at = c + Offset(0f, 33f * k)) // l10n-ignore
+        drawCentered(paint, total, unbounded, 30f * k * stage.textScale, colors.text.copy(alpha = a), centroid = false, at = c + Offset(0f, 33f * k))
     }
 }

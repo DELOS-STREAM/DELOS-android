@@ -18,6 +18,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberUpdatedState
@@ -69,16 +71,24 @@ internal fun OverviewPlayerWindow(
     val currentPointer by rememberUpdatedState(onPointer)
     val currentAlpha by rememberUpdatedState(pictureAlpha)
     val currentOffset by rememberUpdatedState(pictureOffset)
-    val window = remember(anchor, player) { PlayerWindow(anchor, player, parent, { currentPointer() }) { currentContent() } }
+    var window by remember(anchor, player) { mutableStateOf<PlayerWindow?>(null) }
+    DisposableEffect(anchor, player) {
+        val created = PlayerWindow(anchor, player, parent, { currentPointer() }) { currentContent() }
+        window = created
+        onDispose {
+            created.destroy()
+            window = null
+        }
+    }
     SideEffect {
-        window.place(bounds)
-        window.pointerHidden = pointerHidden
+        window?.place(bounds)
+        window?.pointerHidden = pointerHidden
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, window) {
         fun resumed(value: Boolean) {
             player.setActive(value)
-            if (value) window.show() else window.hide()
+            if (value) window?.show() else window?.hide()
         }
         resumed(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
         val observer = LifecycleEventObserver { _, event ->
@@ -91,18 +101,18 @@ internal fun OverviewPlayerWindow(
         lifecycle.addObserver(observer)
         onDispose {
             lifecycle.removeObserver(observer)
-            window.destroy()
+            window?.hide()
         }
     }
     LaunchedEffect(player) {
         delay(LOAD_TIMEOUT_MS)
         if (!player.heard) player.fail(-1)
     }
-    LaunchedEffect(window, player.started) { if (player.started) window.logPlaying() }
+    LaunchedEffect(window, player.started) { if (player.started) window?.logPlaying() }
     // View properties update RenderNodes, never the panel's layout or Compose content.
     LaunchedEffect(window) {
         snapshotFlow { currentAlpha() to currentOffset() }.collectLatest { (alpha, offset) ->
-            window.picture(alpha, offset)
+            window?.picture(alpha, offset)
         }
     }
 }

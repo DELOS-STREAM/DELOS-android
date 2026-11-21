@@ -6,6 +6,7 @@ import android.media.MediaMetadataRetriever
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -37,9 +38,20 @@ class TrailerStills(cacheDir: File, private val http: OkHttpClient) {
      * The still of Steam movie [id] from its HLS [stream], made now if needed: once, however many ask, and on in the background when the
      * asker goes away (the next look finds it ready); null when it cannot be made.
      */
-    suspend fun still(id: String, stream: String): File? = cached(id) ?: started.computeIfAbsent(id) {
-        scope.async { busy.withPermit { runInterruptible { runCatching { make(id, stream) }.getOrNull() } }.also { started.remove(id) } }
-    }.await()
+    suspend fun still(id: String, stream: String): File? {
+        if (id in failed) return null
+        cached(id)?.let { return it }
+        val task = started.computeIfAbsent(id) {
+            scope.async(start = CoroutineStart.LAZY) {
+                busy.withPermit {
+                    // A caller can have passed the first check before another request records this failure.
+                    if (id in failed) null else runInterruptible { runCatching { make(id, stream) }.getOrNull() }
+                        .also { if (it == null) failed.add(id) }
+                }
+            }
+        }
+        return task.await().also { started.remove(id, task) }
+    }
 
     /** Starts the stills of [trailers] (movie id to HLS stream) in the background, e.g. as soon as a game's details are known. */
     fun prefetch(trailers: List<Pair<String, String>>) {
@@ -102,6 +114,8 @@ class TrailerStills(cacheDir: File, private val http: OkHttpClient) {
     }
 
     private companion object {
+        /** Broken trailers are not retried until the process restarts. */
+        val failed = ConcurrentHashMap.newKeySet<String>()
         const val MAX_SEGMENT_BYTES = 8L * 1024 * 1024
     }
 }

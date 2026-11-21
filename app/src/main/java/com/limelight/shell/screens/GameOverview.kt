@@ -348,7 +348,7 @@ internal fun GameOverview(
     }
     val currentClose by rememberUpdatedState(close)
     // Back while the overview is already leaving is swallowed: it must not reach the dashboard (and leave the app)
-    BackHandler(enabled = controller.app != null) {
+    BackHandler(enabled = controller.app != null && (controller.leaving || shell.layer == null && shell.picker == null)) {
         if (viewer != null) viewer = viewer?.copy(closing = true) else currentClose(0f)
     }
     // The viewer keeps the items it opened with, so its indices hold while a video drops out of the carousel; these map them back
@@ -444,6 +444,7 @@ internal fun GameOverview(
             }
         }
     }
+    val cueVisible by remember { derivedStateOf { scroll.value < 160f * k } }
 
     Box(
         Modifier
@@ -459,7 +460,10 @@ internal fun GameOverview(
                     else -> return@onPreviewKeyEvent false
                 }
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent true
-                val from = focus.focused ?: return@onPreviewKeyEvent true
+                val from = focus.focused ?: run {
+                    playRequester.requestFocus()
+                    return@onPreviewKeyEvent true
+                }
                 val r = root ?: return@onPreviewKeyEvent true
                 val part = parts[from]
                 val row = part?.track
@@ -527,6 +531,7 @@ internal fun GameOverview(
                             register = { id -> parts[id] = PartFocus(HEAD) }, onFocused = onPartFocused, onHover = { hovered = true },
                             playEffectActive = controller.settled && playVisible && viewer == null && shell.layer == null &&
                                 shell.picker == null && shell.portal == null && shell.launch == null && shell.result == null,
+                            cueActive = cueVisible && viewer == null && shell.layer == null,
                         )
                         // Fading out while it closes: its alpha applies to each of its parts as they draw (no offscreen copy of the page)
                         if (sectionsReady) Column(
@@ -585,7 +590,7 @@ internal fun GameOverview(
                 viewerMedia, request, viewerHaze, reducedMotion,
                 thumbRect = { index -> carouselIndex(index).takeIf { it >= 0 }?.let { thumbRect(focus, it, root) } },
                 onIndex = { index ->
-                    viewer = request.copy(index = index)
+                    viewer = viewer?.copy(index = index)
                     carouselIndex(index).takeIf { it >= 0 }?.let { scope.launch { track.anchor(it, reducedMotion) } }
                 },
                 onClosed = {
@@ -653,7 +658,7 @@ private fun Header(
     candidate: com.limelight.shell.data.MetadataCandidate?, art: GameArt, cover: ImageBitmap?, card: GraphicsLayer?, playtime: Playtime, resumes: Int,
     sections: List<OverviewModel.Section>, ratings: () -> Float, pageMotion: () -> Pair<Float, Float>, playRequester: FocusRequester,
     onPlay: () -> Unit, onSettings: () -> Unit, coverArt: @Composable (App, Modifier) -> Unit, pull: () -> Float,
-    register: (String) -> Unit, onFocused: (String) -> Unit, onHover: () -> Unit, playEffectActive: Boolean,
+    register: (String) -> Unit, onFocused: (String) -> Unit, onHover: () -> Unit, playEffectActive: Boolean, cueActive: Boolean,
 ) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
@@ -882,7 +887,7 @@ private fun Header(
                 Modifier.align(Alignment.BottomCenter).padding(bottom = 18.px).st(5, OverviewMotion.CUE_DELAY),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px),
             ) {
-                Bob(down = true) { Symbol(Symbols.EXPAND_MORE, 24.tpx, colors.accent, filled = true) }
+                Bob(down = true, active = cueActive) { Symbol(Symbols.EXPAND_MORE, 24.tpx, colors.accent, filled = true) }
                 BasicText(
                     names.reduce { a, b -> res.getString(R.string.home_meta_join, a, b) },
                     style = TextStyle(color = colors.text3, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 19.tpx, letterSpacing = .04.em),
@@ -977,12 +982,13 @@ private fun Title(controller: OverviewController, pc: Pc, app: App, hue: Float, 
 
 /** Bobs its content by a few pixels (2.2 s, `@keyframes bob`), down or up; still with reduced motion. */
 @Composable
-internal fun Bob(down: Boolean, content: @Composable () -> Unit) {
+internal fun Bob(down: Boolean, active: Boolean, content: @Composable () -> Unit) {
     val reduced = com.limelight.shell.ui.LocalReducedMotion.current
     val k = stageUnit()
     val phase = remember { Animatable(0f) }
-    LaunchedEffect(reduced) {
-        if (reduced) return@LaunchedEffect
+    LaunchedEffect(reduced, active) {
+        phase.snapTo(0f)
+        if (reduced || !active) return@LaunchedEffect
         while (true) {
             phase.snapTo(0f)
             phase.animateTo(1f, tween(2200, easing = LinearEasing))
@@ -1217,7 +1223,7 @@ private fun AboutSection(
                             .part("story", section, parts, onFocused, onHover, onClick = {
                                 onStory(!storyOpen)
                                 // The page settles on the button again once the text has opened or closed
-                                scope.launch { delay(620); onFocused("story") }
+                                scope.launch { delay(620); if (focused) onFocused("story") }
                             }, ring = RingStyle(), corner = 999f, focusScale = 1.06f, onFocusChange = { focused = it })
                             .height(52.px).clip(CircleShape).glass(Color.White.copy(alpha = .06f)).border(1.px, colors.line, CircleShape)
                             .padding(horizontal = 22.px),

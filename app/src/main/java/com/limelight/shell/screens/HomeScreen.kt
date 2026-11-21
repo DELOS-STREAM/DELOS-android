@@ -481,7 +481,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
             withFrameNanos { }
             runCatching { requester(target).requestFocus() }
             delay(if (appearance.reducedMotion) 50 else 520)
-            openOverview(target)
+            if (hasOverview(target)) openOverview(target)
         }
     }
 
@@ -607,6 +607,9 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
             ) {
                 itemsIndexed(apps, key = { _, app -> app.id }) { i, app ->
                     val isFocused = i == focusedIndex
+                    DisposableEffect(app.id) {
+                        onDispose { tileCoordinates.remove(app.id) }
+                    }
                     Box(
                         Modifier
                             .onGloballyPositioned { tileCoordinates[app.id] = it }
@@ -1082,10 +1085,10 @@ private fun GameInfoHint(visible: Boolean, progress: () -> Float, onOpen: () -> 
         horizontalArrangement = Arrangement.spacedBy(8.px),
     ) {
         when (kind) {
-            InputKind.CONTROLLER -> Bob(down = true) { GlyphButton(Glyph.DPAD_DOWN, 32) }
-            InputKind.KEYBOARD -> Bob(down = true) { GlyphButton(Glyph.Cap(InputCap.ARROW_DOWN), 32) }
+            InputKind.CONTROLLER -> Bob(down = true, active = visible) { GlyphButton(Glyph.DPAD_DOWN, 32) }
+            InputKind.KEYBOARD -> Bob(down = true, active = visible) { GlyphButton(Glyph.Cap(InputCap.ARROW_DOWN), 32) }
             InputKind.TOUCH -> SwipeUpCue(visible, progress)
-            InputKind.POINTER -> Bob(down = true) { Symbol(Symbols.EXPAND_MORE, 24.tpx, Color.White, filled = true) }
+            InputKind.POINTER -> Bob(down = true, active = visible) { Symbol(Symbols.EXPAND_MORE, 24.tpx, Color.White, filled = true) }
         }
         BasicText(
             stringResource(if (kind == InputKind.TOUCH) R.string.overview_swipe_up_game_info else R.string.overview_game_info),

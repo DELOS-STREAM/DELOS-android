@@ -71,7 +71,17 @@ class OverviewDockTest {
         assertEquals(5_000L, input.revealedAt)
         input.onInput(5_400)
         assertEquals(5_000L, input.revealedAt)
-        input.hide()
+        input.hide(held = false)
+        assertFalse(input.controlsVisible)
+    }
+
+    @Test fun `paused playback and dragged sliders hold the dock through taps and idle`() {
+        val input = OverviewViewerInput(now = 0)
+        input.hide(held = true)
+        assertTrue(input.controlsVisible)
+        input.hideIfIdle(4_000, held = true)
+        assertTrue(input.controlsVisible)
+        input.hideIfIdle(4_000, held = false)
         assertFalse(input.controlsVisible)
     }
 }

@@ -557,6 +557,8 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    the focused part shows its ring and its focus growth after a tap too. The sections below the header compose once
    the opening is over and fade in (280 ms): during the flight only the top of the first one would peek in at the
    bottom edge, and Down reaches them from then on.
+   Shell menus and pickers take Back before the overview or viewer; Select and the edge swipe do not open the side
+   menu while an overview is present. If a focused part disappears, the next D-pad step restores focus to Play.
 6. **Closing** (B, Esc, Back, Up from the header, the round back button, or pulling the page down 150 px at its top):
    the card takes the focus again and the hint bar shows the dashboard's hints, the page scrolls to its top (420 ms),
    then everything reverses: the cover flies back into its card on a spring of response 0.55 s, damping 0.78 (2 %
@@ -603,9 +605,9 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    - **Screenshots and videos** with its count: a full-width carousel of 520 × 292 thumbnails, videos first; each
      picture lags 7 % behind the carousel's movement (parallax). Steam's media wins per kind: a game with Steam
      trailers shows those instead of IGDB's YouTube videos, one with Steam screenshots those instead of IGDB's; each
-     kind falls back alone. Steam's trailer stills are only 293 × 165, so a trailer's tile (and its blurred still in
-     the viewer) is the first screenshot (Steam's 600 × 338 and 1920 × 1080, else IGDB's) with the play badge and the
-     trailer's name;
+     kind falls back alone. Steam's trailer stills are only 293 × 165, so a trailer's tile and viewer use a frame
+     extracted from its HLS stream, falling back to the first screenshot when unavailable. Failed stills are remembered
+     for the process lifetime, so revisiting the trailer does not retry the download; the play badge and name remain.
    - **Details** (glass card, two columns): genres, themes, game modes, perspective, platforms, age ratings with
      descriptors, multiplayer, languages, keywords (5);
    - **Your streaming** (glass card, three columns): the streaming time counting up when the card is first focused,
@@ -679,14 +681,14 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
    Left and Right walk previous and next, Up reaches close. Left/Right never browse: L1 and R1 (keyboard `[` `]`)
    browse screenshots and videos alike; the new picture slides in 160 px from the side of the key while the old one
    leaves 90 px the other way. A selects the focused button, Y mutes (keyboard F or M), B closes (Esc); Return is A,
-   Space plays or pauses anywhere. The focus returns to its first stop whenever the item changes or the dock hides, so a
+   Space also selects the focused stop (mapped to A before viewer input). The focus returns to its first stop whenever the dock hides, so a
    key on the hidden dock acts at once (Left/Right seek, A plays or pauses). Down from the timeline lands on play, not on
    the row's first button: an owner-approved exception to the row-first focus rule. The hint bar shows Seek 5 s (or
    Volume), Play or Pause (or Select), Mute or Sound on, L1 R1 Browse and Back; on a screenshot Select, L1 R1 Browse and
    Back.
 6. **Seek feedback:** a gold arc (108° of a 300 px ring, 10 px, open towards the middle) over a soft gold glow, at 22 %
    or 78 % of the width and 42 % of the height on the side of the seek, with the seek glyph and the running total
-   ("5 s"): repeated seeks one way within 900 ms count 5, 10, 15… Each press nudges it 26 px outward; it settles back
+   (localized seconds, e.g. "5 s"): repeated seeks one way within 900 ms count 5, 10, 15… Each press nudges it 26 px outward; it settles back
    in 420 ms, holds 900 ms after the last press and fades out in 180 ms (owner, 2026-11-21).
 7. **Touch:** a tap toggles the dock, a double tap in the left or right third seeks 5 s (with the flash), a swipe
    sideways carries the item with the finger and brings the next or previous one in from that side under the dock (let go
@@ -695,7 +697,9 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
    YouTube's own surface: while the dock is hidden over a playing video, the viewer's touch layer is not there, so a tap
    reaches the player (an ad's Skip, its links) and the same touch brings the dock back; with the dock up, taps belong
    to the dock. A tap that brings the dock back never hides it again.
-8. **Mouse and trackpad:** moving shows the dock; a click on the picture plays or pauses; hovering the seek bar shows the
+   A paused or ended video and a dragged slider also prevent a picture tap from hiding the dock. Closing during a
+   sideways slide wins over its eventual index update; that completion cannot reopen the viewer.
+8. **Mouse and trackpad:** moving shows the dock; a click on the picture shows or hides the dock as a tap does (Play is the dock's button; owner, 2026-11-21); hovering the seek bar shows the
    time under the pointer; buttons light up under it. A horizontal scroll (a trackpad's two-finger swipe, a tilt
    wheel) carries the item as a finger does; a 120 ms pause in the scrolling lets it go (owner, 2026-11-21).
 9. **Reduced motion:** fades stay; the rises, the focus scale, the ring's glide, the slides and the flash's nudge go.

@@ -29,6 +29,7 @@ internal fun OverviewViewerPreview(intent: Intent, shell: ShellState) {
     val media = remember { viewerMedia() }
     var request by remember { mutableStateOf(ViewerRequest(intent.getIntExtra("preview_index", 0).coerceIn(media.indices), null)) }
     var visible by remember { mutableStateOf(true) }
+    val input = remember { com.limelight.shell.screens.OverviewViewerInput() }
     val haze = rememberHazeState()
     CompositionLocalProvider(LocalShell provides shell) {
         Box(Modifier.fillMaxSize().background(Color.Black).onPreviewKeyEvent { event ->
@@ -42,8 +43,9 @@ internal fun OverviewViewerPreview(intent: Intent, shell: ShellState) {
         }) {
             if (visible) OverviewViewer(
                 media, request, haze, intent.getBooleanExtra("preview_reduced", false), thumbRect = { null },
-                onIndex = { request = ViewerRequest(it, null) }, onClosed = { visible = false },
+                onIndex = { request = request.copy(index = it) }, onClosed = { visible = false },
                 onCloseRequest = { request = request.copy(closing = true) },
+                input = input, onControlsVisibilityChanged = { shell.overviewViewerControlsVisible = it },
             )
         }
     }
