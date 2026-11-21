@@ -72,13 +72,13 @@
     <string name="overview_video">Vidéo</string>
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">Parcourir</string>
-    <string name="overview_hint_seek">Sauter 10 s</string>
+    <string name="overview_hint_seek">Sauter 5 s</string>
     <string name="overview_hint_play">Lire</string>
     <string name="overview_hint_pause">Pause</string>
     <string name="overview_hint_mute">Couper le son</string>
     <string name="overview_hint_unmute">Activer le son</string>
-    <string name="overview_video_back">Reculer de 10 secondes</string>
-    <string name="overview_video_forward">Avancer de 10 secondes</string>
+    <string name="overview_video_back">Reculer de 5 secondes</string>
+    <string name="overview_video_forward">Avancer de 5 secondes</string>
     <string name="overview_video_volume">Volume</string>
     <string name="overview_video_unavailable">Impossible de lire cette vidéo</string>
     <string name="overview_video_blocked">Son propriétaire n\'autorise pas sa lecture dans d\'autres applications.</string>

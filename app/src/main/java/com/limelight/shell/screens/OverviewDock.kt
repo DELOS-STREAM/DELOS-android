@@ -133,12 +133,15 @@ internal fun dockStep(slot: DockSlot, dx: Int, dy: Int, video: Boolean): DockSlo
     return if (at < 0) dockDefault(video) else row[(at + dx).coerceIn(0, row.lastIndex)]
 }
 
-/** Repeated seeks in one direction within this long add up in the flash (10, 20…). */
+/** One seek of the viewer: the ± buttons, a double tap at a side, Left and Right on the timeline (seconds; owner, 2026-11-21). */
+internal const val SEEK_STEP = 5
+
+/** Repeated seeks in one direction within this long add up in the flash (5, 10…). */
 internal const val SEEK_FLASH_CHAIN_MS = 900L
 
 /** The running total of the seek flash: [previous] seconds shown on [previousSide], a new press [side] at [now] after one at [last]. */
 internal fun seekFlashTotal(previous: Int, previousSide: Int, last: Long, side: Int, now: Long): Int =
-    if (side == previousSide && now - last <= SEEK_FLASH_CHAIN_MS) previous + 10 else 10
+    if (side == previousSide && now - last <= SEEK_FLASH_CHAIN_MS) previous + SEEK_STEP else SEEK_STEP
 
 /** The dock's focus, its controls' bounds (viewer pixels), a slider being dragged and the seek flash. */
 @Stable
@@ -165,7 +168,7 @@ internal class DockState(video: Boolean = false) {
     /** Milliseconds since the last press, while a flash shows ([SEEK_FLASH_LIFE] when none does). */
     val flash = Animatable(SEEK_FLASH_LIFE)
 
-    /** A seek of 10 s to [side] (−1 back, 1 forward): the arc on that side flashes and counts the chain up. */
+    /** A seek of [SEEK_STEP] s to [side] (−1 back, 1 forward): the arc on that side flashes and counts the chain up. */
     suspend fun flash(side: Int) {
         val now = SystemClock.uptimeMillis()
         flashChained = side == flashSide && flash.value < SEEK_FLASH_LIFE
@@ -414,8 +417,8 @@ private enum class ButtonLook { PLAIN, ACCENT, GLASS }
 
 /**
  * A round button of the dock, [size] stage pixels. Its glyph is centred by its ink, not its font box: the ink's bounds centre (the play
- * triangle: its ink centroid, the usual optical nudge to the right) sits on the button's centre ([CenteredGlyph]). [ten]: the ±10 s
- * arrows carry a drawn "10". Focused: 1.08 by a spring, a lighter fill, the Fill glyph.
+ * triangle: its ink centroid, the usual optical nudge to the right) sits on the button's centre ([CenteredGlyph]). [ten]: the seek
+ * arrows carry the drawn [SEEK_STEP]. Focused: 1.08 by a spring, a lighter fill, the Fill glyph.
  */
 @Composable
 private fun DockButton(
@@ -467,7 +470,7 @@ private fun DockButton(
     ) {
         val glyph = size * if (ten) .62f else .44f
         CenteredGlyph(icon, glyph, ink, filled = focused, centroid = icon == Symbols.PLAYER_PLAY, modifier = Modifier.fillMaxSize())
-        if (ten) CenteredText("10", size * .19f, ink, Modifier.fillMaxSize())
+        if (ten) CenteredText(SEEK_STEP.toString(), size * .19f, ink, Modifier.fillMaxSize())
     }
 }
 
@@ -538,7 +541,7 @@ internal fun CenteredGlyph(icon: String, size: Float, color: Color, filled: Bool
     }
 }
 
-/** [text] in Figtree ExtraBold, centred by its ink (the "10" inside the ±10 s arrows). */
+/** [text] in Figtree ExtraBold, centred by its ink (the seconds inside the seek arrows). */
 @Composable
 private fun CenteredText(text: String, size: Float, color: Color, modifier: Modifier) {
     val context = LocalContext.current
@@ -751,7 +754,7 @@ private val NudgeEasing = CubicBezierEasing(.16f, 1f, .3f, 1f)
 
 /**
  * The seek flash: a gold arc on the side of the seek (a 108° stretch of a 300 px ring, its open side towards the middle) over a soft
- * gold glow, with the seek glyph and the running total ("10 s", "20 s"…), centred at 22 % or 78 % of the width and 42 % of the height.
+ * gold glow, with the seek glyph and the running total ("5 s", "10 s"…), centred at 22 % or 78 % of the width and 42 % of the height.
  * Each press nudges it 26 px outward and lets it settle back; it fades in on the first press, holds while the presses come within
  * [SEEK_FLASH_CHAIN_MS] and then fades out. It shows whether or not the dock does.
  */

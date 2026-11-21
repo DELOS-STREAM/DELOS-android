@@ -659,21 +659,21 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
    a tint of 0.20 over a real 40 px backdrop blur, a top highlight and a hairline. On a video its first row is the
    timeline: the elapsed time, the seek bar (10 px; buffered in white, played in gold; 16 px with its knob when focused,
    dragged or hovered) and the remaining time. The second row has the count and the title left ("3 / 11 · Launch
-   Trailer"), the transport exactly in the middle (equal weights either side: previous 76 px, back 10 s 92, play/pause
-   124 in gold, forward 10 s 92, next 76, 26 px apart) and the sound right (mute 72 px, which shows the volume level, and
+   Trailer"), the transport exactly in the middle (equal weights either side: previous 76 px, back 5 s 92, play/pause
+   124 in gold, forward 5 s 92, next 76, 26 px apart) and the sound right (mute 72 px, which shows the volume level, and
    a 170 px volume slider). On a screenshot the timeline and the sound go and the transport is previous, a page indicator
    (a dot per item, videos as rings, the current one a 40 px gold bar) and next. A glass close button (76 px) sits top
    right. Previous and next are dimmed at the ends.
 3. **Icons are centred by their ink:** `CenteredGlyph` measures each glyph once (drawn into a bitmap) and places its ink
    bounds' centre on the button's centre; the play triangle uses its ink centroid instead (the usual optical nudge to
-   the right). The ±10 s arrows (`arrow-counter-clockwise`, `arrow-clockwise`) carry a "10" centred the same way.
+   the right). The ±5 s arrows (`arrow-counter-clockwise`, `arrow-clockwise`) carry a "5" centred the same way.
 4. **Showing and hiding:** the dock, close and the shades rise (dock 30 px, close 14 px down) in 420 ms ease-out and
    fall away in 240 ms; each glass part fades by its own opacity. They hide after 3 s without input while a video plays
    or a screenshot shows; a paused, loading or ended video and a dragged slider hold them; any key, touch or pointer
    movement brings them back. The hint bar and the status bar hide with them, and so does the mouse pointer (over the
    shell and the player's window). Nothing of DELOS stays on a playing video (YouTube's terms).
 5. **Controller and keyboard:** a gold ring glides between the stops by a spring (about 560 ms, slight overshoot). On a
-   video the focus starts on the timeline: Left and Right seek 10 s, A plays or pauses (from the start once it has
+   video the focus starts on the timeline: Left and Right seek 5 s (owner, 2026-11-21), A plays or pauses (from the start once it has
    ended); Down reaches play, Left and Right walk the transport on to mute and the volume slider (Left/Right change the
    volume there by 10); Up returns to the timeline and from there to close. On a screenshot the focus starts on next;
    Left and Right walk previous and next, Up reaches close. Left/Right never browse: L1 and R1 (keyboard `[` `]`)
@@ -681,14 +681,14 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
    leaves 90 px the other way. A selects the focused button, Y mutes (keyboard F or M), B closes (Esc); Return is A,
    Space plays or pauses anywhere. The focus returns to its first stop whenever the item changes or the dock hides, so a
    key on the hidden dock acts at once (Left/Right seek, A plays or pauses). Down from the timeline lands on play, not on
-   the row's first button: an owner-approved exception to the row-first focus rule. The hint bar shows Seek 10 s (or
+   the row's first button: an owner-approved exception to the row-first focus rule. The hint bar shows Seek 5 s (or
    Volume), Play or Pause (or Select), Mute or Sound on, L1 R1 Browse and Back; on a screenshot Select, L1 R1 Browse and
    Back.
 6. **Seek feedback:** a gold arc (108° of a 300 px ring, 10 px, open towards the middle) over a soft gold glow, at 22 %
    or 78 % of the width and 42 % of the height on the side of the seek, with the seek glyph and the running total
-   ("10 s"): repeated seeks one way within 900 ms count 10, 20, 30… Each press nudges it 26 px outward; it settles back
+   ("5 s"): repeated seeks one way within 900 ms count 5, 10, 15… Each press nudges it 26 px outward; it settles back
    in 420 ms, holds 900 ms after the last press and fades out in 180 ms (owner, 2026-11-21: the look of DELOS on iPad).
-7. **Touch:** a tap toggles the dock, a double tap in the left or right third seeks 10 s (with the flash), a swipe
+7. **Touch:** a tap toggles the dock, a double tap in the left or right third seeks 5 s (with the flash), a swipe
    sideways browses and a swipe down closes; the seek bar and the volume slider take taps and drags. Decision for
    YouTube's own surface: while the dock is hidden over a playing video, the viewer's touch layer is not there, so a tap
    reaches the player (an ad's Skip, its links) and the same touch brings the dock back; with the dock up, taps belong
@@ -709,7 +709,7 @@ its progressive MP4 or WebM file; there are no ads.
    (letterboxed). The blurred still stays over it until the first frame is drawn and then crossfades away. The zoom,
    the browse slide and the dock's glass apply to the moving picture: the dock blurs the video itself (Haze, 40 px), as
    it blurs a screenshot.
-2. The dock drives the player directly: play/pause, ±10 s, the timeline (played, and buffered from the player's
+2. The dock drives the player directly: play/pause, ±5 s, the timeline (played, and buffered from the player's
    buffered position, read every 250 ms), mute and the volume slider; the keys, touch and mouse are those of the dock.
 3. The app going to the background pauses it (it stays paused on return); browsing away or closing the viewer releases
    the player, its decoder and buffers. A trailer that fails shows the still dimmed with "This video can't be played"

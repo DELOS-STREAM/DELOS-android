@@ -76,13 +76,13 @@
     <string name="overview_video">Відео</string>
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">Гортати</string>
-    <string name="overview_hint_seek">Перемотати 10 с</string>
+    <string name="overview_hint_seek">Перемотати 5 с</string>
     <string name="overview_hint_play">Відтворити</string>
     <string name="overview_hint_pause">Пауза</string>
     <string name="overview_hint_mute">Вимкнути звук</string>
     <string name="overview_hint_unmute">Увімкнути звук</string>
-    <string name="overview_video_back">Назад на 10 секунд</string>
-    <string name="overview_video_forward">Вперед на 10 секунд</string>
+    <string name="overview_video_back">Назад на 5 секунд</string>
+    <string name="overview_video_forward">Вперед на 5 секунд</string>
     <string name="overview_video_volume">Гучність</string>
     <string name="overview_video_unavailable">Це відео неможливо відтворити</string>
     <string name="overview_video_blocked">Його власник не дозволяє відтворювати його в інших застосунках.</string>

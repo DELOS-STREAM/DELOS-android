@@ -49,9 +49,9 @@ class OverviewDockTest {
     }
 
     @Test fun `repeated seeks one way add up, a pause or the other way starts again`() {
-        assertEquals(20, seekFlashTotal(10, 1, 1_000, 1, 1_500))
-        assertEquals(10, seekFlashTotal(20, 1, 1_000, -1, 1_200))
-        assertEquals(10, seekFlashTotal(30, 1, 1_000, 1, 1_000 + SEEK_FLASH_CHAIN_MS + 1))
+        assertEquals(2 * SEEK_STEP, seekFlashTotal(SEEK_STEP, 1, 1_000, 1, 1_500))
+        assertEquals(SEEK_STEP, seekFlashTotal(2 * SEEK_STEP, 1, 1_000, -1, 1_200))
+        assertEquals(SEEK_STEP, seekFlashTotal(3 * SEEK_STEP, 1, 1_000, 1, 1_000 + SEEK_FLASH_CHAIN_MS + 1))
     }
 
     @Test fun `a long gallery shows a window of page dots around the current item`() {
