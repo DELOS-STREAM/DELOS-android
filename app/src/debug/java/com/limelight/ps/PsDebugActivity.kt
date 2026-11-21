@@ -46,6 +46,7 @@ class PsDebugActivity : Activity() {
     private var pad = PsControllerState()
     private var web: WebView? = null
     private lateinit var root: FrameLayout
+    private var audio: PsAudioPlayer? = null
 
     /** Sony's sign-in page in a WebView; the redirect with the code is caught here and never loaded (spec 3.1). */
     private fun signIn() {
@@ -127,7 +128,8 @@ class PsDebugActivity : Activity() {
     }
 
     private fun register() = thread {
-        val host = hosts.firstOrNull() ?: return@thread say("Search first.")
+        if (hosts.isEmpty()) hosts = runCatching { PsDiscovery.search(broadcast(), 3000) }.getOrDefault(emptyList())
+        val host = hosts.firstOrNull() ?: return@thread say("No console found on the network.")
         val account = PsAccountId.fromBase64(accountField.text.toString()) ?: return@thread say("The account id must be 8 bytes in base64.")
         val pin = pinField.text.toString().trim().toIntOrNull() ?: return@thread say("Enter the 8-digit PIN.")
         say("Registering with ${host.name} (${host.target})…")
@@ -182,10 +184,12 @@ class PsDebugActivity : Activity() {
         override fun onStatus(text: String) = say(text)
         override fun onEnded(reason: String) { say("Stream ended: $reason"); runOnUiThread { surface.visibility = View.GONE; panel.visibility = View.VISIBLE } }
         override fun onStreamInfo(width: Int, height: Int, videoHeader: ByteArray, audioHeader: ByteArray?) {
-            say("STREAMINFO ${width}x$height, video header ${videoHeader.size} bytes")
+            say("STREAMINFO ${width}x$height, video header ${videoHeader.size} bytes, audio ${audioHeader?.let { PsHex.encode(it) }}")
+            audioHeader?.let { h -> runCatching { audio = PsAudioPlayer(h) }.onFailure { say("audio: ${it.message}") } }
             runOnUiThread {
                 panel.visibility = View.GONE
                 surface.visibility = View.VISIBLE
+                immersive(true)
                 surface.holder.addCallback(object : SurfaceHolder.Callback {
                     override fun surfaceCreated(holder: SurfaceHolder) = startDecoder(holder, width, height, videoHeader)
                     override fun surfaceChanged(holder: SurfaceHolder, format: Int, w: Int, h: Int) {}
@@ -195,6 +199,7 @@ class PsDebugActivity : Activity() {
             }
         }
         override fun onVideoFrame(frame: ByteArray, index: Int) = feed(frame)
+        override fun onAudio(opus: ByteArray, frameIndex: Int) { audio?.play(opus, frameIndex) }
     }
 
     private fun startDecoder(holder: SurfaceHolder, width: Int, height: Int, header: ByteArray) {
@@ -222,8 +227,18 @@ class PsDebugActivity : Activity() {
     private fun stop() = thread {
         stream?.close(); stream = null
         ctrl?.close(); ctrl = null
+        audio?.close(); audio = null
         say("Stopped")
-        runOnUiThread { surface.visibility = View.GONE; panel.visibility = View.VISIBLE }
+        runOnUiThread { surface.visibility = View.GONE; panel.visibility = View.VISIBLE; immersive(false) }
+    }
+
+    /** The stream fills the screen: system bars hidden (a swipe shows them for a moment). */
+    private fun immersive(on: Boolean) {
+        val c = window.insetsController ?: return
+        if (on) {
+            c.hide(android.view.WindowInsets.Type.systemBars())
+            c.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else c.show(android.view.WindowInsets.Type.systemBars())
     }
 
     // Controller → console. The debug bench maps a standard Android gamepad onto the PlayStation layout.
@@ -254,6 +269,15 @@ class PsDebugActivity : Activity() {
         fun trig(a: Int) = (event.getAxisValue(a) * 255).toInt().coerceIn(0, 255)
         pad = pad.copy(lx = axis(MotionEvent.AXIS_X), ly = axis(MotionEvent.AXIS_Y), rx = axis(MotionEvent.AXIS_Z), ry = axis(MotionEvent.AXIS_RZ),
             l2 = trig(MotionEvent.AXIS_LTRIGGER).coerceAtLeast(trig(MotionEvent.AXIS_BRAKE)), r2 = trig(MotionEvent.AXIS_RTRIGGER).coerceAtLeast(trig(MotionEvent.AXIS_GAS)))
+        // The Odin's D-pad (and most gamepads) report it as the hat axes, not as key events
+        val hx = event.getAxisValue(MotionEvent.AXIS_HAT_X)
+        val hy = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
+        var b = pad.buttons and (PsButton.DPAD_LEFT.mask or PsButton.DPAD_RIGHT.mask or PsButton.DPAD_UP.mask or PsButton.DPAD_DOWN.mask).inv()
+        if (hx < -0.5f) b = b or PsButton.DPAD_LEFT.mask
+        if (hx > 0.5f) b = b or PsButton.DPAD_RIGHT.mask
+        if (hy < -0.5f) b = b or PsButton.DPAD_UP.mask
+        if (hy > 0.5f) b = b or PsButton.DPAD_DOWN.mask
+        pad = pad.copy(buttons = b)
         s.updateController(pad)
         return true
     }
