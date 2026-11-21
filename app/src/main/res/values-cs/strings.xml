@@ -220,6 +220,7 @@
     <string name="pacing_balanced">Vyvážený</string>
     <string name="pacing_balanced_alt">Vyvážený s limitem FPS</string>
     <string name="pacing_smoothness">Nejplynulejší video</string>
+    <string name="pacing_phase_lock">Fázový zámek</string>
     <string name="pacing_fast_vsync">Fast V-Sync (Nano Pacer)</string>
 
     <string name="title_async_decode">Asynchronní dekódování</string>

@@ -31,7 +31,11 @@
     <string name="filters_length_over_60">60+ h</string>
     <string name="filters_length_unknown">Inconnue</string>
     <string name="filters_reset">Réinitialiser</string>
-    <string name="filters_done">Terminé</string>
+    <plurals name="filters_show">
+        <item quantity="one">Afficher %1$d appli</item>
+        <item quantity="many">Afficher %1$d applis</item>
+        <item quantity="other">Afficher %1$d applis</item>
+    </plurals>
     <string name="filters_art_title">Filtrer les visuels</string>
     <string name="filters_art_reset">Réinitialiser les filtres</string>
     <string name="filters_art_done">Terminé</string>

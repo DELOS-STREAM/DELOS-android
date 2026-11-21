@@ -34,7 +34,8 @@ One motion language serves the whole UI. Every screen animates with the motion l
 | Motion | Rule | Value | Easing |
 |---|---|---|---|
 | Focus | A spring. | 420 ms | `EaseSpring` |
-| Press | A spring. | 120 ms | `EaseSpring` |
+| Press | Every activation drops the element's lift (focus, hover) to 1 and squeezes it, so pressed it stands at 0.96 of its size at rest, below every focus scale, on the spring; it holds and springs back in the focus's 420 ms; its glow's blur pulses to 1.6 times. A tap or a click squeezes from the finger's or the button's down and runs its action once the squeeze has landed; A and Enter act at once. | 120 ms in, 130 ms held | `EaseSpring` |
+| Hover | A mouse or trackpad over an element that is no focus item lays the `text` colour at 8 % over it in its shape and lifts it to 1.03. A focus item takes the focus instead. | In 140 ms, out 110 ms | CSS `ease` |
 | Enter | Things enter by rising and fading in, one after the other. | Rise 18 px, 46 ms apart, 420 ms each | `EaseOut` |
 | Leave | Everything leaves faster than it came. | 240 ms | ease-in |
 | Menu | A menu grows out of its anchor. Its glass fades in faster. It shrinks back. | From 0.86 with the spring; glass 336 ms; shrinks back in 240 ms | The spring |
@@ -54,7 +55,9 @@ Nothing ever delays a control:
 | Building block | What it does | Values |
 |---|---|---|
 | `Modifier.staggerEntrance()` | Fade and rise by place. The place comes from the surrounding `EntranceScope`, from an index, or from the counter of a stream menu page. | |
-| `focusEffects` | Focus spring, press squeeze, ring, glow. `pressScale = 1f` turns the squeeze off. | Squeeze to 0.97 for 130 ms |
+| `focusEffects` | Focus spring, ring, glow, the press (`pressLook`), the pointer's hover focus and right click. `press = false` only for a focus target that does nothing when activated. | Press as above |
+| `pressLook` + `PressPulse` | The one press of every interactive element: a layer around the element that squeezes to 0.96, while `animateFocusScale` (and the hover lift) drop to 1 for the press. The Full keyboard's keys use `animatePressScale`. | 0.96 of the size at rest, glow blur 1.6x |
+| `pointerTap` / `hoverLook` | A tap target that is no focus item (hint pill, back arrow, tab pill, submenu back chip, reset pill, the loader's Cancel): hover look, press look, deferred tap. `hoverLook` alone on the toast's action. | 1.03, 8 % |
 | `GlideRingHost` + `Modifier.glideTarget` | One ring that glides to the focused element. `Circles` uses it. | 560 ms with a slight overshoot |
 | `RowGlideHost` + `Modifier.rowGlideTarget` / `SettingRowList` | The same for a scrolling list of settings rows. See "Settings row focus" in [MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md). | 520 ms |
 | `MotionSwitch` | The knob springs across and the gradient track fades in. | |
@@ -257,26 +260,26 @@ rules are in [DIAGNOSTICS.md](../DIAGNOSTICS.md).
 
 ### 3.1 Card
 
-`ui/ProblemOfferCard.kt` is a glass card in the top right corner of the start screen and the home screen, under the
-toast's place.
+`ui/ProblemOfferCard.kt` is a glass card in the centre of the start screen and the home screen; a compact stage
+centres it between the status bar and the hint bar.
 
 | Element | Value |
 |---|---|
-| Corner | 34 |
-| Fill | The shared `glass` fill |
+| Corner | 38 |
+| Fill | `surface` over a real 24 px blur of the screen under the card (the shell's screen haze, [GUI.md, "Glass"](../GUI.md#glass)) |
 | Border | 1 px `line` |
-| Padding | 36 px |
-| Width | 780 px |
-| Distance from the top | 230 px |
-| Distance from the right edge | 64 px |
+| Padding | 48 px (38 on a compact stage) |
+| Gap between its parts | 24 px |
+| Width | 936 px (a compact stage: the width less 48 px on each side, 936 at most) |
+| Pop | From its centre |
 
 | Content | Style |
 |---|---|
-| An accent disc with the bug icon | |
-| Title: *Delos had a problem*, or *A stream could not run* | Unbounded 28 |
-| One sentence for the kind of problem | Figtree 22 |
-| The one-line technical summary | 18, at most two lines, ellipsis |
-| The note: what Report does and that nothing is sent before the user chooses. With the report service (`DELOS_REPORTS_URL`) it is `shell_problem_note_upload`: Report sends a cleaned log to the Delos report service, kept 30 days, readable by anyone who has the link, and opens a GitHub draft | 20 |
+| An accent disc with the bug icon, 28 px from the title | |
+| Title: *Delos had a problem*, or *A stream could not run* | Unbounded 28, line height 1.3 |
+| One sentence for the kind of problem, 10 px under the title | Figtree 22, line height 1.45 |
+| The one-line technical summary | 18, line height 1.45, at most two lines, ellipsis |
+| The note: what Report does and that nothing is sent before the user chooses. With the report service (`DELOS_REPORTS_URL`) it is `shell_problem_note_upload`: Report sends a cleaned log to the Delos report service, kept 30 days, readable by anyone who has the link, and opens a GitHub draft | 20, line height 1.5 |
 
 The card has two `PillButton`s (compact):
 
@@ -291,7 +294,7 @@ shows the old note.
 
 ### 3.2 Behavior
 
-- The card is not a dialog: no scrim, no blur of the screen, no confirmation.
+- The card is not a dialog: no scrim, no confirmation. Only what lies under the card is blurred.
 - It shows only while no layer, portal, launch loader or stream result is up and the shell is on Start or Home
   (`ShellState.offerShown`). The result screen of a failed stream comes first and the card follows it.
 

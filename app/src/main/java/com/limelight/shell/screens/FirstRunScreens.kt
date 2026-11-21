@@ -48,12 +48,16 @@ import com.limelight.shell.ui.CircleItem
 import androidx.compose.ui.focus.focusProperties
 import com.limelight.shell.ui.Figtree
 import com.limelight.shell.ui.FocusGlow
+import com.limelight.shell.ui.FocusGap
 import com.limelight.shell.ui.FocusRing
+import com.limelight.shell.ui.FocusRow
+import com.limelight.shell.ui.FocusSpacing
 import com.limelight.shell.ui.Heading
 import com.limelight.shell.ui.InitialFocus
 import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.LocalFeedback
 import com.limelight.shell.ui.LocalStage
+import com.limelight.shell.ui.PILL_HEIGHT
 import com.limelight.shell.ui.PillButton
 import com.limelight.shell.ui.RowGlideHost
 import com.limelight.shell.ui.ScrollRow
@@ -66,6 +70,7 @@ import com.limelight.shell.ui.compact
 import com.limelight.shell.ui.compactScale
 import com.limelight.shell.ui.px
 import com.limelight.shell.ui.tpx
+import com.limelight.shell.ui.rowNavGrid
 
 /** First launch (`#scr-boot`): the logo, the wordmark and "Get started"; [onSkip] when PCs are paired already. */
 @Composable
@@ -85,7 +90,7 @@ fun BootScreen(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
             modifier = Modifier.padding(start = (if (LocalStage.current.compact) 22 else 30).px),
         )
         BasicText(stringResource(R.string.firstrun_boot_tagline), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 28.tpx))
-        Row(Modifier.padding(top = 26.px), horizontalArrangement = Arrangement.spacedBy((if (LocalStage.current.compact) Compact.BUTTON_GAP else 24f).px)) {
+        FocusRow(FocusSpacing.PILL, gap = if (LocalStage.current.compact) Compact.BUTTON_GAP else 24f, Modifier.padding(top = 26.px)) {
             PillButton(stringResource(R.string.firstrun_boot_begin), Symbols.ARROW_FORWARD, onBegin, Modifier.focusRequester(begin), primary = true)
             if (onSkip != null) PillButton(stringResource(R.string.firstrun_boot_skip), Symbols.FAST_FORWARD, onSkip)
         }
@@ -150,7 +155,7 @@ fun CreateProfileScreen(editing: Boolean, initial: Profile?, onDone: (name: Stri
     }
     // Without a name there is nothing to create: the dialog asks for one
     val submit = { if (name.isBlank()) askName() else onDone(name.trim(), avatar) }
-    CenterColumn(gap = 40f) {
+    CenterColumn(gap = CREATE_PROFILE.gap, minGap = CREATE_PROFILE.minGap) {
         Heading(
             stringResource(if (editing) R.string.firstrun_create_edit_title else R.string.firstrun_create_new_title),
             stringResource(if (editing) R.string.firstrun_create_edit_note else R.string.firstrun_create_new_note),
@@ -183,7 +188,7 @@ fun CreateProfileScreen(editing: Boolean, initial: Profile?, onDone: (name: Stri
                 )
             }
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(rowGap.px)) {
+        Column(Modifier.rowNavGrid(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(rowGap.px)) {
             AVATARS.withIndex().chunked(columns).forEach { row ->
                 if (stage.compact) {
                     Row(horizontalArrangement = Arrangement.spacedBy(24.px), verticalAlignment = Alignment.Top) { cells(row) }
@@ -219,3 +224,9 @@ private const val AVATAR_MARGIN = 52f
 private const val COMPACT_AVATAR_COLUMNS = 4
 private const val AVATAR_DIAMETER = 144f
 private const val AVATAR_CELL = 184f
+
+/**
+ * The gap of the create-profile column (prototype: 40): a compact stage scales it, but Change name and Create / Save (pills) keep the
+ * focus rule's apart.
+ */
+internal val CREATE_PROFILE = FocusGap(FocusSpacing.PILL, PILL_HEIGHT, 40f)

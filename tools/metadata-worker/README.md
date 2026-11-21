@@ -34,6 +34,7 @@ appear once, unknown parameters are `400`. Strings are trimmed; control characte
 | `/v1/pcgw/redirect` | `title=<title>` | `action=query&titles=<title>&redirects=1` | MediaWiki JSON (`{"query":{"redirects":[...]}}`) |
 | `/v1/pcgw/search` | `q=<title>` | `action=query&list=search&srsearch=<q>&srnamespace=0&srlimit=5` | MediaWiki JSON (`{"query":{"search":[...]}}`) |
 | `/v1/steam/tags` | `app=<positive int, max 2000000000>` | `GET https://store.steampowered.com/app/<id>/?l=english` (see "Steam store tags") | `{"app":<id>,"tags":["Survival Horror",...]}`, built by the Worker |
+| `/v1/igdb/game-details` | `id=<positive int, max 2000000000>` | `POST https://api.igdb.com/v4/games` with the expanded detail fields (see "Game details") and `where id = <id>; limit 1;` | the game overview's flat object, built by the Worker (see "Game details") |
 
 A wiki `<title>` is 1-200 code points without control characters and without `# < > [ ] { | }` (MediaWiki
 forbids those in page titles, so no wiki page can carry them). IGDB search escaping: `\` and `"` are escaped,
@@ -48,6 +49,7 @@ included.
 | --- | --- | --- |
 | 400 | `invalid_request` | validation failed |
 | 404 | `not_found` | unknown path |
+| 404 | `game_not_found` | `/v1/igdb/game-details`: IGDB has no game with that id (not cached) |
 | 405 | `method_not_allowed` | not a GET |
 | 413 | `body_not_allowed` | a request body was announced |
 | 414 | `uri_too_long` | URL longer than 2048 characters |
@@ -63,6 +65,89 @@ included.
 
 The app treats every non-2xx answer and every network error as a provider failure that uses its existing
 per-provider backoff.
+
+## Game details
+
+`GET /v1/igdb/game-details?id=<igdb id>` feeds the app's game overview (issue #107). It is one IGDB `games` query
+with expanded fields (`src/details.js`, `DETAIL_FIELDS`, IGDB v4 names only: `age_ratings.organization` /
+`rating_category` / `rating_content_descriptions`, `websites.type`, `external_games.external_game_source`), kept
+separate from `/v1/igdb/games` so search and matching stay small. Unlike the other IGDB route, the Worker does not
+relay IGDB's array: it answers one flat object in a fixed shape, so both apps parse the same strict JSON. Caching,
+pacing, the rate limit and the error codes are those of `/v1/igdb/games` (`public, max-age=21600`).
+
+Every key below is always present. A missing scalar is `null`, a missing list is `[]`. Strings are trimmed and
+non-empty; lists keep IGDB's order without duplicates and are capped (screenshots 30, artworks 10, videos 10,
+websites 20, similar games 12, keywords 30, languages 60, companies 20, other lists 40; summary and storyline
+6000 characters).
+
+```jsonc
+{
+  "id": 214337,                          // IGDB game id
+  "name": "Hollow Meridian",
+  "slug": "hollow-meridian",             // string | null
+  "summary": "A salvage diver ...",      // string | null
+  "storyline": "Forty years after ...",  // string | null; paragraphs separated by "\n\n"
+  "firstReleaseDate": 1758153600,        // Unix seconds (UTC) | null
+  "releaseDates": [{ "platform": "PC", "date": 1758153600, "human": "Sep 18, 2025" }],  // oldest first; each field may be null
+  "rating": 82.37, "ratingCount": 1284,               // IGDB players: 0-100 (2 decimals) | null, count >= 0
+  "criticRating": 86.1, "criticRatingCount": 42,      // aggregated_rating(_count): critics
+  "totalRating": 84.24, "totalRatingCount": 1326,
+  "genres": ["Shooter", "Adventure"], "themes": ["Horror"], "modes": ["Single player"], "perspectives": ["Third person"],
+  "platforms": [{ "name": "PC (Microsoft Windows)", "abbreviation": "PC" }],     // abbreviation may be null
+  "companies": [{ "name": "Driftlight Studios", "developer": true, "publisher": false, "porting": false, "supporting": false }],
+  "ageRatings": [{ "organization": "PEGI", "rating": "18", "descriptors": ["Violence"] }],  // one per organization
+  "screenshots": [{ "imageId": "sc6x1a", "width": 1920, "height": 1080 }],      // width/height may be null
+  "artworks": [{ "imageId": "ar9q", "width": 3840, "height": 2160 }],
+  "videos": [{ "name": "Launch Trailer", "videoId": "dQw4w9WgXcQ" }],           // YouTube ids; name may be null
+  "websites": [{ "url": "https://hollowmeridian.example/", "type": "Official Website" }],  // http(s) only; type may be null
+  "similarGames": [{ "id": 11, "name": "Ashfall Protocol", "coverImageId": "co1abc" }],     // coverImageId may be null
+  "franchises": ["Meridian"], "collections": ["Meridian"], "engines": ["Unreal Engine 5"],
+  "keywords": ["space station"], "languages": ["English", "German"],
+  "multiplayer": {                       // all multiplayer_modes rows folded (max / any); null when IGDB lists none
+    "onlineMax": 8, "offlineMax": 0, "onlineCoopMax": 0, "offlineCoopMax": 0,
+    "onlineCoop": true, "offlineCoop": false, "lanCoop": false, "campaignCoop": false, "dropIn": false, "splitscreen": true
+  },
+  "externalGames": [{ "uid": "2741160", "source": 1 }]  // external_game_source: 1 = Steam
+}
+```
+
+- `ageRatings[].rating` is the mark as printed on the badge: IGDB's words become digits (`Eighteen` → `18`), an
+  organization prefix is dropped (`PEGI 12` → `12`), `E10` becomes `E10+`.
+- Image ids and video ids are checked against `[A-Za-z0-9_-]`; anything else is dropped. The apps build the image
+  URLs themselves: `https://images.igdb.com/igdb/image/upload/t_<size>/<imageId>.jpg` (`screenshot_med`,
+  `screenshot_big`, `screenshot_huge`, `1080p`, `cover_big`, append `_2x` for double density) and the video thumbnail
+  `https://i.ytimg.com/vi/<videoId>/hqdefault.jpg`. IGDB's image CDN needs no credentials, so images do not go
+  through the Worker.
+- An id IGDB does not know is `404` `{"error":"game_not_found"}` with `no-store`; the app stores "no details" with
+  the record and asks again at the next 7-day refresh. A non-array answer is `502 upstream_error`.
+
+### Steam media
+
+When the game has a Steam external game (the first numeric `uid` with source 1), the Worker adds Steam's trailers
+and screenshots from the public, keyless store API
+`https://store.steampowered.com/api/appdetails?appids=<id>&l=english&filters=basic,movies,screenshots`. This is
+the one optional key of the answer; old clients ignore it:
+
+```jsonc
+"steam": {
+  "appId": 1145360,
+  "movies": [{ "id": 256801252, "name": "Launch Trailer", "thumbnail": "https://…/movie.293x165.jpg",
+               "hls": "https://…/hls_264_master.m3u8?t=…", "dash": "https://…/dash_h264.mpd?t=…",
+               "mp4": "https://…/movie_max.mp4", "webm": "https://…/movie_max.webm", "highlight": true }],
+  "screenshots": [{ "id": 0, "thumbnail": "https://…600x338.jpg", "full": "https://…1920x1080.jpg" }]
+}
+```
+
+- `steam` is absent when IGDB lists no Steam id, Steam does not know the app, or it has neither movies nor
+  screenshots. Both lists are always present inside it (possibly empty).
+- Inside a movie or screenshot, a field Steam does not provide is absent, never null. Current answers carry
+  `hls`/`dash` (`hls_h264`, `dash_h264`, else `dash_av1`), older ones `mp4`/`webm` (`max`, else `480`). A movie
+  without any stream and a screenshot without `full` are dropped. Only `https` URLs on `*.steamstatic.com` /
+  `*.steampowered.com` pass.
+- Highlight movies first (otherwise Steam's order); at most 10 movies and 30 screenshots.
+- The Steam answer is cached for 24 hours per app id (key `/v1/steam/media?app=<id>`, not a public route) and
+  shares the 600 ms Steam store pacing. When Steam fails (429/503, error, timeout, malformed answer), the details
+  answer is still `200` without `steam`, cached for 5 minutes only (`public, max-age=300`).
 
 ## Steam store tags
 
@@ -164,6 +249,7 @@ Use `curl.exe` (PowerShell's `curl` is an alias). Replace `$URL` with the Worker
 $URL = "https://delos-meta.<account>.workers.dev"
 curl.exe -s "$URL/v1/igdb/games?search=The%20Witcher%203"            # IGDB array
 curl.exe -s "$URL/v1/igdb/games?id=1942"                              # one game
+curl.exe -s "$URL/v1/igdb/game-details?id=1942"                       # the overview's flat object
 curl.exe -s "$URL/v1/pcgw/cargo?steam=292030"                         # Cargo rows
 curl.exe -s "$URL/v1/pcgw/cargo?page=Elden%20Ring"
 curl.exe -s "$URL/v1/pcgw/page?title=Elden%20Ring"                    # wikitext (large)

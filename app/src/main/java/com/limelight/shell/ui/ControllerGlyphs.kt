@@ -36,6 +36,8 @@ enum class GlyphRole {
     MENU_RIGHT,
     TOUCHPAD,
     DPAD, GUIDE,
+    /** The D-pad with its down arm pressed (Game info) and with left and right pressed (browse). */
+    DPAD_DOWN, DPAD_HORIZONTAL,
 }
 
 /** Complete, owner-approved button glyph; physical positions never change with the printed label. */
@@ -117,6 +119,19 @@ fun PadFamily.fontSymbol(role: GlyphRole): String = when (role) {
         PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_DPAD_NEUTRAL
         PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_DPAD_NEUTRAL
         PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_DPAD_NEUTRAL
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_DPAD_NEUTRAL
+    }
+    GlyphRole.DPAD_DOWN -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_DPAD_DOWN
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_DPAD_DOWN
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_DPAD_DOWN
+        PadFamily.NINTENDO -> Symbols.PAD_JOYCON_DPAD_DOWN
+    }
+    GlyphRole.DPAD_HORIZONTAL -> when (this) {
+        PadFamily.GENERIC, PadFamily.XBOX -> Symbols.PAD_XBOX_DPAD_HORIZONTAL
+        PadFamily.DUALSENSE -> Symbols.PAD_DUALSENSE_DPAD_HORIZONTAL
+        PadFamily.DUALSHOCK -> Symbols.PAD_DUALSHOCK4_DPAD_HORIZONTAL
+        // The Joy-Con caps have no left-right cut: the neutral pad
         PadFamily.NINTENDO -> Symbols.PAD_JOYCON_DPAD_NEUTRAL
     }
     GlyphRole.GUIDE -> when (this) {
@@ -244,9 +259,10 @@ object ControllerGlyphs {
         InputKinds.pointer(event.actionMasked, event.getToolType(0), source)?.let(::note)
     }
 
-    /** The player used [input] on purpose: the hints show it from now on. */
+    /** The player used [input] on purpose: the hints show it from now on, and the pointer owns the scrolling while it is the input ([PointerFocus]). */
     fun note(input: InputKind) {
         state.used(input)
+        PointerFocus.used(input)
         evaluate()
     }
 

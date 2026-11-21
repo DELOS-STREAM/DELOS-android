@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="overview_game_info">ゲーム情報</string>
+    <string name="overview_swipe_up_game_info">上にスワイプしてゲーム情報</string>
+    <string name="overview_play">プレイ</string>
+    <string name="overview_section_about">概要</string>
+    <string name="overview_section_media">スクリーンショットと動画</string>
+    <string name="overview_section_details">詳細</string>
+    <string name="overview_section_streaming">あなたのストリーミング</string>
+    <string name="overview_section_links">リンク</string>
+    <string name="overview_section_similar">似たゲーム</string>
+    <string name="overview_cue_media">メディア</string>
+    <string name="overview_read_story">ストーリーを読む</string>
+    <string name="overview_show_less">閉じる</string>
+    <string name="overview_critics">批評家</string>
+    <string name="overview_players">プレイヤー</string>
+    <plurals name="overview_reviews">
+        <item quantity="other">%s件のレビュー</item>
+    </plurals>
+    <plurals name="overview_ratings">
+        <item quantity="other">%s件の評価</item>
+    </plurals>
+    <plurals name="overview_ratings_few">
+        <item quantity="other">%s件の評価 · まだ少数</item>
+    </plurals>
+    <string name="overview_no_critics">批評家レビューはまだありません</string>
+    <string name="overview_not_rated_yet">まだ評価がありません</string>
+    <string name="overview_not_rated">レーティングなし</string>
+    <string name="overview_no_age_rating">IGDBに年齢レーティングがありません</string>
+    <string name="overview_no_descriptors">記述子なし</string>
+    <string name="overview_fact_developer">開発</string>
+    <string name="overview_fact_publisher">販売</string>
+    <string name="overview_fact_released">発売</string>
+    <string name="overview_fact_ported">移植</string>
+    <string name="overview_fact_engine">エンジン</string>
+    <string name="overview_fact_series">シリーズ</string>
+    <string name="overview_self_published">自社販売</string>
+    <string name="overview_detail_genres">ジャンル</string>
+    <string name="overview_detail_themes">テーマ</string>
+    <string name="overview_detail_modes">ゲームモード</string>
+    <string name="overview_detail_perspective">視点</string>
+    <string name="overview_detail_platforms">プラットフォーム</string>
+    <string name="overview_detail_age">年齢レーティング</string>
+    <string name="overview_detail_multiplayer">マルチプレイ</string>
+    <string name="overview_detail_languages">言語</string>
+    <string name="overview_detail_keywords">キーワード</string>
+    <plurals name="overview_languages">
+        <item quantity="other">%d言語</item>
+    </plurals>
+    <string name="overview_online_coop">オンライン協力 最大%d人</string>
+    <string name="overview_online_max">オンライン 最大%d人</string>
+    <string name="overview_couch_coop">ローカル協力 最大%d人</string>
+    <string name="overview_lan_coop">LAN協力</string>
+    <string name="overview_split_screen">画面分割</string>
+    <string name="overview_streaming_note">このプロフィールとPCで</string>
+    <string name="overview_running_on">%1$sで実行中</string>
+    <string name="overview_hltb">HowLongToBeat</string>
+    <string name="overview_hltb_all">HowLongToBeat · 全スタイル</string>
+    <string name="overview_hltb_share">%1$sストリーミング · その%2$d %%</string>
+    <string name="overview_official_site">公式サイト</string>
+    <string name="overview_in_library">ライブラリにあり</string>
+    <string name="overview_not_in_library">%1$sはライブラリにありません。</string>
+    <string name="overview_screenshot">スクリーンショット %1$d</string>
+    <string name="overview_video">動画</string>
+    <string name="overview_viewer_count">/ %1$d · %2$s</string>
+    <string name="overview_hint_browse">閲覧</string>
+    <string name="overview_hint_seek">5秒移動</string>
+    <string name="overview_hint_play">再生</string>
+    <string name="overview_hint_pause">一時停止</string>
+    <string name="overview_hint_mute">ミュート</string>
+    <string name="overview_hint_unmute">ミュート解除</string>
+    <string name="overview_video_back">5秒戻る</string>
+    <string name="overview_video_forward">5秒進む</string>
+    <string name="overview_video_volume">音量</string>
+    <string name="overview_video_unavailable">この動画は再生できません</string>
+    <string name="overview_video_blocked">所有者が他のアプリでの再生を許可していません。</string>
+    <string name="overview_video_failed">YouTube で読み込めませんでした。接続を確認して、もう一度お試しください。</string>
+    <string name="overview_video_failed_steam">Steam から読み込めませんでした。接続を確認して、もう一度お試しください。</string>
+    <string name="overview_previous">前へ</string>
+    <string name="overview_next">次へ</string>
+    <string name="overview_loading">ゲーム情報を読み込み中…</string>
+    <string name="overview_unavailable">現在ゲーム情報を利用できません。</string>
+    <string name="overview_credit">ゲームデータ: IGDB.com · クリア時間: HowLongToBeat · HDR: PCGamingWiki · カバー: あなたのアートワーク</string>
+</resources>

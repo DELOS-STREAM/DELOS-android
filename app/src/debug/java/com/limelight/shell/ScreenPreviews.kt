@@ -25,6 +25,7 @@ import com.limelight.shell.companion.PublishCompanionOverlays
 import com.limelight.shell.data.LocalArtwork
 import com.limelight.shell.data.LocalBoxArt
 import com.limelight.shell.data.LocalGameMetadata
+import com.limelight.shell.data.LocalIgdbImages
 import com.limelight.shell.screens.appArt
 import com.limelight.shell.settings.Appearance
 import com.limelight.shell.ui.Backdrop
@@ -69,6 +70,7 @@ import kotlin.math.roundToInt
  * - `boot`, `create_profile`, `pair_pc`: the first-launch screens, and the PC pairing list.
  * - `stream_stats` (`preview_state` full|compact, `preview_position` TOP_LEFT|TOP_RIGHT|BOTTOM_LEFT|BOTTOM_RIGHT): the real statistics panel over the game scene, with fixed numbers.
  * - `stream_osc`, `stream_video`: the stream's own geometry (the real on-screen controls, the video rectangle), see [StreamShapePreview].
+ * - `overview_viewer`: the real viewer with public Hades Steam and YouTube trailers and screenshots (network required).
  * All of them but `loader`, `result`, `stream_stats`, `stream_osc` and `stream_video` run the real `Shell` in a [PreviewWorld] (docs/GUI.md, "Screen previews"); `loader`,
  * `result` and `stream_stats` draw `LaunchScene`, `StreamResultLayer` and `StreamStatsPanel` alone. Any other name is not handled here.
  */
@@ -99,6 +101,7 @@ internal object ScreenPreviews {
             "result" -> resultPreview
             "stream_stats" -> StatsPreview.from(intent)
             "stream_osc", "stream_video" -> StreamShapePreview.from(intent)
+            "overview_viewer" -> { { PreviewTheme { _, _ -> OverviewViewerPreview(intent, shell) } } }
             else -> null
         }
     }
@@ -157,6 +160,7 @@ internal object ScreenPreviews {
         CompositionLocalProvider(
             LocalContext provides world.context, LocalDelosColors provides colors, LocalReducedMotion provides appearance.reducedMotion,
             LocalBoxArt provides world.boxArt, LocalArtwork provides world.artwork, LocalGameMetadata provides world.metadata,
+            LocalIgdbImages provides world.igdbImages,
         ) {
             // The activity's own GlobalKeys has no listener in a preview: the shell's global keys (L1 / R1, X, Y, Start, Select) reach the world's
             // here, so `adb shell input keyevent` (and a controller) can switch tabs and open the filter sheets of a previewed screen

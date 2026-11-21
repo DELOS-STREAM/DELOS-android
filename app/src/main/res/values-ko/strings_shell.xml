@@ -46,6 +46,7 @@
     <string name="shell_hint_library_label">라이브러리</string>
 
     <string name="shell_hint_select">선택</string>
+    <string name="shell_hint_apply">적용</string>
     <string name="shell_hint_back">뒤로</string>
     <string name="shell_hint_close">닫기</string>
     <string name="shell_hint_cancel">취소</string>

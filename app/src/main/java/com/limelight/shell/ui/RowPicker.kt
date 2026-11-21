@@ -108,8 +108,16 @@ import com.limelight.shell.ui.PickerLayout as P
 sealed interface RowPopup {
     val title: String
 
-    /** [options] (their labels) with the current one [selected] (-1: none); a pick calls [onPick] with its index. */
-    data class Options(override val title: String, val options: List<String>, val selected: Int, val onPick: (Int) -> Unit) : RowPopup
+    /**
+     * [options] (their labels) with the current one [selected] (-1: none); a pick calls [onPick] with its index. [onReset]: "Reset to profile value"
+     * as the last item (a custom game setting).
+     */
+    data class Options(
+        override val title: String, val options: List<String>, val selected: Int, val onPick: (Int) -> Unit, val onReset: (() -> Unit)? = null,
+    ) : RowPopup {
+        /** The list's items: the options and the reset. */
+        val count get() = options.size + if (onReset != null) 1 else 0
+    }
 
     /** The popup of [slider]: its value is changed through [RowValue.Slider.onChange]. */
     data class Value(override val title: String, val slider: RowValue.Slider) : RowPopup
@@ -122,9 +130,9 @@ data class RowPopupRequest(val popup: RowPopup, val anchor: Rect?)
 /** Opens a row's popup at the focused row; null where no shell can show one (the row then steps on a tap, as A does). */
 val LocalRowPicker = staticCompositionLocalOf<((RowPopup) -> Unit)?> { null }
 
-/** The popup [value] opens on a touch tap, or null for a row that has none (a toggle, an action, a choice without its options). */
-internal fun rowPopupFor(title: String, value: RowValue): RowPopup? = when {
-    value is RowValue.Choice && value.onPick != null && !value.options.isNullOrEmpty() -> RowPopup.Options(title, value.options, value.selected, value.onPick)
+/** The popup [value] opens on a touch tap or Options, or null for a row that has none (a toggle, an action, a choice without its options). [onReset]: a choice's reset item. */
+internal fun rowPopupFor(title: String, value: RowValue, onReset: (() -> Unit)? = null): RowPopup? = when {
+    value is RowValue.Choice && value.onPick != null && !value.options.isNullOrEmpty() -> RowPopup.Options(title, value.options, value.selected, value.onPick, onReset)
     value is RowValue.Slider -> RowPopup.Value(title, value)
     else -> null
 }
@@ -164,7 +172,7 @@ private fun PickerSheet(request: RowPopupRequest, layerAt: Offset, haze: HazeSta
     val top = if (stage.compact) ContextMenuLayout.compactTopMargin(stage.textScale, stage.safe.top) else P.TOP_MARGIN + stage.safe.top
     val bottom = if (stage.compact) ContextMenuLayout.compactBottomMargin(stage.textScale, stage.safe.bottom) else P.BOTTOM_MARGIN + stage.safe.bottom
     val place = when (popup) {
-        is RowPopup.Options -> P.options(anchor, popup.options.size, popup.selected, stage.stageWidth, stage.stageHeight, top, bottom)
+        is RowPopup.Options -> P.options(anchor, popup.count, popup.selected, stage.stageWidth, stage.stageHeight, top, bottom)
         is RowPopup.Value -> P.value(anchor, stage.stageWidth, stage.stageHeight, top, bottom)
     }
     val hook = remember { CloseHook() }
@@ -261,15 +269,21 @@ private fun OptionsCard(popup: RowPopup.Options, list: Float, active: Boolean, o
     // The current option is in view from the first frame (a long list is scrolled to it)
     LaunchedEffect(Unit) {
         withFrameNanos { }
-        scroll.scrollTo((popup.selected.coerceAtLeast(0) * (P.OPTION + P.GAP) * k).roundToInt())
+        scroll.scrollTo((popup.selected.coerceAtLeast(0) * (P.OPTION + P.OPTIONS.gap) * k).roundToInt())
     }
     Column(Modifier.fillMaxSize().focusTrap(active).padding(vertical = P.PAD.px), verticalArrangement = Arrangement.spacedBy(P.GAP.px)) {
         CardTitle(popup.title)
-        Column(Modifier.fillMaxWidth().height(list.px).verticalScroll(scroll).padding(horizontal = 12.px, vertical = P.LIST_ROOM.px), verticalArrangement = Arrangement.spacedBy(P.GAP.px)) {
+        Column(Modifier.fillMaxWidth().height(list.px).verticalScroll(scroll).padding(horizontal = 12.px, vertical = P.LIST_ROOM.px), verticalArrangement = Arrangement.spacedBy(P.OPTIONS.gap.px)) {
             popup.options.forEachIndexed { i, label ->
                 OptionRow(label, current = i == popup.selected, requester = if (i == popup.selected.coerceAtLeast(0)) first else null) {
                     popup.onPick(i)
                     onClose()
+                }
+            }
+            popup.onReset?.let { reset ->
+                OptionRow(stringResource(R.string.settings_game_reset_menu), current = false, requester = null, icon = Symbols.RESET) {
+                    onClose()
+                    reset()
                 }
             }
         }
@@ -278,7 +292,7 @@ private fun OptionsCard(popup: RowPopup.Options, list: Float, active: Boolean, o
 
 /** An option (`.menu-item` of the prototype): the focused one on a tint of the main color with a 3 px ring, the current one with a check. */
 @Composable
-private fun OptionRow(label: String, current: Boolean, requester: FocusRequester?, onClick: () -> Unit) {
+private fun OptionRow(label: String, current: Boolean, requester: FocusRequester?, icon: String? = null, onClick: () -> Unit) {
     val colors = LocalDelosColors.current
     var focused by remember { mutableStateOf(false) }
     val fill by animateColorAsState(if (focused) colors.accent.copy(alpha = .17f) else Color.Transparent, tween(Motion.ROW_FOCUS, easing = Motion.Ease), label = "optionFill")
@@ -287,7 +301,7 @@ private fun OptionRow(label: String, current: Boolean, requester: FocusRequester
             .fillMaxWidth()
             .height(P.OPTION.px)
             .focusEffects(
-                onClick = onClick, corner = 28f, focusScale = 1f, ring = FocusRing(3f, 0f), glow = null, pressScale = 1f, clickCue = Cue.SELECT,
+                onClick = onClick, corner = 28f, focusScale = P.OPTION_LOOK.scale, ring = P.OPTION_RING, glow = null, clickCue = Cue.SELECT,
                 onFocusChange = { focused = it }, focusRequester = requester,
             )
             .clip(RoundedCornerShape(28.px))
@@ -296,6 +310,7 @@ private fun OptionRow(label: String, current: Boolean, requester: FocusRequester
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(18.px),
     ) {
+        if (icon != null) Symbol(icon, 30.tpx, if (focused) colors.accent else colors.text2)
         MarqueeText(
             label, active = focused, modifier = Modifier.weight(1f),
             style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 23.tpx),
@@ -417,11 +432,11 @@ private fun ValueCard(popup: RowPopup.Value, active: Boolean, hook: CloseHook, o
                 .padding(horizontal = P.VALUE_SIDE.px)
                 .fillMaxWidth()
                 .height(P.VALUE_FIELD.px)
+                .then(if (!editing) Modifier.pointerTap(999f, cue = Cue.OPEN) { editing = true } else Modifier)
                 .clip(shape)
                 .background(colors.surface2)
                 .border((if (editing) 2 else 1).px, line, shape)
-                .semantics { role = Role.Button; contentDescription = enterValue; onClick { editing = true; true } }
-                .pointerInput(editing) { if (!editing) detectTapGestures { feedback.play(Cue.OPEN); editing = true } },
+                .semantics { role = Role.Button; contentDescription = enterValue; onClick { editing = true; true } },
             contentAlignment = Alignment.Center,
         ) {
             if (editing) {
@@ -470,9 +485,13 @@ private fun StepButton(
     val colors = LocalDelosColors.current
     var pressed by remember { mutableStateOf(false) }
     val fill by animateColorAsState(Color.White.copy(alpha = if (pressed) .22f else .10f), tween(Motion.PRESS, easing = Motion.Ease), label = "stepFill")
+    // The shared hover and press looks; the step itself runs at the press (a hold repeats), so it is not deferred
+    val pulse = rememberPressPulse()
     Box(
         Modifier
             .size(P.VALUE_BUTTON.px)
+            .hoverLook(999f, pulse)
+            .pressLook(pulse)
             .alpha(if (enabled) 1f else .35f)
             .clip(CircleShape)
             .background(fill)

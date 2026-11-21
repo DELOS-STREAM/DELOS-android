@@ -50,6 +50,7 @@
     <string name="shell_hint_library_label">BIBLIOTECA</string>
 
     <string name="shell_hint_select">Seleccionar</string>
+    <string name="shell_hint_apply">Aplicar</string>
     <string name="shell_hint_back">Atrás</string>
     <string name="shell_hint_close">Cerrar</string>
     <string name="shell_hint_cancel">Cancelar</string>

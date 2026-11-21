@@ -176,6 +176,43 @@ class IgdbMetadataClientTest {
             .apply { headers.forEach { (name, value) -> header(name, value) } }
             .body(body.toResponseBody("application/json".toMediaType())).build()
 
+    @Test fun detailsAskTheDetailsRouteByIdAndReturnTheCheckedJson() {
+        val requests = mutableListOf<Request>()
+        val json = detailsFixture(1942, "The Witcher 3")
+        val client = proxyClient { requests.add(it); respond(it, 200, json) }
+        assertEquals(json, client.details(1942))
+        val request = requests.single()
+        assertEquals("GET", request.method)
+        assertEquals("https://meta.test/v1/igdb/game-details?id=1942", request.url.toString())
+        assertNull(request.header("Authorization"))
+        assertThrows(IllegalArgumentException::class.java) { client.details(0) }
+        assertEquals(1, requests.size)
+    }
+
+    @Test fun detailsOfAGameIgdbDoesNotKnowAreNullButOther404sFail() {
+        assertNull(proxyClient { respond(it, 404, """{"error":"game_not_found"}""") }.details(5))
+        for (body in listOf("""{"error":"not_found"}""", "", "not json", "[]")) {
+            val error = assertThrows(IgdbMetadataException::class.java) { proxyClient { respond(it, 404, body) }.details(5) }
+            assertEquals("IGDB HTTP 404", error.message)
+        }
+    }
+
+    @Test fun detailsFailuresAreProviderFailures() {
+        for (code in listOf(429, 503, 502, 400, 307)) {
+            val error = assertThrows(IgdbMetadataException::class.java) {
+                proxyClient { respond(it, code, """{"error":"game_not_found"}""", "Location" to "https://evil.test/") }.details(5)
+            }
+            assertEquals("IGDB HTTP $code", error.message)
+        }
+        for (body in listOf("", "not json", "[]", """{"id":5}""", detailsFixture(6, "Another game"))) {
+            val error = assertThrows(IgdbMetadataException::class.java) { proxyClient { respond(it, 200, body) }.details(5) }
+            assertEquals("IGDB returned invalid game details", error.message)
+        }
+        assertThrows(IOException::class.java) { proxyClient { throw IOException("offline") }.details(5) }
+        val unconfigured = OkHttpClient.Builder().addInterceptor { chain -> respond(chain.request(), 200, detailsFixture(5)) }.build()
+        assertThrows(IgdbMetadataException::class.java) { IgdbMetadataClient(unconfigured, "http://meta.test", RequestPacer(0)).details(5) }
+    }
+
     @Test fun searchRanksPcSteamThenPlatformlessThenConsoleOnlyEntries() {
         fun candidate(id: Long, platforms: List<Int>, steam: List<Long> = emptyList()) =
             MetadataCandidate(id, "Game", null, steam, platformIds = platforms)

@@ -40,6 +40,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,8 +64,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.rememberUpdatedState
 import com.limelight.R
@@ -149,9 +148,9 @@ private fun StatusBarBack(onBack: (() -> Unit)?) {
     val c = StatusBarLayout
     InputKindVisibility(c.BACK_RULE, visible = onBack != null, after = c.BACK_GAP.px) {
         Box(
-            Modifier.size(c.BACK_SIZE.px).clip(CircleShape).glass(colors.surface).border(1.px, colors.line, CircleShape)
-                .semantics { contentDescription = label; role = Role.Button; onClick { back[0]?.invoke(); true } }
-                .pointerInput(Unit) { detectTapGestures { back[0]?.invoke() } },
+            Modifier.size(c.BACK_SIZE.px).pointerTap(999f) { back[0]?.invoke() }
+                .clip(CircleShape).glass(colors.surface).border(1.px, colors.line, CircleShape)
+                .semantics { contentDescription = label; role = Role.Button; onClick { back[0]?.invoke(); true } },
             contentAlignment = Alignment.Center,
         ) {
             Symbol(Symbols.ARROW_BACK, c.BACK_ARROW.tpx, colors.text)
@@ -188,7 +187,7 @@ private fun StatusCluster(
  * but the navigation's buttons are 56 px, the connected PC is only its status dot with the PC glyph (its name is in Home's hint bar and
  * on the Devices screen; a screen reader still gets it) and the wordmark goes under [Compact.NARROW_STAGE]. [fitStatusBar] places the
  * navigation: on the bar's middle while that leaves [StatusBarLayout.MIN_GAP] to both clusters, else in the middle of the free space
- * between them; when even that is too narrow the inner gaps tighten and, last, the battery's percentage goes ([StatusBarStep]).
+ * between them; when even that is too narrow the status cluster's gaps tighten and, last, the battery's percentage goes ([StatusBarStep]).
  */
 @Composable
 private fun CompactStatusBar(
@@ -205,8 +204,7 @@ private fun CompactStatusBar(
     val sideRight = (c.SIDE + safe.right).px
     val minGap = c.MIN_GAP.px
     val buttons = nav?.size ?: 0
-    val navWide = c.navWidth(buttons, c.NAV_BUTTON, c.NAV_GAP).px
-    val navTight = c.navWidth(buttons, c.NAV_BUTTON, c.NAV_GAP_TIGHT).px
+    val navWidth = c.navWidth(buttons, c.NAV_BUTTON, c.NAV_COMPACT.gap).px
     SubcomposeLayout(modifier.fillMaxWidth().padding(top = safe.top.px).height(104.px)) { constraints ->
         val open = Constraints(maxHeight = constraints.maxHeight)
         val width = constraints.maxWidth
@@ -231,12 +229,12 @@ private fun CompactStatusBar(
         }.first().measure(open).also { rights[step.ordinal] = it }
         val fit = fitStatusBar(width.toFloat(), sideLeft.toPx(), sideRight.toPx(), minGap.toPx()) { step ->
             StatusBarWidths(
-                (left?.width ?: 0).toFloat(), if (buttons == 0) 0f else (if (step.tight) navTight else navWide).toPx(), right(step).width.toFloat(),
+                (left?.width ?: 0).toFloat(), if (buttons == 0) 0f else navWidth.toPx(), right(step).width.toFloat(),
             )
         }
         val status = right(fit.step)
         val bar = if (nav != null) subcompose("nav") {
-            TopNav(nav, Modifier, buttonSize = c.NAV_BUTTON, gap = if (fit.step.tight) c.NAV_GAP_TIGHT else c.NAV_GAP)
+            TopNav(nav, Modifier, buttonSize = c.NAV_COMPACT.size, gap = c.NAV_COMPACT.gap)
         }.first().measure(open) else null
         val statusX = width - sideRight.roundToPx() - status.width
         layout(width, constraints.maxHeight) {
@@ -290,18 +288,19 @@ private fun BatteryIndicator(battery: BatteryStatus) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
     // While charging, one cycle of 1.8 s: the green fades up and down, and the moment it is at full strength
-    // a ring pulses out from the outline, like the one around the focused cover
-    val phase = if (battery.charging) {
-        val p by rememberInfiniteTransition(label = "charging").animateFloat(
+    // a ring pulses out from the outline, like the one around the focused cover. The phase is read while drawing only, so
+    // the animation redraws the icon without recomposing it every frame.
+    val phase: State<Float>? = if (battery.charging) {
+        rememberInfiniteTransition(label = "charging").animateFloat(
             0f, 1f, infiniteRepeatable(tween(1800, easing = LinearEasing)), label = "chargingPhase",
         )
-        p
-    } else 0f
-    val pulse = if (battery.charging) .55f + .45f * EaseOut.transform(if (phase < .5f) phase * 2f else (1f - phase) * 2f) else 1f
-    val wave = EaseOut.transform((phase + .5f) % 1f)
+    } else null
     val fill = if (!battery.charging && battery.level <= LOW_BATTERY) LowRed else OnlineGreen
     Box(Modifier.size(48.px, 24.px), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
+            val p = phase?.value ?: 0f
+            val pulse = if (phase != null) .55f + .45f * EaseOut.transform(if (p < .5f) p * 2f else (1f - p) * 2f) else 1f
+            val wave = EaseOut.transform((p + .5f) % 1f)
             val k = stage.dpPerPx * density
             val stroke = 2f * k
             val cap = 3f * k
@@ -358,9 +357,9 @@ private fun PcPill(name: String, online: Boolean) {
 
 private val ONLINE = androidx.compose.ui.graphics.Color(0xFF3DDC84)
 
-/** The top navigation: round buttons [buttonSize] wide and [gap] apart in a glass pill (64 and 14; a compact stage's are smaller, see [StatusBarLayout]). */
+/** The top navigation: round buttons [buttonSize] wide and [gap] apart in a glass pill (64 and 16; a compact stage's are smaller, see [StatusBarLayout]). */
 @Composable
-internal fun TopNav(buttons: List<NavButton>, modifier: Modifier, buttonSize: Float = 64f, gap: Float = StatusBarLayout.NAV_GAP) {
+internal fun TopNav(buttons: List<NavButton>, modifier: Modifier, buttonSize: Float = StatusBarLayout.NAV.size, gap: Float = StatusBarLayout.NAV.gap) {
     val colors = LocalDelosColors.current
     val glass = LocalBackdropHaze.current
     val requesters = remember(buttons.size) { List(buttons.size) { FocusRequester() } }
@@ -392,7 +391,7 @@ internal fun TopNav(buttons: List<NavButton>, modifier: Modifier, buttonSize: Fl
 }
 
 /** What a focused top menu button is scaled to; the transient pill takes its focused bounds. */
-private const val NAV_FOCUS_SCALE = 1.12f
+private val NAV_FOCUS_SCALE = StatusBarLayout.NAV_LOOK.scale
 
 @Composable
 private fun NavButtonView(button: NavButton, requester: FocusRequester, wrapLeft: FocusRequester?, wrapRight: FocusRequester?, size: Float) {
@@ -458,13 +457,22 @@ private fun NavButtonView(button: NavButton, requester: FocusRequester, wrapLeft
 
 /**
  * A complete cap of the keyboard and mouse library in the shared font (`Symbols.MAC_*`): what a keyboard or a mouse does instead of a
- * pad's button. [symbols] are the caps drawn side by side (the arrows are two keys).
+ * pad's button (the keys of [com.limelight.shell.GlobalKeys.keyboardButton]). [symbols] are the caps drawn side by side (the arrows are
+ * two keys).
  */
 enum class InputCap(val symbols: List<String>) {
     RETURN(listOf(Symbols.MAC_RETURN)),
+    SPACE(listOf(Symbols.MAC_SPACE)),
     ESCAPE(listOf(Symbols.MAC_ESCAPE)),
+    TAB(listOf(Symbols.MAC_TAB)),
+    LETTER_F(listOf(Symbols.MAC_LETTER_F)),
+    LETTER_O(listOf(Symbols.MAC_LETTER_O)),
+    LEFT_BRACKET(listOf(Symbols.MAC_LEFT_BRACKET)),
+    RIGHT_BRACKET(listOf(Symbols.MAC_RIGHT_BRACKET)),
     ARROWS(listOf(Symbols.MAC_ARROW_LEFT, Symbols.MAC_ARROW_RIGHT)),
+    ARROW_DOWN(listOf(Symbols.MAC_ARROW_DOWN)),
     CLICK(listOf(Symbols.MAC_MOUSE_CLICK_LEFT)),
+    SECONDARY_CLICK(listOf(Symbols.MAC_MOUSE_CLICK_RIGHT)),
 }
 
 /**
@@ -498,6 +506,10 @@ sealed interface Glyph {
         val MENU_LEFT = Pad(GlyphRole.MENU_LEFT)
         val MENU_RIGHT = Pad(GlyphRole.MENU_RIGHT)
 
+        /** Down on the D-pad (the game overview) and left-right (browsing its screenshots): drawn in the outline cut, the pressed arm filled. */
+        val DPAD_DOWN = Pad(GlyphRole.DPAD_DOWN)
+        val DPAD_HORIZONTAL = Pad(GlyphRole.DPAD_HORIZONTAL)
+
         /** Material swap_horiz 0.827 x 0.661 em vs Phosphor arrows-left-right 0.6875 x 0.6875 em -> area-equivalent 1.075 (17.7 px). */
         val ADJUST = Icon(Symbols.SWAP_HORIZ, scale = 1.075f)
 
@@ -506,16 +518,27 @@ sealed interface Glyph {
 
         /** The primary action for a mouse or a trackpad: the mouse's left click. */
         val CLICK = Cap(InputCap.CLICK)
+
+        /** The context menu for a mouse or a trackpad: the right click (a trackpad's two-finger click). */
+        val SECONDARY_CLICK = Cap(InputCap.SECONDARY_CLICK)
     }
 }
 
 /**
  * [shortLabel] is the label a cramped (compact) bar uses before it drops the label altogether. [tappable]: a finger, a mouse or a
  * keyboard can press it in the bar (the library's Filter): while no controller is the input it is a glyphless pill that runs the bar's
- * `onTap`; a controller has the button itself, and the hint stays a hint (`Hint.tappable` of DELOS for Apple).
+ * `onTap`; a controller has the button itself, and the hint stays a hint (`Hint.tappable` of DELOS for Apple). [pair]: a second button
+ * drawn right after [glyph] for the opposite direction of the same action (L1 and R1: Browse).
  */
 @Immutable
-data class Hint(val glyph: Glyph, val label: String, val shortLabel: String? = null, val tappable: Boolean = false, val icon: String? = null)
+data class Hint(
+    val glyph: Glyph,
+    val label: String,
+    val shortLabel: String? = null,
+    val tappable: Boolean = false,
+    val icon: String? = null,
+    val pair: Glyph? = null,
+)
 
 /** The bottom bar: an optional note on the left, the button hints on the right; [onTap] runs a [Hint.tappable] hint's pill. */
 @Composable
@@ -628,11 +651,11 @@ private fun HintCell(hint: Hint, detail: HintDetail, onTap: ((Hint) -> Unit)?) {
             // A button, and it looks like one: the glass pill with its symbol (the filter's funnel) and label
             Row(
                 Modifier
+                    .pointerTap(999f, key = hint) { tap?.invoke(hint) }
                     .clip(CircleShape)
                     .glass(colors.surface)
                     .border(1.px, colors.line, CircleShape)
                     .semantics(mergeDescendants = true) { role = Role.Button; onClick { tap?.invoke(hint); true } }
-                    .pointerInput(hint) { detectTapGestures { tap?.invoke(hint) } }
                     .height(52.px)
                     .padding(start = (if (hint.icon != null) 18 else 24).px, end = 24.px),
                 verticalAlignment = Alignment.CenterVertically,
@@ -644,7 +667,10 @@ private fun HintCell(hint: Hint, detail: HintDetail, onTap: ((Hint) -> Unit)?) {
             }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.px)) {
-                GlyphButton(hint.glyph)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.px)) {
+                    GlyphButton(hint.glyph)
+                    hint.pair?.let { GlyphButton(it) }
+                }
                 if (detail != HintDetail.BARE) BasicText(
                     label, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 21.tpx), maxLines = 1,
                 )
@@ -661,7 +687,8 @@ internal const val BUTTON_INK_FRACTION = .75f
 fun GlyphButton(glyph: Glyph, size: Int = 38) {
     val colors = LocalDelosColors.current
     when (glyph) {
-        is Glyph.Pad -> FontCap(ControllerGlyphs.family.fontSymbol(glyph.role), size, colors.text)
+        // The pressed D-pad reads better in the outline cut, where the pressed arm is the filled one
+        is Glyph.Pad -> FontCap(ControllerGlyphs.family.fontSymbol(glyph.role), size, colors.text, filled = glyph != Glyph.DPAD_DOWN && glyph != Glyph.DPAD_HORIZONTAL)
         is Glyph.Cap -> Row(verticalAlignment = Alignment.CenterVertically) { glyph.cap.symbols.forEach { FontCap(it, size, colors.text) } }
         is Glyph.Icon -> Box(
             Modifier.size(size.px).clip(CircleShape).background(colors.text),
@@ -674,11 +701,11 @@ fun GlyphButton(glyph: Glyph, size: Int = 38) {
 
 /** One complete cap of the shared font, [size] stage pixels high. */
 @Composable
-private fun FontCap(symbol: String, size: Int, color: Color) {
+private fun FontCap(symbol: String, size: Int, color: Color, filled: Boolean = true) {
     // The glyph is text (em.tpx grows with the text scale): its box grows the same way, so the cap is never cut at a text scale above 100 %
     val em = size / BUTTON_INK_FRACTION
     val scale = LocalStage.current.textScale
     Box(Modifier.width((em * scale).px).height((size * scale).px), contentAlignment = Alignment.Center) {
-        Symbol(symbol, em.tpx, color, modifier = Modifier.requiredSize((em * scale).px), filled = true)
+        Symbol(symbol, em.tpx, color, modifier = Modifier.requiredSize((em * scale).px), filled = filled)
     }
 }

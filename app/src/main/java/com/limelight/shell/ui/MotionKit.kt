@@ -1,5 +1,6 @@
 package com.limelight.shell.ui
 
+import android.os.SystemClock
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -148,19 +149,71 @@ fun Modifier.staggerEntrance(
 
 // ---- Press and focus ----
 
-/** The squeeze of an element that was activated: [pressed] is true for [Motion.PRESS_HOLD] after [fire]. */
+/**
+ * The press of an element ([Motion.PRESS]): [pressed] while a finger or a mouse button is down on it ([down], [up]) and for
+ * [Motion.PRESS_HOLD] after an activation ([fire]) or a release that tapped. [amount] is the squeeze, 0 at rest and 1 fully pressed: in
+ * [Motion.PRESS] on the spring, back in [Motion.FOCUS] (reduced motion: it jumps). Drawn by [pressLook]; read it only while drawing.
+ */
 @Stable
-class PressPulse internal constructor(private val scope: CoroutineScope) {
+class PressPulse internal constructor(private val scope: CoroutineScope, private val reduced: Boolean) {
     var pressed by mutableStateOf(false)
         private set
-    private var job: Job? = null
+    private val squeeze = Animatable(0f)
+    val amount: Float get() = squeeze.value
+    private var hold: Job? = null
+    private var motion: Job? = null
+    private var held = false
+    private var downAt = 0L
 
+    private fun show(on: Boolean) {
+        if (pressed == on) return
+        pressed = on
+        motion?.cancel()
+        motion = scope.launch {
+            val target = if (on) 1f else 0f
+            if (reduced) squeeze.snapTo(target) else squeeze.animateTo(target, tween(if (on) Motion.PRESS else Motion.FOCUS, easing = EaseSpring))
+        }
+    }
+
+    /** An activation (A, Enter, a tap): the squeeze for [Motion.PRESS_HOLD]; while a finger or a button still holds it, nothing more. */
     fun fire() {
-        job?.cancel()
-        job = scope.launch {
-            pressed = true
+        if (held) return
+        // A tap's press already started at the finger's down: its squeeze lands from there
+        if (!pressed) downAt = SystemClock.uptimeMillis()
+        hold?.cancel()
+        show(true)
+        hold = scope.launch {
             delay(Motion.PRESS_HOLD)
-            pressed = false
+            show(false)
+        }
+    }
+
+    /** A finger or the primary mouse button went down on the element: it stays squeezed until [up]. */
+    fun down() {
+        hold?.cancel()
+        held = true
+        downAt = SystemClock.uptimeMillis()
+        show(true)
+    }
+
+    /** It went up: after a tap ([tapped]) the squeeze is held [Motion.PRESS_HOLD] more, a press a scroll took over lets go at once. */
+    fun up(tapped: Boolean) {
+        if (!held) return
+        held = false
+        hold?.cancel()
+        if (!tapped) return show(false)
+        hold = scope.launch {
+            delay(Motion.PRESS_HOLD)
+            show(false)
+        }
+    }
+
+    /** Runs a tap's or a click's [action] once the squeeze has landed ([Motion.pressLandsIn]): the press is seen before the screen changes. */
+    fun afterSqueeze(action: () -> Unit) {
+        val wait = Motion.pressLandsIn(SystemClock.uptimeMillis() - downAt)
+        if (wait == 0L || reduced) action() else scope.launch {
+            delay(wait)
+            action()
         }
     }
 }
@@ -168,27 +221,39 @@ class PressPulse internal constructor(private val scope: CoroutineScope) {
 @Composable
 fun rememberPressPulse(): PressPulse {
     val scope = rememberCoroutineScope()
-    return remember { PressPulse(scope) }
+    val reduced = LocalReducedMotion.current
+    return remember(reduced) { PressPulse(scope, reduced) }
 }
 
 /**
- * The scale of a focusable element: the focus lifts it to [focusScale] with the overshooting spring ([focusMillis], by default
- * [Motion.FOCUS]; a settings row with a gliding ring takes the calmer [Motion.ROW_FOCUS]), a press squeezes it to [pressScale]
- * for a moment ([Motion.PRESS]). With reduced motion it jumps.
+ * The focus lift of an element: the focus lifts it to [focusScale] with the overshooting spring ([focusMillis], by default
+ * [Motion.FOCUS]; a settings row with a gliding ring takes the calmer [Motion.ROW_FOCUS]). While it is [pressed] the lift drops to 1 in
+ * [Motion.PRESS], so with the shared squeeze of [pressLook] a pressed element stands at [Motion.PRESS_SCALE] of its size at rest, below
+ * every focus scale. With reduced motion it jumps.
  */
 @Composable
 fun animateFocusScale(
     focused: Boolean,
     pressed: Boolean,
     focusScale: Float,
-    pressScale: Float = Motion.PRESS_SCALE,
     label: String = "focusScale",
     focusMillis: Int = Motion.FOCUS,
 ): State<Float> {
     val reduced = LocalReducedMotion.current
     return animateFloatAsState(
-        Motion.scaleTarget(focused, pressed, focusScale, pressScale),
+        Motion.scaleTarget(focused, pressed, focusScale),
         if (reduced) snap() else tween(if (pressed) Motion.PRESS else focusMillis, easing = EaseSpring),
+        label = label,
+    )
+}
+
+/** A squeeze of its own for what has no [PressPulse] (the Full keyboard's keys and ring): [Motion.PRESS_SCALE] while [pressed]. */
+@Composable
+fun animatePressScale(pressed: Boolean, label: String = "pressScale"): State<Float> {
+    val reduced = LocalReducedMotion.current
+    return animateFloatAsState(
+        if (pressed) Motion.PRESS_SCALE else 1f,
+        if (reduced) snap() else tween(if (pressed) Motion.PRESS else Motion.FOCUS, easing = EaseSpring),
         label = label,
     )
 }

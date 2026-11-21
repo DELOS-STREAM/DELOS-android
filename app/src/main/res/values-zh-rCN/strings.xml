@@ -211,6 +211,7 @@
     <string name="pacing_balanced">均衡</string>
     <string name="pacing_balanced_alt">均衡（带 FPS 限制）</string>
     <string name="pacing_smoothness">最流畅</string>
+    <string name="pacing_phase_lock">相位锁定</string>
     <string name="pacing_fast_vsync">快速 V-Sync (Nano Pacer)</string>
 
     <string name="title_async_decode">异步解码</string>

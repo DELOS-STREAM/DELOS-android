@@ -304,10 +304,11 @@ All versions are exact; there are no dynamic versions. Direct dependencies in `a
 | `androidx.lifecycle:lifecycle-runtime-compose`, `lifecycle-viewmodel-compose` | 2.11.0 | Google | Apache-2.0 | `AndroidX-Apache-2.0.txt` |
 | `org.jetbrains.kotlinx:kotlinx-coroutines-android` | 1.11.0 | Maven Central | Apache-2.0 | `kotlinx-coroutines-Apache-2.0.txt` |
 | `dev.chrisbanes.haze:haze-blur` (brings JetBrains Compose Multiplatform 1.12.2) | 2.1.0 | Maven Central | Apache-2.0 | `Haze-Apache-2.0.txt`, `JetBrains-Compose-Apache-2.0.txt` |
+| `androidx.media3:media3-exoplayer`, `media3-exoplayer-hls` (bring the other Media3 modules 1.11.1, Guava 33.3.1-android and Guava failureaccess 1.0.2) | 1.11.1 | Google | Apache-2.0 | `AndroidX-Apache-2.0.txt`, `Guava-ListenableFuture-Apache-2.0.txt` |
 | `com.android.tools:desugar_jdk_libs` (core library desugaring) | 2.1.5 | Google | GPL-2.0 with Classpath exception | `desugar_jdk_libs-GPL-2.0-with-Classpath-exception.txt` |
 
 Transitive runtime libraries with their own licence file: Kotlin standard library 2.4.21, kotlinx.serialization
-1.7.3, JetBrains annotations 23.0.0, JSpecify 1.0.0, Guava ListenableFuture 1.0 (all Apache-2.0). The
+1.7.3, JetBrains annotations 23.0.0, JSpecify 1.0.0, Guava ListenableFuture 1.0, Guava 33.3.1-android and failureaccess 1.0.2 (all Apache-2.0; Guava's licence file covers them). The
 complete resolved set, with checksums, is in `gradle/verification-metadata.xml`;
 `./gradlew :app:dependencies --configuration releaseRuntimeClasspath` prints the tree.
 

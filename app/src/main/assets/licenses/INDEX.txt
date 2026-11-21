@@ -18,7 +18,7 @@ Vulkan-Headers | KhronosGroup/Vulkan-Headers 6802bb47 | Apache-2.0 OR MIT | Vulk
 Snapdragon Game Super Resolution shaders | SnapdragonGameStudios/snapdragon-gsr d926f074 | BSD-3-Clause | sgsr.txt
 
 Java and Kotlin libraries
-AndroidX and Jetpack Compose (androidx.*) | appcompat 1.8.0, preference 1.2.1, annotation 1.11.0, activity 1.13.0, lifecycle 2.11.0, Compose 1.12.1 (BOM 2026.09.00) and their dependencies | Apache-2.0 | AndroidX-Apache-2.0.txt
+AndroidX and Jetpack Compose (androidx.*) | appcompat 1.8.0, preference 1.2.1, annotation 1.11.0, activity 1.13.0, lifecycle 2.11.0, Compose 1.12.1 (BOM 2026.09.00), Media3 1.11.1 and their dependencies | Apache-2.0 | AndroidX-Apache-2.0.txt
 JetBrains Compose Multiplatform and AndroidX forks (org.jetbrains.compose.*, org.jetbrains.androidx.*) | 1.12.1, lifecycle 2.11.0, savedstate 1.3.6 | Apache-2.0 | JetBrains-Compose-Apache-2.0.txt
 Material Components for Android | 1.14.0 | Apache-2.0 | Material-Components-Apache-2.0.txt
 Kotlin standard library | 2.4.21 | Apache-2.0 | Kotlin-Apache-2.0.txt
@@ -30,6 +30,7 @@ Okio | 3.18.1 | Apache-2.0 | Okio-Apache-2.0.txt
 Gson | 2.14.0 | Apache-2.0 | Gson-Apache-2.0.txt
 Error Prone annotations | 2.48.0 | Apache-2.0 | ErrorProne-Annotations-Apache-2.0.txt
 Guava ListenableFuture | 1.0 | Apache-2.0 | Guava-ListenableFuture-Apache-2.0.txt
+Guava, Guava failureaccess | 33.3.1-android, 1.0.2 | Apache-2.0 | Guava-ListenableFuture-Apache-2.0.txt
 JSpecify | 1.0.0 | Apache-2.0 | JSpecify-Apache-2.0.txt
 JmDNS | 3.6.3 | Apache-2.0 | JmDNS-Apache-2.0.txt
 SLF4J API | 2.0.7 | MIT | SLF4J-MIT.txt

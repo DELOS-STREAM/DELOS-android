@@ -51,4 +51,17 @@ class FocusTrackerHoldTest {
         tracker.release()
         assertFalse(tracker.holds(tile))
     }
+
+    @Test
+    fun optionsOnTheFocusedRowCountAsSomethingToOpen() {
+        val tracker = FocusTracker()
+        var opened = false
+        tracker.focused(FocusRequester(), null, null, adjustable = true, options = { opened = true })
+        assertTrue(tracker.hasContextMenu)
+        tracker.options?.invoke()
+        assertTrue(opened)
+        tracker.focus(FocusRequester())
+        assertFalse(tracker.hasContextMenu)
+        assertTrue(tracker.options == null)
+    }
 }

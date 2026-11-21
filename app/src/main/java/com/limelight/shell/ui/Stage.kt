@@ -195,7 +195,9 @@ class MarginBringIntoView internal constructor(
 ) : BringIntoViewSpec {
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
         // Where the element will be once the running scroll has arrived, so a retarget is measured against its destination.
-        scroller.request(distance(offset - scroller.remaining, size, containerSize, before, after))
+        // While the pointer is the input it owns the scrolling: a focus it moved stays where it is (PointerFocus)
+        val distance = PointerFocus.scrollFor(distance(offset - scroller.remaining, size, containerSize, before, after))
+        if (distance != 0f) scroller.request(distance)
         return 0f
     }
 

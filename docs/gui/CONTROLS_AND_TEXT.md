@@ -105,22 +105,24 @@ pointer, touch) is what the hints and the input-dependent controls are drawn for
   that was not the controller, else the device's default (touch with a touchscreen, else the controller). So the Odin starts
   with the controller, a tap switches to touch, a button press back; unplugging a pad brings back the touch or keyboard
   hints at once.
-- **Hints by kind** (`Glyph.forKind`, `List<Hint>.adaptedTo`, `shell/ui/HintKinds.kt`; the screens only write controller
-  hints): controller: unchanged; touch: only the primary action (A: Select, Start, Connect, Change), drawn with the hand-tap
-  symbol on the cue disc (`Glyph.TAP`: the shared font has no touch caps); pointer: the same with the font's left-click cap
-  (`Glyph.CLICK`, `Symbols.MAC_MOUSE_CLICK_LEFT`); keyboard: Return for the primary action, Esc for back, the left and right
-  arrows for the adjust cue, the font's complete key caps (`Glyph.Cap`, `InputCap`: `MAC_RETURN`, `MAC_ESCAPE`,
-  `MAC_ARROW_LEFT` + `MAC_ARROW_RIGHT`), drawn like the pad caps (`GlyphButton`, no disc); the other actions
-  (tabs, menu buttons, X, Y) have a control on the screen or no key and are dropped. This applies to the hint bar, the
-  companion window's copy of it and the stream menu's dock. A tappable hint (`Hint.tappable`: the library's Filter) stays for
-  every kind: while no controller is the input the bar draws it as a glyphless glass pill with its label (44 high, 24 at the
-  sides; it cross-fades into the hint with `Motion.ROW_IN`, reduced motion a fade), and a tap runs `HintBar(onTap)`, which
-  opens the filters exactly like Y (`GlobalKeys.canFilter` / `onFilter`). The Artwork screen has its own Filter pill.
+- **Hints by kind** (`Glyph.forKind`, `Glyph.keyCap`, `List<Hint>.adaptedTo`, `shell/ui/HintKinds.kt`; the screens only write
+  controller hints): controller: unchanged; touch: only the primary action (A: Select, Start, Connect, Change), drawn with the
+  hand-tap symbol on the cue disc (`Glyph.TAP`: the shared font has no touch caps); pointer: the primary action with the font's
+  left-click cap (`Glyph.CLICK`, `Symbols.MAC_MOUSE_CLICK_LEFT`) and the right menu button (Options, the context menu) with the
+  right-click cap (`Glyph.SECONDARY_CLICK`, `MAC_MOUSE_CLICK_RIGHT`), the rest dropped; keyboard: every button with its key of
+  the keyboard map below (`InputCap`: Return, Esc, Tab, O, F, [ and ], the left and right arrows for the adjust cue), the font's
+  complete key caps drawn like the pad caps (`GlyphButton`, no disc); X and the right menu button are both O, so O shows once.
+  This applies to the hint bar, the companion window's copy of it and the stream menu's dock. A tappable hint
+  (`Hint.tappable`: the library's Filter) stays for touch and the pointer: the bar draws it as a glyphless glass pill with its
+  label (44 high, 24 at the sides; it cross-fades into the hint with `Motion.ROW_IN`, reduced motion a fade), and a tap runs
+  `HintBar(onTap)`, which opens the filters exactly like Y (`GlobalKeys.canFilter` / `onFilter`). For the keyboard it is a
+  hint with its key (F). The Artwork screen has its own Filter pill.
 - **Pills a finger can press** keep working for every kind. The button glyph on them (`PillButton(glyph = ...)`, drawn by
   `PillGlyph`: the update and problem cards, the artwork search, filter and sheet pills) shows only for a kind that has that
-  button (a key cap for Return and Esc) and gives way like `InputKindVisibility`, the pill narrowing with it. The toast's Y
-  chip shows its Y only for a controller; the settings rows' reset pill drops its X for a keyboard, and the per-app settings
-  show the round reset button on every custom row while a finger or a mouse is the input.
+  button (a key cap on the keyboard: O for X, F for Y) and gives way like `InputKindVisibility`, the pill narrowing with it.
+  The toast's Y chip shows its Y only for a controller; the settings rows' reset pill shows X's glyph for the input (O on a
+  keyboard, none for touch and the pointer), and the per-app settings show the round reset button on every custom row while a
+  finger or a mouse is the input.
 - **`InputKindVisibility`** (`shell/ui/InputKindVisibility.kt`) is the one component for chrome that depends on the kind
   (`InputKindRule.WITHOUT_CONTROLLER` / `WITH_CONTROLLER`, and `visible` for the screen's own condition): it fades with a
   small scale (`Motion.POP_FROM_SCALE`) and slide (`Motion.CHEVRON_BUMP` twice) over `Motion.ROW_IN` with `EaseOut` (in a row
@@ -132,6 +134,39 @@ pointer, touch) is what the hints and the input-dependent controls are drawn for
   the back arrow at 34, 24 px before the brand, on every screen that can go back (`Screen.back`), in the regular and the
   compact bar (`StatusBarLayout.BACK_*`); the brand glides as it comes and goes. A tap runs the activity's back dispatch, so it
   does exactly what B does (the screen's own back handler first, the shell's with the BACK cue otherwise).
+
+### Keyboard and pointer
+
+A hardware keyboard and a mouse or trackpad are inputs of their own in the shell, with the rules and values of DELOS for
+Apple.
+
+- **Key map** (`GlobalKeys.keyboardButton`, applied in `ShellActivity.dispatchKeyEvent` to a physical keyboard with
+  letters): the arrows move (they are the D-pad already); Return, Enter and Space are A; Esc is B; Tab is the left menu
+  button (the side menu); O and the menu key are X (the context menu, and a screen's own X action: the filters' reset, the
+  Artwork search by name, a custom app setting's reset); F is Y (Undo, the library filter, the Settings search, the Artwork
+  filter); [ and ] are L1 and R1 (the tabs). While a text field is typed in (`onCheckIsTextEditor`) only Esc is mapped, the
+  letters, Space and Enter are the field's; a key with Ctrl, Alt or Meta is never mapped. A button being recorded
+  (Stream menu buttons) sees the keys as they are.
+- **Hover focus** (`focusEffects`): moving the pointer over a focus item gives it the focus where it is, so the ring and the
+  focus look move with the pointer. Only a move of the pointer itself counts (`PointerFocus.moved`, window coordinates):
+  content that scrolls under a pointer at rest takes no focus. The move cue plays at most every 90 ms
+  (`PointerLook.CUE_GAP_MS`). Items behind an open layer are not reached (the layer's scrim takes the pointer).
+- **Scrolling has one owner.** While the pointer is the last input (`PointerFocus.used`, fed by `ControllerGlyphs.note`) no
+  focus scroller follows the focus: `MarginBringIntoView` asks for no scroll and the library row does not glide the focused
+  cover to the left. A hover, a click or a right click focuses an item where it is; the wheel and the trackpad scroll the row
+  and the lists with Compose's own scrolling, which also stops a running focus scroll. A plain mouse wheel scrolls the library
+  row too (`wheelScrollsRow`; a trackpad's sideways swipe already does). A key, the pad or a touch hands the scrolling back
+  to the focus.
+- **Right click** (or a trackpad's two-finger click) on a focus item focuses it where it is and runs its Options (its context
+  menu, or a settings row's list of values), as Start does; it never activates the item. Beside the items of an open layer
+  (a menu, the side menu, a row popup) it closes the layer like B (`secondaryClickOutside` on the shell's root).
+- **Click** is A with the press: the item squeezes from the button's down and acts once the squeeze has landed ("Motion",
+  Press).
+- **Hover look** (`hoverLook`, `pointerTap`): the interactive elements that are no focus items (the hint bar's pills, the
+  back arrow, the settings tab pills, a submenu's back chip, the reset pill, the slider popup's value field and step buttons,
+  the loader's Cancel, a toast with an action) take a light hover look: the `text` colour at 8 % over them in their shape
+  and a lift to 1.03, in 140 ms, out 110 ms. Focus items have no hover look: they take the focus.
+- The pointer icon is never hidden over the items.
 
 ### Navigation
 

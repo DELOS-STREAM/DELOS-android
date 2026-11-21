@@ -219,8 +219,11 @@ class FocusTracker {
         private set
     var adjustable by mutableStateOf(false)
         private set
+    /** What Options (the right menu button, Start) does on the focused element instead of opening [contextMenu]: a settings row's popup. */
+    var options: (() -> Unit)? = null
+        private set
 
-    /** Whether the focused element has a context menu (the Options hint shows only then); a mirror of [contextMenu] that is read in composition. */
+    /** Whether Options opens something on the focused element (the Options hint shows only then): its [options] or its [contextMenu], read in composition. */
     var hasContextMenu by mutableStateOf(false)
         private set
 
@@ -241,12 +244,14 @@ class FocusTracker {
         adjustable: Boolean,
         activate: (() -> Unit)? = null,
         adjust: ((direction: Int, repeatCount: Int) -> Unit)? = null,
+        options: (() -> Unit)? = null,
     ) {
         if (requester == held) held = null
         this.requester = requester
         this.coordinates = coordinates
         this.contextMenu = contextMenu
-        hasContextMenu = contextMenu != null
+        this.options = options
+        hasContextMenu = contextMenu != null || options != null
         this.adjustable = adjustable
         this.activate = activate
         this.adjust = adjust
@@ -296,6 +301,21 @@ class ShellState(initial: Screen) {
 
     /** Key ("pc uuid/app id") of the focused game on the home screen. */
     var homeGame by mutableStateOf<String?>(null)
+
+    /**
+     * Key ("pc uuid/app id") of the game whose overview is open (docs/gui/GAME_INFO.md, "Game overview"); kept while its app settings are
+     * open, so the overview is there again when they close.
+     */
+    var overviewGame by mutableStateOf<String?>(null)
+
+    /** The overview's viewer is open: null when it is not, else what the hint bar names for the item shown. */
+    var overviewViewer by mutableStateOf<OverviewViewerHints?>(null)
+
+    /** Actual fullscreen viewer overlay visibility, independent of its media/hint model updates. */
+    var overviewViewerControlsVisible by mutableStateOf(true)
+
+    /** Early input observation, before global shortcuts consume a key/controller/motion event. */
+    var overviewViewerInput: (() -> Unit)? = null
 
     /** The PC whose games the shell shows (null before a PC is chosen); the companion screen shows it (docs/DUAL_SCREEN.md). */
     var pcName by mutableStateOf<String?>(null)
@@ -477,6 +497,17 @@ class ShellState(initial: Screen) {
 }
 
 val LocalShell = staticCompositionLocalOf<ShellState> { error("ShellState not provided") }
+
+/**
+ * What the hint bar shows for the overview's viewer: L1/R1 browse; on a [video] the player can play, Y mutes or turns the sound on
+ * ([muted]), and the focused stop of the dock ([target]) decides what Left/Right (seek 10 s, volume) and A (play or pause, select) do.
+ */
+@androidx.compose.runtime.Immutable
+data class OverviewViewerHints(val video: Boolean, val playing: Boolean = false, val muted: Boolean = false, val target: ViewerHintTarget = ViewerHintTarget.SEEK)
+
+/** The kind of stop the viewer dock's focus is on, for its hints. */
+enum class ViewerHintTarget { SEEK, PLAY, VOLUME, BUTTON }
+
 val LocalFocusTracker = staticCompositionLocalOf<FocusTracker> { error("FocusTracker not provided") }
 
 /**

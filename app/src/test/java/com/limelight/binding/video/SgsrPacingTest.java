@@ -92,4 +92,13 @@ public class SgsrPacingTest {
         long earlier = plain - withSgsr;
         assertTrue("released " + earlier + " ns earlier", earlier >= 3 * MS && earlier <= 4 * MS);
     }
+
+    @Test
+    public void phaseLockPresentsAtTheFrameTimestampOnlyWhenItIsAPlausibleFutureTarget() {
+        assertEquals(108 * MS, SgsrPacing.presentationTimeNs(108 * MS, 100 * MS));
+        assertEquals(100 * MS, SgsrPacing.presentationTimeNs(90 * MS, 100 * MS));
+        assertEquals(100 * MS, SgsrPacing.presentationTimeNs(100 * MS, 100 * MS));
+        assertEquals(100 * MS, SgsrPacing.presentationTimeNs(100 * MS + SgsrPacing.MAX_PRESENT_AHEAD_NS + 1, 100 * MS));
+        assertEquals(100 * MS, SgsrPacing.presentationTimeNs(0L, 100 * MS));
+    }
 }

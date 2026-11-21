@@ -76,7 +76,8 @@ fun StreamResultLayer(result: StreamResult?, haze: HazeState, reducedMotion: Boo
                 // Nothing underneath reacts to a tap
                 .pointerInput(Unit) { detectTapGestures { } }
                 .focusProperties { onExit = { if (open) cancelFocusChange() } }
-                .focusGroup(),
+                .focusGroup()
+                .rowNavScope(),
             contentAlignment = Alignment.Center,
         ) {
             // A compact stage keeps the card 48 px from the edges and sets the face and the headline smaller
@@ -84,7 +85,7 @@ fun StreamResultLayer(result: StreamResult?, haze: HazeState, reducedMotion: Boo
             val compact = stage.compact
             Column(
                 Modifier.then(if (compact) Modifier.padding(horizontal = Compact.MARGIN.px) else Modifier),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.px),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(RESULT_GAP.px),
             ) {
                 FaceBadge(r.id, reducedMotion)
                 BasicText(
@@ -97,12 +98,12 @@ fun StreamResultLayer(result: StreamResult?, haze: HazeState, reducedMotion: Boo
                     style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 28.tpx, lineHeight = 1.4.em, textAlign = TextAlign.Center),
                     modifier = Modifier.widthIn(max = 1000.px),
                 )
-                Row(Modifier.padding(top = 12.px), horizontalArrangement = Arrangement.spacedBy((if (compact) Compact.BUTTON_GAP else 24f).px)) {
+                FocusRow(FocusSpacing.PILL, gap = if (compact) Compact.BUTTON_GAP else 24f, Modifier.padding(top = 12.px)) {
                     PillButton(stringResource(R.string.stream_result_try_again), Symbols.REFRESH, onRetry, Modifier.focusRequester(retry), primary = true)
                     PillButton(stringResource(R.string.stream_result_back_to_library), Symbols.LIBRARY, onBack, clickCue = Cue.BACK)
                 }
                 r.details?.takeIf { it.isNotBlank() }?.let { details ->
-                    DetailsToggle(expanded) { expanded = !expanded }
+                    DetailsToggle(expanded, Modifier.padding(top = (RESULT_DETAILS.gap - RESULT_GAP).px)) { expanded = !expanded }
                     AnimatedVisibility(expanded, enter = fadeIn(tween(250)), exit = fadeOut(tween(200))) {
                         val shape = RoundedCornerShape(28.px)
                         BasicText(
@@ -159,10 +160,10 @@ private fun FaceBadge(id: Long, reducedMotion: Boolean) {
 
 /** The small text button under the actions: opens and closes the technical details. */
 @Composable
-private fun DetailsToggle(expanded: Boolean, onClick: () -> Unit) {
+private fun DetailsToggle(expanded: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val colors = LocalDelosColors.current
     Row(
-        Modifier
+        modifier
             .focusEffects(onClick = onClick, corner = 999f, focusScale = 1.06f, ring = FocusRing(3f, 3f), glow = null)
             .clip(CircleShape)
             .padding(horizontal = 26.px, vertical = 12.px),
@@ -173,3 +174,9 @@ private fun DetailsToggle(expanded: Boolean, onClick: () -> Unit) {
         Symbol(if (expanded) Symbols.EXPAND_LESS else Symbols.EXPAND_MORE, 26.tpx, colors.text2)
     }
 }
+
+/** The gap between the parts of the result (the face, the texts, the actions). */
+private const val RESULT_GAP = 24f
+
+/** From the actions (pills) to the Details toggle, whose own reach (1.06, a 3 px ring 3 px out) is the smaller. */
+internal val RESULT_DETAILS = FocusGap(FocusSpacing.PILL, PILL_HEIGHT, 32f)

@@ -5,7 +5,8 @@
     <corners android:radius="4dp" />
 
     <!-- 边框的颜色和粗细 -->
-    <solid android:color="#35000000" />
+    <!-- Over the stream's video nothing can blur it: the darker tint of docs/GUI.md, "Glass" -->
+    <solid android:color="#B3000000" />
 
     <!-- android:radius 圆角的半径 -->
     <stroke

@@ -48,5 +48,27 @@ class GlobalKeys {
             KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_START, KeyEvent.KEYCODE_BUTTON_X,
             KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_BUTTON_R1,
         )
+
+        /**
+         * The shell's keyboard map (docs/GUI.md, "Keyboard and pointer"): the pad button a hardware keyboard's [keyCode] stands for, or
+         * null for a key the shell leaves alone. The arrows are the D-pad already. Return, Enter and Space are A, Esc is B, Tab the left
+         * menu button (the side menu), O and the menu key are X (the context menu, a screen's X action), F is Y (filter, search, Undo),
+         * [ and ] are L1 and R1 (the tabs). While a text field is [typing] only Esc is mapped (letters, Space and Enter are the
+         * field's); a key with Ctrl, Alt or Meta ([modified]) never is.
+         */
+        fun keyboardButton(keyCode: Int, typing: Boolean, modified: Boolean): Int? {
+            if (modified) return null
+            if (keyCode == KeyEvent.KEYCODE_ESCAPE) return KeyEvent.KEYCODE_BUTTON_B
+            if (typing) return null
+            return when (keyCode) {
+                KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_SPACE -> KeyEvent.KEYCODE_BUTTON_A
+                KeyEvent.KEYCODE_TAB -> KeyEvent.KEYCODE_BUTTON_SELECT
+                KeyEvent.KEYCODE_O, KeyEvent.KEYCODE_MENU -> KeyEvent.KEYCODE_BUTTON_X
+                KeyEvent.KEYCODE_F -> KeyEvent.KEYCODE_BUTTON_Y
+                KeyEvent.KEYCODE_LEFT_BRACKET -> KeyEvent.KEYCODE_BUTTON_L1
+                KeyEvent.KEYCODE_RIGHT_BRACKET -> KeyEvent.KEYCODE_BUTTON_R1
+                else -> null
+            }
+        }
     }
 }

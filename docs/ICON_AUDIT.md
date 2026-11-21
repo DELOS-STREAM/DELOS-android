@@ -32,6 +32,7 @@ Glyph names are Phosphor 2.1.2 (Regular, with the Fill twin used on focus).
 
 | Glyph | Where | Why it is one meaning |
 |---|---|---|
+| `arrow-counter-clockwise` | Replay, the video player's back 10 s | turning time back |
 | `drop` (opacity) | Keyboard opacity, OSC opacity, Free stick opacity (Controls); Game background opacity (Appearance) | the same property on different targets |
 | `arrow-u-up-left` (reset) | Reset on-screen controls / Reset keyboard layout, Reset all, Reset to profile value, Reset filters, Reset metadata match, toasts | the same action |
 | `file-arrow-down` (import) | Import keyboard layout, Import special buttons | the same action |
@@ -48,7 +49,8 @@ Glyph names are Phosphor 2.1.2 (Regular, with the Fill twin used on focus).
 | `clock-countdown` | HLTB chip, HowLongToBeat provider row, Duration filter | completion time |
 | `sparkle` | HDR setting, native HDR chip, HDR filter chip and section, metadata badge | HDR |
 | `game-controller` | Controls tab, button-capture dialog, Debug controllers, Player avatar, and a game's placeholder tile and candidate lists | a controller; a game without artwork has nothing but its controller to show |
-| `play` | Start game, right menu button hint on the AYN (a physical button printed with that triangle) | the hint copies the hardware |
+| `play` | Start game, play a video in the overview's viewer, right menu button hint on the AYN (a physical button printed with that triangle) | starting playback; the hint copies the hardware |
+| `speaker-high` | Play audio on the PC, the sound of a video in the overview's viewer | sound on |
 | `list` / `square` / `copy` | menu button hints | hardware glyphs, not features |
 | `pencil-simple` | Rename (devices, profile, dialog field) | rename |
 | `trash` | Delete profile, Remove from Delos, undo toast default | remove |
@@ -426,6 +428,36 @@ The header pills. The per-app settings tab pills use the same glyphs.
 | Genre chips | see [Genres (IGDB)](#genres-igdb) | `GENRE_*` |  |
 | Theme chips | see [Themes (IGDB)](#themes-igdb) | `THEME_*` |  |
 
+### Game overview
+
+| Element | Glyph (Phosphor name) | Symbol constant | Note |
+|---|---|---|---|
+| "Game info" hint: touch / mouse | `caret-up` / `caret-down` | `EXPAND_LESS` / `EXPAND_MORE` | open more (also the section cue and Read the story) |
+| Section: About | `book-open` | `OVERVIEW_ABOUT` |  |
+| Section: Screenshots and videos | `images-square` | `OVERVIEW_MEDIA` | not `images` (the artwork library) |
+| Section: Details | `list-dashes` | `OVERVIEW_DETAILS` |  |
+| Section: Your streaming | `clock-user` | `OVERVIEW_STREAMING` | the player's own time |
+| Section: Links, and a link of another kind | `link-simple` | `OVERVIEW_LINKS` |  |
+| Section: Similar games | `grid-four` | `OVERVIEW_SIMILAR` |  |
+| Play / App settings | `play` / `gear-six` | `PLAY_ARROW` / `SETTINGS` | as Start app and App settings of the game's menu |
+| Link: opens outside the app | `arrow-square-out` | `LINK_OPEN_EXTERNAL` |  |
+| Link: official site / store / video site / wiki | `globe-simple` / `storefront` / `video-camera` / `book-bookmark` | `WEBSITE_*` |  |
+| Link: Steam | `steam-logo` | `STEAM` |  |
+| A video in the carousel and the viewer | `youtube-logo` | `VIDEO_PLAY` | a YouTube video, played in the app |
+| Video player: play / pause | `play` / `pause` | `PLAYER_PLAY` / `PLAYER_PAUSE` | repeat: `play` is Start game's |
+| Video player: back / forward 10 s (with a drawn "10") | `arrow-counter-clockwise` / `arrow-clockwise` | `PLAYER_SEEK_BACK` / `PLAYER_SEEK_FORWARD` | repeat: `arrow-counter-clockwise` is Replay's; both turn time back |
+| Video player: previous / next item | `skip-back` / `skip-forward` | `PLAYER_PREVIOUS` / `PLAYER_NEXT` |  |
+| Video player: sound / muted | `speaker-high` / `speaker-slash` | `PLAYER_SOUND` / `PLAYER_MUTED` | repeat: `speaker-high` is Play audio on the PC's |
+| Video player: low / no volume | `speaker-low` / `speaker-none` | `PLAYER_VOLUME_LOW` / `PLAYER_VOLUME_NONE` | the sound button at a low or zero volume |
+| A video that cannot play | `warning` | `WARNING` |  |
+| Game modes: single player / with others | `user` / `users-four` | `MODE_SINGLE` / `MODE_MULTI` |  |
+| Perspective | `cube-focus` | `PERSPECTIVE` |  |
+| Platforms: PC and Linux / Mac / consoles | `desktop-tower` / `laptop` / `television-simple` | `DESKTOP_WINDOWS` / `PLATFORM_MAC` / `PLATFORM_CONSOLE` |  |
+| Multiplayer facts | `users-three` | `GROUP` |  |
+| Languages | `translate` | `LANGUAGE` | as the app's language |
+| Data credit | `info` | `INFO` |  |
+| Back (touch, mouse) / viewer: previous, next, close | `arrow-left` / `caret-left`, `caret-right`, `x` | `ARROW_BACK` / `CHEVRON_*`, `CLOSE` |  |
+
 ### Metadata and artwork
 
 | Element | Glyph (Phosphor name) | Symbol constant | Note |
@@ -504,7 +536,7 @@ The header pills. The per-app settings tab pills use the same glyphs.
 | Toast: virtual display not ready | `monitor` | `MONITOR` | the display |
 | Toast: wake sent | `alarm` | `WAKE` | see Wake the PC |
 | Toast: profile name needed | `identification-badge` | `BADGE` |  |
-| Impact chip GPU | `graphics-card` | `GPU` | graphics card (the CPU chip is the Debug kernel) |
+| Impact chip GPU | `cpu` | `GPU` | owner's decision 2026-11-20: the chip, because these devices have an SoC rather than a graphics card; shares the glyph with the Debug kernel row, on another screen |
 | Impact chip Latency | `timer` | `TIMER` | same as Ultra low latency |
 | Impact chip Network | `wifi-high` | `WIFI` |  |
 | Button capture dialog | `game-controller` | `SPORTS_ESPORTS` | a controller |
@@ -834,7 +866,7 @@ that had no glyph before. An empty `Reason` means the reason is the note of the 
 | Dialogs, search keyboard, stream result, portals, toasts | Portal: link test | `gauge` | `network` |  |
 | Dialogs, search keyboard, stream result, portals, toasts | Toast: reset | `arrow-clockwise` / `arrows-clockwise` | `arrow-u-up-left` |  |
 | Dialogs, search keyboard, stream result, portals, toasts | Toast: wake sent | `power` | `alarm` |  |
-| Dialogs, search keyboard, stream result, portals, toasts | Impact chip GPU | `cpu` | `graphics-card` |  |
+| Dialogs, search keyboard, stream result, portals, toasts | Impact chip GPU | `cpu` | `graphics-card` | reverted to `cpu` by the owner's decision of 2026-11-20 (SoC devices, no graphics card) |
 | Stream menu bar and pages | Bar: Brightness | `sun-dim` | `sun` |  |
 | Stream menu bar and pages | More: Send clipboard | `upload-simple` | `paper-plane-tilt` |  |
 | Stream menu bar and pages | More: Get clipboard | `download-simple` | `tray-arrow-down` |  |

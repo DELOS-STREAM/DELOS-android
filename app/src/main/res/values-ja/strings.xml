@@ -220,6 +220,7 @@
     <string name="pacing_balanced">バランス</string>
     <string name="pacing_balanced_alt">バランス（FPS制限付き）</string>
     <string name="pacing_smoothness">最も滑らかな映像</string>
+    <string name="pacing_phase_lock">位相同期</string>
     <string name="pacing_fast_vsync">高速V-Sync（Nano Pacer）</string>
 
     <string name="title_async_decode">非同期デコード</string>

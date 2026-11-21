@@ -34,6 +34,10 @@
 # Moonlight common
 -keep class com.limelight.nvstream.jni.* {*;}
 
+# Compose's accessibility delegate and its list of enabled services (QuietAccessibility)
+-keepclassmembers class androidx.compose.ui.platform.AndroidComposeView { private ** composeAccessibilityDelegate; }
+-keepclassmembers class androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat { private java.util.List _enabledServices; }
+
 # Okio
 -keep class sun.misc.Unsafe {*;}
 -dontwarn java.nio.file.*

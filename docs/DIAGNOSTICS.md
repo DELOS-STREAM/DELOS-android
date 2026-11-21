@@ -129,7 +129,7 @@ All of it is built on a worker thread from the PC list as it is at that moment.
 **Once per problem:** the ledger (`diag_problems` preferences: the newest crash time, exit time and session start offered, and the last stream offer)
 is stored at detection, so a problem is never offered again, whether it was reported, dismissed or ignored.
 
-**The card** (`ProblemOfferCard`, docs/GUI.md): top right of the start screen and the home screen, below the toast's place, only when no layer,
+**The card** (`ProblemOfferCard`, docs/GUI.md): in the centre of the start screen and the home screen, only when no layer,
 portal, launch loader or stream result is up. It says what happened in one sentence, the one-line summary and a note. In a build **with** the report
 service the note is: *Report sends a cleaned log to the Delos report service (kept 30 days, readable by anyone who has the link) and opens a GitHub
 draft for you to check. Nothing is sent before you choose.* In a build **without** it: *Nothing is sent automatically. Report opens GitHub in your

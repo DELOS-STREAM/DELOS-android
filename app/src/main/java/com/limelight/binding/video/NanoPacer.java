@@ -208,10 +208,15 @@ public final class NanoPacer {
     public void setRenderWorkNs(long workNs) { renderWorkNs = Math.max(0L, workNs); }
     private volatile long renderWorkNs = 0L;
 
+    /** The display target of the last {@link #waitAndDrainLatest} that paced a frame, 0 when it did not (for the pacing statistics). */
+    long lastTargetNs() { return lastTargetNs; }
+    private long lastTargetNs = 0L;
+
     // Cooperative nano-pacing: keep draining while waiting to avoid decoder output backpressure.
     // Returns how many extra outputs were drained (and dropped) while waiting.
     public int waitAndDrainLatest(MediaCodec.BufferInfo info, LatestOutput latest, OutputCallbacks cb) {
         if (info == null || latest == null || cb == null) return 0;
+        lastTargetNs = 0L;
         if (!oneToOne) return 0;
 
         final long framePeriodNs = intervalNs;
@@ -273,6 +278,7 @@ public final class NanoPacer {
         synchronized (lock) {
             nextDeadlineNs = targetNs + framePeriodNs;
         }
+        lastTargetNs = targetNs;
 
         return drainedExtra;
     }

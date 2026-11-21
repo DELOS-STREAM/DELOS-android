@@ -26,13 +26,13 @@ class HintBarFit(val note: Int?, val details: List<HintDetail>)
 fun hintRank(glyph: Glyph): Int = when (glyph) {
     Glyph.A, Glyph.TAP, Glyph.CLICK, Glyph.Cap(InputCap.RETURN) -> 0
     Glyph.B, Glyph.Cap(InputCap.ESCAPE) -> 1
-    Glyph.L1, Glyph.R1 -> 3
-    Glyph.MENU_LEFT, Glyph.MENU_RIGHT -> 4
+    Glyph.L1, Glyph.R1, Glyph.Cap(InputCap.LEFT_BRACKET), Glyph.Cap(InputCap.RIGHT_BRACKET) -> 3
+    Glyph.MENU_LEFT, Glyph.MENU_RIGHT, Glyph.Cap(InputCap.TAB), Glyph.SECONDARY_CLICK -> 4
     else -> 2
 }
 
-/** The tab hints belong together, every other hint stands alone ([HintFitItem.group]). */
-fun hintGroup(glyph: Glyph): Int? = if (glyph == Glyph.L1 || glyph == Glyph.R1) hintRank(glyph) else null
+/** The tab hints (L1 and R1, or their keys) belong together, every other hint stands alone ([HintFitItem.group]). */
+fun hintGroup(glyph: Glyph): Int? = hintRank(glyph).takeIf { it == 3 }
 
 /**
  * Chooses how much of each hint fits in [available] pixels, [gap] apart. The most important hint gets the most text: in order of rank

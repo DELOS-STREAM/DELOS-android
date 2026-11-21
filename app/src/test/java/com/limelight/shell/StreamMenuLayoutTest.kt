@@ -67,14 +67,14 @@ class StreamMenuLayoutTest {
     }
 
     @Test
-    fun nineTilesOf150WithGapsOf40FillTheStageWith125OnEachSide() {
-        assertEquals(1670f, c.TILES_WIDTH, 0f)
-        assertEquals(125f, c.TILES_LEFT, 0f)
-        assertEquals(125f, tileLeft(BarItem.RESUME), 0f)
+    fun nineTilesOf150WithGapsOf44FillTheStageWith109OnEachSide() {
+        assertEquals(1702f, c.TILES_WIDTH, 0f)
+        assertEquals(109f, c.TILES_LEFT, 0f)
+        assertEquals(109f, tileLeft(BarItem.RESUME), 0f)
         val last = tileLeft(BarItem.QUIT) + c.TILE
-        assertEquals(c.STAGE_WIDTH - 125f, last, 0f)
+        assertEquals(c.STAGE_WIDTH - 109f, last, 0f)
         for (item in BarItem.entries) {
-            assertEquals(125f + item.ordinal * 190f, tileLeft(item), 0f)
+            assertEquals(109f + item.ordinal * 194f, tileLeft(item), 0f)
             assertEquals(tileLeft(item) + 75f, tileCenterX(item), 0f)
         }
     }
@@ -483,7 +483,6 @@ class StreamMenuLayoutTest {
         assertEquals(190f, m.GEO_STIFFNESS, 0f)
         assertEquals(.8f, m.GEO_DAMPING, 0f)
         assertEquals(c.POPOVER_HIDDEN_SCALE, m.POP_FROM_SCALE, 0f)
-        assertEquals(c.PRESS_SCALE, m.PRESS_SCALE, 0f)
         assertEquals(c.FOCUS_SCALE, 1.12f, 0f)
     }
 }

@@ -182,6 +182,75 @@ internal object PreviewMetadataProviders : MetadataProviders {
 
     override fun steamTags(candidate: MetadataCandidate): List<String> =
         candidate.genres.map { it.name } + candidate.themes.map { it.name } + "Singleplayer"
+
+    /** A full Worker game-details object for every preview game (fixed fake text; the image ids do not exist, so no picture loads). */
+    override fun details(id: Long): String? {
+        val game = PreviewFixtures.GAMES.firstOrNull { 5000L + it.id == id } ?: return null
+        val released = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
+            clear()
+            set(game.year, java.util.Calendar.MARCH, 15)
+        }.timeInMillis / 1000
+        val slug = game.name.lowercase().replace("[^a-z0-9]+".toRegex(), "-").trim('-')
+        val similar = PreviewFixtures.GAMES.filter { it.id != game.id }.let { others -> List(4) { others[(game.id + it * 3) % others.size] } }
+        val details = mapOf(
+            "id" to id, "name" to game.name, "slug" to slug,
+            "summary" to "${game.name} is a fixed fake summary for the preview: a short paragraph about what the game is, where it " +
+                "takes place and what the player does, long enough to wrap over a few lines.",
+            "storyline" to "The first paragraph of a fake storyline sets the scene and introduces the hero.\n\n" +
+                "A second paragraph raises the stakes: an old promise, a broken city and a road that leads further than planned.\n\n" +
+                "The third paragraph stops before the ending, as storylines on IGDB usually do.",
+            "firstReleaseDate" to released,
+            "releaseDates" to listOf(
+                mapOf("platform" to "PC", "date" to released, "human" to "Mar 15, ${game.year}"),
+                mapOf("platform" to "PS5", "date" to released + 86_400L * 120, "human" to "Jul 13, ${game.year}"),
+            ),
+            "rating" to 70.0 + game.id * 2 % 25, "ratingCount" to 150 * game.id,
+            "criticRating" to 75.5 + game.id % 20, "criticRatingCount" to 12 + game.id * 3,
+            "totalRating" to 73.0 + game.id % 22, "totalRatingCount" to 162 * game.id,
+            "genres" to game.genres.map { PreviewFixtures.GENRES.getValue(it) },
+            "themes" to game.themes.map { PreviewFixtures.THEMES.getValue(it) },
+            "modes" to listOf("Single player", "Co-operative"),
+            "perspectives" to listOf("Third person"),
+            "platforms" to listOf(
+                mapOf("name" to "PC (Microsoft Windows)", "abbreviation" to "PC"),
+                mapOf("name" to "PlayStation 5", "abbreviation" to "PS5"),
+                mapOf("name" to "Xbox Series X|S"),
+            ),
+            "companies" to listOf(
+                mapOf("name" to "Preview Studio ${game.id}", "developer" to true, "publisher" to false, "porting" to false, "supporting" to false),
+                mapOf("name" to "Fixture Interactive", "developer" to false, "publisher" to true, "porting" to false, "supporting" to false),
+                mapOf("name" to "Sample Ports", "developer" to false, "publisher" to false, "porting" to true, "supporting" to true),
+            ),
+            "ageRatings" to listOf(
+                mapOf("organization" to "PEGI", "rating" to "16", "descriptors" to listOf("Violence", "Bad Language")),
+                mapOf("organization" to "ESRB", "rating" to "M", "descriptors" to listOf("Blood and Gore", "Intense Violence")),
+            ),
+            "screenshots" to List(9) { mapOf("imageId" to "preview${game.id}sc$it", "width" to 1920, "height" to 1080) },
+            "artworks" to List(2) { mapOf("imageId" to "preview${game.id}ar$it", "width" to 3840, "height" to 2160) },
+            "videos" to listOf(
+                mapOf("name" to "Launch Trailer", "videoId" to "preview${game.id}v0"),
+                mapOf("name" to "Gameplay Overview", "videoId" to "preview${game.id}v1"),
+            ),
+            "websites" to listOf(
+                mapOf("url" to "https://preview.invalid/$slug/", "type" to "Official Website"),
+                mapOf("url" to "https://store.steampowered.com/app/${9000 + game.id}", "type" to "Steam"),
+                mapOf("url" to "https://preview.invalid/wiki/$slug", "type" to "Community Wiki"),
+            ),
+            "similarGames" to similar.mapIndexed { index, other ->
+                mapOf("id" to 5000L + other.id, "name" to other.name, "coverImageId" to if (index == 3) null else "preview${other.id}co")
+            } + mapOf("id" to 4999L, "name" to "A Game Outside the Library", "coverImageId" to "previewoutsideco"),
+            "franchises" to listOf("${game.name} Universe"), "collections" to listOf(game.name),
+            "engines" to listOf("Preview Engine 4"),
+            "keywords" to listOf("exploration", "boss fights", "crafting", "story rich", "atmospheric", "upgrades"),
+            "languages" to listOf("English", "German", "French", "Spanish", "Japanese", "Czech"),
+            "multiplayer" to mapOf(
+                "onlineMax" to 4, "offlineMax" to 2, "onlineCoopMax" to 4, "offlineCoopMax" to 2,
+                "onlineCoop" to true, "offlineCoop" to true, "lanCoop" to false, "campaignCoop" to true, "dropIn" to true, "splitscreen" to true,
+            ),
+            "externalGames" to listOf(mapOf("uid" to "${9000 + game.id}", "source" to 1)),
+        )
+        return com.google.gson.Gson().toJson(details)
+    }
 }
 
 /**

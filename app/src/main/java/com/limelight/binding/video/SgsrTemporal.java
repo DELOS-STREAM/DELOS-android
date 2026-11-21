@@ -9,14 +9,19 @@ import java.nio.charset.StandardCharsets;
 
 /** SGSR 2-derived video reconstruction. Every resource is owned by the SGSR GL thread. */
 final class SgsrTemporal implements AutoCloseable {
-    private static final int LEVELS=4;
+    static final int LEVELS=4;
     private static final String VERTEX="#version 310 es\nlayout(location=0) out highp vec2 texCoord;"+
             "void main(){vec2 p=vec2(float(gl_VertexID&1),float(gl_VertexID>>1));"+
             "gl_Position=vec4(p*2.0-1.0,0,1);texCoord=p;}";
+    // Level 0 of the pyramid: Rec. 709 luma smoothed by a 3 x 3 binomial filter. Detail near the pixel pitch otherwise
+    // aliases in the flow's gradients and samples and biases the subpixel motion.
     private static final String LUMA="#version 310 es\nprecision highp float;"+
-            "layout(location=0) in highp vec2 texCoord;uniform sampler2D source;out vec4 color;"+
-            "void main(){vec3 c=textureLod(source,texCoord,0.0).rgb;"+
-            "color=vec4(dot(c,vec3(0.2126,0.7152,0.0722)),0,0,1);}";
+            "uniform highp sampler2D source;out vec4 color;"+
+            "void main(){ivec2 p=ivec2(gl_FragCoord.xy),last=textureSize(source,0)-1;float v=0.0;"+
+            "for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++)"+
+            "v+=dot(texelFetch(source,clamp(p+ivec2(x,y),ivec2(0),last),0).rgb,vec3(0.2126,0.7152,0.0722))"+
+            "*float((2-abs(x))*(2-abs(y)));"+
+            "color=vec4(v/16.0,0,0,1);}";
     private final int width,height;
     private final int[] luma=new int[2], history=new int[2], backward=new int[LEVELS],forward=new int[LEVELS];
     private int lumaProgram,flowProgram,sceneProgram,activateProgram,upscaleProgram,framebuffer,sceneTexture,reactiveTexture;
@@ -37,7 +42,7 @@ final class SgsrTemporal implements AutoCloseable {
             for(int texture:luma) allocate(texture,GLES31.GL_R8,width,height,LEVELS);
             GLES31.glGenTextures(LEVELS,backward,0);GLES31.glGenTextures(LEVELS,forward,0);
             for(int level=0;level<LEVELS;level++) {
-                int w=((width>>level)+7)/8,h=((height>>level)+7)/8;
+                int w=SgsrDimensions.flowGrid(width,level),h=SgsrDimensions.flowGrid(height,level);
                 allocate(backward[level],GLES31.GL_RGBA16F,w,h,1);
                 allocate(forward[level],GLES31.GL_RGBA16F,w,h,1);
             }
@@ -86,7 +91,6 @@ final class SgsrTemporal implements AutoCloseable {
             bind(activateProgram,"currentLuma",0,luma[index]);
             bind(activateProgram,"previousLuma",1,luma[1-index]);
             bind(activateProgram,"backwardFlow",2,backward[0]);
-            bind(activateProgram,"forwardFlow",3,forward[0]);
             GLES31.glUniform2i(GLES31.glGetUniformLocation(activateProgram,"inputSize"),width,height);
             GLES31.glBindImageTexture(0,reactiveTexture,0,false,0,GLES31.GL_WRITE_ONLY,GLES31.GL_RGBA16F);
             GLES31.glDispatchCompute((width+7)/8,(height+7)/8,1);barrier();
@@ -118,14 +122,14 @@ final class SgsrTemporal implements AutoCloseable {
         GLES31.glUseProgram(flowProgram);
         bind(flowProgram,"currentLuma",0,current);bind(flowProgram,"previousLuma",1,previous);
         for(int level=LEVELS-1;level>=0;level--) {
-            int w=width>>level,h=height>>level;
+            int w=SgsrDimensions.pyramidSize(width,level),h=SgsrDimensions.pyramidSize(height,level);
             // The coarsest invocation does not sample coarseFlow. Bind a different image anyway.
             bind(flowProgram,"coarseFlow",2,level==LEVELS-1?sceneTexture:output[level+1]);
             GLES31.glUniform1i(GLES31.glGetUniformLocation(flowProgram,"level"),level);
             GLES31.glUniform1i(GLES31.glGetUniformLocation(flowProgram,"coarsest"),level==LEVELS-1?1:0);
             GLES31.glUniform2i(GLES31.glGetUniformLocation(flowProgram,"levelSize"),w,h);
             GLES31.glBindImageTexture(0,output[level],0,false,0,GLES31.GL_WRITE_ONLY,GLES31.GL_RGBA16F);
-            GLES31.glDispatchCompute((((w+7)/8)+7)/8,(((h+7)/8)+7)/8,1);barrier();
+            GLES31.glDispatchCompute(SgsrDimensions.flowGroups(width,level),SgsrDimensions.flowGroups(height,level),1);barrier();
         }
     }
     private void resize(int w,int h) {
@@ -142,10 +146,18 @@ final class SgsrTemporal implements AutoCloseable {
     private static void allocate(int texture,int format,int w,int h,int levels) {
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);GLES31.glBindTexture(GLES31.GL_TEXTURE_2D,texture);
         GLES31.glTexStorage2D(GLES31.GL_TEXTURE_2D,levels,format,w,h);
-        GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D,GLES31.GL_TEXTURE_MIN_FILTER,GLES31.GL_LINEAR);
+        GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D,GLES31.GL_TEXTURE_MIN_FILTER,minFilter(levels));
         GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D,GLES31.GL_TEXTURE_MAG_FILTER,GLES31.GL_LINEAR);
         GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D,GLES31.GL_TEXTURE_WRAP_S,GLES31.GL_CLAMP_TO_EDGE);
         GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D,GLES31.GL_TEXTURE_WRAP_T,GLES31.GL_CLAMP_TO_EDGE);
+    }
+    /**
+     * A texture with a mip chain (the luma pyramid) is read per level with textureLod, which needs a filter that selects
+     * a level: with GL_LINEAR every level reads level 0. Nearest between levels, as each read names one whole level;
+     * a read of level 0 (textureLod 0, texelFetch, textureGather) is the same with either filter.
+     */
+    static int minFilter(int levels) {
+        return levels>1?GLES31.GL_LINEAR_MIPMAP_NEAREST:GLES31.GL_LINEAR;
     }
     private static void bind(int program,String name,int unit,int texture) {
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0+unit);GLES31.glBindTexture(GLES31.GL_TEXTURE_2D,texture);

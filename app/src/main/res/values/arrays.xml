@@ -131,16 +131,16 @@
 
     <string-array name="video_format_names">
         <item>@string/videoformat_auto</item>
-        <item>@string/videoformat_av1always</item>
-        <item>@string/videoformat_hevcalways</item>
         <item>@string/videoformat_h264always</item>
+        <item>@string/videoformat_hevcalways</item>
+        <item>@string/videoformat_av1always</item>
         <item>@string/videoformat_pyrowave</item>
     </string-array>
     <string-array name="video_format_values" translatable="false">
         <item>auto</item>
-        <item>forceav1</item>
-        <item>forceh265</item>
         <item>neverh265</item>
+        <item>forceh265</item>
+        <item>forceav1</item>
         <item>pyrowave</item>
     </string-array>
 
@@ -154,22 +154,24 @@
     </string-array>
 
     <string-array name="video_frame_pacing_names">
-        <item>@string/pacing_warp2</item>
-        <item>@string/pacing_warp</item>
+        <item>@string/pacing_phase_lock</item>
+        <item>@string/pacing_fast_vsync</item>
         <item>@string/pacing_latency</item>
         <item>@string/pacing_balanced</item>
         <item>@string/pacing_balanced_alt</item>
         <item>@string/pacing_smoothness</item>
-        <item>@string/pacing_fast_vsync</item>
+        <item>@string/pacing_warp</item>
+        <item>@string/pacing_warp2</item>
     </string-array>
     <string-array name="video_frame_pacing_values" translatable="false">
-        <item>warp2</item>
-        <item>warp</item>
+        <item>phase-lock</item>
+        <item>fast-vsync</item>
         <item>latency</item>
         <item>balanced</item>
         <item>cap-fps</item>
         <item>smoothness</item>
-        <item>fast-vsync</item>
+        <item>warp</item>
+        <item>warp2</item>
     </string-array>
 
     <string-array name="analog_scrolling_names">

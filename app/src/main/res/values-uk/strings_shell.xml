@@ -52,6 +52,7 @@
     <string name="shell_hint_library_label">БІБЛІОТЕКА</string>
 
     <string name="shell_hint_select">Обрати</string>
+    <string name="shell_hint_apply">Застосувати</string>
     <string name="shell_hint_back">Назад</string>
     <string name="shell_hint_close">Закрити</string>
     <string name="shell_hint_cancel">Скасувати</string>

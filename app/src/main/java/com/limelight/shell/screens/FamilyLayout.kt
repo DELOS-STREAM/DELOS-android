@@ -1,5 +1,10 @@
 package com.limelight.shell.screens
 
+import com.limelight.shell.ui.FocusGap
+import com.limelight.shell.ui.FocusLook
+import com.limelight.shell.ui.FocusSpacing
+import com.limelight.shell.ui.SETTING_ROWS
+
 /*
  * The geometry of the settings family (Settings, per-game settings, Debug info, Artwork) that the user's layout rules can be computed for:
  * the description dock, the place of a tab row and the artwork grid. Pure functions in stage pixels (docs/GUI.md, "Screen shapes"), so
@@ -23,8 +28,8 @@ internal object HelpDockLayout {
     const val LIST_GAP = 16f
     const val BODY_GAP = 14f
 
-    /** The room between two rows of a list. */
-    const val ROW_GAP = 10f
+    /** The room between two rows of a list: the settings rows' focus spacing. */
+    val ROW_GAP = SETTING_ROWS.gap
 
     const val PAD_X = 24f
     const val PAD_Y = 14f
@@ -123,19 +128,25 @@ internal object TabRowLayout {
     fun flushRight(rowWidth: Float, outset: Float, right: Float): Float = right - rowWidth + outset
 }
 
-/** One grid of the Artwork screen (stage px): its columns, the tile and the room between tiles and rows, with what the focused tile needs around it. */
-internal data class ArtGrid(val columns: Int, val tileWidth: Float, val tileHeight: Float, val gapX: Float, val gapY: Float) {
+/**
+ * One grid of the Artwork screen (stage px): its columns, the tile and the room between tiles and rows, with what the focused tile needs around it.
+ * [overhang]: how far the grid reaches past each edge of the width it was laid out for (the rule's gaps come out of the side margins).
+ */
+internal data class ArtGrid(val columns: Int, val tileWidth: Float, val tileHeight: Float, val gapX: Float, val gapY: Float, val overhang: Float = 0f) {
     /** How far the focused tile's ring reaches beyond the tile's resting edge: above and below, and at the sides. */
     val ringY: Float get() = ArtGridLayout.ringReach(tileHeight)
     val ringX: Float get() = ArtGridLayout.ringReach(tileWidth)
 
     /** How far its glow (box-shadow 0 18 50 -12, drawn with the focus scale) reaches beyond the resting edge. */
-    val glowSide: Float get() = ArtGridLayout.growth(tileWidth) + (ArtGridLayout.GLOW_BLUR + ArtGridLayout.GLOW_SPREAD) * ArtGridLayout.FOCUS_SCALE
-    val glowTop: Float get() = ArtGridLayout.growth(tileHeight) + (ArtGridLayout.GLOW_BLUR + ArtGridLayout.GLOW_SPREAD - ArtGridLayout.GLOW_OFFSET) * ArtGridLayout.FOCUS_SCALE
-    val glowBottom: Float get() = ArtGridLayout.growth(tileHeight) + (ArtGridLayout.GLOW_BLUR + ArtGridLayout.GLOW_SPREAD + ArtGridLayout.GLOW_OFFSET) * ArtGridLayout.FOCUS_SCALE
+    val glowSide: Float get() = ArtGridLayout.growth(tileWidth) + (ArtGridLayout.GLOW_BLUR + ArtGridLayout.GLOW_SPREAD) * ArtGridLayout.LOOK.scale
+    val glowTop: Float get() = ArtGridLayout.growth(tileHeight) + (ArtGridLayout.GLOW_BLUR + ArtGridLayout.GLOW_SPREAD - ArtGridLayout.GLOW_OFFSET) * ArtGridLayout.LOOK.scale
+    val glowBottom: Float get() = ArtGridLayout.growth(tileHeight) + (ArtGridLayout.GLOW_BLUR + ArtGridLayout.GLOW_SPREAD + ArtGridLayout.GLOW_OFFSET) * ArtGridLayout.LOOK.scale
 
-    /** The room above the first row: its focused tile's ring ends [ArtGridLayout.BLOCK_GAP] under what is above the grid (and the glow has room). */
-    val padTop: Float get() = ArtGridLayout.BLOCK_GAP + ringY
+    /**
+     * The room above the first row, from the compact toolbar's bottom edge: its focused tile's ring ends [ArtGridLayout.BLOCK_GAP] under
+     * what is above the grid, and at least the focus spacing to the toolbar's pills (the tile's or the pill's, whichever reaches further).
+     */
+    val padTop: Float get() = maxOf(ArtGridLayout.BLOCK_GAP + ringY, ArtGridLayout.LOOK.minGap(tileHeight), FocusSpacing.PILL.minGap(ArtworkLayout.TOOLBAR_HEIGHT))
 
     /** The room under the last row: its focused tile's glow ends inside the viewport. */
     val padBottom: Float get() = glowBottom + 4f
@@ -145,16 +156,18 @@ internal data class ArtGrid(val columns: Int, val tileWidth: Float, val tileHeig
 }
 
 /**
- * The Artwork grid. The user's rule: the focused tile (scaled up, with its ring) has room around it like the others, so the room between
- * two tiles covers the growth, the ring and 12 px: `gap >= tile × (focusScale - 1) + ring + 12`; rows get the same clearance from the
- * tile's height. The tiles pay for it: the width is what the columns leave.
+ * The Artwork grid. The room between two tiles is the focus spacing rule's ([gap]: the focused tile's growth and ring on both sides and
+ * 8 px), along each axis from the tile's length on it. The tiles never get smaller than they were before that rule, when they were what
+ * the columns left of the width with [SIZING_GAP] + 6 % of a tile between them ([tileWidth]): the wide stages keep those tiles and take
+ * the rule's few px more out of their side margins ([ArtGrid.overhang], 150 px wide); the compact ones, whose 48 px margin has nothing to
+ * give, fill the width with the rule's gaps ([fitWidth]) and take a column fewer where that would make the tiles smaller.
  */
 internal object ArtGridLayout {
-    const val FOCUS_SCALE = 1.06f
+    /** The tile's focus: 1.06 and its `FocusRing(4, 4)`, drawn scaled with the tile. */
+    val LOOK = FocusLook(scale = 1.06f, outset = 4f, band = 4f)
 
-    /** The tile's `FocusRing(4, 4)`: 4 px of gap and 4 px of ring outside the tile. */
-    const val RING = 8f
-    const val CLEARANCE = 12f
+    /** The room the tiles are sized with, besides 6 % of a tile; never under [MIN_GAP]. */
+    const val SIZING_GAP = 20f
     const val MIN_GAP = 28f
 
     /** Between neighbouring blocks: the ring of a focused first-row tile ends this far under the filter strip. */
@@ -172,42 +185,63 @@ internal object ArtGridLayout {
     const val SHORT_SHARE = .72f
 
     /** How far a focused tile of this size grows beyond its resting edge on each side. */
-    fun growth(tile: Float): Float = tile * (FOCUS_SCALE - 1f) / 2f
+    fun growth(tile: Float): Float = tile * (LOOK.scale - 1f) / 2f
 
     /** The ring's outer edge beyond the resting edge (the ring is drawn scaled with the tile). */
-    fun ringReach(tile: Float): Float = growth(tile) + RING * FOCUS_SCALE
+    fun ringReach(tile: Float): Float = LOOK.reach(tile)
 
-    /** The room between two tiles of this size (along the same axis). */
-    fun gap(tile: Float): Float = maxOf(MIN_GAP, tile * (FOCUS_SCALE - 1f) + RING + CLEARANCE)
+    /** The room between two tiles of this size (along the same axis): the focus spacing rule's, never under [MIN_GAP]. */
+    fun gap(tile: Float): Float = maxOf(MIN_GAP, LOOK.minGap(tile))
 
-    /** The tile width that [columns] tiles and their gaps ([gap]) fill [width] with. */
+    /** The tile width that [columns] tiles fill [width] with, [SIZING_GAP] and 6 % of a tile (at least [MIN_GAP]) between them. */
     fun tileWidth(width: Float, columns: Int): Float {
         if (columns <= 1) return width
-        val byRule = (width - (columns - 1) * (RING + CLEARANCE)) / (columns + (columns - 1) * (FOCUS_SCALE - 1f))
+        val byRule = (width - (columns - 1) * SIZING_GAP) / (columns + (columns - 1) * (LOOK.scale - 1f))
+        return if (byRule * (LOOK.scale - 1f) + SIZING_GAP > MIN_GAP) byRule else (width - (columns - 1) * MIN_GAP) / columns
+    }
+
+    /** The tile width that [columns] tiles fill [width] with, the rule's [gap] between them. */
+    fun fitWidth(width: Float, columns: Int): Float {
+        if (columns <= 1) return width
+        // The rule's gap grows linearly with the tile
+        val fixed = LOOK.minGap(0f)
+        val share = LOOK.minGap(1f) - fixed
+        val byRule = (width - (columns - 1) * fixed) / (columns + (columns - 1) * share)
         return if (gap(byRule) > MIN_GAP) byRule else (width - (columns - 1) * MIN_GAP) / columns
     }
 
     /**
-     * The grid of [columns] tiles of [ratio] (width / height) across [width]. A tile never grows over [maxTile]: what the columns then leave
-     * of the width goes into the gaps between them, the room between rows stays the rule's.
+     * The grid of [columns] tiles of [ratio] (width / height) across [width], the tiles [tileWidth] wide. A tile never grows over [maxTile]:
+     * what the columns then leave of the width goes into the gaps between them, the room between rows stays the rule's. Gaps are never
+     * under the rule's: the grid then reaches past the width by [ArtGrid.overhang] on each side.
      */
-    fun grid(width: Float, ratio: Float, columns: Int, maxTile: Float = Float.MAX_VALUE): ArtGrid {
-        val tile = minOf(tileWidth(width, columns), maxTile)
+    fun grid(width: Float, ratio: Float, columns: Int, maxTile: Float = Float.MAX_VALUE): ArtGrid =
+        layout(width, ratio, columns, maxTile, tileWidth(width, columns))
+
+    /** The same grid with the tiles [fitWidth] wide: it fills [width] exactly, no overhang. */
+    fun fitted(width: Float, ratio: Float, columns: Int, maxTile: Float = Float.MAX_VALUE): ArtGrid =
+        layout(width, ratio, columns, maxTile, fitWidth(width, columns))
+
+    private fun layout(width: Float, ratio: Float, columns: Int, maxTile: Float, natural: Float): ArtGrid {
+        val tile = minOf(natural, maxTile)
         val height = tile / ratio
-        val gapX = if (columns > 1) (width - columns * tile) / (columns - 1) else gap(tile)
-        val capped = tileWidth(width, columns) > maxTile
-        return ArtGrid(columns, tile, height, gapX, if (capped) gap(height) else maxOf(gapX, gap(height)))
+        val gapX = if (columns > 1) maxOf((width - columns * tile) / (columns - 1), gap(tile)) else gap(tile)
+        val overhang = ((columns * tile + (columns - 1) * gapX - width) / 2f).coerceAtLeast(0f)
+        return ArtGrid(columns, tile, height, gapX, if (natural > maxTile) gap(height) else maxOf(gapX, gap(height)), overhang)
     }
 
     /**
      * The compact grid: as many columns as keep the tile at [minTile] wide or more (and at [maxTile] at most); a [viewport] too short to
-     * show a focused row of those whole ([ArtGrid.rowRoom]) takes more, smaller ones, down to [SHORT_SHARE] of [minTile].
+     * show a focused row of those whole ([ArtGrid.rowRoom]) takes more, smaller ones, down to [SHORT_SHARE] of [minTile]. Those are the
+     * tiles of [tileWidth]; the grid fills the [width] with the rule's gaps ([fitted]) and a column fewer where its tiles would be smaller.
      */
     fun compact(width: Float, viewport: Float, ratio: Float, minTile: Float, maxTile: Float = Float.MAX_VALUE): ArtGrid {
         var columns = 1
         while (tileWidth(width, columns + 1) >= minTile) columns++
         while (grid(width, ratio, columns, maxTile).rowRoom > viewport && tileWidth(width, columns + 1) >= minTile * SHORT_SHARE) columns++
-        return grid(width, ratio, columns, maxTile)
+        val least = minOf(tileWidth(width, columns), maxTile)
+        while (columns > 1 && minOf(fitWidth(width, columns), maxTile) < least - .01f) columns--
+        return fitted(width, ratio, columns, maxTile)
     }
 }
 
@@ -219,13 +253,30 @@ internal object ArtworkLayout {
     const val TABS_Y = SettingsLayout.COMPACT_TABS_Y
     const val TABS_HEIGHT = SettingsLayout.TABS_HEIGHT
 
-    /** Between the two rows: the growth of a focused toolbar pill (64 × 0.08), its ring (8) and 12 px. */
+    /** Between the two rows (the tabs are touch only, the game chip is not focusable): the growth of a focused toolbar pill (64 × 0.08), its ring (8) and 12 px. */
     const val ROW_GAP = 26f
     const val TOOLBAR_Y = TABS_Y + TABS_HEIGHT + ROW_GAP
     const val TOOLBAR_HEIGHT = 64f
+    val SHEET_HEADER = FocusGap(FocusSpacing.PILL, TOOLBAR_HEIGHT, 32f)
 
-    /** Between the strip and the two toolbar pills, and between the pills: half the growth of a focused pill up to 300 px wide (12), its ring (8.6) and 12 px. */
-    const val PILL_GAP = 34f
+    /** Between the strip and the two toolbar pills, and between the pills: the focus spacing of the wider pill ([widestPill] stage px). */
+    fun toolbarGap(widestPill: Float): Float = FocusSpacing.PILL.minGap(widestPill)
+
+    /**
+     * The taller (not compact) screen: the toolbar, the filter strip ([STRIP_HEIGHT]) under it, the focus spacing of the toolbar's pills
+     * (the taller ones) apart, and the grid 4 px under the strip, which pads its first row by [WIDE_GRID_PAD].
+     */
+    const val WIDE_TOOLBAR_Y = 206f
+    const val STRIP_HEIGHT = 44f
+    val WIDE_STRIP_GAP = FocusGap(FocusSpacing.PILL, TOOLBAR_HEIGHT, 31f)
+    val WIDE_STRIP_Y = WIDE_TOOLBAR_Y + TOOLBAR_HEIGHT + WIDE_STRIP_GAP.gap
+    val WIDE_GRID_Y = WIDE_STRIP_Y + STRIP_HEIGHT + 4f
+    const val WIDE_GRID_PAD = 46f
+
+    /** The filter sheet's rows of chips: [SHEET_ROW_PAD] above and below each, [SHEET_ROW_SPACING] on both sides of the 1 px line between two. */
+    const val SHEET_ROW_PAD = 6f
+    const val SHEET_ROW_SPACING = ChipFocus.BASE_GAP / 2f
+    val SHEET_ROWS = FocusGap(ChipFocus.LOOK, ChipFocus.HEIGHT, 2f * SHEET_ROW_PAD + 2f * SHEET_ROW_SPACING + 1f)
 
     /**
      * The grid's room starts at the toolbar's bottom edge ([ArtGrid.padTop] is measured from there); its scrolling viewport starts

@@ -71,6 +71,9 @@ public final class SgsrRenderer implements AutoCloseable {
             (frameId, out) -> this.hdrOutput != 0 ? nativeHdrFrameTimestamps(this.hdrOutput,(int) frameId,out) : -1;
     private boolean timestampsChecked, sdrTimestamps, statsFrameArmed;
     private long statsFrameArrivalNs;
+    // Phase lock: present each drawn frame at its buffer timestamp (the target refresh); GL thread only while drawing
+    private volatile boolean presentAtFrameTimestamp;
+    private long presentTimestampNs;
     // The GPU frames in flight and how they are read; the GPU time per frame they measure (the stat and pacer input)
     private final GpuInFlight gpuInFlight = new GpuInFlight();
     private final GpuInFlight.Fences sdrFences = new GpuInFlight.Fences() {
@@ -242,6 +245,8 @@ public final class SgsrRenderer implements AutoCloseable {
      * checks and native calls cost nothing while it is off.
      */
     public void setLatencyStages(LatencyStages stages) { latencyStages = stages; }
+    /** Phase lock: the codec releases each frame with its target refresh as the buffer timestamp; SDR swaps honour it. */
+    public void setPresentAtFrameTimestamp(boolean enabled) { presentAtFrameTimestamp = enabled; }
     /** On the GL thread with the window current: turns on EGL frame timestamps for the SDR window surface. */
     private static boolean enableSdrTimestamps() {
         try {
@@ -645,7 +650,9 @@ public final class SgsrRenderer implements AutoCloseable {
             }
             statsFrameArrivalNs = arrivalNs;
             statsFrameArmed = true;
+            presentTimestampNs = presentAtFrameTimestamp ? texture.getTimestamp() : 0L;
             presentCachedNormal();
+            presentTimestampNs = 0L;
             statsFrameArmed = false;
             final long swapEndNs=System.nanoTime();
             if (stages != null) {
@@ -849,7 +856,10 @@ public final class SgsrRenderer implements AutoCloseable {
                 else if (fence == -1) GLES31.glFinish();
             }
             long frameId = stages != null && sdrTimestamps ? nativeFrameNextId() : -1;
-            EGLExt.eglPresentationTimeANDROID(display,window,System.nanoTime());
+            // Phase lock: the frame's target refresh (the HDR SurfaceControl path presents as soon as it can)
+            final long presentNowNs = System.nanoTime();
+            EGLExt.eglPresentationTimeANDROID(display,window,presentTimestampNs != 0L
+                    ? SgsrPacing.presentationTimeNs(presentTimestampNs,presentNowNs) : presentNowNs);
             require(EGL14.eglSwapBuffers(display,window),"SGSR swap");
             if (frameId >= 0) displayTimestamps.add(frameId,statsFrameArrivalNs);
         }

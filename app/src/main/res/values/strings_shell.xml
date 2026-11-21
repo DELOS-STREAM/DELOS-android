@@ -67,6 +67,8 @@
 
     <!-- Button hints in the bottom bar: the word next to the controller button -->
     <string name="shell_hint_select">Select</string>
+    <!-- Y in the library filter: applies the chosen filters and closes it -->
+    <string name="shell_hint_apply">Apply</string>
     <string name="shell_hint_back">Back</string>
     <string name="shell_hint_close">Close</string>
     <string name="shell_hint_cancel">Cancel</string>

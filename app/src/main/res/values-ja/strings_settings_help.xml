@@ -6,7 +6,7 @@
     <string name="help_seekbar_metered_bitrate_kbps">従量制ネットワーク（モバイルデータ、一部のホットスポット）でのビットレートです。0にすると通常のビットレートの4分の1になります。</string>
     <string name="help_frame_pacing">Warpモードは、すべての端末で動作するとは限りません。</string>
     <string name="help_checkbox_async_decode">ポーリングではなくMediaCodecのコールバックを使います。H.264、HEVC、AV1のみ。デコードが不安定な場合はオフにしてください。</string>
-    <string name="help_pref_low_latency_frame_balance">デコーダーをより頻繁にポーリングするバランス型のペーシングです。Fast V-Sync以外のMediaCodecのペーシングより優先されます。端末によって異なります。</string>
+    <string name="help_pref_low_latency_frame_balance">デコーダーをより頻繁にポーリングするバランス型のペーシングです。Fast V-Syncと位相同期以外のMediaCodecのペーシングより優先されます。端末によって異なります。</string>
     <string name="help_checkbox_ultra_low_latency">MediaCodecの追加の低遅延オプションです。効果はチップとドライバーによって異なります。映像が不安定な場合はオフにしてください。</string>
     <string name="help_checkbox_use_virtual_display">指定した解像度とFPSの仮想PCディスプレイを、VibepolloまたはApolloに要求します。ホスト側の対応が必要です。</string>
     <string name="help_checkbox_auto_orientation">端末の現在の縦向きまたは横向きで、ストリームを開始します。PCのデスクトップは回転しません。</string>
@@ -119,6 +119,7 @@
     <string name="help_frame_pacing_smoothness">安定して配信しますが、バッファリングと遅延が増えます。</string>
     <string name="help_frame_pacing_warp">FPSを2倍（60 → 120）要求し、最新のフレームを表示します。</string>
     <string name="help_frame_pacing_warp2">FPSを4倍（60 → 240）要求します。</string>
+    <string name="help_frame_pacing_phase_lock">遅れたフレームのために各リフレッシュを待たせます。</string>
     <string name="help_frame_pacing_fast_vsync">FPSとリフレッシュレートの低いほうに同期します。MediaCodecのみ。</string>
     <string name="help_video_format_auto">H.264またはHEVCを自動で選びます。AV1とPyroWaveは、選択が必要です。</string>
     <string name="help_video_format_forceav1">低ビットレートで効率的です。ホストでのAV1エンコードと、この端末でのデコードが必要です。</string>
@@ -171,6 +172,7 @@
     <string name="help_note_pyrowave_recommends">ここでは、PyroWaveは%1$d Mbpsを推奨します。</string>
     <string name="help_note_lfr_balanced">LFRが有効なため、バランスを使用しています。</string>
     <string name="help_note_fast_vsync_lfr">Fast V-SyncがLFRより優先されます。</string>
+    <string name="help_note_phase_lock_lfr">位相同期がLFRより優先されます。</string>
     <string name="help_note_not_with_pyrowave">PyroWaveでは使用されません。</string>
     <string name="help_note_needs_pyrowave">PyroWaveコーデックが必要です。</string>
     <string name="help_note_hdr_420">HDRがオンのため、4:2:0を使用しています。</string>

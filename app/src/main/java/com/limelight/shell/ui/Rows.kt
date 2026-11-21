@@ -166,6 +166,11 @@ fun SettingRow(
     override: RowOverride? = null,
     onFocused: (() -> Unit)? = null,
     impact: SettingImpact? = null,
+    /**
+     * A custom game setting's reset: its choice popup ends with "Reset to profile value"; a custom slider's Options opens [contextMenu] instead of
+     * its popup (the menu has both).
+     */
+    popupReset: (() -> Unit)? = null,
 ) {
     val colors = LocalDelosColors.current
     val feedback = LocalFeedback.current
@@ -198,7 +203,7 @@ fun SettingRow(
     }
     // Touch (issue #92): a first tap focuses and shows the help; the focused row's tap changes it, or opens its options list / its slider popup
     val touchTap: (Boolean) -> Boolean = { wasFocused ->
-        val popup = rowPopupFor(label, value)
+        val popup = rowPopupFor(label, value, popupReset)
         when (rowTouch(value, wasFocused, enabled, picker != null && popup != null)) {
             RowTouch.ACTIVATE -> true
             RowTouch.PICK, RowTouch.ADJUST -> {
@@ -210,6 +215,9 @@ fun SettingRow(
             RowTouch.FOCUS_ONLY, RowTouch.NONE -> false
         }
     }
+    // Options (the right menu button): the popup a tap opens, so a controller sees every value at once
+    val options: (() -> Unit)? = if (picker == null || !enabled || (value is RowValue.Slider && popupReset != null)) null
+        else rowPopupFor(label, value, popupReset)?.let { popup -> { feedback.play(Cue.OPEN); picker(popup) } }
     // A tap on a part of the value that changes it directly (a choice's arrows, the switch): focus the row too, for its help
     val partTap: (() -> Unit) -> Unit = { change ->
         requester.requestFocus()
@@ -256,6 +264,7 @@ fun SettingRow(
                 onLookChange = { focused = it },
                 focusRequester = requester,
                 onTouchTap = touchTap,
+                onOptions = options,
             )
             .clip(shape),
     ) {
@@ -366,16 +375,14 @@ private fun RowResetButton(override: RowOverride, focused: Boolean) {
     val reset by rememberUpdatedState(override.onReset)
     val tint = colors.accent3
     val label = stringResource(R.string.row_reset_to_profile)
+    val resetGlyph = Glyph.X.forKind(ControllerGlyphs.kind)
     Row(
         Modifier.graphicsLayer { alpha = shown; (.9f + .1f * pop).let { if (reduced) 1f else it }.let { scaleX = it; scaleY = it } }
+            .then(if (visible) Modifier.pointerTap(999f) { reset() } else Modifier)
             .clip(CircleShape).background(tint.copy(alpha = .22f)).border(1.px, tint.copy(alpha = .5f), CircleShape)
-            .then(
-                if (visible) Modifier.pointerInput(Unit) { detectTapGestures(onTap = { reset() }) }
-                    .semantics { role = Role.Button; onClick(label) { reset(); true } }
-                else Modifier
-            )
-            // A keyboard has no X key: the pill is then the icon and the word, its ends even
-            .then(if (override.touch) Modifier.size(52.px) else Modifier.height(46.px).padding(start = 16.px, end = (if (ControllerGlyphs.kind == InputKind.CONTROLLER) 8 else 16).px)),
+            .then(if (visible) Modifier.semantics { role = Role.Button; onClick(label) { reset(); true } } else Modifier)
+            // X's glyph for the input (O on a keyboard); without one (touch, the pointer) the pill is the icon and the word, its ends even
+            .then(if (override.touch) Modifier.size(52.px) else Modifier.height(46.px).padding(start = 16.px, end = (if (resetGlyph != null) 8 else 16).px)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (override.touch) Arrangement.Center else Arrangement.spacedBy(10.px),
     ) {
@@ -383,7 +390,7 @@ private fun RowResetButton(override: RowOverride, focused: Boolean) {
         else {
             Symbol(Symbols.RESET, 24.tpx, tint)
             BasicText(stringResource(R.string.row_reset), style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 19.tpx))
-            if (ControllerGlyphs.kind == InputKind.CONTROLLER) GlyphButton(Glyph.X, 30)
+            resetGlyph?.let { GlyphButton(it, 30) }
         }
     }
 }
@@ -395,6 +402,15 @@ private const val IMPACT_ROW_MIN_HEIGHT = 120
 private const val ROW_CORNER = 24f
 private const val ROW_FOCUS_SCALE = 1.02f
 private val ROW_RING = FocusRing(width = 3f, gap = 0f)
+
+/** A focused row of a [SettingRowList]: it grows by [ROW_FOCUS_SCALE] and the plate draws [ROW_RING] around the grown bounds. */
+val SETTING_ROW_LOOK = FocusLook(ROW_FOCUS_SCALE, outset = ROW_RING.gap, band = ROW_RING.width, ringScales = false)
+
+/**
+ * Between two rows of a [SettingRowList] (settings, their search results, per game, debug info, the side menu): the plate's reach on the
+ * tallest row, one with impact chips (1.2 + 3 px), twice, and the clear space make 16.4; 18 holds rows up to 200 px (a large text scale).
+ */
+val SETTING_ROWS = FocusGap(SETTING_ROW_LOOK, IMPACT_ROW_MIN_HEIGHT.toFloat(), 18f)
 
 /**
  * A scrolling list of [SettingRow]s (settings, per-game settings, debug info): one focus plate (tint, ring and glow)

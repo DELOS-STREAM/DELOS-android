@@ -187,6 +187,7 @@
     <string name="pacing_balanced">균형</string>
     <string name="pacing_balanced_alt">FPS 제한 균형</string>
     <string name="pacing_smoothness">가장 부드럽게</string>
+    <string name="pacing_phase_lock">위상 동기화</string>
     <string name="pacing_fast_vsync">Fast V-Sync (Nano Pacer)</string>
     <string name="title_async_decode">비동기 디코딩</string>
     <string name="summary_async_decode">MediaCodec이 폴링 대신 콜백으로 준비된 버퍼를 전달해요. H.264, HEVC, AV1에 적용되며 다음 스트림부터 반영돼요. 디코더가 불안정하면 꺼 주세요.</string>

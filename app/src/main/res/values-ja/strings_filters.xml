@@ -25,7 +25,9 @@
     <string name="filters_length_over_60">60時間以上</string>
     <string name="filters_length_unknown">不明</string>
     <string name="filters_reset">リセット</string>
-    <string name="filters_done">完了</string>
+    <plurals name="filters_show">
+        <item quantity="other">%1$d個を表示</item>
+    </plurals>
 
     <string name="filters_art_title">アートワークをフィルター</string>
     <string name="filters_art_reset">フィルターをリセット</string>

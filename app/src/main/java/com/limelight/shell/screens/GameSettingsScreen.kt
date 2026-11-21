@@ -93,6 +93,7 @@ fun GameSettingsScreen(screen: Screen.GameSettings, profiles: ProfileStore, appe
     // The catalog is read in the language of these resources
     profiles.catalog.refresh(res)
     val feedback = LocalFeedback.current
+    val picker = LocalRowPicker.current
     val activity = LocalActivity.current
     val profile by profiles.profiles.collectAsStateWithLifecycle()
     val game = remember(screen.pc.uuid, screen.app.id, profile.currentId) {
@@ -290,7 +291,7 @@ fun GameSettingsScreen(screen: Screen.GameSettings, profiles: ProfileStore, appe
                     Column(
                         modifier = Modifier.fillMaxSize().focusedListBoundary(navigation).verticalScroll(scroll)
                             .padding(start = (18f + SETTING_LIST_ROOM).px, end = (18f + SETTING_LIST_ROOM).px, top = listInnerTop.px, bottom = 140.px),
-                        verticalArrangement = Arrangement.spacedBy(10.px)) {
+                        verticalArrangement = Arrangement.spacedBy(SETTING_ROWS.gap.px)) {
                         rows.forEach { spec ->
                             key(spec.key) {
                                 val current = values[spec.key] ?: spec.default
@@ -308,15 +309,20 @@ fun GameSettingsScreen(screen: Screen.GameSettings, profiles: ProfileStore, appe
                                 val isCustom = spec.key in custom
                                 val hint = bitrateHint.takeIf { spec.key == "seekbar_bitrate_kbps" }
                                 val profileLine = res.getString(R.string.settings_game_profile_line, profileValueLabel(res, spec, profileValues[spec.key] ?: spec.default, choices))
-                                // The START menu keeps the reset of a custom row; X resets it directly
-                                val menu = if (isCustom) ContextMenu(spec.label, listOf(MenuItem(Symbols.RESET, res.getString(R.string.settings_game_reset_menu)) { resetRow(spec.key) })) else null
+                                val enabled = caps != null && stream.enabled(spec, caps)
+                                // A custom row resets from START: a choice's list of values ends with the reset, a slider's menu opens its popup
+                                // or resets, another row's menu resets; X resets it directly
+                                val adjust = rowPopupFor(spec.label, value).takeIf { value is RowValue.Slider && enabled && picker != null }
+                                    ?.let { popup -> listOf(MenuItem(Symbols.TUNE, res.getString(R.string.shell_hint_adjust)) { picker?.invoke(popup) }) }.orEmpty()
+                                val menu = if (isCustom) ContextMenu(spec.label, adjust + MenuItem(Symbols.RESET, res.getString(R.string.settings_game_reset_menu)) { resetRow(spec.key) }) else null
                                 SettingRow(spec.icon, spec.label, value, Modifier.focusedListRow(navigation, spec.key),
                                     // Compact: the dock under the list says where the focused value comes from, so a plain row keeps only the hint
                                     description = (if (compact) hint else dotJoin(res, res.getString(R.string.settings_game_from_profile), hint)).takeIf { !isCustom },
                                     override = if (isCustom) RowOverride(dotJoin(res, profileLine, hint), touch) { resetRow(spec.key) } else null,
-                                    enabled = caps != null && stream.enabled(spec, caps), contextMenu = menu,
+                                    enabled = enabled, contextMenu = menu,
                                     impact = impact(spec.key, values),
-                                    onFocused = { focusedKey = spec.key })
+                                    onFocused = { focusedKey = spec.key },
+                                    popupReset = if (isCustom) ({ resetRow(spec.key) }) else null)
                             }
                         }
                     }

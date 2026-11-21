@@ -9,6 +9,17 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntOffset
 import com.limelight.shell.SideMenuSwipe
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import kotlin.math.roundToInt
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -64,6 +75,44 @@ import dev.chrisbanes.haze.blur.hazeBlur
  * bar); overlays blur the whole screen through their own state instead.
  */
 val LocalBackdropHaze = androidx.compose.runtime.staticCompositionLocalOf<HazeState?> { null }
+
+/**
+ * The animated background exactly as the shell draws it this frame (the hero at the user's blur, playing when animated, the
+ * lights, the vignette), recorded once and drawn again by a page that covers the screen but continues the same background (the
+ * game overview, [drawBackdropMirror]): the same render node drawn twice, no second hero, decoder or blur.
+ */
+@Stable
+class BackdropMirror internal constructor(internal val layer: GraphicsLayer) {
+    internal var coordinates: LayoutCoordinates? = null
+}
+
+val LocalBackdropMirror = staticCompositionLocalOf<BackdropMirror?> { null }
+
+@Composable
+fun rememberBackdropMirror(): BackdropMirror {
+    val layer = rememberGraphicsLayer()
+    return remember(layer) { BackdropMirror(layer) }
+}
+
+/** Records the background drawn by this element into [mirror] (and draws it as before). */
+fun Modifier.backdropMirrorSource(mirror: BackdropMirror): Modifier = this
+    .onGloballyPositioned { mirror.coordinates = it }
+    .drawWithContent {
+        mirror.layer.record { this@drawWithContent.drawContent() }
+        drawLayer(mirror.layer)
+    }
+
+/**
+ * Draws [mirror] where the shell's background lies on screen. [anchor] is an element that does not move with this one's own
+ * transforms (a parallax may move and zoom the mirror like any picture drawn here).
+ */
+fun Modifier.drawBackdropMirror(mirror: BackdropMirror?, anchor: () -> LayoutCoordinates?): Modifier =
+    if (mirror == null) this else drawBehind {
+        val source = mirror.coordinates?.takeIf { it.isAttached }
+        val here = anchor()?.takeIf { it.isAttached }
+        val at = if (source != null && here != null) here.localPositionOf(source, Offset.Zero) else Offset.Zero
+        translate(at.x, at.y) { drawLayer(mirror.layer) }
+    }
 
 /** Blur of the content behind an overlay, with a tint; the tint alone below Android 12. */
 @Composable
@@ -123,7 +172,7 @@ private val LightScrim = Color(4, 8, 16).copy(alpha = .26f)
 @Composable
 internal fun Modifier.focusTrap(active: Boolean): Modifier {
     val current by rememberUpdatedState(active)
-    return focusProperties { onExit = { if (current) cancelFocusChange() } }.focusGroup()
+    return focusProperties { onExit = { if (current) cancelFocusChange() } }.focusGroup().rowNavScope()
 }
 
 /**
@@ -224,7 +273,7 @@ fun <K : Any> ColumnScope.SideMenuScroll(navigation: FocusedListNavigation<K>, c
                     .focusedListBoundary(navigation)
                     .verticalScroll(sideScroll)
                     .padding(horizontal = (14f + GLOW_SIDE).px, vertical = (18f + GLOW_VERTICAL).px),
-                verticalArrangement = Arrangement.spacedBy(10.px),
+                verticalArrangement = Arrangement.spacedBy(SETTING_ROWS.gap.px),
                 content = content,
             )
         }

@@ -72,9 +72,12 @@ object SettingsHelp {
             key == "seekbar_bitrate_kbps" -> pyroWaveRecommendedBitrateKbps(values)?.let {
                 res.getString(R.string.help_note_pyrowave_recommends, it / 1000)
             }.orEmpty()
+            key == "frame_pacing" && values["pref_low_latency_frame_balance"] == true && values[key] == "phase-lock" ->
+                res.getString(R.string.help_note_phase_lock_lfr)
             key == "frame_pacing" && values["pref_low_latency_frame_balance"] == true && values[key] != "fast-vsync" ->
                 res.getString(R.string.help_note_lfr_balanced)
-            key == "frame_pacing" && values[key] == "fast-vsync" -> res.getString(R.string.help_note_fast_vsync_lfr)
+            key == "frame_pacing" && values["pref_low_latency_frame_balance"] == true && values[key] == "fast-vsync" ->
+                res.getString(R.string.help_note_fast_vsync_lfr)
             key in setOf("checkbox_async_decode", "checkbox_ultra_low_latency", "pref_low_latency_frame_balance") && pyro ->
                 res.getString(R.string.help_note_not_with_pyrowave)
             key == "list_pyrowave_chroma" && !pyro -> res.getString(R.string.help_note_needs_pyrowave)
@@ -94,10 +97,14 @@ private val NOT_ALPHANUMERIC = Regex("[^a-z0-9]+")
 
 /**
  * The text of the string resource [name] (a `help_*` or `stream_help_*` key), or null when there is none. It goes through
- * the formatter, so a literal percent sign is written `%%` in the XML.
+ * the formatter, so a literal percent sign is written `%%` in the XML. The resource ids are kept ([helpIds]): the settings
+ * list asks for every row's help on each recomposition, and a lookup by name searches the resource table.
  */
 @SuppressLint("DiscouragedApi") // the help keys are built from setting keys; res/raw/keep.xml keeps the resources
 internal fun lookup(res: Resources, name: String, vararg args: Any): String? {
-    val id = res.getIdentifier(name, "string", res.getResourcePackageName(R.string.help_dynamic_fps))
+    val id = helpIds.getOrPut(name) { res.getIdentifier(name, "string", res.getResourcePackageName(R.string.help_dynamic_fps)) }
     return if (id == 0) null else res.getString(id, *args)
 }
+
+/** Resource ids by name (0: none), the same in every language and configuration of the app. */
+private val helpIds = java.util.concurrent.ConcurrentHashMap<String, Int>()

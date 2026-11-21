@@ -50,9 +50,15 @@ object Motion {
     /** Focus: the spring of a scale, a ring, a knob, a lifted element. */
     const val FOCUS = 420
 
-    /** The squeeze of a pressed element, and how long it is held before it springs back. */
+    /**
+     * The press of an activation (A, Enter, a tap, a click): the element's lift (focus, hover) drops to 1 and it squeezes to [PRESS_SCALE]
+     * of its size at rest in [PRESS] ms on the spring, stays [PRESS_HOLD] ms and springs back in the focus's [FOCUS] ms, while its glow's
+     * blur pulses to [PRESS_GLOW] times.
+     * A tap's or a click's action runs once the squeeze has landed ([pressLandsIn]), so the press is seen before the screen changes.
+     */
     const val PRESS = 120
     const val PRESS_HOLD = 130L
+    const val PRESS_GLOW = 1.6f
 
     /** Colors and opacities (`ease`). */
     const val FADE = 280
@@ -117,8 +123,8 @@ object Motion {
     const val VALUE_SLIDE = 22f
     const val CHEVRON_BUMP = 7f
 
-    /** A pressed element squeezes to this scale (absolute, below every focus scale). */
-    const val PRESS_SCALE = .97f
+    /** A pressed element stands at this share of its size at rest, below every focus scale, focused or not ([PressPulse], [pressLook]). */
+    const val PRESS_SCALE = .96f
 
     /** A card grows out of its anchor from this scale. */
     const val POP_FROM_SCALE = .86f
@@ -178,12 +184,11 @@ object Motion {
     fun chevronBump(side: Int, direction: Int, bump: Float, reduced: Boolean): Float =
         if (reduced || Integer.signum(direction) != side) 0f else side * CHEVRON_BUMP * bump
 
-    /** The scale an element aims for: pressed squeezes it ([pressScale] 1 turns that off), else focus lifts it. */
-    fun scaleTarget(focused: Boolean, pressed: Boolean, focusScale: Float, pressScale: Float): Float = when {
-        pressed && pressScale < 1f -> pressScale
-        focused -> focusScale
-        else -> 1f
-    }
+    /** The focus lift an element aims for: [focusScale] while focused and not pressed; a press drops it to 1 (the squeeze is [pressLook]'s). */
+    fun scaleTarget(focused: Boolean, pressed: Boolean, focusScale: Float): Float = if (focused && !pressed) focusScale else 1f
+
+    /** How long a tap's action still waits for the squeeze to land, [sinceDownMs] after the finger or the button went down (0: it has). */
+    fun pressLandsIn(sinceDownMs: Long): Long = (PRESS - sinceDownMs).coerceIn(0L, PRESS.toLong())
 }
 
 /**

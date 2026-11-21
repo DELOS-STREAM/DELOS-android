@@ -266,7 +266,7 @@ map_pin = map-pin
 add_address = map-pin-plus
 link_test = network
 recommend = thumbs-up
-gpu = graphics-card
+gpu = cpu
 version = package
 provider_igdb = database
 provider_pcgw = article
@@ -313,6 +313,35 @@ appearance = paint-brush
 reduced_motion = pinwheel
 stream_menu_buttons = squares-four
 logo = delos-wordmark-plate
+
+# Game overview (docs/gui/GAME_INFO.md, "Game overview")
+overview_about = book-open
+overview_media = images-square
+overview_details = list-dashes
+overview_streaming = clock-user
+overview_links = link-simple
+overview_similar = grid-four
+link_open_external = arrow-square-out
+website_official = globe-simple
+website_store = storefront
+website_video = video-camera
+website_wiki = book-bookmark
+video_play = youtube-logo
+player_play = play
+player_pause = pause
+player_sound = speaker-high
+player_muted = speaker-slash
+player_seek_back = arrow-counter-clockwise
+player_seek_forward = arrow-clockwise
+player_previous = skip-back
+player_next = skip-forward
+player_volume_low = speaker-low
+player_volume_none = speaker-none
+mode_single = user
+mode_multi = users-four
+perspective = cube-focus
+platform_console = television-simple
+platform_mac = laptop
 
 # Game genres (IGDB genre chips, see shell/ui/GenreIcons.kt)
 genre_point_and_click = cursor-click

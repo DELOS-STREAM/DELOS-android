@@ -38,6 +38,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,6 +57,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -80,15 +86,18 @@ import com.limelight.shell.ui.EaseOut
 import com.limelight.shell.ui.dialogEnter
 import com.limelight.shell.ui.dialogExit
 import com.limelight.shell.ui.Figtree
+import com.limelight.shell.ui.FocusLook
 import com.limelight.shell.ui.FocusRing
+import com.limelight.shell.ui.FocusRow
+import com.limelight.shell.ui.FocusSpacing
 import com.limelight.shell.ui.InitialFocus
 import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.LocalStage
 import com.limelight.shell.ui.rememberMarginBringIntoView
+import com.limelight.shell.ui.LocalFeedback
 import com.limelight.shell.ui.PillButton
 import com.limelight.shell.ui.RowGlideHost
 import com.limelight.shell.ui.ScrollRow
-import com.limelight.shell.ui.compactScale
 import com.limelight.shell.ui.Symbol
 import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.genreIcon
@@ -104,6 +113,7 @@ import com.limelight.shell.ui.px
 import com.limelight.shell.ui.StageShape
 import com.limelight.shell.ui.cpx
 import com.limelight.shell.ui.tpx
+import com.limelight.shell.ui.rowNavScope
 import dev.chrisbanes.haze.HazeState
 
 private fun countGames(games: List<GameMetadata?>, entries: (GameMetadata) -> List<GameGenre>): Map<Int, Int> {
@@ -128,16 +138,35 @@ internal fun filterResultLine(res: Resources, shown: Int, total: Int, active: Bo
     if (active) res.getQuantityString(R.plurals.filters_result_active, total, shown, total)
     else res.getQuantityString(R.plurals.filters_result_all, total, total)
 
-/** The criteria that narrow the library as the sheet names them, in the order of its rows: genre, theme, HDR support, length. */
+/** The values that narrow the library as the sheet names them, in the order of its rows and chips: genres, themes, HDR support, length. */
 internal fun libraryFilterLabels(res: Resources, filters: MetadataFilters, genres: List<GameGenre>, themes: List<GameGenre>): List<String> = buildList {
-    filters.genreId?.let { id ->
-        add(genres.firstOrNull { it.id == id }?.let { genreName(res, it) } ?: genreNameRes(id)?.let(res::getString) ?: res.getString(R.string.filters_section_genre))
+    // A chosen value the library no longer lists comes after the listed ones
+    fun named(chosen: Set<Int>, listed: List<GameGenre>, name: (GameGenre) -> String, fallback: (Int) -> String) {
+        listed.filter { it.id in chosen }.forEach { add(name(it)) }
+        chosen.filter { id -> listed.none { it.id == id } }.sorted().forEach { add(fallback(it)) }
     }
-    filters.themeId?.let { id ->
-        add(themes.firstOrNull { it.id == id }?.let { themeName(res, it) } ?: themeNameRes(id)?.let(res::getString) ?: res.getString(R.string.filters_section_theme))
-    }
-    if (filters.hdr != HdrFilter.ANY) add(res.getString(hdrFilterLabel(filters.hdr)))
-    if (filters.length != LengthFilter.ANY) add(res.getString(lengthFilterLabel(filters.length)))
+    named(filters.genres, genres, { genreName(res, it) }) { genreNameRes(it)?.let(res::getString) ?: res.getString(R.string.filters_section_genre) }
+    named(filters.themes, themes, { themeName(res, it) }) { themeNameRes(it)?.let(res::getString) ?: res.getString(R.string.filters_section_theme) }
+    HdrFilter.entries.filter { it in filters.hdr }.forEach { add(res.getString(hdrFilterLabel(it))) }
+    LengthFilter.entries.filter { it in filters.length }.forEach { add(res.getString(lengthFilterLabel(it))) }
+}
+
+/** The label of the button that applies the chosen filters: "Show 12 apps". */
+internal fun filterShowLabel(res: Resources, matching: Int): String = res.getQuantityString(R.plurals.filters_show, matching, matching)
+
+/**
+ * The sheet's choices while it is open: the library keeps the applied filter ([applied]) until [confirm] hands the choices to [apply];
+ * closing without it drops them, and the next [begin] starts from the applied filter again.
+ */
+@Stable
+class FilterDraft(private val applied: () -> MetadataFilters, private val apply: (MetadataFilters) -> Unit) {
+    var value by mutableStateOf(MetadataFilters())
+        private set
+
+    fun begin() { value = applied() }
+    fun edit(change: (MetadataFilters) -> MetadataFilters) { value = change(value) }
+    fun reset() { value = MetadataFilters() }
+    fun confirm() { if (value != applied()) apply(value) }
 }
 
 /** The home hint bar's label for Y: "Filter", with the number of narrowing criteria while any is set. */
@@ -146,7 +175,6 @@ internal fun filterHintLabel(res: Resources, filters: MetadataFilters): String =
 
 @StringRes
 internal fun hdrFilterLabel(filter: HdrFilter): Int = when (filter) {
-    HdrFilter.ANY -> R.string.filters_hdr_any
     HdrFilter.HDR -> R.string.filters_hdr_hdr
     HdrFilter.SDR -> R.string.filters_hdr_sdr
     HdrFilter.UNKNOWN -> R.string.metadata_hdr_unverified
@@ -154,7 +182,6 @@ internal fun hdrFilterLabel(filter: HdrFilter): Int = when (filter) {
 
 @StringRes
 internal fun lengthFilterLabel(filter: LengthFilter): Int = when (filter) {
-    LengthFilter.ANY -> R.string.filters_length_any
     LengthFilter.UNDER_10 -> R.string.filters_length_under_10
     LengthFilter.FROM_10_TO_30 -> R.string.filters_length_10_30
     LengthFilter.FROM_30_TO_60 -> R.string.filters_length_30_60
@@ -163,20 +190,20 @@ internal fun lengthFilterLabel(filter: LengthFilter): Int = when (filter) {
 }
 
 /** The icons of the home badges (sparkle, dim sun and sealed question mark), so a filter and its badge look alike. */
-private fun hdrFilterIcon(filter: HdrFilter): String? = when (filter) {
-    HdrFilter.ANY -> null
+private fun hdrFilterIcon(filter: HdrFilter): String = when (filter) {
     HdrFilter.HDR -> Symbols.HDR_ON
     HdrFilter.SDR -> Symbols.SDR
     HdrFilter.UNKNOWN -> Symbols.HDR_UNKNOWN
 }
 
 /**
- * The library filter modal (Y on the home screen): a centered glass panel with genre, theme, HDR support
- * and duration chips. Choices apply at once; the focus stays inside while it is open and starts on the selected
- * genre. [ready] is the library to count in (null while it is not available, which also hides the panel).
+ * The library filter modal (Y on the home screen): a centered glass panel with genre, theme, HDR support and duration chips. A chip
+ * toggles its value in [draft]; the library stays as it is until [onConfirm] (the "Show N apps" pill, Y, Return on a chip) applies
+ * the choices, and closing (B) drops them. Values in one row combine with OR, rows with AND. The focus stays inside while it is open
+ * and starts on the first selected genre. [ready] is the library to count in (null while it is not available, which also hides the panel).
  */
 @Composable
-fun FilterModalLayer(visible: Boolean, ready: Library.Ready?, haze: HazeState, reducedMotion: Boolean, onClose: () -> Unit) {
+fun FilterModalLayer(visible: Boolean, ready: Library.Ready?, draft: FilterDraft, haze: HazeState, reducedMotion: Boolean, onConfirm: () -> Unit) {
     // Keep the last library while animating out
     var shown by remember { mutableStateOf(ready) }
     if (ready != null) shown = ready
@@ -186,14 +213,14 @@ fun FilterModalLayer(visible: Boolean, ready: Library.Ready?, haze: HazeState, r
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AnimatedVisibility(visible, enter = enter, exit = exit) {
             val library = shown ?: return@AnimatedVisibility
-            FilterPanel(library, open, haze, onClose)
+            FilterPanel(library, open, draft, haze, onConfirm)
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FilterPanel(ready: Library.Ready, open: Boolean, haze: HazeState, onClose: () -> Unit) {
+private fun FilterPanel(ready: Library.Ready, open: Boolean, draft: FilterDraft, haze: HazeState, onConfirm: () -> Unit) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
     val metadata = LocalGameMetadata.current
@@ -201,7 +228,7 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, haze: HazeState, on
     val shape = RoundedCornerShape(34.px)
     val chipScroll = rememberScrollState()
     val bringIntoView = rememberMarginBringIntoView(chipScroll, before = 150f * k, after = 56f * k, stagePx = k)
-    val filters = metadata.filters
+    val filters = draft.value
     val apps = ready.apps
 
     // Reading the entries here makes the counts follow the metadata as it arrives
@@ -213,31 +240,33 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, haze: HazeState, on
     val themes = remember(games, locale) { val by = java.text.Collator.getInstance(res.configuration.locales[0]); metadata.themes(ready.pc, apps).sortedWith(compareBy(by) { themeName(res, it) }) }
     val counts = remember(games) { genreCounts(games) }
     val themeCount = remember(games) { themeCounts(games) }
+    // Cheap enough to follow every toggle: the title and the pill show what the choices would leave
     val matching = games.indices.count { filters.matches(apps[it], games[it]) }
 
-    // The second display summarises the sheet while it is open: the same count as the title's, the active criteria, and the sheet's own reset
+    // The second display summarises the sheet while it is open: the same count as the title's, the chosen values, and the sheet's own reset
     val chips = remember(filters, genres, themes, locale) { libraryFilterLabels(res, filters, genres, themes) }
-    val reset = remember(metadata) { { if (metadata.filters.active) metadata.updateFilters(MetadataFilters()) } }
+    val reset = remember(draft) { { draft.reset() } }
     val page = remember(open, chips, matching, apps.size, filters.active, reset) {
         if (open) FilterPage(true, chips, filterCount(matching, apps.size, filters.active), FilterUnit.GAMES, reset) else null
     }
     PublishCompanionPage(page)
 
-    // One requester per genre chip: the first focus goes to the selected one, a reset back to "All"
+    // One requester per genre chip: the first focus goes to the first selected one, else to "All"
     val genreRequesters = remember { HashMap<Int, FocusRequester>() }
     fun genreRequester(id: Int?) = genreRequesters.getOrPut(id ?: 0) { FocusRequester() }
-    val startGenre = filters.genreId?.takeIf { id -> genres.any { it.id == id } }
+    val confirmRequester = remember { FocusRequester() }
+    val startGenre = genres.firstOrNull { it.id in filters.genres }?.id
     // The focus goes in every time the modal opens, also when it is reopened while it still animates out:
     // the panel then stays composed, so a one-time request would leave the focus on the dashboard behind it.
     if (open) InitialFocus(genreRequester(startGenre))
 
-    // Reset disables itself once nothing is filtered; if it had the focus, the focus goes back up to "All"
+    // Reset disables itself once nothing is chosen; if it had the focus, the focus goes to the pill that applies the choices
     var panelFocused by remember { mutableStateOf(false) }
     var wasActive by remember { mutableStateOf(filters.active) }
     LaunchedEffect(filters.active) {
         if (wasActive && !filters.active) {
             withFrameNanos { }
-            if (!panelFocused) runCatching { genreRequester(null).requestFocus() }
+            if (!panelFocused) runCatching { confirmRequester.requestFocus() }
         }
         wasActive = filters.active
     }
@@ -259,11 +288,12 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, haze: HazeState, on
             .clip(shape)
             .backdropBlur(haze, 24f, colors.surface3)
             .border(1.px, colors.line, shape)
-            // Under the Reset / Done pills the room is not scaled down on the compact stage: the focused pill's glow (44 px under it) ends inside the panel
+            // Under the Reset / Show pills the room is not scaled down on the compact stage: the focused pill's glow (44 px under it) ends inside the panel
             .padding(horizontal = 40.cpx).padding(top = 44.cpx, bottom = 44.px)
             .onFocusChanged { panelFocused = it.hasFocus }
             .focusProperties { onExit = { if (open) cancelFocusChange() } }
-            .focusGroup(),
+            .focusGroup()
+            .rowNavScope(),
     ) {
         Row(Modifier.fillMaxWidth().padding(start = 12.px, end = 12.px, bottom = 26.cpx), verticalAlignment = Alignment.CenterVertically) {
             BasicText(stringResource(R.string.filters_title), style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 40.tpx))
@@ -283,7 +313,7 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, haze: HazeState, on
         CompositionLocalProvider(LocalBringIntoViewSpec provides bringIntoView) {
         // Share the cursor across the chip rows without changing spatial D-pad navigation.
         RowGlideHost(
-            ring = FocusRing(3f, 3f), corner = 999f, focusScale = 1.05f,
+            ring = FocusRing(ChipFocus.LOOK.band, ChipFocus.LOOK.outset), corner = 999f, focusScale = ChipFocus.LOOK.scale,
             fill = null, glow = null,
             // The edges fade only while chips continue behind them, so the ring of a chip in the first or the last row is not dimmed
             modifier = Modifier.weight(1f, fill = false).fadeEdges(stage, chipScroll, 20f, 40f),
@@ -292,19 +322,19 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, haze: HazeState, on
             Modifier
                 .verticalScroll(chipScroll)
                 .padding(start = 12.px, end = 12.px, top = 24.cpx, bottom = 48.cpx),
-            verticalArrangement = Arrangement.spacedBy(34.cpx),
+            verticalArrangement = Arrangement.spacedBy(LibraryFilterLayout.SECTION_GAP.cpx),
         ) {
             FilterSection(Symbols.GENRE_UNKNOWN, stringResource(R.string.filters_section_genre)) {
-                ScrollRow(gap = 14f * stage.compactScale, ringRoom = 12f) {
+                ChipRow {
                     FilterChip(
-                        stringResource(R.string.filters_all), filters.genreId == null, { metadata.updateFilters(metadata.filters.copy(genreId = null)) },
-                        Modifier.focusRequester(genreRequester(null)), count = apps.size,
+                        stringResource(R.string.filters_all), filters.genres.isEmpty(), { draft.edit { it.copy(genres = emptySet()) } },
+                        Modifier.focusRequester(genreRequester(null)), count = apps.size, onConfirm = onConfirm,
                     )
                     genres.forEach { genre ->
                         key(genre.id) {
                             FilterChip(
-                                genreName(res, genre), filters.genreId == genre.id, { metadata.updateFilters(metadata.filters.copy(genreId = genre.id)) },
-                                Modifier.focusRequester(genreRequester(genre.id)), icon = genreIcon(genre.id), count = counts[genre.id] ?: 0,
+                                genreName(res, genre), genre.id in filters.genres, { draft.edit { it.toggleGenre(genre.id) } },
+                                Modifier.focusRequester(genreRequester(genre.id)), icon = genreIcon(genre.id), count = counts[genre.id] ?: 0, onConfirm = onConfirm,
                             )
                         }
                     }
@@ -312,18 +342,18 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, haze: HazeState, on
             }
             FilterDivider()
             // Without any theme in the library there is nothing to choose (a theme that was chosen stays visible)
-            if (themes.isNotEmpty() || filters.themeId != null) {
+            if (themes.isNotEmpty() || filters.themes.isNotEmpty()) {
                 FilterSection(Symbols.THEMES, stringResource(R.string.filters_section_theme)) {
-                    ScrollRow(gap = 14f * stage.compactScale, ringRoom = 12f) {
+                    ChipRow {
                         FilterChip(
-                            stringResource(R.string.filters_all), filters.themeId == null, { metadata.updateFilters(metadata.filters.copy(themeId = null)) },
-                            count = apps.size,
+                            stringResource(R.string.filters_all), filters.themes.isEmpty(), { draft.edit { it.copy(themes = emptySet()) } },
+                            count = apps.size, onConfirm = onConfirm,
                         )
                         themes.forEach { theme ->
                             key(theme.id) {
                                 FilterChip(
-                                    themeName(res, theme), filters.themeId == theme.id, { metadata.updateFilters(metadata.filters.copy(themeId = theme.id)) },
-                                    icon = themeIcon(theme.id), count = themeCount[theme.id] ?: 0,
+                                    themeName(res, theme), theme.id in filters.themes, { draft.edit { it.toggleTheme(theme.id) } },
+                                    icon = themeIcon(theme.id), count = themeCount[theme.id] ?: 0, onConfirm = onConfirm,
                                 )
                             }
                         }
@@ -332,21 +362,25 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, haze: HazeState, on
                 FilterDivider()
             }
             FilterSection(Symbols.HDR_ON, stringResource(R.string.filters_section_hdr)) {
-                ScrollRow(gap = 14f * stage.compactScale, ringRoom = 12f) {
+                ChipRow {
+                    FilterChip(stringResource(R.string.filters_hdr_any), filters.hdr.isEmpty(), { draft.edit { it.copy(hdr = emptySet()) } }, onConfirm = onConfirm)
                     HdrFilter.entries.forEach { option ->
                         FilterChip(
-                            stringResource(hdrFilterLabel(option)), filters.hdr == option, { metadata.updateFilters(metadata.filters.copy(hdr = option)) },
-                            icon = hdrFilterIcon(option),
+                            stringResource(hdrFilterLabel(option)), option in filters.hdr, { draft.edit { it.toggleHdr(option) } },
+                            icon = hdrFilterIcon(option), onConfirm = onConfirm,
                         )
                     }
                 }
             }
             FilterDivider()
             FilterSection(Symbols.COMPLETION_TIME, stringResource(R.string.filters_section_duration)) {
-                ScrollRow(gap = 14f * stage.compactScale, ringRoom = 12f) {
+                // The last row: one press down reaches the pill that applies the choices, wherever the cursor is in the row
+                val down = Modifier.focusProperties { this.down = confirmRequester }
+                ChipRow {
+                    FilterChip(stringResource(R.string.filters_length_any), filters.length.isEmpty(), { draft.edit { it.copy(length = emptySet()) } }, down, onConfirm = onConfirm)
                     LengthFilter.entries.forEach { option ->
                         FilterChip(
-                            stringResource(lengthFilterLabel(option)), filters.length == option, { metadata.updateFilters(metadata.filters.copy(length = option)) },
+                            stringResource(lengthFilterLabel(option)), option in filters.length, { draft.edit { it.toggleLength(option) } }, down, onConfirm = onConfirm,
                         )
                     }
                 }
@@ -354,29 +388,29 @@ private fun FilterPanel(ready: Library.Ready, open: Boolean, haze: HazeState, on
         }
         }
         }
-        Row(
-            Modifier.fillMaxWidth().padding(top = 30.cpx, start = 12.px, end = 12.px),
-            // Compact: the room a focused pill grows into (half its 8 %, its ring and 12 px), as on the Artwork toolbar
-            horizontalArrangement = Arrangement.spacedBy((if (stage.shape == StageShape.COMPACT) ArtworkLayout.PILL_GAP else 24f).px, Alignment.End),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        // The pills keep their focus spacing apart, more for a long label
+        Box(Modifier.fillMaxWidth().padding(top = 30.cpx, start = 12.px, end = 12.px), contentAlignment = Alignment.CenterEnd) { FocusRow(FocusSpacing.PILL, 24f) {
             val active = filters.active
             PillButton(
-                stringResource(R.string.filters_reset), Symbols.RESET, { if (metadata.filters.active) metadata.updateFilters(MetadataFilters()) },
+                stringResource(R.string.filters_reset), Symbols.RESET, { draft.reset() },
                 Modifier.alpha(if (active) 1f else .4f).then(if (active) Modifier else Modifier.focusProperties { canFocus = false }),
                 compact = stage.shape == StageShape.COMPACT,
             )
-            PillButton(stringResource(R.string.filters_done), Symbols.CHECK, onClose, primary = true, clickCue = Cue.BACK, compact = stage.shape == StageShape.COMPACT)
-        }
+            // The confirm cue comes from [onConfirm], which also closes the sheet
+            PillButton(
+                filterShowLabel(res, matching), Symbols.CHECK, onConfirm, Modifier.focusRequester(confirmRequester),
+                primary = true, clickCue = null, compact = stage.shape == StageShape.COMPACT,
+            )
+        } }
     }
 }
 
 @Composable
 private fun FilterSection(icon: String, title: String, content: @Composable () -> Unit) {
     val colors = LocalDelosColors.current
-    Column(verticalArrangement = Arrangement.spacedBy(22.cpx)) {
+    Column(verticalArrangement = Arrangement.spacedBy(LibraryFilterLayout.HEADING_GAP.cpx)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.px)) {
-            Box(Modifier.size(60.cpx).clip(CircleShape).background(colors.accent.copy(alpha = .18f)), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(LibraryFilterLayout.HEADING_HEIGHT.cpx).clip(CircleShape).background(colors.accent.copy(alpha = .18f)), contentAlignment = Alignment.Center) {
                 Symbol(icon, 32.tpx, colors.accent2, filled = true)
             }
             BasicText(title, style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = 29.tpx))
@@ -391,21 +425,65 @@ private fun FilterDivider() {
     Box(Modifier.fillMaxWidth().height(1.px).background(LocalDelosColors.current.line))
 }
 
-/** A selectable chip: filled with the accent while chosen, glass otherwise; the focus ring marks the cursor. */
+/** The filter chips' focus ([FilterChip], the Artwork strip's chips): 1.05 and a 3 px band 3 px outside, the gliding plate of their [RowGlideHost] drawn around the scaled chip. */
+internal object ChipFocus {
+    val LOOK = FocusLook(scale = 1.05f, outset = 3f, band = 3f, ringScales = false)
+
+    /** A [FilterChip]'s least height. */
+    const val HEIGHT = 60f
+    /** Shared chip gap floor; width-aware rows still widen it for longer labels. */
+    const val BASE_GAP = 40f
+    const val ROW_ROOM = 12f
+}
+
+/** Physical separation between library chip rows also includes the next heading and both rows' focus room. */
+internal object LibraryFilterLayout {
+    const val SECTION_GAP = 34f
+    const val HEADING_GAP = 22f
+    const val HEADING_HEIGHT = 60f
+}
+
+/**
+ * A row of [FilterChip]s that scrolls when they need more room than it has (keeping their ring's room above and below while it does). The
+ * gap between the chips grows with the widest of them to their focus spacing, so a focused chip never reaches its neighbour.
+ */
 @Composable
-internal fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, icon: String? = null, count: Int? = null) {
+internal fun ChipRow(content: @Composable () -> Unit) {
+    ScrollRow(gap = 0f, ringRoom = ChipFocus.ROW_ROOM) { FocusRow(ChipFocus.LOOK, ChipFocus.BASE_GAP, content = content) }
+}
+
+/**
+ * A selectable chip: filled with the accent while chosen, glass otherwise; the focus ring marks the cursor. With [onConfirm] (a sheet
+ * whose choices apply on confirm) the keyboard's Space toggles it and Return confirms; A and the D-pad center still toggle it.
+ */
+@Composable
+internal fun FilterChip(
+    label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, icon: String? = null, count: Int? = null,
+    onConfirm: (() -> Unit)? = null,
+) {
     val colors = LocalDelosColors.current
+    val feedback = LocalFeedback.current
     var focused by remember { mutableStateOf(false) }
     val content = if (selected) colors.onAccent else colors.text
     Row(
         modifier
+            .then(if (onConfirm == null) Modifier else Modifier.onPreviewKeyEvent { event ->
+                val action = when (event.key) {
+                    Key.Spacebar -> { { feedback.play(Cue.SELECT); onClick() } }
+                    Key.Enter, Key.NumPadEnter -> onConfirm
+                    else -> return@onPreviewKeyEvent false
+                }
+                // Both edges are handled, so Android does not synthesize a fallback key
+                if (event.type == KeyEventType.KeyUp) action()
+                true
+            })
             .focusEffects(
-                onClick = onClick, corner = 999f, focusScale = 1.05f, ring = FocusRing(3f, 3f), glow = null,
+                onClick = onClick, corner = 999f, focusScale = ChipFocus.LOOK.scale, ring = FocusRing(ChipFocus.LOOK.band, ChipFocus.LOOK.outset), glow = null,
                 onFocusChange = { focused = it }, glide = true,
             )
             .clip(CircleShape)
             .then(if (selected) Modifier.background(colors.accent) else Modifier.glass(colors.surface).border(1.px, colors.line, CircleShape))
-            .heightIn(min = 60.px)
+            .heightIn(min = ChipFocus.HEIGHT.px)
             .padding(horizontal = 30.cpx, vertical = 12.cpx),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.px),

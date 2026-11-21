@@ -25,7 +25,9 @@
     <string name="filters_length_over_60">60시간 이상</string>
     <string name="filters_length_unknown">알 수 없음</string>
     <string name="filters_reset">초기화</string>
-    <string name="filters_done">완료</string>
+    <plurals name="filters_show">
+        <item quantity="other">앱 %1$d개 보기</item>
+    </plurals>
 
     <string name="filters_art_title">아트워크 필터</string>
     <string name="filters_art_reset">필터 초기화</string>

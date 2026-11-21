@@ -123,7 +123,7 @@ class ShellSettingsTest {
 
     @Test fun unavailableStoredChoiceIsNotShownAsAnotherMode() {
         val pacing = spec("frame_pacing")
-        val supported = pacing.choices.filter { it.value != "fast-vsync" }
+        val supported = pacing.choices.filter { it.value != "fast-vsync" && it.value != "phase-lock" }
         assertEquals("Fast V-Sync (Nano Pacer) (unavailable)", pacing.choiceLabel(context.resources, "fast-vsync", supported))
         assertEquals(supported.first(), nextSettingChoice("fast-vsync", supported, 1))
         assertEquals(supported.last(), nextSettingChoice("fast-vsync", supported, -1))

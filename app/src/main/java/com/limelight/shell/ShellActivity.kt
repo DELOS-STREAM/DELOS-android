@@ -10,6 +10,8 @@ import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -17,17 +19,21 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.limelight.shell.ui.ControllerGlyphs
+import com.limelight.shell.ui.InputKinds
 import com.limelight.shell.companion.CompanionHost
 import com.limelight.shell.companion.CompanionState
 import com.limelight.shell.data.ArtworkStore
 import com.limelight.shell.data.GameMetadataStore
 import com.limelight.shell.data.LocalGameMetadata
+import com.limelight.shell.data.IgdbImageCache
+import com.limelight.shell.data.LocalIgdbImages
 import com.limelight.shell.data.BoxArtCache
 import com.limelight.shell.data.LocalArtwork
 import com.limelight.shell.data.GameLauncher
@@ -48,6 +54,7 @@ import com.limelight.shell.ui.Stage
 import com.limelight.shell.ui.animateDelosColors
 import com.limelight.shell.ui.delosColors
 import com.limelight.shell.ui.systemAccentHue
+import com.limelight.shell.ui.rowFirstNavigation
 import kotlinx.coroutines.flow.MutableStateFlow
 import com.limelight.utils.DelosToast
 
@@ -62,8 +69,11 @@ class ShellActivity : ComponentActivity() {
     private lateinit var boxArt: BoxArtCache
     private lateinit var artwork: ArtworkStore
     private lateinit var metadata: GameMetadataStore
+    private lateinit var igdbImages: IgdbImageCache
     private lateinit var profiles: ProfileStore
     private val keys = GlobalKeys()
+    /** The shell, for the input hooks that must see an event before anything consumes it (null until created). */
+    private var shellState: ShellState? = null
 
     /** The second panel of a dual-screen device (docs/DUAL_SCREEN.md): shown from `onResume` to `onStop` while a companion display exists. */
     private var companion: CompanionHost? = null
@@ -110,9 +120,11 @@ class ShellActivity : ComponentActivity() {
         repo = PcRepository(this, profiles::settings)
         val settingsAgain = intent.getBooleanExtra(ShellPlacement.EXTRA_RESTORE_SETTINGS, false) && profiles.profiles.value.all.isNotEmpty()
         val shell = ShellState(if (profiles.profiles.value.all.isEmpty()) Screen.Boot() else if (settingsAgain) Screen.Settings else Screen.Start)
+        shellState = shell
         if (settingsAgain) shell.settingsTab = SettingsTab.DISPLAY
         DelosToast.register(this, show = { text, durationMs, kind -> shell.showToast(text, durationMs = durationMs, kind = kind) })
         metadata = GameMetadataStore(this, profiles::settings)
+        igdbImages = IgdbImageCache(this)
         val startup = StartupStore(profiles::settings)
         profiles.onSettingsChanged {
             appearance.reload()
@@ -139,12 +151,13 @@ class ShellActivity : ComponentActivity() {
         // Debug builds only: draws all of it in a box of another panel's size and density (Debug info menu, or `preview_shape`)
         val simulator = ShapeSimulator.from(this, intent)
         setContent {
+            com.limelight.shell.ui.QuietAccessibility()
             val screen: @Composable () -> Unit = {
                 if (preview != null) ShellTheme(appearance, feedback) {
                     preview()
                     com.limelight.shell.ui.ToastHost(shell.toast, shell::hideToast, shell::runToastAction, shell.toastPress)
                 }
-                else ShellRoot(appearance, feedback, keys, repo, boxArt, artwork, metadata, launcher, profiles, startup, setup, links, results, shell)
+                else ShellRoot(appearance, feedback, keys, repo, boxArt, artwork, metadata, igdbImages, launcher, profiles, startup, setup, links, results, shell)
             }
             if (simulator != null) simulator.Host(shell, appearance.appearance, screen) else screen()
         }
@@ -165,20 +178,37 @@ class ShellActivity : ComponentActivity() {
     }
 
     // Activity's public key dispatcher must still run after the shell's global controller keys. Every event first tells the input kind
-    // what was used (ControllerGlyphs: the hints follow the last input)
+    // what was used (ControllerGlyphs: the hints follow the last input); a hardware keyboard's keys then act as the pad's buttons
+    // (GlobalKeys.keyboardButton), except while a button is being recorded
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         ControllerGlyphs.key(event)
-        return keys.dispatch(event) || super.dispatchKeyEvent(event)
+        // Any key shows the fullscreen viewer's overlay again, before a global shortcut may consume it
+        shellState?.overviewViewerInput?.invoke()
+        val shellEvent = if (keys.capture == null) keyboardAsPad(event) else event
+        return keys.dispatch(shellEvent) || super.dispatchKeyEvent(shellEvent)
+    }
+
+    /** A hardware keyboard's key as the pad button it stands for ([GlobalKeys.keyboardButton]); any other event as it is. */
+    private fun keyboardAsPad(event: KeyEvent): KeyEvent {
+        if (InputKinds.fromPad(event.source) || !InputKinds.isKeyboard(event.device)) return event
+        // In the filter, Return applies (FilterChip's own Return handler) where A toggles a chip: it must reach Compose as Return
+        if (shellState?.layer == Layer.Filters && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER)) return event
+        val typing = currentFocus?.onCheckIsTextEditor() == true
+        val modified = event.isCtrlPressed || event.isAltPressed || event.isMetaPressed
+        val button = GlobalKeys.keyboardButton(event.keyCode, typing, modified) ?: return event
+        return KeyEvent(event.downTime, event.eventTime, event.action, button, event.repeatCount, 0, event.deviceId, event.scanCode, event.flags, event.source)
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         ControllerGlyphs.touch(event)
+        shellState?.overviewViewerInput?.invoke()
         return super.dispatchTouchEvent(event)
     }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
         ControllerGlyphs.motion(event)
+        shellState?.overviewViewerInput?.invoke()
         return super.dispatchGenericMotionEvent(event)
     }
 
@@ -243,6 +273,7 @@ private fun ShellRoot(
     boxArt: BoxArtCache,
     artwork: ArtworkStore,
     metadata: GameMetadataStore,
+    igdbImages: IgdbImageCache,
     launcher: GameLauncher,
     profiles: ProfileStore,
     startup: StartupStore,
@@ -252,8 +283,13 @@ private fun ShellRoot(
     shell: ShellState,
 ) {
     ShellTheme(store, feedback) { appearance ->
-        CompositionLocalProvider(LocalBoxArt provides boxArt, LocalArtwork provides artwork, LocalGameMetadata provides metadata) {
-            Shell(appearance, store::update, keys, repo, launcher, profiles, startup, setup, links, results, shell)
+        CompositionLocalProvider(
+            LocalBoxArt provides boxArt, LocalArtwork provides artwork, LocalGameMetadata provides metadata, LocalIgdbImages provides igdbImages,
+        ) {
+            // Up and Down that no element handled land on the first element of the next row (RowNav, docs/GUI.md)
+            Box(Modifier.fillMaxSize().rowFirstNavigation(), propagateMinConstraints = true) {
+                Shell(appearance, store::update, keys, repo, launcher, profiles, startup, setup, links, results, shell)
+            }
         }
     }
 }

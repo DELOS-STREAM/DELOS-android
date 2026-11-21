@@ -51,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -75,7 +76,6 @@ import com.limelight.shell.data.PcRepository
 import com.limelight.shell.data.PcSetup
 import com.limelight.shell.data.ProfileStore
 import com.limelight.shell.data.LocalGameMetadata
-import com.limelight.shell.data.MetadataFilters
 import com.limelight.shell.screens.HomeScreen
 import com.limelight.shell.screens.openMetadataMenu
 import com.limelight.shell.screens.BootScreen
@@ -102,6 +102,8 @@ import com.limelight.shell.ui.EaseOut
 import com.limelight.shell.ui.Feedback
 import com.limelight.shell.ui.Glyph
 import com.limelight.shell.ui.Hint
+import com.limelight.shell.ui.InputCap
+import com.limelight.shell.ui.InputKind
 import com.limelight.shell.ui.HintBar
 import com.limelight.shell.ui.ControllerGlyphs
 import com.limelight.shell.ui.adaptedTo
@@ -112,6 +114,9 @@ import com.limelight.shell.ui.LaunchCard
 import com.limelight.shell.ui.LaunchHandoff
 import com.limelight.shell.ui.LaunchOverlay
 import com.limelight.shell.ui.LocalBackdropHaze
+import com.limelight.shell.ui.LocalBackdropMirror
+import com.limelight.shell.ui.backdropMirrorSource
+import com.limelight.shell.ui.rememberBackdropMirror
 import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.LocalFeedback
 import com.limelight.shell.ui.NavButton
@@ -153,6 +158,7 @@ import com.limelight.diag.ReportOutcomeText
 import com.limelight.diag.ReportUploader
 import com.limelight.shell.ui.LocalImeAvoidance
 import com.limelight.shell.ui.rememberImeAvoidance
+import com.limelight.shell.ui.secondaryClickOutside
 import com.limelight.shell.data.LocalArtwork
 import com.limelight.shell.data.downloadAll
 import com.limelight.shell.data.BundledArtwork
@@ -162,6 +168,7 @@ import com.limelight.shell.ui.ArtworkProgressBar
 import com.limelight.shell.screens.ArtworkScreen
 import com.limelight.shell.screens.DebugInfoScreen
 import com.limelight.shell.screens.OscPreviewScreen
+import com.limelight.shell.screens.FilterDraft
 import com.limelight.shell.screens.FilterModalLayer
 import com.limelight.shell.screens.filterHintLabel
 import dev.chrisbanes.haze.hazeSource
@@ -194,9 +201,13 @@ fun Shell(
     val haze = rememberHazeState()
     // Only the animated background, for glass that is always on (the focused row, the top bar)
     val backdropHaze = rememberHazeState()
+    // The same background, recorded for a page that continues it over the dashboard (the game overview)
+    val backdropMirror = rememberBackdropMirror()
     var blurSource by remember { mutableStateOf(false) }
-    LaunchedEffect(shell.layer != null || shell.portal != null || shell.picker != null) {
-        if (shell.layer != null || shell.portal != null || shell.picker != null) {
+    // The glass cards over the screen (the problem offer, the button capture) blur what lies under them through the same source as the layers
+    val screenGlass = shell.layer != null || shell.portal != null || shell.picker != null || shell.buttonCapture != null || (shell.offerShown && shell.problem != null)
+    LaunchedEffect(screenGlass) {
+        if (screenGlass) {
             blurSource = true
         } else {
             delay(600)
@@ -504,6 +515,8 @@ fun Shell(
     val clock by rememberClock(appearance.clock)
     val library by repo.library.collectAsStateWithLifecycle()
     val metadata = LocalGameMetadata.current
+    // The library filter's choices while it is open: applied only on confirm, dropped when it closes without
+    val filterDraft = remember(metadata) { FilterDraft({ metadata.filters }, metadata::updateFilters) }
     val openMetadata: (Pc, App) -> Unit = remember(scope, shell, tracker, metadata) {
         { selectedPc, app -> openMetadataMenu(res, scope, shell, tracker, metadata, selectedPc, app) }
     }
@@ -593,14 +606,20 @@ fun Shell(
         }
     }
 
+    fun confirmFilters() {
+        if (shell.layer != Layer.Filters) return
+        feedback.play(Cue.BACK)
+        filterDraft.confirm()
+        shell.closeLayer()
+    }
+
     fun toggleFilters() {
         when (shell.layer) {
-            Layer.Filters -> {
-                feedback.play(Cue.BACK)
-                shell.closeLayer()
-            }
+            // Y in the open filter applies its choices, as its "Show N apps" pill does
+            Layer.Filters -> confirmFilters()
             null -> {
                 feedback.play(Cue.OPEN)
+                filterDraft.begin()
                 shell.openLayer(Layer.Filters, tracker)
             }
             else -> Unit
@@ -614,6 +633,8 @@ fun Shell(
                 shell.closeLayer()
             }
             null -> {
+                // A settings row's Options opens its popup, the one a tap opens (it plays its own cue)
+                tracker.options?.let { it(); return }
                 val menu = tracker.contextMenu ?: return
                 feedback.play(Cue.OPEN)
                 shell.openLayer(Layer.Context(menu, tracker.bounds()), tracker)
@@ -633,7 +654,7 @@ fun Shell(
         keys.onSearch = { if (shell.screen is Screen.Artwork) shell.onArtworkFilter?.invoke() else shell.onSettingsSearch?.invoke() }
         // Y opens the filters over a library with games (and closes them again); nothing else may react to it
         keys.canFilter = {
-            shell.screen == Screen.Home && shell.picker == null && shell.portal == null && shell.launch == null && shell.result == null && (
+            shell.screen == Screen.Home && shell.overviewGame == null && shell.picker == null && shell.portal == null && shell.launch == null && shell.result == null && (
                 shell.layer == Layer.Filters || (shell.layer == null && (library as? Library.Ready)?.apps?.isNotEmpty() == true)
             )
         }
@@ -645,9 +666,9 @@ fun Shell(
                 KeyEvent.KEYCODE_BUTTON_SELECT -> if (shell.screen.sideMenu) toggleSide()
                 KeyEvent.KEYCODE_BUTTON_START -> toggleContext()
                 KeyEvent.KEYCODE_BUTTON_X -> if (shell.layer == Layer.Filters) {
-                    if (metadata.filters.active) {
+                    if (filterDraft.value.active) {
                         feedback.play(Cue.SELECT)
-                        metadata.updateFilters(MetadataFilters())
+                        filterDraft.reset()
                     }
                 } else if (shell.screen is Screen.Artwork && shell.layer == null && shell.onArtworkSearch != null) shell.onArtworkSearch?.invoke()
                 else if (shell.screen is Screen.GameSettings && shell.layer == null && shell.onGameReset != null) shell.onGameReset?.invoke()
@@ -743,12 +764,15 @@ fun Shell(
     val imeAvoidance = rememberImeAvoidance()
     // Where the status bar's Wi-Fi, battery and clock start: the start screen's profile chip keeps clear of them on a compact stage
     val statusEdges = remember { com.limelight.shell.ui.StatusBarEdges() }
+    // The overview viewer's player window covers the hint bar below: it draws this one over the video
+    val windowHintBar: @Composable () -> Unit = remember(shell, uiScale) { { WindowHintBar(shell, uiScale) } }
     CompositionLocalProvider(
         LocalShell provides shell, LocalFocusTracker provides tracker, LocalGameActions provides actions, LocalDeviceActions provides devices,
-        LocalBackdropHaze provides backdropHaze, LocalLibrary provides library, LocalImeAvoidance provides imeAvoidance,
+        LocalBackdropHaze provides backdropHaze, LocalBackdropMirror provides backdropMirror, LocalLibrary provides library, LocalImeAvoidance provides imeAvoidance,
         com.limelight.shell.screens.LocalLinkTests provides linkTests, com.limelight.shell.ui.LocalStatusBarEdges provides statusEdges,
         // Touch: a focused choice or slider row's tap opens its popup at the row (issue #92)
         LocalRowPicker provides { popup -> shell.openPicker(popup, tracker) },
+        LocalWindowHintBar provides windowHintBar,
         // Touch: a long press on a cover (or any element with a context menu) opens it, as Start does
         LocalContextMenuOpener provides { menu, bounds ->
             if (longPressOpensContext(menu, true, shell.layer != null, shell.launch != null || shell.portal != null || shell.result != null || shell.picker != null)) {
@@ -771,13 +795,21 @@ fun Shell(
                 .sideMenuSwipe(
                     canOpen = ::sideSwipeOpens, isOpen = ::sideSwipeCloses,
                     onStart = ::startSideDrag, onMove = { _, travel -> moveSideDrag(travel) }, onEnd = ::endSideDrag,
-                ),
+                )
+                // A right click beside the items of an open layer (a menu, the side menu, a popup) closes it, as B does; one on an item
+                // is the item's (focusEffects: its Options)
+                .secondaryClickOutside {
+                    if (shell.layer != null || shell.picker != null) {
+                        feedback.play(Cue.BACK)
+                        shell.back()
+                    }
+                },
         ) {
             // The blur source re-records the whole screen every frame, so it is only active while an overlay
             // is shown (and while it fades out)
             // On in the very frame an overlay appears (its blur would otherwise start empty and clipped)
-            Box(Modifier.fillMaxSize().then(if (blurSource || shell.layer != null || shell.portal != null || shell.result != null || shell.picker != null) Modifier.hazeSource(haze) else Modifier)) {
-                Box(Modifier.fillMaxSize().hazeSource(backdropHaze)) {
+            Box(Modifier.fillMaxSize().then(if (blurSource || screenGlass || shell.result != null) Modifier.hazeSource(haze) else Modifier)) {
+                Box(Modifier.fillMaxSize().hazeSource(backdropHaze).backdropMirrorSource(backdropMirror)) {
                     ShellBackdrop(shell, appearance, colors, heroShown = shell.screen == Screen.Home, animate = shell.launch == null && shell.portal == null)
                 }
                 AnimatedContent(
@@ -844,11 +876,18 @@ fun Shell(
                     // The back button (no controller in use) does what B does: the same back dispatch, so a screen's own handler wins as for B
                     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
                     val goBack = remember(backDispatcher) { { backDispatcher?.onBackPressed(); Unit } }
-                    StatusBar(
-                        nav.takeIf { shell.screen.main }, pcName = pc?.name.takeIf { shell.screen.main }, pcOnline = pc?.online == true,
-                        wifi = wifi, battery = battery, clock = clock, brand = shell.screen != Screen.Start,
-                        onBack = goBack.takeIf { shell.screen.back != null },
+                    // The game overview's screenshot viewer covers the whole screen, the status bar too
+                    val barAlpha by androidx.compose.animation.core.animateFloatAsState(
+                        if (shell.overviewViewer != null) 0f else 1f, tween(Motion.FADE, easing = Motion.Ease), label = "statusBarUnderViewer",
                     )
+                    Box(Modifier.graphicsLayer { alpha = barAlpha }) {
+                        StatusBar(
+                            nav.takeIf { shell.screen.main }, pcName = pc?.name.takeIf { shell.screen.main }, pcOnline = pc?.online == true,
+                            wifi = wifi, battery = battery, clock = clock, brand = shell.screen != Screen.Start,
+                            // The game overview goes back with the same button (its own back handler closes it), the dashboard has none
+                            onBack = goBack.takeIf { shell.screen.back != null || shell.overviewGame != null },
+                        )
+                    }
                 }
             }
 
@@ -899,10 +938,7 @@ fun Shell(
                     shell.closeLayer()
                 }
 
-                FilterModalLayer(shell.layer == Layer.Filters, library as? Library.Ready, haze, appearance.reducedMotion) {
-                    feedback.play(Cue.BACK)
-                    shell.closeLayer()
-                }
+                FilterModalLayer(shell.layer == Layer.Filters, library as? Library.Ready, filterDraft, haze, appearance.reducedMotion) { confirmFilters() }
 
                 // The popup of a settings row (touch, issue #92): over every layer, the side menu's rows open it too
                 RowPickerLayer(shell.picker, haze) { shell.closePicker() }
@@ -923,7 +959,7 @@ fun Shell(
 
                 StreamResultLayer(shell.result, haze, appearance.reducedMotion, onRetry = ::retryStream, onBack = ::dismissResult)
 
-                ButtonCaptureLayer(shell.buttonCapture != null, keys) { buttons ->
+                ButtonCaptureLayer(shell.buttonCapture != null, keys, haze) { buttons ->
                     val save = shell.buttonCapture
                     shell.buttonCapture = null
                     if (buttons != null) save?.invoke(buttons)
@@ -933,22 +969,7 @@ fun Shell(
             val artworkProgress = artwork.progress.value
             ArtworkProgressBar(artworkProgress ?: metadata.progress.value,
                 label = res.getString(if (artworkProgress != null) R.string.shell_progress_artwork else R.string.shell_progress_metadata))
-            val note = (library as? Library.Ready)?.takeIf { shell.screen == Screen.Home && shell.layer == null }?.let { ready ->
-                val shown = if (metadata.filters.active) ready.apps.count { metadata.filters.matches(it, metadata.entry(ready.pc, it).data) } else ready.apps.size
-                if (shown == ready.apps.size) res.getQuantityString(R.plurals.shell_home_apps_on_pc, shown, shown, ready.pc.name)
-                else res.getQuantityString(R.plurals.shell_home_apps_filtered, ready.apps.size, shown, ready.apps.size, ready.pc.name)
-            }
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                val filterHint = (library as? Library.Ready)?.takeIf { it.apps.isNotEmpty() }?.let { filterHintLabel(res, metadata.filters) }
-                // Written for a controller, shown for the input in use (a finger, a mouse, a keyboard: ui/HintKinds.kt)
-                val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint).adaptedTo(ControllerGlyphs.kind)
-                com.limelight.shell.companion.PublishCompanionContext(hintEntries, library, pcs)
-                // A tap on the Filter pill (no controller in use) does what Y does: opens the library's filters
-                ZoomedBar(uiScale) {
-                    HintBar(hintEntries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null,
-                        onTap = { if (keys.canFilter()) keys.onFilter?.invoke() })
-                }
-            }
+            ShellHints(shell, library, pcs, tracker, keys, uiScale)
             val launch = shell.launch
             val launchLogo = launch?.let { rememberArtwork(artwork, it.pc, it.app, ArtKind.LOGO).value }
             // Read off the main thread: profile and per-game settings; the card gets them when they are ready
@@ -962,7 +983,7 @@ fun Shell(
                 instantExit = launchExitInstant.value,
                 onCancel = ::cancelLaunch,
             )
-            ProblemOfferCard(if (shell.offerShown) shell.problem else null, appearance.reducedMotion, onReport = { reportProblem(ReportMode.UPLOAD) }, onSaveToDownloads = { reportProblem(ReportMode.DOWNLOADS) }, onDismiss = ::dismissProblem)
+            ProblemOfferCard(if (shell.offerShown) shell.problem else null, haze, appearance.reducedMotion, onReport = { reportProblem(ReportMode.UPLOAD) }, onSaveToDownloads = { reportProblem(ReportMode.DOWNLOADS) }, onDismiss = ::dismissProblem)
             UpdateOfferCard(
                 if (updateShown) updateState else null, appearance.reducedMotion,
                 onUpdate = { updates.accept() }, onAllow = updates::openPermissionSettings, onCancel = ::updateBack, onLater = ::updateBack,
@@ -1055,6 +1076,56 @@ private fun ShellBackdrop(shell: ShellState, appearance: Appearance, colors: Del
     Backdrop(appearance, colors, hero = if (heroShown) shell.hero else null, animate = animate)
 }
 
+/**
+ * The hint bar and the library note. It reads the shell's state itself, so what only changes the hints (the game overview opening
+ * or closing, its viewer) recomposes just this, not the whole shell.
+ */
+@Composable
+private fun ShellHints(shell: ShellState, library: Library, pcs: List<Pc>, tracker: FocusTracker, keys: GlobalKeys, uiScale: Float) {
+    val res = textResources()
+    val metadata = LocalGameMetadata.current
+    val note = (library as? Library.Ready)?.takeIf { shell.screen == Screen.Home && shell.layer == null && shell.overviewGame == null }?.let { ready ->
+        val shown = if (metadata.filters.active) ready.apps.count { metadata.filters.matches(it, metadata.entry(ready.pc, it).data) } else ready.apps.size
+        if (shown == ready.apps.size) res.getQuantityString(R.plurals.shell_home_apps_on_pc, shown, shown, ready.pc.name)
+        else res.getQuantityString(R.plurals.shell_home_apps_filtered, ready.apps.size, shown, ready.apps.size, ready.pc.name)
+    }
+    val filterHint = (library as? Library.Ready)?.takeIf { it.apps.isNotEmpty() }?.let { filterHintLabel(res, metadata.filters) }
+    // Written for a controller, shown for the input in use (a finger, a mouse, a keyboard: ui/HintKinds.kt)
+    val hintEntries = hints(res, shell, tracker.adjustable, tracker.hasContextMenu, filterHint).adaptedTo(ControllerGlyphs.kind)
+    com.limelight.shell.companion.PublishCompanionContext(hintEntries, library, pcs)
+    // A tap on the Filter pill (no controller in use) does what Y does: opens the library's filters
+    HintBarLayer(shell, hintEntries, note, uiScale) { if (keys.canFilter()) keys.onFilter?.invoke() }
+}
+
+/**
+ * The hint bar for a window over the shell's own, which covers the shell's bar (the game overview viewer's player window): the
+ * viewer's hints, read from the shell's state. Null outside the shell.
+ */
+internal val LocalWindowHintBar = staticCompositionLocalOf<(@Composable () -> Unit)?> { null }
+
+@Composable
+private fun WindowHintBar(shell: ShellState, uiScale: Float) {
+    val entries = hints(textResources(), shell, adjustable = false, options = false, filterHint = null).adaptedTo(ControllerGlyphs.kind)
+    HintBarLayer(shell, entries, note = null, uiScale, onTap = null)
+}
+
+/** The hint bar at the bottom, with the library [note]; it fades out with the game overview viewer's overlay. */
+@Composable
+private fun HintBarLayer(shell: ShellState, entries: List<Hint>, note: String?, uiScale: Float, onTap: ((Hint) -> Unit)?) {
+    val res = textResources()
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+        val viewerHintsAlpha by androidx.compose.animation.core.animateFloatAsState(
+            if (shell.overviewViewer != null && !shell.overviewViewerControlsVisible) 0f else 1f,
+            tween(Motion.FADE, easing = Motion.Ease), label = "viewerHints",
+        )
+        Box(Modifier.graphicsLayer { alpha = viewerHintsAlpha }) {
+            ZoomedBar(uiScale) {
+                HintBar(entries, note = note, noteLabel = if (note != null) res.getString(R.string.shell_hint_library_label) else null, onTap = onTap)
+            }
+        }
+    }
+}
+
 /** Button hints for the current screen and layer (the prototype's updateHints). */
 private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, options: Boolean, filterHint: String?): List<Hint> {
     // [short]: an existing, shorter hint word a cramped (compact) bar tries before it drops the label
@@ -1072,11 +1143,47 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
     return when (shell.layer) {
         is Layer.Context -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, if (shell.menuPath.isEmpty()) R.string.shell_hint_close else R.string.shell_hint_back))
         Layer.Side -> adjust + listOf(hint(Glyph.A, R.string.shell_hint_change), hint(Glyph.B, R.string.shell_hint_close))
-        Layer.Filters -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.X, R.string.shell_hint_reset), hint(Glyph.Y, R.string.shell_hint_close), hint(Glyph.B, R.string.shell_hint_close))
+        // Space toggles a chip and Return applies the choices (FilterChip), so the keyboard's hints name those keys
+        Layer.Filters -> if (ControllerGlyphs.kind == InputKind.KEYBOARD) listOf(
+            Hint(Glyph.Cap(InputCap.SPACE), res.getString(R.string.shell_hint_select)), Hint(Glyph.Cap(InputCap.RETURN), res.getString(R.string.shell_hint_apply)),
+            hint(Glyph.B, R.string.shell_hint_close),
+        ) else listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.X, R.string.shell_hint_reset), hint(Glyph.Y, R.string.shell_hint_apply), hint(Glyph.B, R.string.shell_hint_close))
         is Layer.Dialog -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_cancel))
         null -> when (val screen = shell.screen) {
-            Screen.Home -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it, tappable = true, icon = Symbols.FILTER) }, hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)
-            Screen.Settings -> adjust + listOf(hint(Glyph.L1, R.string.shell_hint_previous_tab), hint(Glyph.R1, R.string.shell_hint_next_tab), hint(Glyph.Y, R.string.shell_hint_search), hint(Glyph.A, R.string.shell_hint_change), hint(Glyph.B, R.string.shell_hint_back))
+            Screen.Home -> {
+                val viewer = shell.overviewViewer
+                when {
+                    // The game overview (docs/gui/GAME_INFO.md, "Game overview") and its viewer's dock: L1 and R1 browse, on a video
+                    // Left/Right seek on the timeline (or change the volume on its slider), A plays or pauses there and on play (else
+                    // selects the focused button), Y mutes; on a screenshot Left/Right only walk previous, next and close
+                    viewer != null -> {
+                        val browse = Hint(Glyph.L1, res.getString(R.string.overview_hint_browse), pair = Glyph.R1)
+                        val back = hint(Glyph.B, R.string.shell_hint_back)
+                        if (!viewer.video) listOf(hint(Glyph.A, R.string.shell_hint_select), browse, back)
+                        else listOfNotNull(
+                            when (viewer.target) {
+                                ViewerHintTarget.SEEK -> hint(Glyph.DPAD_HORIZONTAL, R.string.overview_hint_seek)
+                                ViewerHintTarget.VOLUME -> hint(Glyph.DPAD_HORIZONTAL, R.string.overview_video_volume)
+                                else -> null
+                            },
+                            when (viewer.target) {
+                                ViewerHintTarget.SEEK, ViewerHintTarget.PLAY -> hint(Glyph.A, if (viewer.playing) R.string.overview_hint_pause else R.string.overview_hint_play)
+                                else -> hint(Glyph.A, R.string.shell_hint_select)
+                            },
+                            hint(Glyph.Y, if (viewer.muted) R.string.overview_hint_unmute else R.string.overview_hint_mute),
+                            browse,
+                            back,
+                        )
+                    }
+                    shell.overviewGame != null -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
+                    else -> listOfNotNull(
+                        // "Game info" is not repeated here: the hint under the focused cover (GameInfoHint) already names it
+                        hint(Glyph.A, R.string.shell_hint_start), filterHint?.let { Hint(Glyph.Y, it, tappable = true, icon = Symbols.FILTER) },
+                        hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint,
+                    )
+                }
+            }
+            Screen.Settings -> adjust + listOfNotNull(hint(Glyph.L1, R.string.shell_hint_previous_tab), hint(Glyph.R1, R.string.shell_hint_next_tab), hint(Glyph.Y, R.string.shell_hint_search), hint(Glyph.A, R.string.shell_hint_change), optionsHint, hint(Glyph.B, R.string.shell_hint_back))
             Screen.SettingsSearch -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             Screen.Start -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_connect), hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)
             is Screen.Boot -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back).takeIf { screen.back != null })

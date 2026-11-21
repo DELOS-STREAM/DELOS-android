@@ -103,6 +103,7 @@ import com.limelight.shell.ui.icon
 import com.limelight.shell.ui.Figtree
 import com.limelight.shell.ui.Unbounded
 import com.limelight.shell.ui.SETTING_LIST_ROOM
+import com.limelight.shell.ui.SETTING_ROWS
 import com.limelight.shell.ui.settingListViewport
 import com.limelight.shell.ui.focusEffects
 import com.limelight.shell.ui.glass
@@ -571,7 +572,7 @@ fun DebugInfoScreen() {
                 Column(
                     Modifier.fillMaxSize().focusedListBoundary(navigation).verticalScroll(listState)
                         .padding(start = (18f + SETTING_LIST_ROOM).px, end = (18f + SETTING_LIST_ROOM).px, top = 14.px, bottom = 140.px),
-                    verticalArrangement = Arrangement.spacedBy(10.px),
+                    verticalArrangement = Arrangement.spacedBy(SETTING_ROWS.gap.px),
                 ) {
                     var previous: DebugSection? = null
                     rows.forEach { row ->
@@ -579,7 +580,7 @@ fun DebugInfoScreen() {
                             val section = row.section
                             key("section-${section.name}") {
                                 BasicText((if (section.title == 0) ShapeSimulatorMenu.SECTION_TITLE else stringResource(section.title)).uppercase(Locale.ROOT), style = TextStyle(color = colors.text3, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 16.tpx, letterSpacing = .08.em),
-                                    modifier = Modifier.padding(start = 26.px, top = 10.px, bottom = 2.px))
+                                    modifier = Modifier.padding(start = 26.px, top = SettingsLayout.SECTION_TOP.px, bottom = 2.px))
                             }
                             previous = section
                         }
@@ -653,7 +654,7 @@ private fun DetailsPanel(row: DebugRow?, modifier: Modifier) {
                 if (event.type == KeyEventType.KeyDown) scope.launch { scroll.animateScrollBy(direction * 130f * k) }
                 true
             } else false
-        }.focusEffects(onClick = {}, corner = 34f, focusScale = 1f, clickCue = null, pressScale = 1f)
+        }.focusEffects(onClick = {}, corner = 34f, focusScale = 1f, clickCue = null, press = false)
             .clip(shape).glass(colors.surface).border(1.px, colors.line, shape).verticalScroll(scroll).padding(44.px),
         verticalArrangement = Arrangement.spacedBy(18.px),
     ) {
