@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -145,13 +146,14 @@ internal fun OverviewViewer(
     var fading by remember { mutableStateOf(zoomFrom == null || reduced) }
     var shown by remember { mutableIntStateOf(request.index) }
     var leaving by remember { mutableStateOf<Int?>(null) }
+    var leavingPlayer by remember { mutableStateOf<OverviewVideoPlayer?>(null) }
     var direction by remember { mutableIntStateOf(1) }
     val change = remember { Animatable(1f) }
     var drag by remember { mutableStateOf(Offset.Zero) }
     var opened by remember { mutableStateOf(false) }
     val currentRequest by rememberUpdatedState(request)
     val scope = rememberCoroutineScope()
-    val dock = remember { DockState() }
+    val dock = remember { DockState(media.getOrNull(shown)?.kind == OverviewModel.MediaKind.VIDEO) }
     val player = remember(shown) {
         media.getOrNull(shown)?.takeIf { it.kind == OverviewModel.MediaKind.VIDEO }?.let { item ->
             item.stream?.let(::NativeVideoPlayer) ?: YouTubeVideoPlayer(item.id)
@@ -159,6 +161,10 @@ internal fun OverviewViewer(
     }
     val native = player as? NativeVideoPlayer
     val video = player?.takeIf { it.error == null }
+    LaunchedEffect(video != null, reduced) {
+        dock.morph.animateTo(if (video != null) 1f else 0f, if (reduced) tween(200) else ViewerSpring)
+        if (video == null) dock.lastPlayer = null
+    }
     val settled = opened && leaving == null && !request.closing
     val thumbnailAlpha by animateFloatAsState(
         if (settled && player?.started == true && player.error == null) 0f else 1f,
@@ -191,8 +197,12 @@ internal fun OverviewViewer(
         }
     }
     DisposableEffect(controls) { onDispose { visibilityChanged(true) } }
-    // The focus starts on the timeline (a screenshot: Next) whenever the item changes or the overlay comes back
-    LaunchedEffect(shown, video != null, overlayShown) { if (!overlayShown || dock.slot !in dockSlots(video != null)) dock.slot = dockDefault(video != null) }
+    // Preserve shared stops. A disappearing control hands focus to the nearest surviving
+    // transport button rather than jumping to the screenshot's default every time.
+    LaunchedEffect(shown, video != null, overlayShown) {
+        if (!overlayShown) dock.slot = dockDefault(video != null)
+        else dock.slot = dockSurviving(dock.slot, video != null)
+    }
     // The ring glides to the focused stop by a spring (snaps with reduced motion and on its first placement)
     LaunchedEffect(dock) {
         snapshotFlow { dock.bounds[dock.slot]?.let { ringRect(dock.slot, it, k) } }.collectLatest { target ->
@@ -207,10 +217,15 @@ internal fun OverviewViewer(
         if (request.index == shown) return@LaunchedEffect
         controls.onInput()
         direction = if (request.index > shown) 1 else -1
+        leavingPlayer?.release()
+        leavingPlayer = player
+        player?.pause()
         leaving = shown
-        shown = request.index
         change.snapTo(0f)
-        change.animateTo(1f, tween(if (reduced) Motion.FADE else 560, easing = EaseOut))
+        shown = request.index
+        change.animateTo(1f, if (reduced) tween(200) else ViewerSpring)
+        leavingPlayer?.release()
+        leavingPlayer = null
         leaving = null
     }
     LaunchedEffect(request.closing) {
@@ -329,23 +344,25 @@ internal fun OverviewViewer(
             val origin = if (inWindow) Offset.Zero else root?.positionInWindow() ?: Offset.Zero
             Box(Modifier.fillMaxSize().hazeSource(pictures)) {
                 // The thumbnail covers the video until it plays (a YouTube video: state 1; a Steam trailer: its first frame).
-                listOfNotNull(leaving, shown).forEach { index ->
+                listOfNotNull(leaving, shown).forEach { index -> key(index) {
                     val item = media.getOrNull(index) ?: return@forEach
                     val isLeaving = index == leaving
                     // A Steam trailer draws under its still here; the still fades, not the whole picture
-                    val trailerHere = !isLeaving && native != null && !inWindow
+                    val surface = if (isLeaving) leavingPlayer as? NativeVideoPlayer else native
+                    val trailerHere = surface != null && !inWindow
+                    val leavingWeb = isLeaving && leavingPlayer is YouTubeVideoPlayer && inWindow
                     Box(
                         Modifier.fillMaxSize().graphicsLayer {
                             transformOrigin = TransformOrigin(0f, 0f)
                             val c = change.value
+                            val opacity = c.coerceIn(0f, 1f)
                             if (isLeaving) {
-                                val p = min(1f, c * 560f / 420f)
-                                alpha = 1f - p
-                                if (!reduced) translationX = -direction * 90f * k * p
+                                alpha = if (leavingWeb) 0f else 1f - opacity
+                                if (!reduced) translationX = -direction * size.width * .04f * c
                                 return@graphicsLayer
                             }
-                            var a = if (leaving != null) c else 1f
-                            if (leaving != null && !reduced) translationX = direction * 160f * k * (1f - c)
+                            var a = if (leaving != null) opacity else 1f
+                            if (leaving != null && !reduced) translationX = direction * size.width * .04f * (1f - c)
                             val z = zoom.value
                             val from = zoomFrom
                             if (fading || from == null || root == null) a *= z
@@ -364,7 +381,7 @@ internal fun OverviewViewer(
                         }.background(Color.Black),
                     ) {
                         // The trailer comes in once the opening or the browse has landed and stays through the closing
-                        if (trailerHere && native != null && (settled || native.started)) NativeVideoSurface(native)
+                        if (trailerHere && surface != null && (isLeaving || settled || surface.started)) NativeVideoSurface(surface)
                         val thumb by rememberIgdbImage(item.thumb, (569f * k).toInt())
                         val full by rememberIgdbImage(item.full, (maxOf(fit.width, fit.height) * k).toInt())
                         // A trailer's still fills the stage like the video will (cropped), softly blurred until the video plays and
@@ -372,11 +389,11 @@ internal fun OverviewViewer(
                         val trailer = item.kind == OverviewModel.MediaKind.VIDEO
                         (full ?: thumb)?.let {
                             Image(it, null, Modifier.fillMaxSize().then(if (trailer) Modifier.blur(16.px) else Modifier)
-                                .then(if (trailerHere) Modifier.graphicsLayer { alpha = thumbnailAlpha } else Modifier),
+                                .then(if (trailerHere) Modifier.graphicsLayer { alpha = if (isLeaving && surface?.started == true) 0f else thumbnailAlpha } else Modifier),
                                 contentScale = if (trailer) ContentScale.Crop else ContentScale.Fit)
                         }
                     }
-                }
+                } }
             }
             if (settled && player?.error != null) VideoError(player.error!!, steam = native != null, Modifier.fillMaxSize())
             // Touch: a tap toggles the overlay, a double tap in the left or right third seeks 10 s, a swipe sideways browses and down closes.
@@ -433,8 +450,13 @@ internal fun OverviewViewer(
             }
         }
         aboveVideo(false)
-        if (settled && player is YouTubeVideoPlayer && player.error == null) {
-            OverviewPlayerWindow(player, bounds, pointerHidden = !overlayShown, onPointer = { controls.onInput() }) {
+        val webPlayer = (leavingPlayer as? YouTubeVideoPlayer)
+            ?: (player as? YouTubeVideoPlayer)?.takeIf { settled }
+        if (webPlayer != null && webPlayer.error == null) {
+            OverviewPlayerWindow(webPlayer, bounds, pointerHidden = !overlayShown, onPointer = { controls.onInput() },
+                pictureAlpha = { if (webPlayer === leavingPlayer) 1f - change.value.coerceIn(0f, 1f) else 1f },
+                pictureOffset = { if (!reduced && webPlayer === leavingPlayer) -direction * bounds.width * .04f * change.value else 0f },
+            ) {
                 Box(Modifier.fillMaxSize()) {
                     aboveVideo(true)
                     // The window covers the shell's hint bar: the same hints again, over the video
@@ -444,9 +466,6 @@ internal fun OverviewViewer(
         }
     }
 }
-
-/** The stops of the dock for a video or a screenshot. */
-private fun dockSlots(video: Boolean): List<DockSlot> = listOf(DockSlot.CLOSE) + (if (video) listOf(DockSlot.SEEK) else emptyList()) + dockRow(video)
 
 private val VIEWER_KEYS = setOf(
     Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown, Key.ButtonA, Key.Enter, Key.NumPadEnter, Key.DirectionCenter,

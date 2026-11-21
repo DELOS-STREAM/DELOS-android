@@ -838,7 +838,7 @@ private fun Header(
                         colors.accent2, ratings, index = 1, reduced = controller.reduced,
                     )
                     if (details != null) {
-                        val country = java.util.Locale.getDefault().country
+                        val country = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].country
                         AgeRatingView(
                             OverviewModel.ageRatings(details.ageRatings, country).firstOrNull(),
                             stringResource(R.string.overview_not_rated), stringResource(R.string.overview_no_age_rating), stringResource(R.string.overview_no_descriptors),
@@ -1314,6 +1314,7 @@ private fun MediaSection(
             horizontalArrangement = Arrangement.spacedBy(OverviewGaps.MEDIA.gap.px),
         ) {
             itemsIndexed(media, key = { _, item -> item.kind.name + item.id }) { index, item ->
+                val tileHaze = remember { HazeState() }
                 Box(
                     Modifier
                         .part(
@@ -1332,6 +1333,7 @@ private fun MediaSection(
                             bitmap, null, contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .requiredSize((OverviewGaps.MEDIA_W * 1.28f).px, OverviewGaps.MEDIA_H.px)
+                                .hazeSource(tileHaze)
                                 .graphicsLayer {
                                     // Parallax: the picture lags behind the carousel by 7 % of its distance from the middle
                                     val info = track.layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
@@ -1345,12 +1347,14 @@ private fun MediaSection(
                     }
                     Box(Modifier.fillMaxSize().border(1.px, Color.White.copy(alpha = .1f), RoundedCornerShape(22.px)))
                     if (item.kind == OverviewModel.MediaKind.VIDEO) {
-                        Box(Modifier.align(Alignment.Center)) { Symbol(Symbols.VIDEO_PLAY, 64.tpx, Color.White, filled = true) }
-                        BasicText(
-                            item.name ?: stringResource(R.string.overview_video), Modifier.align(Alignment.BottomStart).padding(start = 16.px, bottom = 14.px),
-                            maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            style = TextStyle(color = Color.White, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 18.tpx, shadow = Shadow(Color.Black.copy(alpha = .7f), Offset(0f, 2f * k), 10f * k)),
-                        )
+                        Box(Modifier.align(Alignment.Center)) { TrailerPlayBadge(tileHaze, LocalOverviewFocus.current?.focused == "shot$index") }
+                        com.limelight.shell.ui.MarqueeContent(
+                            key = item.name, bounce = true, active = LocalOverviewFocus.current?.focused == "shot$index",
+                            modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 16.px, end = 16.px, bottom = 14.px),
+                        ) {
+                            BasicText(item.name ?: stringResource(R.string.overview_video), maxLines = 1, softWrap = false,
+                                style = TextStyle(color = Color.White, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 18.tpx, shadow = Shadow(Color.Black.copy(alpha = .7f), Offset(0f, 2f * k), 10f * k)))
+                        }
                     }
                 }
             }
@@ -1391,7 +1395,7 @@ private fun DetailsSection(
                 OverviewTag(icon, name)
             }
         })
-        val country = java.util.Locale.getDefault().country
+        val country = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].country
         add(R.string.overview_detail_age to {
             val ratings = OverviewModel.ageRatings(details.ageRatings, country)
             if (ratings.isEmpty()) AgeRatingView(null, stringResource(R.string.overview_not_rated), stringResource(R.string.overview_no_age_rating), stringResource(R.string.overview_no_descriptors))

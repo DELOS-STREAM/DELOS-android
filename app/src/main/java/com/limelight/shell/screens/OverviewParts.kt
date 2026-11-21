@@ -1,11 +1,15 @@
 package com.limelight.shell.screens
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -18,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.graphicsLayer
@@ -64,7 +69,7 @@ import kotlin.math.min
 @Composable
 internal fun OverviewEyebrow(text: String, color: Color, modifier: Modifier = Modifier, size: Int = 15) {
     BasicText(
-        text.uppercase(Locale.getDefault()), modifier, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        text.uppercase(androidx.compose.ui.platform.LocalConfiguration.current.locales[0]), modifier, maxLines = 1, overflow = TextOverflow.Ellipsis,
         style = TextStyle(color = color, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = size.tpx, letterSpacing = .16.em),
     )
 }
@@ -97,6 +102,30 @@ internal fun OverviewTag(icon: String?, label: String, look: TagLook = TagLook.P
     ) {
         if (icon != null) Symbol(icon, 22.tpx, if (genre) content else colors.accent2)
         BasicText(label, maxLines = 1, style = TextStyle(color = content, fontFamily = Figtree, fontSize = 19.tpx))
+    }
+}
+
+/** Trailer tiles use the same optically centred play ink as the dock, over their own art. */
+@Composable
+internal fun TrailerPlayBadge(haze: HazeState, focused: Boolean) {
+    val colors = LocalDelosColors.current
+    val reduced = com.limelight.shell.ui.LocalReducedMotion.current
+    val focus = animateFloatAsState(
+        if (focused) 1f else 0f,
+        if (reduced) tween(0) else spring(OverviewMotion.CHIP_DAMPING, OverviewMotion.stiffness(OverviewMotion.CHIP_RESPONSE)),
+        label = "trailerBadgeFocus",
+    )
+    Box(Modifier.size(72.px).graphicsLayer {
+        val scale = if (reduced) 1f else 1f + .08f * focus.value
+        scaleX = scale
+        scaleY = scale
+    }) {
+        Box(Modifier.fillMaxSize().clip(CircleShape).backdropBlur(haze, 24f, Color.Black.copy(alpha = .20f))
+            .border(1.px, Color.White.copy(alpha = .18f), CircleShape))
+        CenteredGlyph(com.limelight.shell.ui.Symbols.PLAYER_PLAY, 32f, colors.accent, filled = true, centroid = true,
+            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = .35f + .3f * focus.value.coerceIn(0f, 1f) }.blur(8.px))
+        CenteredGlyph(com.limelight.shell.ui.Symbols.PLAYER_PLAY, 32f, colors.accent, filled = true, centroid = true,
+            modifier = Modifier.fillMaxSize())
     }
 }
 
@@ -206,7 +235,7 @@ internal fun AgeRatingView(rating: DetailAgeRating?, notRated: String, noRating:
 @Composable
 internal fun CountText(final: String, value: Double, style: TextStyle, progress: () -> Float, modifier: Modifier = Modifier) {
     val measurer = rememberTextMeasurer()
-    val locale = Locale.getDefault()
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     val decimals = remember(final) { final.reversed().takeWhile { it.isDigit() }.length.takeIf { final.any { c -> !c.isDigit() } } ?: 0 }
     val format = remember(locale, decimals) { NumberFormat.getNumberInstance(locale).apply { minimumFractionDigits = decimals; maximumFractionDigits = decimals } }
     val layout = remember(final, style) { measurer.measure(final, style) }
