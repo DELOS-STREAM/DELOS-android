@@ -10,6 +10,8 @@ import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,7 +53,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -88,11 +90,9 @@ import com.limelight.shell.ui.rememberPressPulse
 import com.limelight.shell.ui.stageUnit
 import com.limelight.shell.ui.tpx
 import dev.chrisbanes.haze.HazeState
-import kotlin.math.PI
 import androidx.compose.ui.layout.layout
 import kotlin.math.roundToInt
 import kotlin.math.min
-import kotlin.math.sin
 
 /** A stop of the viewer dock's focus (controller and keyboard); docs/gui/GAME_INFO.md §9.4. */
 internal enum class DockSlot { CLOSE, SEEK, PREVIOUS, BACK, PLAY, FORWARD, NEXT, MUTE, VOLUME }
@@ -158,17 +158,22 @@ internal class DockState(video: Boolean = false) {
         private set
     var flashTotal by mutableIntStateOf(0)
         private set
+    /** The flash on [flashSide] was showing when this press came: it stays and only counts up and nudges again. */
+    var flashChained = false
+        private set
     private var flashAt = 0L
-    val flash = Animatable(1f)
+    /** Milliseconds since the last press, while a flash shows ([SEEK_FLASH_LIFE] when none does). */
+    val flash = Animatable(SEEK_FLASH_LIFE)
 
     /** A seek of 10 s to [side] (−1 back, 1 forward): the arc on that side flashes and counts the chain up. */
-    suspend fun flash(side: Int, reduced: Boolean) {
+    suspend fun flash(side: Int) {
         val now = SystemClock.uptimeMillis()
+        flashChained = side == flashSide && flash.value < SEEK_FLASH_LIFE
         flashTotal = seekFlashTotal(flashTotal, flashSide, flashAt, side, now)
         flashSide = side
         flashAt = now
         flash.snapTo(0f)
-        flash.animateTo(1f, tween(if (reduced) 600 else 700))
+        flash.animateTo(SEEK_FLASH_LIFE, tween(SEEK_FLASH_LIFE.toInt(), easing = LinearEasing))
     }
 }
 
@@ -504,10 +509,12 @@ private object DockFonts {
     private var regular: Typeface? = null
     private var fill: Typeface? = null
     private var figtree: Typeface? = null
+    private var unbounded: Typeface? = null
 
     fun regular(context: Context) = regular ?: ResourcesCompat.getFont(context, R.font.phosphor_regular)!!.also { regular = it }
     fun fill(context: Context) = fill ?: ResourcesCompat.getFont(context, R.font.phosphor_fill)!!.also { fill = it }
     fun figtree(context: Context) = figtree ?: Typeface.create(ResourcesCompat.getFont(context, R.font.figtree)!!, 800, false).also { figtree = it }
+    fun unbounded(context: Context) = unbounded ?: Typeface.create(ResourcesCompat.getFont(context, R.font.unbounded)!!, 700, false).also { unbounded = it }
 }
 
 /**
@@ -736,9 +743,17 @@ internal fun DockRing(state: DockState, visible: () -> Float) {
 /** The dock and media use the overview's 0.6 s / 0.8 settle family. */
 internal val ViewerSpring = spring<Float>(OverviewMotion.SETTLE_DAMPING, OverviewMotion.stiffness(OverviewMotion.SETTLE_RESPONSE), visibilityThreshold = .0005f)
 
+/** How long a seek flash lives after its last press: it holds for [SEEK_FLASH_CHAIN_MS], then fades out (milliseconds). */
+internal const val SEEK_FLASH_LIFE = SEEK_FLASH_CHAIN_MS + 180f
+
+/** The seek flash's nudge settles on this curve (`cubic-bezier(.16, 1, .3, 1)`). */
+private val NudgeEasing = CubicBezierEasing(.16f, 1f, .3f, 1f)
+
 /**
- * The seek flash (variant B's arcs): a glass wedge of a ring around the picture's centre on the side of the seek, flashing gold, with the
- * seek glyph and the running total (10, 20…). It shows whether or not the dock does.
+ * The seek flash: a gold arc on the side of the seek (a 108° stretch of a 300 px ring, its open side towards the middle) over a soft
+ * gold glow, with the seek glyph and the running total ("10 s", "20 s"…), centred at 22 % or 78 % of the width and 42 % of the height.
+ * Each press nudges it 26 px outward and lets it settle back; it fades in on the first press, holds while the presses come within
+ * [SEEK_FLASH_CHAIN_MS] and then fades out. It shows whether or not the dock does.
  */
 @Composable
 internal fun SeekFlash(state: DockState, reduced: Boolean) {
@@ -747,37 +762,27 @@ internal fun SeekFlash(state: DockState, reduced: Boolean) {
     val stage = LocalStage.current
     val k = stageUnit()
     val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG) }
-    val regular = DockFonts.fill(context)
-    val figtree = DockFonts.figtree(context)
+    val regular = DockFonts.regular(context)
+    val unbounded = DockFonts.unbounded(context)
     Canvas(Modifier.fillMaxSize()) {
-        val t = state.flash.value
-        if (t >= 1f || state.flashSide == 0) return@Canvas
-        val a = when {
-            t < .18f -> t / .18f
-            t < .7f -> 1f
-            else -> 1f - (t - .7f) / .3f
-        }
+        val ms = state.flash.value
         val side = state.flashSide
-        val c = center
-        val outer = 232f * k
-        val inner = 128f * k
-        val half = 44f
-        val mid = if (side < 0) 180f else 0f
-        val path = Path().apply {
-            arcTo(Rect(c, outer), mid - half, half * 2f, forceMoveTo = true)
-            arcTo(Rect(c, inner), mid + half, -half * 2f, forceMoveTo = false)
-            close()
+        if (ms >= SEEK_FLASH_LIFE || side == 0) return@Canvas
+        val a = when {
+            ms < 180f && !state.flashChained -> ms / 180f
+            ms > SEEK_FLASH_CHAIN_MS -> 1f - (ms - SEEK_FLASH_CHAIN_MS) / 180f
+            else -> 1f
         }
-        drawPath(path, Color(10, 16, 32).copy(alpha = .4f * a))
-        drawPath(path, colors.accent.copy(alpha = .34f * a))
-        drawPath(path, Color.White.copy(alpha = .14f * a), style = Stroke(1.5f * k))
-        // The label nudges outward as it lands, unless motion is reduced
-        val nudge = if (reduced) 0f else sin((t.coerceAtMost(.6f) / .6f) * PI.toFloat()) * 8f * k
-        val lx = c.x + side * (180f * k + nudge)
+        val nudge = if (reduced) 0f else 26f * (1f - NudgeEasing.transform((ms / 420f).coerceAtMost(1f)))
+        val c = Offset(size.width * if (side > 0) .78f else .22f, size.height * .42f) + Offset(side * nudge * k, 0f)
+        val r = 150f * k
+        drawCircle(Brush.radialGradient(listOf(colors.accent.copy(alpha = .30f * a), Color.Transparent), c, r), r, c)
+        drawArc(
+            colors.accent.copy(alpha = .85f * a), if (side > 0) -54f else 126f, 108f, useCenter = false,
+            topLeft = c - Offset(r, r), size = Size(2f * r, 2f * r), style = Stroke(10f * k, cap = StrokeCap.Round),
+        )
         val icon = if (side < 0) Symbols.PLAYER_SEEK_BACK else Symbols.PLAYER_SEEK_FORWARD
-        val glyph = 44f * k * stage.textScale
-        drawCentered(paint, icon, regular, glyph, colors.accent.copy(alpha = a), centroid = false, at = Offset(lx, c.y - 18f * k))
-        drawCentered(paint, state.flashTotal.toString(), figtree, 28f * k * stage.textScale, colors.text.copy(alpha = a), centroid = false, at = Offset(lx, c.y + 30f * k))
+        drawCentered(paint, icon, regular, 48f * k * stage.textScale, colors.text.copy(alpha = a), centroid = false, at = c + Offset(0f, -22f * k))
+        drawCentered(paint, "${state.flashTotal} s", unbounded, 30f * k * stage.textScale, colors.text.copy(alpha = a), centroid = false, at = c + Offset(0f, 33f * k)) // l10n-ignore
     }
 }
-
