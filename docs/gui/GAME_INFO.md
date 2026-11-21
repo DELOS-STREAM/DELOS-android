@@ -563,7 +563,7 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    overshoot; its place passes the card along the way it arrives by 2.5 times that, about 5 % of the distance, capped at
    40 px, at the card's size; the closing clock runs 700 ms, until it is within 0.2 %), the page sinks
    120 px and fades (560 ms ease-in-out), the header's parts leave first (240 ms). The dashboard comes back with the
-   cover, as on the iPad: the other covers and the info row return together on the cover's closing spring and land
+   cover: the other covers and the info row return together on the cover's closing spring and land
    with it. A close during the opening interrupts it: the cover's spring turns back from its current position and
    velocity (when the page did not have to scroll first), and every other part (the dashboard's covers, the page, the
    header's parts, the name, the logos) leaves from where the opening left it, so nothing jumps. A pull down hands
@@ -687,7 +687,7 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
 6. **Seek feedback:** a gold arc (108° of a 300 px ring, 10 px, open towards the middle) over a soft gold glow, at 22 %
    or 78 % of the width and 42 % of the height on the side of the seek, with the seek glyph and the running total
    ("5 s"): repeated seeks one way within 900 ms count 5, 10, 15… Each press nudges it 26 px outward; it settles back
-   in 420 ms, holds 900 ms after the last press and fades out in 180 ms (owner, 2026-11-21: the look of DELOS on iPad).
+   in 420 ms, holds 900 ms after the last press and fades out in 180 ms (owner, 2026-11-21).
 7. **Touch:** a tap toggles the dock, a double tap in the left or right third seeks 5 s (with the flash), a swipe
    sideways carries the item with the finger and brings the next or previous one in from that side under the dock (let go
    past 90 px it slides into place, else it springs back; past either end it gives a quarter), and a swipe down closes;
