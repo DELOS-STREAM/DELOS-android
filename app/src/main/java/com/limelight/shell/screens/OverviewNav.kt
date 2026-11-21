@@ -44,11 +44,6 @@ internal class OverviewNavigator<K : Any> {
     private val rows = RowCandidates()
     private val keys = ArrayList<K>()
 
-    fun forget() {
-        back.clear()
-        left = null
-    }
-
     /** The element [direction] of [from] among [targets], or null at the edge. */
     fun move(from: K, direction: NavDirection, targets: Map<K, NavTarget>): K? {
         val a = targets[from] ?: return null

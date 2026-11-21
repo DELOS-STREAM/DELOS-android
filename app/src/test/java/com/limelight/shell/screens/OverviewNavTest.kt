@@ -432,11 +432,4 @@ class OverviewNavTest {
         assertEquals(1f, OverviewMotion.countUp(380f, 380, reduced = true), 0f)
     }
 
-    @Test fun `the viewer's picture owns the whole stage, edge to edge`() {
-        val fit = viewerFit(1920f, 1080f)
-        assertEquals(0f, fit.left, 0f)
-        assertEquals(0f, fit.top, 0f)
-        assertEquals(1920f, fit.width, 0f)
-        assertEquals(1080f, fit.height, 0f)
-    }
 }

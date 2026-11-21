@@ -102,7 +102,7 @@ class TranslucentSurfaceTest {
             Allowed("ui/RowPicker.kt", ".background(colors.surface2)", "value field in the popup's glass"),
             Allowed("screens/OverviewDock.kt", "background(tint.copy(alpha = .45f))", "dock tint over video where the player window cannot be blurred"),
             Allowed("screens/OverviewDock.kt", "Color(10, 16, 32).copy(alpha = .8f)", "seek time label in the dock's glass"),
-            Allowed("screens/OverviewDock.kt", "background(Color.White.copy(alpha = .08f))", "volume pill in the dock's glass"),
+            Allowed("screens/OverviewDock.kt", "background(Color.White.copy(alpha = .08f))", "page-dots pill in the dock's glass"),
             Allowed("screens/OverviewDock.kt", "dot.background(Color.White.copy(alpha = .4f))", "page dot in the dock's glass"),
             Allowed("ui/Rows.kt", "background(tint.copy(alpha = .22f))", "reset pill in the focused row's glass"),
             Allowed("ui/ToastHost.kt", "gold.copy(alpha = .16f)", "icon disc on the opaque toast"),

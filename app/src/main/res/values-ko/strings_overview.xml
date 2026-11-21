@@ -65,6 +65,7 @@
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">둘러보기</string>
     <string name="overview_hint_seek">5초 이동</string>
+    <string name="overview_seek_total">%d초</string>
     <string name="overview_hint_play">재생</string>
     <string name="overview_hint_pause">일시정지</string>
     <string name="overview_hint_mute">음소거</string>

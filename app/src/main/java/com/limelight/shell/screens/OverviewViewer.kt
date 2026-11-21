@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.key
@@ -76,9 +77,6 @@ import kotlin.math.max
 /** The viewer opened on item [index], zooming out of the thumbnail at [from] (root pixels; null: it fades in); [closing]: Back was pressed. */
 internal data class ViewerRequest(val index: Int, val from: Rect?, val closing: Boolean = false)
 
-/** The entire viewport belongs to the image; Image's Fit preserves its natural aspect ratio inside it. */
-internal fun viewerFit(width: Float, height: Float): Rect = Rect(0f, 0f, width, height)
-
 /**
  * Non-consuming input observation, also called before the shell consumes a global key or pointer event. The overlay hides after 3 s
  * without input unless something holds it ([OverviewViewer]: a paused or ended video, a slider being dragged).
@@ -99,15 +97,15 @@ internal class OverviewViewerInput(now: Long = SystemClock.uptimeMillis()) {
         controlsVisible = true
     }
 
-    /** A tap on the picture hides the overlay at once. */
-    fun hide() {
-        controlsVisible = false
+    /** A tap on the picture hides the overlay unless playback or a slider holds it. */
+    fun hide(held: Boolean) {
+        if (OverviewViewerDecisions.canHide(held)) controlsVisible = false
     }
 
     internal fun remaining(now: Long): Long = (3_000L - (now - lastInput)).coerceAtLeast(0L)
 
-    internal fun hideIfIdle(now: Long) {
-        if (remaining(now) == 0L) controlsVisible = false
+    internal fun hideIfIdle(now: Long, held: Boolean = false) {
+        if (remaining(now) == 0L) hide(held)
     }
 }
 
@@ -126,20 +124,19 @@ internal fun OverviewViewer(
     onIndex: (Int) -> Unit,
     onClosed: () -> Unit,
     onCloseRequest: () -> Unit,
-    input: OverviewViewerInput? = null,
-    onControlsVisibilityChanged: (Boolean) -> Unit = {},
+    input: OverviewViewerInput,
+    onControlsVisibilityChanged: (Boolean) -> Unit,
 ) {
     val stage = LocalStage.current
     val feedback = LocalFeedback.current
     val k = stageUnit()
-    val fit = remember(stage.stageWidth, stage.stageHeight) { viewerFit(stage.stageWidth, stage.stageHeight) }
+    val fit = remember(stage.stageWidth, stage.stageHeight) { Rect(0f, 0f, stage.stageWidth, stage.stageHeight) }
     // A horizontal scroll's step in pixels (a tilt-wheel notch; a trackpad sends fractions of it)
     val context = androidx.compose.ui.platform.LocalContext.current
     val scrollStep = remember(context) { android.view.ViewConfiguration.get(context).scaledHorizontalScrollFactor }
     val shell = LocalShell.current
     val kind = ControllerGlyphs.kind
-    val localInput = remember { OverviewViewerInput() }
-    val controls = input ?: localInput
+    val controls = input
     val visibilityChanged by rememberUpdatedState(onControlsVisibilityChanged)
     var root by remember { mutableStateOf<LayoutCoordinates?>(null) }
     // Where the player's window goes: the viewer, in the shell window's pixels
@@ -187,6 +184,7 @@ internal fun OverviewViewer(
         if (overlayShown) tween(420, easing = EaseOut) else tween(Motion.EXIT, easing = Motion.In), label = "viewerOverlay",
     )
     val overlayAlpha = { ui.value * overlay }
+    val overlayPresent by remember { derivedStateOf { controls.controlsVisible && !currentRequest.closing || overlay > 0f } }
 
     LaunchedEffect(Unit) {
         controls.onInput()
@@ -197,6 +195,7 @@ internal fun OverviewViewer(
     }
     // Auto-hide: 3 s without input while a video plays or a screenshot shows; a paused or ended video and a dragged slider hold it
     val hold = (video != null && !video.playing) || dock.dragging
+    val currentHold by rememberUpdatedState(hold)
     LaunchedEffect(controls, controls.controlsVisible, hold) {
         visibilityChanged(controls.controlsVisible)
         if (!controls.controlsVisible || hold) return@LaunchedEffect
@@ -224,7 +223,7 @@ internal fun OverviewViewer(
     LaunchedEffect(request.index) {
         if (request.index == shown) return@LaunchedEffect
         controls.onInput()
-        if (slidIn) {
+        if (OverviewViewerDecisions.swapInPlace(slidIn, request.closing)) {
             // The swipe has the new item in place: the two swap where they are, with nothing more to animate
             direction = if (request.index > shown) 1 else -1
             player?.release()
@@ -260,25 +259,27 @@ internal fun OverviewViewer(
     }
     fun go(index: Int) {
         controls.onInput()
-        if (currentRequest.closing || index !in media.indices || index == shown) return
+        if (!OverviewViewerDecisions.canBrowse(index, shown, media.size, currentRequest.closing)) return
         feedback.play(Cue.MOVE)
         onIndex(index)
     }
     /** The item follows a sideways swipe of [x] pixels; past either end only a quarter of it, a rubber band. */
     fun follow(x: Float) {
+        if (currentRequest.closing) return
         controls.onInput()
         sliding = true
-        val next = shown + if (x < 0f) 1 else -1
-        scope.launch { slide.snapTo(if (next in media.indices) x else x * .25f) }
+        scope.launch { slide.snapTo(OverviewViewerDecisions.follow(shown, media.size, x)) }
     }
     /** A sideways swipe let go at [x]: past 90 px the item slides out and the one beside it in, then they swap; else it springs back. */
     fun endSlide(x: Float) {
         controls.onInput()
-        val next = shown + if (x < 0f) 1 else -1
+        val startedAt = shown
+        val next = OverviewViewerDecisions.slideTarget(shown, media.size, x, k, currentRequest.closing)
         val width = fit.width * k
         scope.launch {
-            if (next in media.indices && abs(x) > 90f * k && !currentRequest.closing) {
+            if (next != null) {
                 if (!reduced) slide.animateTo(-(if (x < 0f) 1f else -1f) * (width + SLIDE_GAP * k), tween(260, easing = EaseOut))
+                if (!OverviewViewerDecisions.canCommit(startedAt, shown, currentRequest.closing)) return@launch
                 slidIn = true
                 feedback.play(Cue.MOVE)
                 onIndex(next)
@@ -343,7 +344,7 @@ internal fun OverviewViewer(
     }
     val requester = remember { FocusRequester() }
     LaunchedEffect(Unit) { requester.requestFocus() }
-    BackHandler { controls.onInput(); onCloseRequest() }
+    BackHandler(enabled = shell.layer == null && shell.picker == null) { controls.onInput(); onCloseRequest() }
     val hiddenPointer = remember { PointerIcon(android.view.PointerIcon.TYPE_NULL) }
     Box(
         Modifier.fillMaxSize()
@@ -352,15 +353,13 @@ internal fun OverviewViewer(
                 controls.onInput()
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent event.key in VIEWER_KEYS
                 when (event.key) {
-                    Key.Back, Key.Escape, Key.ButtonB -> onCloseRequest()
+                    Key.Back, Key.ButtonB -> onCloseRequest()
                     Key.DirectionLeft -> step(-1, 0)
                     Key.DirectionRight -> step(1, 0)
                     Key.DirectionUp -> step(0, -1)
                     Key.DirectionDown -> step(0, 1)
-                    Key.ButtonA, Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> activate(dock.slot)
+                    Key.ButtonA, Key.DirectionCenter -> activate(dock.slot)
                     Key.ButtonY, Key.M -> video?.let { feedback.play(Cue.SELECT); it.toggleMute() }
-                    // A keyboard's Space (when it is not mapped to A) plays or pauses wherever the focus is
-                    Key.Spacebar -> video?.let { feedback.play(Cue.SELECT); it.togglePlay() }
                     else -> return@onPreviewKeyEvent false
                 }
                 true
@@ -434,8 +433,9 @@ internal fun OverviewViewer(
                         // A trailer's still fills the stage like the video will (cropped), softly blurred until the video plays and
                         // crossfades over it: its own frame when made, else the full picture, else (missing or still loading) the thumbnail
                         (still.picture ?: full ?: thumb)?.let {
-                            Image(it, null, Modifier.fillMaxSize().then(if (trailer) Modifier.blur(16.px) else Modifier)
-                                .then(if (trailerHere) Modifier.graphicsLayer { alpha = if (isLeaving && surface?.started == true) 0f else thumbnailAlpha } else Modifier),
+                            Image(it, null, Modifier.fillMaxSize()
+                                .then(if (trailerHere) Modifier.graphicsLayer { alpha = if (isLeaving && surface?.started == true) 0f else thumbnailAlpha } else Modifier)
+                                .then(if (trailer) Modifier.blur(16.px) else Modifier),
                                 contentScale = if (trailer) ContentScale.Crop else ContentScale.Fit)
                         }
                     }
@@ -478,7 +478,7 @@ internal fun OverviewViewer(
                             when {
                                 ControllerGlyphs.kind == InputKind.POINTER -> { controls.onInput(); video?.let { feedback.play(Cue.SELECT); it.togglePlay() } }
                                 revealTap -> controls.onInput()
-                                else -> controls.hide()
+                                else -> controls.hide(currentHold)
                             }
                         }
                     }
@@ -493,7 +493,7 @@ internal fun OverviewViewer(
                                 drag = Offset.Zero
                                 when {
                                     sideways == true -> endSlide(travel)
-                                    d.y > 120f && abs(d.y) > abs(d.x) -> onCloseRequest()
+                                    OverviewViewerDecisions.closesDrag(d.x, d.y) -> onCloseRequest()
                                 }
                             },
                             onDragCancel = {
@@ -538,7 +538,7 @@ internal fun OverviewViewer(
                     })
             }
             SeekFlash(dock, reduced)
-            if (overlayShown || overlay > 0f) {
+            if (overlayPresent) {
                 ViewerDock(
                     dock, media, shown, video, pictures, inWindow, origin, reduced,
                     overlay = overlayAlpha,
@@ -567,9 +567,9 @@ internal fun OverviewViewer(
 }
 
 private val VIEWER_KEYS = setOf(
-    Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown, Key.ButtonA, Key.Enter, Key.NumPadEnter, Key.DirectionCenter,
-    Key.Back, Key.Escape, Key.ButtonB,
-    Key.ButtonY, Key.M, Key.Spacebar,
+    Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown, Key.ButtonA, Key.DirectionCenter,
+    Key.Back, Key.ButtonB,
+    Key.ButtonY, Key.M,
 )
 
 /** A horizontal scroll carrying the viewer's item: its sideways travel so far (pixels) and whether one is going on. */

@@ -65,6 +65,7 @@
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">浏览</string>
     <string name="overview_hint_seek">跳转 5 秒</string>
+    <string name="overview_seek_total">%d 秒</string>
     <string name="overview_hint_play">播放</string>
     <string name="overview_hint_pause">暂停</string>
     <string name="overview_hint_mute">静音</string>

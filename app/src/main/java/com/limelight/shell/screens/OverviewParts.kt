@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
@@ -153,20 +154,27 @@ internal fun RatingRing(
                     scaleY = s
                     alpha = OverviewMotion.ringAlpha(t, reduced)
                 }
-                .drawBehind {
-                    val stroke = 8f * k
-                    val radius = size * k / 2f - 8f * k
-                    val topLeft = Offset(this.size.width / 2f - radius, this.size.height / 2f - radius)
-                    drawCircle(Color.White.copy(alpha = .1f), radius, style = Stroke(stroke))
-                    val t = millis()
-                    val fill = OverviewMotion.ring(t, index, reduced)
-                    if (value != null && fill > 0f) {
-                        val sweep = min(360f, 360f * value.toFloat() / 100f * fill)
-                        drawArc(color, -90f, sweep, false, topLeft, Size(radius * 2f, radius * 2f), style = Stroke(stroke, cap = StrokeCap.Round))
+                .drawWithCache {
+                    var lastNumber = Long.MIN_VALUE
+                    var numberLayout = measurer.measure("\u2014", valueStyle)
+                    onDrawBehind {
+                        val stroke = 8f * k
+                        val radius = size * k / 2f - 8f * k
+                        val topLeft = Offset(this.size.width / 2f - radius, this.size.height / 2f - radius)
+                        drawCircle(Color.White.copy(alpha = .1f), radius, style = Stroke(stroke))
+                        val t = millis()
+                        val fill = OverviewMotion.ring(t, index, reduced)
+                        if (value != null && fill > 0f) {
+                            val sweep = min(360f, 360f * value.toFloat() / 100f * fill)
+                            drawArc(color, -90f, sweep, false, topLeft, Size(radius * 2f, radius * 2f), style = Stroke(stroke, cap = StrokeCap.Round))
+                        }
+                        val number = if (value == null) Long.MIN_VALUE else OverviewMotion.ringNumber(value, OverviewMotion.ringCount(t, index, reduced))
+                        if (number != lastNumber) {
+                            lastNumber = number
+                            numberLayout = measurer.measure(number.toString(), valueStyle)
+                        }
+                        drawText(numberLayout, topLeft = Offset((this.size.width - numberLayout.size.width) / 2f, (this.size.height - numberLayout.size.height) / 2f))
                     }
-                    val text = if (value == null) "\u2014" else OverviewMotion.ringNumber(value, OverviewMotion.ringCount(t, index, reduced)).toString()
-                    val layout = measurer.measure(text, valueStyle)
-                    drawText(layout, topLeft = Offset((this.size.width - layout.size.width) / 2f, (this.size.height - layout.size.height) / 2f))
                 },
         )
         Column(verticalArrangement = Arrangement.spacedBy(4.px)) {
@@ -249,10 +257,21 @@ internal fun CountText(final: String, value: Double, style: TextStyle, progress:
                     mapOf(FirstBaseline to layout.firstBaseline.toInt(), LastBaseline to layout.lastBaseline.toInt()),
                 ) { placeable.place(0, 0) }
             }
-            .drawBehind {
-                val p = progress()
-                val text = if (p >= 1f) final else format.format(value * p)
-                drawText(measurer.measure(text, style))
+            .drawWithCache {
+                var lastNumber = Double.NaN
+                var numberLayout = layout
+                val scale = Math.pow(10.0, decimals.toDouble())
+                onDrawBehind {
+                    val p = progress()
+                    if (p >= 1f) drawText(layout) else {
+                        val number = Math.rint(value * p * scale) / scale
+                        if (number != lastNumber) {
+                            lastNumber = number
+                            numberLayout = measurer.measure(format.format(number), style)
+                        }
+                        drawText(numberLayout)
+                    }
+                }
             },
     )
 }

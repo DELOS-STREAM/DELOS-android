@@ -77,6 +77,7 @@
     <string name="overview_viewer_count">/ %1$d · %2$s</string>
     <string name="overview_hint_browse">Procházet</string>
     <string name="overview_hint_seek">Posun o 5 s</string>
+    <string name="overview_seek_total">%d s</string>
     <string name="overview_hint_play">Přehrát</string>
     <string name="overview_hint_pause">Pozastavit</string>
     <string name="overview_hint_mute">Ztlumit</string>

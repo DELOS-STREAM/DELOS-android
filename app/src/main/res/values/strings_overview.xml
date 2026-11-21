@@ -95,6 +95,7 @@
     <string name="overview_hint_browse">Browse</string>
     <!-- The video player of the viewer: the hint bar (Left/Right seek, A, Y) and its buttons -->
     <string name="overview_hint_seek">Seek 5 s</string>
+    <string name="overview_seek_total">%d s</string>
     <string name="overview_hint_play">Play</string>
     <string name="overview_hint_pause">Pause</string>
     <string name="overview_hint_mute">Mute</string>

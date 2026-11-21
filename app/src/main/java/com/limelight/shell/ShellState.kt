@@ -500,7 +500,7 @@ val LocalShell = staticCompositionLocalOf<ShellState> { error("ShellState not pr
 
 /**
  * What the hint bar shows for the overview's viewer: L1/R1 browse; on a [video] the player can play, Y mutes or turns the sound on
- * ([muted]), and the focused stop of the dock ([target]) decides what Left/Right (seek 10 s, volume) and A (play or pause, select) do.
+ * ([muted]), and the focused stop of the dock ([target]) decides what Left/Right (seek 5 s, volume) and A (play or pause, select) do.
  */
 @androidx.compose.runtime.Immutable
 data class OverviewViewerHints(val video: Boolean, val playing: Boolean = false, val muted: Boolean = false, val target: ViewerHintTarget = ViewerHintTarget.SEEK)

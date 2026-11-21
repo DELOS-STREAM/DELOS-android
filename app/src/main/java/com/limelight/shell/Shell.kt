@@ -562,7 +562,7 @@ fun Shell(
         }
     }
 
-    fun sideSwipeOpens() = shell.screen.sideMenu && shell.layer == null && shell.picker == null && shell.launch == null &&
+    fun sideSwipeOpens() = shell.screen.sideMenu && shell.overviewGame == null && shell.layer == null && shell.picker == null && shell.launch == null &&
         shell.portal == null && shell.result == null && shell.buttonCapture == null
 
     fun sideSwipeCloses() = shell.layer == Layer.Side && shell.picker == null
@@ -663,7 +663,7 @@ fun Shell(
             if (shell.launch != null || shell.portal != null || shell.result != null || shell.picker != null) return@listener
             when (code) {
                 // Read the screen now: this listener is set once, so a value captured at the first composition (the first launch) would stay false
-                KeyEvent.KEYCODE_BUTTON_SELECT -> if (shell.screen.sideMenu) toggleSide()
+                KeyEvent.KEYCODE_BUTTON_SELECT -> if (shell.screen.sideMenu && shell.overviewGame == null) toggleSide()
                 KeyEvent.KEYCODE_BUTTON_START -> toggleContext()
                 KeyEvent.KEYCODE_BUTTON_X -> if (shell.layer == Layer.Filters) {
                     if (filterDraft.value.active) {

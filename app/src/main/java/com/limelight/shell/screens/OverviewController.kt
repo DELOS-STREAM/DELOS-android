@@ -55,8 +55,8 @@ internal class SteadyFrameClock(
  * hides the card that flies, and the overview, which flies the cover and the title in and rises its page. Every animated value is a
  * pure function of [clock] or [home] ([OverviewMotion]), read while drawing, so the motion never recomposes anything.
  *
- * Nothing delays a control: the overview takes input from its first frame while it is still entering. Closing during the opening waits
- * for it to finish, then reverses ([close]). Both run on a [SteadyFrameClock], so a slow frame never skips a part of the motion.
+ * Nothing delays a control: the overview takes input from its first frame while it is still entering. Closing interrupts the opening
+ * and reverses from its current position ([close]). Both run on a [SteadyFrameClock], so a slow frame never skips a part of the motion.
  */
 @Stable
 internal class OverviewController(private val scope: CoroutineScope) {
@@ -68,7 +68,7 @@ internal class OverviewController(private val scope: CoroutineScope) {
     var opening by mutableStateOf(false)
         private set
 
-    /** Back was pressed: the overview is on its way out (the ring hides at once, the motion reverses once the opening is over). */
+    /** Back was pressed: the ring hides at once and the opening is interrupted for the return motion. */
     var leaving by mutableStateOf(false)
         private set
 
@@ -238,8 +238,8 @@ internal class OverviewController(private val scope: CoroutineScope) {
     }
 
     /**
-     * Closes the overview: waits for the opening, runs [prepare] (the dashboard takes back the focus and the hints, the page scrolls
-     * back to its top), then reverses every motion; the overview leaves composition once the card is back in its row. A finger that
+     * Closes the overview: interrupts the opening, runs [prepare] (the dashboard takes back the focus and the hints, the page scrolls
+     * back to its top), then reverses from the interrupted position; the overview leaves composition once the card is back in its row. A finger that
      * pulled the page down [slotShift] screen pixels hands the cover's speed ([velocityY], screen pixels per second, down positive) to
      * the flight back.
      */
