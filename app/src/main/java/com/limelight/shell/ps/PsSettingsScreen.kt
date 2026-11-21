@@ -52,10 +52,10 @@ import kotlinx.coroutines.withContext
  */
 private enum class PsSettingsTab(@StringRes val label: Int, val icon: String, val classic: List<String>) {
     STREAM(R.string.settings_tab_stream, Symbols.CAST,
-        listOf("list_resolution", "list_fps", "seekbar_bitrate_kbps", "video_format", "checkbox_enable_hdr")),
+        listOf("list_resolution", "list_fps", "seekbar_bitrate_kbps", "video_format", "checkbox_enable_hdr", "frame_pacing")),
     PICTURE(R.string.ps_settings_tab_picture, Symbols.MONITOR,
         listOf("checkbox_sgsr", "list_sgsr_quality", "seekbar_sgsr_sharpness", "list_sgsr_supersampling_level", "list_video_scale_mode",
-            "frame_pacing", "checkbox_enable_perf_overlay", "checkbox_enable_perf_overlay_lite")),
+            "checkbox_enable_perf_overlay", "checkbox_enable_perf_overlay_lite")),
     NETWORK(R.string.ps_settings_tab_network, Symbols.NETWORK_CHECK,
         listOf("checkbox_prevent_packet_loss", "checkbox_enable_pip")),
     CONTROLLER(R.string.settings_tab_controls, Symbols.SPORTS_ESPORTS,

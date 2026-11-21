@@ -43,6 +43,13 @@
     <string name="ps_settings_tab_network">Red</string>
     <string name="ps_settings_keyframe_title">Fotograma clave tras una pérdida</string>
     <string name="ps_settings_keyframe_description">Pide a la consola un fotograma completo nuevo cada vez que se pierde uno. La imagen se recupera antes, a cambio de un breve pico de datos.</string>
+    <string name="ps_menu_ps_button">Botón PS</string>
+    <string name="ps_menu_create">Crear</string>
+    <string name="ps_menu_rest">Modo de reposo</string>
+    <string name="ps_menu_help_ps_button">Pulsa el botón PS de la consola: se abre el centro de control.</string>
+    <string name="ps_menu_help_create">Pulsa el botón Crear de la consola: capturas y clips.</string>
+    <string name="ps_menu_help_disconnect">Detiene la transmisión y vuelve a DELOS. El juego sigue en la consola.</string>
+    <string name="ps_menu_help_rest">Pone la consola en modo de reposo y detiene la transmisión. El juego queda suspendido donde la consola puede reanudarlo.</string>
     <string name="ps_settings_auto_bitrate_title">Tasa de bits automática</string>
     <string name="ps_settings_auto_bitrate_description">La consola elige la tasa de bits, la baja cuando la red pierde paquetes y luego la vuelve a subir. Desactivada: se mantiene la tasa fija de abajo.</string>
     <string name="ps_settings_video_queue_title">Cola de fotogramas</string>

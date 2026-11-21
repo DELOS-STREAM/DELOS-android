@@ -43,6 +43,13 @@
     <string name="ps_settings_tab_network">네트워크</string>
     <string name="ps_settings_keyframe_title">프레임 손실 시 키프레임</string>
     <string name="ps_settings_keyframe_description">프레임이 손실될 때마다 본체에 완전한 새 프레임을 요청합니다. 화면이 더 빨리 회복되지만 잠시 데이터가 늘어납니다.</string>
+    <string name="ps_menu_ps_button">PS 버튼</string>
+    <string name="ps_menu_create">만들기</string>
+    <string name="ps_menu_rest">휴식 모드</string>
+    <string name="ps_menu_help_ps_button">본체의 PS 버튼을 누릅니다: 제어 센터가 열립니다.</string>
+    <string name="ps_menu_help_create">본체의 만들기 버튼을 누릅니다: 스크린샷과 클립.</string>
+    <string name="ps_menu_help_disconnect">스트리밍을 끝내고 DELOS로 돌아갑니다. 게임은 본체에서 계속 실행됩니다.</string>
+    <string name="ps_menu_help_rest">본체를 휴식 모드로 전환하고 스트리밍을 끝냅니다. 게임은 본체가 다시 이어갈 수 있게 일시 중지됩니다.</string>
     <string name="ps_settings_auto_bitrate_title">자동 비트레이트</string>
     <string name="ps_settings_auto_bitrate_description">본체가 비트레이트를 직접 고르고, 패킷 손실이 생기면 낮췄다가 다시 올립니다. 끄면 아래의 고정 비트레이트를 유지합니다.</string>
     <string name="ps_settings_video_queue_title">프레임 대기열</string>

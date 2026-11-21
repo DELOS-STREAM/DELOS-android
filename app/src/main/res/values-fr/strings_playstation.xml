@@ -43,6 +43,13 @@
     <string name="ps_settings_tab_network">Réseau</string>
     <string name="ps_settings_keyframe_title">Image clé après une perte</string>
     <string name="ps_settings_keyframe_description">Demande à la console une image complète à chaque image perdue. L\'image se rétablit plus vite, au prix d\'un bref surplus de données.</string>
+    <string name="ps_menu_ps_button">Touche PS</string>
+    <string name="ps_menu_create">Créer</string>
+    <string name="ps_menu_rest">Mode repos</string>
+    <string name="ps_menu_help_ps_button">Appuie sur la touche PS de la console : le centre de contrôle s’ouvre.</string>
+    <string name="ps_menu_help_create">Appuie sur la touche Créer de la console : captures et clips.</string>
+    <string name="ps_menu_help_disconnect">Arrête le streaming et revient à DELOS. Le jeu continue sur la console.</string>
+    <string name="ps_menu_help_rest">Met la console en mode repos et arrête le streaming. Le jeu reste suspendu, la console peut le reprendre.</string>
     <string name="ps_settings_auto_bitrate_title">Débit automatique</string>
     <string name="ps_settings_auto_bitrate_description">La console choisit le débit, le baisse quand le réseau perd des paquets puis le remonte. Désactivé : le débit fixe ci-dessous est conservé.</string>
     <string name="ps_settings_video_queue_title">File d\'images</string>

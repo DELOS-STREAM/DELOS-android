@@ -43,6 +43,13 @@
     <string name="ps_settings_tab_network">Netzwerk</string>
     <string name="ps_settings_keyframe_title">Keyframe nach verlorenem Bild</string>
     <string name="ps_settings_keyframe_description">Fordert bei jedem verlorenen Bild ein vollständiges neues Bild von der Konsole an. Das Bild erholt sich schneller, kostet aber kurz mehr Daten.</string>
+    <string name="ps_menu_ps_button">PS-Taste</string>
+    <string name="ps_menu_create">Erstellen</string>
+    <string name="ps_menu_rest">Ruhemodus</string>
+    <string name="ps_menu_help_ps_button">Drückt die PS-Taste der Konsole: Das Kontrollzentrum öffnet sich.</string>
+    <string name="ps_menu_help_create">Drückt die Erstellen-Taste der Konsole: Screenshots und Clips.</string>
+    <string name="ps_menu_help_disconnect">Beendet das Streaming und kehrt zu DELOS zurück. Das Spiel läuft auf der Konsole weiter.</string>
+    <string name="ps_menu_help_rest">Versetzt die Konsole in den Ruhemodus und beendet das Streaming. Das Spiel bleibt angehalten, wo die Konsole es fortsetzen kann.</string>
     <string name="ps_settings_auto_bitrate_title">Automatische Bitrate</string>
     <string name="ps_settings_auto_bitrate_description">Die Konsole wählt die Bitrate selbst, senkt sie bei Paketverlust und hebt sie danach wieder an. Aus: Die feste Bitrate darunter gilt.</string>
     <string name="ps_settings_video_queue_title">Bildwarteschlange</string>

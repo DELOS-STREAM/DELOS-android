@@ -185,7 +185,8 @@ class StreamMenu(private val game: DelosStreamActivity) {
             attributes = attributes.apply { layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS }
             WindowCompat.setDecorFitsSystemWindows(this, false)
         }
-        val colors = delosColors(appearance, systemAccentHue(game))
+        // A PlayStation stream wears the PlayStation theme, as its loader and the shell's PlayStation mode do
+        val colors = if (game.conn is com.limelight.ps.PsConnection) com.limelight.shell.ps.playStationColors() else delosColors(appearance, systemAccentHue(game))
         val host = GameHost(d)
         menuReady = false
         val composeView = ComposeView(d.context).apply {
@@ -381,7 +382,13 @@ class StreamMenu(private val game: DelosStreamActivity) {
         private val prefs get() = game.prefConfig
         private val classic get() = game.gameMenuCallbacks
 
-        override val gameName: String = game.intent.getStringExtra(DelosStreamActivity.EXTRA_APP_NAME) ?: "Stream"
+        // A PlayStation stream is named after its console
+        override val gameName: String = (if (game.conn is com.limelight.ps.PsConnection) game.intent.getStringExtra(DelosStreamActivity.EXTRA_PC_NAME) else null)
+            ?: game.intent.getStringExtra(DelosStreamActivity.EXTRA_APP_NAME) ?: "Stream"
+        override val playStation get() = game.conn is com.limelight.ps.PsConnection
+        override fun pressConsoleButton(ps: Boolean) {
+            (game.conn as? com.limelight.ps.PsConnection)?.tapButton(if (ps) com.limelight.ps.PsButton.PS else com.limelight.ps.PsButton.SHARE)
+        }
         override fun dismiss() { menu?.dismiss() }
 
         // The whole stream behind the menu is blurred (the way leaving a stream does it): a window can only blur what lies
@@ -515,7 +522,14 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override val serverCommands get() = game.serverCmds.orEmpty()
         override fun runServerCommand(index: Int) { game.sendExecServerCmd(index) }
 
-        override fun leave(quit: Boolean) { this@StreamMenu.leave(quit) }
+        // Quit on a console: rest mode as the session ends (no game is quit; the console sleeps)
+        override fun leave(quit: Boolean) {
+            val ps = game.conn as? com.limelight.ps.PsConnection
+            if (ps != null) {
+                if (quit) ps.restOnStop = true
+                this@StreamMenu.leave(false)
+            } else this@StreamMenu.leave(quit)
+        }
     }
 
     private companion object {

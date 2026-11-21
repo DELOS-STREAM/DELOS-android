@@ -303,8 +303,11 @@ internal fun StreamMenuRoot(
 
     val circles = listOf(
         BarCircleSpec(BarItem.RESUME, Symbols.RESUME, res.getString(R.string.stream_menu_tile_resume)) { close() },
-        // The Delos keyboard takes the controller, so the menu closes first. A toggle without a state word: only the accent shows it
-        BarCircleSpec(BarItem.KEYBOARD, Symbols.KEYBOARD, res.getString(R.string.stream_menu_tile_keyboard), on = host.fullKeyboardOn, showState = false) {
+        // The Delos keyboard takes the controller, so the menu closes first. A toggle without a state word: only the accent shows it.
+        // A console takes no keyboard: the tile presses its PS button (a handheld may have none)
+        if (host.playStation) BarCircleSpec(BarItem.KEYBOARD, Symbols.PAD_DUALSENSE_PS, res.getString(R.string.ps_menu_ps_button)) {
+            close { host.pressConsoleButton(ps = true) }
+        } else BarCircleSpec(BarItem.KEYBOARD, Symbols.KEYBOARD, res.getString(R.string.stream_menu_tile_keyboard), on = host.fullKeyboardOn, showState = false) {
             close { host.toggleFullKeyboard() }
         },
         BarCircleSpec(BarItem.OVERLAY, Symbols.OVERLAY, res.getString(R.string.stream_menu_tile_overlay), on = host.overlayOn,
@@ -312,16 +315,23 @@ internal fun StreamMenuRoot(
             toggle { host.toggleOverlay() }
         },
         BarCircleSpec(BarItem.BRIGHTNESS, Symbols.BRIGHTNESS_MEDIUM, res.getString(R.string.stream_menu_tile_brightness), opensPage = true) { openPage(MenuPage.BRIGHTNESS) },
-        BarCircleSpec(BarItem.BITRATE, Symbols.NETWORK_CHECK, res.getString(R.string.stream_menu_tile_bitrate), opensPage = true) { openPage(MenuPage.BITRATE) },
+        // A console keeps its bitrate for the session: the tile presses its Create button instead
+        if (host.playStation) BarCircleSpec(BarItem.BITRATE, Symbols.CONSOLE_CREATE, res.getString(R.string.ps_menu_create)) {
+            close { host.pressConsoleButton(ps = false) }
+        } else BarCircleSpec(BarItem.BITRATE, Symbols.NETWORK_CHECK, res.getString(R.string.stream_menu_tile_bitrate), opensPage = true) { openPage(MenuPage.BITRATE) },
         BarCircleSpec(BarItem.UPSCALER, Symbols.UPSCALER, res.getString(if (supersamplingMode) R.string.stream_menu_tile_supersampling else R.string.stream_menu_tile_upscaler),
             on = host.upscalerRequested, state = upscalerStatus.pillText(res), opensPage = true) { openPage(MenuPage.UPSCALER) },
         BarCircleSpec(BarItem.MORE, Symbols.MORE_HORIZ, res.getString(R.string.stream_menu_tile_more), opensPage = true) { openPage(MenuPage.MORE) },
         BarCircleSpec(BarItem.DISCONNECT, Symbols.LOGOUT, res.getString(R.string.stream_menu_tile_disconnect)) { close { host.leave(quit = false) } },
-        BarCircleSpec(BarItem.QUIT, Symbols.POWER_SETTINGS_NEW, res.getString(R.string.stream_menu_tile_quit)) { close { host.leave(quit = true) } },
+        BarCircleSpec(BarItem.QUIT, if (host.playStation) Symbols.DARK_MODE else Symbols.POWER_SETTINGS_NEW,
+            res.getString(if (host.playStation) R.string.ps_menu_rest else R.string.stream_menu_tile_quit)) { close { host.leave(quit = true) } },
     )
-    // A rumble preset the device cannot run, or whose technique failed in the stream, says so in its help line
+    // A rumble preset the device cannot run, or whose technique failed in the stream, says so in its help line; a console's own tiles
+    // say what they do on the console
     fun helpText(key: String): String = if (key == RECOMMENDED_ROW) {
         helpLineText(host.linkGuidance?.streamHelp(res, System.currentTimeMillis()).orEmpty())
+    } else if (host.playStation && key in PS_HELP) {
+        helpLineText(res.getString(PS_HELP.getValue(key)))
     } else helpLineText(
         streamMenuHelp(res, key, upscalerStatus, host.upscalerMode, host.mouseMode, host.rememberMouseMode, (host.bitrateResult as? BitrateResult.Failed)?.reason?.text(res)) +
             (StreamMenuHelp.rumblePreset(key)?.let { host.rumbleProblemText(res, it) }?.let { "\n" + res.getString(R.string.stream_menu_rumble_problem, it) }.orEmpty())

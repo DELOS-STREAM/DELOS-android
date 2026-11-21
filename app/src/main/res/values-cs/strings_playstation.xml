@@ -43,6 +43,13 @@
     <string name="ps_settings_tab_network">Síť</string>
     <string name="ps_settings_keyframe_title">Klíčový snímek po ztrátě</string>
     <string name="ps_settings_keyframe_description">Při každém ztraceném snímku požádá konzoli o celý nový snímek. Obraz se zotaví rychleji za cenu krátké dávky dat navíc.</string>
+    <string name="ps_menu_ps_button">Tlačítko PS</string>
+    <string name="ps_menu_create">Vytvořit</string>
+    <string name="ps_menu_rest">Klidový režim</string>
+    <string name="ps_menu_help_ps_button">Stiskne na konzoli tlačítko PS: otevře se ovládací centrum.</string>
+    <string name="ps_menu_help_create">Stiskne na konzoli tlačítko Vytvořit: snímky obrazovky a klipy.</string>
+    <string name="ps_menu_help_disconnect">Ukončí stream a vrátí se do DELOS. Hra na konzoli běží dál.</string>
+    <string name="ps_menu_help_rest">Uspí konzoli do klidového režimu a ukončí stream. Hra zůstane pozastavená, odkud ji konzole umí obnovit.</string>
     <string name="ps_settings_auto_bitrate_title">Automatický datový tok</string>
     <string name="ps_settings_auto_bitrate_description">Konzole si datový tok volí sama: při ztrátě paketů ho sníží a pak zase zvýší. Vypnuto: drží se pevný datový tok níže.</string>
     <string name="ps_settings_video_queue_title">Fronta snímků</string>

@@ -615,6 +615,14 @@ internal fun streamMenuHelp(
 /** The Bitrate page's recommendation row (PyroWave): its focus key and help key; its label is the changing recommendation line. */
 internal const val RECOMMENDED_ROW = "Recommended bitrate"
 
+/** A PlayStation stream's help for the dock tiles that do something else on a console (StreamMenuHost.playStation). */
+internal val PS_HELP = mapOf(
+    MenuKey.KEYBOARD to R.string.ps_menu_help_ps_button,
+    MenuKey.BITRATE to R.string.ps_menu_help_create,
+    MenuKey.DISCONNECT to R.string.ps_menu_help_disconnect,
+    MenuKey.QUIT_GAME to R.string.ps_menu_help_rest,
+)
+
 /** What the Apply row of the Bitrate page says on its right: null before anything was applied. */
 internal fun bitrateStatusText(res: Resources, busy: Boolean, result: BitrateResult?): String? = when {
     busy -> res.getString(R.string.stream_menu_bitrate_applying)

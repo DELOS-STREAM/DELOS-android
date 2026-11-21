@@ -179,6 +179,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         }
     }
 
+    /** Set by the stream menu's rest-mode tile: [stop] puts the console in rest mode (ctrl GOTO_BED, 4.5) before it disconnects. */
+    @Volatile var restOnStop = false
+
     override fun stop() {
         running = false
         connectThread?.interrupt()
@@ -186,6 +189,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         // The audio renderer is set up only when the console sent an audio header (AudioSource)
         val hadAudio = audioSource != null
         audioSource?.close(); audioSource = null
+        if (restOnStop) runCatching { ctrl?.send(PsCtrl.GOTO_BED) }.onFailure { Log.w(TAG, "rest mode: ${it.message}") }
         stream?.close(); stream = null
         ctrl?.close(); ctrl = null
         if (started) {
@@ -285,6 +289,15 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     private fun update(change: (PsControllerState) -> PsControllerState) {
         val next = synchronized(padLock) { change(pad).also { pad = it } }
         stream?.updateController(next)
+    }
+
+    /** A press of [button] from the stream menu (PS or Create, which a handheld's controls may not have): down, then up 120 ms later. */
+    fun tapButton(button: PsButton) {
+        update { it.copy(buttons = it.buttons or button.mask) }
+        thread(name = "ps-button", isDaemon = true) {
+            Thread.sleep(120)
+            update { it.copy(buttons = it.buttons and button.mask.inv()) }
+        }
     }
 
     private fun integrate(gx: Float, gy: Float, gz: Float, dt: Float) {

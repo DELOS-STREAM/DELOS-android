@@ -41,6 +41,15 @@ internal interface StreamMenuHost {
     /** Whether the host takes keyboard, mouse, text and commands: a PlayStation does not, so their rows are not offered. */
     val keyboardAndMouse: Boolean get() = true
 
+    /**
+     * A PlayStation stream: the dock's Keyboard and Bitrate tiles press the console's PS and Create buttons ([pressConsoleButton]),
+     * and Quit puts the console in rest mode instead of quitting a game ([leave] with quit).
+     */
+    val playStation: Boolean get() = false
+
+    /** Presses and releases the PS button ([ps]) or the Create button on the console. */
+    fun pressConsoleButton(ps: Boolean) {}
+
     // Overlay and keyboard
     val overlayOn: Boolean
     val overlayCompact: Boolean

@@ -43,6 +43,13 @@
     <string name="ps_settings_tab_network">ネットワーク</string>
     <string name="ps_settings_keyframe_title">フレーム欠落時にキーフレーム</string>
     <string name="ps_settings_keyframe_description">フレームが欠けるたびに、本体へ完全な新しいフレームを要求します。映像の回復が速くなる代わりに、一時的にデータが増えます。</string>
+    <string name="ps_menu_ps_button">PS ボタン</string>
+    <string name="ps_menu_create">クリエイト</string>
+    <string name="ps_menu_rest">レストモード</string>
+    <string name="ps_menu_help_ps_button">本体の PS ボタンを押します：コントロールセンターが開きます。</string>
+    <string name="ps_menu_help_create">本体のクリエイトボタンを押します：スクリーンショットとクリップ。</string>
+    <string name="ps_menu_help_disconnect">ストリーミングを終了して DELOS に戻ります。ゲームは本体で動き続けます。</string>
+    <string name="ps_menu_help_rest">本体をレストモードにしてストリーミングを終了します。ゲームは中断され、本体で再開できます。</string>
     <string name="ps_settings_auto_bitrate_title">自動ビットレート</string>
     <string name="ps_settings_auto_bitrate_description">本体がビットレートを自動で選び、パケットロスがあると下げ、その後また上げます。オフ：下の固定ビットレートを使います。</string>
     <string name="ps_settings_video_queue_title">フレームキュー</string>
