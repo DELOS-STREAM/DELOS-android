@@ -108,6 +108,7 @@
     <string name="overview_video_unavailable">This video can\'t be played</string>
     <string name="overview_video_blocked">Its owner doesn\'t allow playing it in other apps.</string>
     <string name="overview_video_failed">YouTube couldn\'t load it. Check the connection and try again.</string>
+    <string name="overview_video_failed_steam">Steam couldn\'t load it. Check the connection and try again.</string>
     <string name="overview_previous">Previous</string>
     <string name="overview_next">Next</string>
     <!-- While the IGDB details load, and when they cannot be loaded -->

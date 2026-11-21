@@ -88,6 +88,7 @@
     <string name="overview_video_unavailable">Video nejde přehrát</string>
     <string name="overview_video_blocked">Jeho vlastník nepovoluje přehrávání v jiných aplikacích.</string>
     <string name="overview_video_failed">YouTube ho nenačetl. Zkontroluj připojení a zkus to znovu.</string>
+    <string name="overview_video_failed_steam">Steam ho nenačetl. Zkontroluj připojení a zkus to znovu.</string>
     <string name="overview_previous">Předchozí</string>
     <string name="overview_next">Další</string>
     <string name="overview_loading">Načítám info o hře…</string>

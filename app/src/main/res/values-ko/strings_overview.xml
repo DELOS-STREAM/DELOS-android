@@ -76,6 +76,7 @@
     <string name="overview_video_unavailable">이 동영상을 재생할 수 없습니다</string>
     <string name="overview_video_blocked">소유자가 다른 앱에서의 재생을 허용하지 않습니다.</string>
     <string name="overview_video_failed">YouTube에서 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요.</string>
+    <string name="overview_video_failed_steam">Steam에서 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요.</string>
     <string name="overview_previous">이전</string>
     <string name="overview_next">다음</string>
     <string name="overview_loading">게임 정보 불러오는 중…</string>
