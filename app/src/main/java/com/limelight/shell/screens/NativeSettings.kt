@@ -323,6 +323,12 @@ internal fun nativeSettings(
                 }), tracker)
             }, "Debug builds only: where the update check asks instead of GitHub.", // l10n-ignore: debug build only
             tab = SettingsTab.ABOUT, section = updateSection)
+        // The PlayStation Remote Play bench (issue #25); its activity exists only in debug builds, so it is opened by name
+        row("about_ps_remote_play_debug", Symbols.DEBUG, "PS Remote Play (debug)", // l10n-ignore: debug build only
+            RowValue.Text("Open") { // l10n-ignore: debug build only
+                context.startActivity(android.content.Intent().setClassName(context, "com.limelight.ps.PsDebugActivity"))
+            }, "Debug builds only: search, pair and stream a PlayStation.", // l10n-ignore: debug build only
+            tab = SettingsTab.ABOUT, section = updateSection)
     }
     var diagnosticLogs by remember { mutableStateOf(DiagLog.enabled) }
     row("about_diag_logs", Symbols.DIAGNOSTIC_LOGS, res.getString(R.string.settings_native_diag_logs_title), RowValue.Toggle(diagnosticLogs) { on ->
