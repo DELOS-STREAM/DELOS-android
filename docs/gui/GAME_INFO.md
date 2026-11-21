@@ -499,7 +499,7 @@ Variant **A · Descent** of issue [#107](https://github.com/DELOS-STREAM/DELOS-a
    | Controller | The D-pad cap with the down arm pressed (outline cut), bobbing | Down |
    | Keyboard | The ↓ key cap, bobbing | ↓ |
    | Touch | A small arrow up, bobbing up | A swipe up on the cover, or a tap on the chip |
-   | Mouse | A small arrow down, bobbing; the chip darkens on hover | A click on the chip |
+   | Mouse, trackpad | A small arrow down, bobbing; the chip darkens on hover | A click on the chip, or scrolling down over the cover (one wheel notch; owner, 2026-11-21); scrolling up still moves the row |
 
    The hint bar does not repeat it: the chip on the cover is the only place that names it. It stays clear of the hint
    bar, whose library note ("LIBRARY · N apps on <PC>") shows as on any other game.

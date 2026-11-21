@@ -661,6 +661,28 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                                             lift = travel.coerceAtMost(0f) / k
                                         }
                                     }
+                                }.pointerInput(app.id) {
+                                    // A mouse wheel or a trackpad scrolled down over the focused cover (a pointer focuses the cover it is on)
+                                    // opens the overview as Down does; scrolling up still moves the row
+                                    var sum = 0f
+                                    var last = 0L
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            val event = awaitPointerEvent()
+                                            if (event.type != PointerEventType.Scroll) continue
+                                            val change = event.changes.firstOrNull() ?: continue
+                                            val d = change.scrollDelta
+                                            if (change.isConsumed || d.y <= 0f || abs(d.x) > abs(d.y)) { sum = 0f; continue }
+                                            if (change.uptimeMillis - last > WHEEL_OPEN_WINDOW_MS) sum = 0f
+                                            last = change.uptimeMillis
+                                            sum += d.y
+                                            change.consume()
+                                            if (sum >= 1f && overview.app == null) {
+                                                sum = 0f
+                                                openOverview(app)
+                                            }
+                                        }
+                                    }
                                 } else Modifier
                             ),
                     ) {
@@ -721,6 +743,9 @@ private fun OverviewLayer(overview: OverviewController, content: @Composable (Ap
 
 /** A compact stage: the room above the row's covers for the focus scale, the ring, the pulse and the glow (the scroll area would cut them). */
 private const val COMPACT_ROW_PAD = 48f
+
+/** Scroll down over a cover within this long adds up to the one wheel notch that opens its overview (a trackpad sends small steps). */
+private const val WHEEL_OPEN_WINDOW_MS = 300L
 
 /**
  * The size of the covers and where the row starts, stage pixels: a cover is [scale] times the prototype's 300 x 450 (the wide first one
