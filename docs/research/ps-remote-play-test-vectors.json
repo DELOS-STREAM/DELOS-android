@@ -1,0 +1,156 @@
+{
+ "session_ps4_9": {
+  "nonce": "000102030405060708090a0b0c0d0e0f",
+  "morning": "404142434445464748494a4b4c4d4e4f",
+  "bright": "9599ea4dadcc7af680736307e84bba7f",
+  "ambassador": "d8905e42bce052e092e354911ad33688",
+  "iv_counter0": "d799a38dc0086f841bc81345eb18f7be",
+  "iv_counter1": "c21a5e2a98d896baa0b572a23feab03e",
+  "plaintext": "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+  "ciphertext_counter0": "02e5d3c82ac351b1251473a3d0b60545be344f016fb4ac3c978ddf34b4ae8d35",
+  "ciphertext_counter5": "2e02d5bbbdd0646dfc2efe7378667f1f1ef92bf3284e8566d7d5a3a06b291ed7"
+ },
+ "session_ps4_10": {
+  "nonce": "000102030405060708090a0b0c0d0e0f",
+  "morning": "404142434445464748494a4b4c4d4e4f",
+  "bright": "574700c8dc4a2c876c3c32bf07a0e7a8",
+  "ambassador": "e978b89a1098296fb32415b9b5713be0",
+  "iv_counter0": "c8b0c57d4b68ff953209efa913889d06",
+  "iv_counter1": "e3d1d77b72507c944204df80159201da",
+  "plaintext": "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+  "ciphertext_counter0": "c3042ac97d4cbdbca78117aa11ecc090378a26bfa07367efbd9608db86c96e31",
+  "ciphertext_counter5": "ab43e424d6a91e8bc6033642d6bb183fc5b5ffefdfd14b867d3cd837558eb3f8"
+ },
+ "session_ps5_1": {
+  "nonce": "000102030405060708090a0b0c0d0e0f",
+  "morning": "404142434445464748494a4b4c4d4e4f",
+  "bright": "b96f49409170b8807b856a1649ab113b",
+  "ambassador": "ac7d50f394ea6588f0488f76e4170c8a",
+  "iv_counter0": "0a894340fc4845e95ddd09d81177fef6",
+  "iv_counter1": "ecf3b9c661c954830539895353ee9f4d",
+  "plaintext": "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+  "ciphertext_counter0": "b46ef0ae3b2e3449c932191e0e1434ab2f8020894672a8a83a1ca24491e0ac01",
+  "ciphertext_counter5": "bf0dffe5b015b645686f93428e156f7339147c3345b1116a35590c8e85383173"
+ },
+ "regist_ps4_9": {
+  "ambassador": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+  "pin": 12345678,
+  "key0_off": 1,
+  "key1_off": 8,
+  "bright": "3fa0a5f8dcbb3ecc50baedef9734c7c9",
+  "aeropause": "969beb4daaca7ff28b796a0fe745b773",
+  "iv_counter0": "f3bc853347fe7d1e652b5c35c305fbc6",
+  "inner_plaintext": "436c69656e742d547970653a20646162666132656338373364653538333962656538643366346330323339633432383263303763323563363037376132393331616663663061646330643334660d0a4e702d4163636f756e7449643a2041514944424155474277673d0d0a",
+  "inner_ciphertext": "17740164e61ad4140daa4a978a520bde974def784031bd79ede86d629389ecb6160cc7a164f998a783e23383a44f0bc4e17337bd544c2468b94f22808363868040e997bc4a08430bc9b1430ab002a6feb858d470b5892ebb2f110f9b675e09e7434d24b55fb72724dc12b0"
+ },
+ "regist_ps4_10": {
+  "ambassador": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+  "pin": 12345678,
+  "key0_off": 1,
+  "key1_off": 8,
+  "bright": "cebcb640080776047b85e85bf350f52d",
+  "aeropause": "28748787624313113fbe3505fc971e2f",
+  "iv_counter0": "1f7364ee8934c1a851b5187f501ec515",
+  "inner_plaintext": "436c69656e742d547970653a20646162666132656338373364653538333962656538643366346330323339633432383263303763323563363037376132393331616663663061646330643334660d0a4e702d4163636f756e7449643a2041514944424155474277673d0d0a",
+  "inner_ciphertext": "62ad1747f0ad058bcf94494b01106c04e6131df3c057387c1da9b9b2120b9e8d8fa0e8cb2417bc516de9df0aa3266a9c8d741c6b00c852c9692d9c7de7f95c14f0d51003d2b47c7059d0fb6f0d3a2afb575731e357e200b93dc0131d1f74f46606bbaa47717b810eb9c3a3"
+ },
+ "regist_ps5_1": {
+  "ambassador": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+  "pin": 12345678,
+  "key0_off": 1,
+  "key1_off": 8,
+  "bright": "d860e146bdb0bd94b460070bb1f3866d",
+  "aeropause": "db6a98ec5a317aa3a5c66dea8c18050c",
+  "iv_counter0": "f5ffaf2c99f37ad216d8066eecd221c8",
+  "inner_plaintext": "436c69656e742d547970653a20646162666132656338373364653538333962656538643366346330323339633432383263303763323563363037376132393331616663663061646330643334660d0a4e702d4163636f756e7449643a2041514944424155474277673d0d0a",
+  "inner_ciphertext": "01e9a624e55b3789b5a0ce41b8d8a3eae14cb724712a633578167a3cf97314878b341b126895747904e12d64dc0869d63f377f8276f4354582029aab3cd761bcf6a3aeafe230f69b2a794d6ed1973ef29bffdce261f974cbbaf2e49a3a0ec01d8726ba9e20c575b6641cbc"
+ },
+ "gk_index2": {
+  "handshake_key": "202122232425262728292a2b2c2d2e2f",
+  "ecdh_secret": "303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f",
+  "key": "c2e12dc05ee0bbdcfb5e2e7d3ab68111",
+  "iv": "ffb487a3f052f0aa3a166a03bacc9308",
+  "gmac_key_index0": "475e0d15b057aa15f253f5ed555cd805",
+  "gmac_key_index1": "a3d3d1b8597d961290b0d35a9b8b719f",
+  "keystream_pos0_32": "cb536857d7bf31194dda44fe9c24e7e40df6fc24075acc8202f5486a99b63111",
+  "keystream_pos0x18_20": "02f5486a99b63111d2e25c99bb2a380323874305",
+  "data": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+  "gmac_pos0": "9a25101f",
+  "gmac_pos0x30": "48912f8d",
+  "gmac_pos45001": "d7057c7c"
+ },
+ "gk_index3": {
+  "handshake_key": "202122232425262728292a2b2c2d2e2f",
+  "ecdh_secret": "303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f",
+  "key": "29a35b63a361f1a787f637fe5bfd2339",
+  "iv": "5a872b0a1a81e2a1a40af7bb93d29c2c",
+  "gmac_key_index0": "f1b80ab1867cbb3b87cf0025f724c923",
+  "gmac_key_index1": "e296fd703ea826c858e96b1b63211a30",
+  "keystream_pos0_32": "7dfa9918d4e3cf1eed031a855133f0fdc214906eebeb3ce25ecc4aa2acb3f2ac",
+  "keystream_pos0x18_20": "5ecc4aa2acb3f2aca9ce1d135010f1ea24f4231e",
+  "data": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+  "gmac_pos0": "d83c35ae",
+  "gmac_pos0x30": "beffd829",
+  "gmac_pos45001": "637bcd79"
+ },
+ "fec_k3_m2": {
+  "matrix": [
+   [
+    142,
+    244,
+    71
+   ],
+   [
+    244,
+    142,
+    167
+   ]
+  ],
+  "sources": [
+   "0001020304050607",
+   "08090a0b0c0d0e0f",
+   "1011121314151617"
+  ],
+  "parity": [
+   "f7ca8db0033e7944",
+   "a67b01dcf528528f"
+  ]
+ },
+ "feedback_state_idle_v12": "a0ff7fff7fff7fff7f9999ff7ffef7ef1f0000000000000000000001",
+ "feedback_state_sample_v9": "a02182aa7a88888e821599e07a1e79742d03e8f8307fff8000",
+ "history_cross_down": "8088ff",
+ "history_touch_down": "d0033e81f4",
+ "ecdh": {
+  "client_private": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+  "client_public": "0484bf7562262bbd6940085748f3be6afa52ae317155181ece31b66351ccffa4b08cc43d63b2859d469fee15f31c9edb5324266e6fd0407e87382d60fc4511acd8",
+  "console_private": "2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40",
+  "console_public": "04207bba70bc66309baa582a6ac120fd52d68026c51f6326f8ccedcbd2c1b7eb828c18ff7dbee879a4335a05294dea1e99e251f4b3e3b020b507f87064993fb202",
+  "shared_secret": "f40bb548d147b2c3cdcf635658c3fca87a3c1f85c7ac006e9b9e80d4dc70d84d",
+  "handshake_key": "202122232425262728292a2b2c2d2e2f",
+  "client_sig": "b897d7e5c2bb3632d7fa6db9b414dab5b69461924db026a21f41a339a62ba7c5"
+ },
+ "account_id": {
+  "user_id": "1234567890123456789",
+  "account_id_bytes": "1581e97df4102211",
+  "account_id_base64": "FYHpffQQIhE="
+ },
+ "launchspec_keystream_ps5": {
+  "note": "rpcrypt counter 0 applied to 48 zero bytes, session_ps5_1 keys",
+  "keystream": "d40f92cd5f4b522ea15b737562795ac4e6fdc575964fe3226690b59a7dbfacd7a619880e3c0d0b222e33e98d19592619"
+ },
+ "ctrl_headers_ps5": {
+  "regist_key_ascii": "1a2b3c4d",
+  "note": "regist key padded with NUL to 16 bytes; counters 0..4 with session_ps5_1 keys",
+  "rp_auth": "5W6gr2woZkqhW3N1YnlaxA==",
+  "did": "00180000000700400080c0c1c2c3c4c5c6c7c8c9cacbcccdcecf000000000000",
+  "rp_did": "mYSOKYcllsRSSFuuxibKQFAkz5D8rcHo+Tap+v05jdk=",
+  "rp_ostype": "yb1uwqCCWuXlbA==",
+  "rp_startbitrate": "xw896g==",
+  "rp_streamingtype_hevc": "5sGeYA=="
+ },
+ "wakeup_credential": {
+  "regist_key_ascii": "1a2b3c4d",
+  "user_credential_decimal": "439041101"
+ },
+ "takion_init_packet": "000000000000000000000000000100001411223344000190000064006411223344"
+}
