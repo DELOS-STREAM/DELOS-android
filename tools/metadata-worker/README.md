@@ -121,6 +121,34 @@ websites 20, similar games 12, keywords 30, languages 60, companies 20, other li
 - An id IGDB does not know is `404` `{"error":"game_not_found"}` with `no-store`; the app stores "no details" with
   the record and asks again at the next 7-day refresh. A non-array answer is `502 upstream_error`.
 
+### Steam media
+
+When the game has a Steam external game (the first numeric `uid` with source 1), the Worker adds Steam's trailers
+and screenshots from the public, keyless store API
+`https://store.steampowered.com/api/appdetails?appids=<id>&l=english&filters=basic,movies,screenshots`. This is
+the one optional key of the answer; old clients ignore it:
+
+```jsonc
+"steam": {
+  "appId": 1145360,
+  "movies": [{ "id": 256801252, "name": "Launch Trailer", "thumbnail": "https://…/movie.293x165.jpg",
+               "hls": "https://…/hls_264_master.m3u8?t=…", "dash": "https://…/dash_h264.mpd?t=…",
+               "mp4": "https://…/movie_max.mp4", "webm": "https://…/movie_max.webm", "highlight": true }],
+  "screenshots": [{ "id": 0, "thumbnail": "https://…600x338.jpg", "full": "https://…1920x1080.jpg" }]
+}
+```
+
+- `steam` is absent when IGDB lists no Steam id, Steam does not know the app, or it has neither movies nor
+  screenshots. Both lists are always present inside it (possibly empty).
+- Inside a movie or screenshot, a field Steam does not provide is absent, never null. Current answers carry
+  `hls`/`dash` (`hls_h264`, `dash_h264`, else `dash_av1`), older ones `mp4`/`webm` (`max`, else `480`). A movie
+  without any stream and a screenshot without `full` are dropped. Only `https` URLs on `*.steamstatic.com` /
+  `*.steampowered.com` pass.
+- Highlight movies first (otherwise Steam's order); at most 10 movies and 30 screenshots.
+- The Steam answer is cached for 24 hours per app id (key `/v1/steam/media?app=<id>`, not a public route) and
+  shares the 600 ms Steam store pacing. When Steam fails (429/503, error, timeout, malformed answer), the details
+  answer is still `200` without `steam`, cached for 5 minutes only (`public, max-age=300`).
+
 ## Steam store tags
 
 `GET /v1/steam/tags?app=<positive integer, max 2000000000>` returns the user tags of a game's Steam store page,

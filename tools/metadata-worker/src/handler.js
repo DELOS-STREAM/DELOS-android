@@ -1,16 +1,19 @@
 import { createResponseCache } from "./cache.js";
 import { HttpError, RETRY_AFTER_SECONDS } from "./errors.js";
-import { buildDetailsQuery, normalizeDetails } from "./details.js";
+import { buildDetailsQuery, detailsObject } from "./details.js";
 import { buildIdQuery, buildSearchQuery, createIgdb } from "./igdb.js";
 import { createBucket, createGate } from "./limits.js";
 import { cargoParams, createPcgw, pageWhere, parseParams, redirectParams, searchParams, steamWhere } from "./pcgw.js";
 import { createSteam } from "./steam.js";
+import { createSteamMedia, steamAppId } from "./steam-media.js";
 import { MAX_IGDB_ID, MAX_STEAM_TAGS_APP_ID, singleParams, validId, validSteamIds, validTerm, validTitle } from "./validate.js";
 
 export const MAX_URL_LENGTH = 2048;
 export const MAX_HEADER_BYTES = 8192;
 export const CACHE_SECONDS = 6 * 60 * 60;
 export const STEAM_CACHE_SECONDS = 24 * 60 * 60;
+// A details answer whose Steam media lookup failed transiently is kept only briefly, so Steam media appear soon.
+export const STEAM_RETRY_SECONDS = 5 * 60;
 
 const JSON_TYPE = "application/json; charset=utf-8";
 
@@ -63,9 +66,38 @@ export function createHandler(deps = {}) {
   const pcgw = createPcgw({ fetch: fetchFn, now, gate: pcgwGate });
   const steamGate = createGate({ intervalMs: deps.steamIntervalMs ?? 600, maxWaitMs: 4000, now, sleep });
   const steam = createSteam({ fetch: fetchFn, gate: steamGate });
+  const steamMedia = createSteamMedia({ fetch: fetchFn, gate: steamGate });
   const cache = createResponseCache({ cacheApi: deps.cacheApi ?? null, now });
   const bucket = createBucket({ capacity: BUCKET_CAPACITY, refillPerSecond: BUCKET_REFILL_PER_SECOND, now });
   const inflight = new Map();
+
+  /**
+   * Steam media of one app, cached for a day under its own key (shared by every IGDB id that maps to it).
+   * Returns the `steam` object, null for "Steam has nothing", or undefined after a transient failure.
+   */
+  async function cachedSteamMedia(appId, { origin, waitUntil }) {
+    const key = `${origin}/v1/steam/media?app=${appId}`;
+    const cached = await cache.get(key);
+    if (cached !== null) return JSON.parse(cached);
+    try {
+      const media = await steamMedia.media(appId);
+      cache.put(key, JSON.stringify(media), STEAM_CACHE_SECONDS, waitUntil);
+      return media;
+    } catch (error) {
+      if (error instanceof HttpError) return undefined;
+      throw error;
+    }
+  }
+
+  /** IGDB details plus Steam trailers/screenshots; a Steam failure only shortens the cache life of the answer. */
+  async function gameDetails(env, io, id) {
+    const game = detailsObject(await igdb.games(env, buildDetailsQuery(id)));
+    const appId = steamAppId(game.externalGames);
+    if (appId === null) return JSON.stringify(game);
+    const media = await cachedSteamMedia(appId, io);
+    if (media) game.steam = media;
+    return media === undefined ? { body: JSON.stringify(game), cacheSeconds: STEAM_RETRY_SECONDS } : JSON.stringify(game);
+  }
 
   // Each route turns validated input into a normalized parameter list (the cache key) and one fixed upstream call.
   const routes = {
@@ -85,7 +117,8 @@ export function createHandler(deps = {}) {
       parse(params) {
         const values = singleParams(params, ["id"], { required: ["id"] });
         const id = values && validId(values.id, MAX_IGDB_ID);
-        return id ? { normalized: [["id", String(id)]], upstream: async (env) => normalizeDetails(await igdb.games(env, buildDetailsQuery(id))) } : null;
+        // `v` changes the cache key when the answer's shape grows (2: Steam media), so stale entries are not served.
+        return id ? { normalized: [["id", String(id)], ["v", "2"]], upstream: (env, io) => gameDetails(env, io, id) } : null;
       },
     },
     "/v1/pcgw/cargo": {
@@ -174,15 +207,18 @@ export function createHandler(deps = {}) {
     const key = `${url.origin}${url.pathname}?${lookup.normalized.map(([name, value]) => `${name}=${encodeURIComponent(value)}`).join("&")}`;
     const seconds = lookup.cacheSeconds ?? CACHE_SECONDS;
     const cacheControl = `public, max-age=${seconds}`;
+    const waitUntil = ctx && ctx.waitUntil ? (promise) => ctx.waitUntil(promise) : null;
     const cached = await cache.get(key);
     if (cached !== null) return jsonResponse(200, cached, cacheControl, { "X-Delos-Cache": "HIT" });
     try {
-      const body = await coalesce(key, async () => {
-        const text = await lookup.upstream(env);
-        cache.put(key, text, seconds, ctx && ctx.waitUntil ? (promise) => ctx.waitUntil(promise) : null);
-        return text;
+      const { body, seconds: stored } = await coalesce(key, async () => {
+        const result = await lookup.upstream(env, { origin: url.origin, waitUntil });
+        const text = typeof result === "string" ? result : result.body;
+        const ttl = typeof result === "string" ? seconds : result.cacheSeconds;
+        cache.put(key, text, ttl, waitUntil);
+        return { body: text, seconds: ttl };
       });
-      return jsonResponse(200, body, cacheControl, { "X-Delos-Cache": "MISS" });
+      return jsonResponse(200, body, `public, max-age=${stored}`, { "X-Delos-Cache": "MISS" });
     } catch (error) {
       // The only log line: route, status, code and a hash of the normalized query, never its text.
       if (error instanceof HttpError && error.status >= 500) {

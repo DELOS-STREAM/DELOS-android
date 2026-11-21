@@ -92,7 +92,10 @@ describe("game details query", () => {
   });
 
   it("sends exactly that query and returns the normalized shape with the usual cache headers", async () => {
-    const world = createWorld({ igdbResponse: () => new Response(JSON.stringify([RAW_GAME])) });
+    const world = createWorld({
+      igdbResponse: () => new Response(JSON.stringify([RAW_GAME])),
+      steamResponse: () => new Response('{"2741160":{"success":false}}'),
+    });
     const client = createClient(world);
     const response = await client.request(details("id=214337"));
     expect(response.status).toBe(200);
