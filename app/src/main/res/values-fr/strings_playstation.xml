@@ -43,6 +43,8 @@
     <string name="ps_settings_tab_network">Réseau</string>
     <string name="ps_settings_keyframe_title">Image clé après une perte</string>
     <string name="ps_settings_keyframe_description">Demande à la console une image complète à chaque image perdue. L\'image se rétablit plus vite, au prix d\'un bref surplus de données.</string>
+    <string name="ps_settings_auto_bitrate_title">Débit automatique</string>
+    <string name="ps_settings_auto_bitrate_description">La console choisit le débit, le baisse quand le réseau perd des paquets puis le remonte. Désactivé : le débit fixe ci-dessous est conservé.</string>
     <string name="ps_settings_video_queue_title">File d\'images</string>
     <string name="ps_settings_video_queue_description">Combien d\'images peuvent attendre le décodeur. Moins réduit la latence ; plus lisse un réseau irrégulier.</string>
     <string name="ps_settings_video_queue_few">Peu (latence minimale)</string>
@@ -55,4 +57,14 @@
     <string name="ps_settings_audio_buffer_high">Haut (moins de coupures)</string>
     <string name="ps_settings_swap_channels_title">Inverser gauche et droite</string>
     <string name="ps_settings_swap_channels_description">Joue le canal gauche à droite et le droit à gauche.</string>
+    <string-array name="stream_loader_lines_ps_wake">
+        <item>Je réveille %1$s du mode repos</item>
+        <item>Je frappe à la porte de %1$s</item>
+        <item>J’appuie à distance sur la touche PS de %1$s</item>
+    </string-array>
+    <string-array name="stream_loader_lines_ps_session">
+        <item>J’ouvre la session Remote Play</item>
+        <item>Je serre la main de %1$s</item>
+        <item>Je demande l’image à %1$s</item>
+    </string-array>
 </resources>

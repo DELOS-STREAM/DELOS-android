@@ -43,6 +43,8 @@
     <string name="ps_settings_tab_network">网络</string>
     <string name="ps_settings_keyframe_title">丢帧后请求关键帧</string>
     <string name="ps_settings_keyframe_description">每当丢失一帧时，向主机请求一个完整的新帧。画面恢复更快，但会短暂增加数据量。</string>
+    <string name="ps_settings_auto_bitrate_title">自动码率</string>
+    <string name="ps_settings_auto_bitrate_description">由主机自行选择码率：网络丢包时降低，之后再提高。关闭时使用下方的固定码率。</string>
     <string name="ps_settings_video_queue_title">帧队列</string>
     <string name="ps_settings_video_queue_description">可以等待解码器的帧数。越少延迟越低；越多在不稳定的网络中越流畅。</string>
     <string name="ps_settings_video_queue_few">少（最低延迟）</string>
@@ -55,4 +57,14 @@
     <string name="ps_settings_audio_buffer_high">高（最少断音）</string>
     <string name="ps_settings_swap_channels_title">交换左右声道</string>
     <string name="ps_settings_swap_channels_description">左声道从右侧播放，右声道从左侧播放。</string>
+    <string-array name="stream_loader_lines_ps_wake">
+        <item>正在从待机模式唤醒 %1$s</item>
+        <item>正在敲 %1$s 的门</item>
+        <item>正在远程按下 %1$s 的 PS 按钮</item>
+    </string-array>
+    <string-array name="stream_loader_lines_ps_session">
+        <item>正在打开遥控游玩会话</item>
+        <item>正在和 %1$s 握手</item>
+        <item>正在向 %1$s 要画面</item>
+    </string-array>
 </resources>

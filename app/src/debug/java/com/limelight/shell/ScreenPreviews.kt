@@ -98,6 +98,7 @@ internal object ScreenPreviews {
             "create_profile" -> shellPreview(ShellRoute { Screen.CreateProfile(editing = false, back = Screen.Boot()) })
             "pair_pc" -> shellPreview(ShellRoute { Screen.PairPc(back = Screen.Start) })
             "loader" -> loaderPreview
+            "loader_ps" -> { { PlayStationLoaderPreview() } }
             "result" -> resultPreview
             "stream_stats" -> StatsPreview.from(intent)
             "stream_osc", "stream_video" -> StreamShapePreview.from(intent)
@@ -196,6 +197,26 @@ internal object ScreenPreviews {
         CompanionOverlayPreview(shell, appearance, formatLaunchStreamParameters(3840, 2160, "HEVC", 60))
         Box(Modifier.fillMaxSize().background(colors.bg)) {
             LaunchScene(card, stage = null, progress = { HANDOFF_PROGRESS }, opening = { 0f }, clock = { LOADER_SECONDS })
+        }
+    }
+
+    /** The loader of a PlayStation stream: the PlayStation theme and the face-button shapes in the running tunnel. */
+    @Composable
+    private fun PlayStationLoaderPreview() {
+        val res = textResources()
+        val start = remember { System.nanoTime() }
+        val clock = com.limelight.shell.ui.rememberLaunchClock(start)
+        val card = remember(res) {
+            LaunchCard(1, "PS5-113", StreamLoader.greeting(res, "PS5-113"), com.limelight.shell.ui.GameArt("ps", 220f, 250f, com.limelight.shell.ui.Symbols.CONSOLE_PS5, null),
+                null, null, formatLaunchStreamParameters(1920, 1080, "HEVC", 60), playStation = true)
+        }
+        CompositionLocalProvider(com.limelight.shell.ui.LocalDelosColors provides com.limelight.shell.ps.playStationColors()) {
+            com.limelight.shell.ui.Stage(textScale = 1f) {
+                Box(Modifier.fillMaxSize().background(com.limelight.shell.ps.playStationColors().bg)) {
+                    LaunchScene(card, stage = res.getStringArray(com.limelight.R.array.stream_loader_lines_ps_wake)[0].format("PS5-113"),
+                        progress = { HANDOFF_PROGRESS }, opening = { 0f }, clock = clock)
+                }
+            }
         }
     }
 

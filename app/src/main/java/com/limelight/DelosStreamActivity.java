@@ -659,7 +659,12 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         float chosenFrameRate = displayPlan.streamFrameRate;
 
         if (psConsoleId != null) {
-            // A PlayStation stream: the console decides the stream from the PlayStation settings (PsConnection), the rest is the same
+            // A PlayStation stream: the console decides the stream from the PlayStation settings (PsConnection), the rest is the same.
+            // HDR only when this display and decoder can show it (the checks above); otherwise the console sends SDR HEVC.
+            prefConfig.enableHdr = willStreamHdr && decoderRenderer.isHevcMain10Hdr10Supported();
+            if (prefConfig.videoFormat != PreferenceConfiguration.FormatOption.FORCE_H264 && !decoderRenderer.isHevcSupported()) {
+                prefConfig.videoFormat = PreferenceConfiguration.FormatOption.FORCE_H264;
+            }
             decoderRenderer.setStreamDiagnostics(prefConfig.bitrate, isMetered, false);
             conn = new PsConnection(getApplicationContext(), psConsoleId, prefConfig);
         } else {

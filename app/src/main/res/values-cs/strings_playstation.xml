@@ -43,6 +43,8 @@
     <string name="ps_settings_tab_network">Síť</string>
     <string name="ps_settings_keyframe_title">Klíčový snímek po ztrátě</string>
     <string name="ps_settings_keyframe_description">Při každém ztraceném snímku požádá konzoli o celý nový snímek. Obraz se zotaví rychleji za cenu krátké dávky dat navíc.</string>
+    <string name="ps_settings_auto_bitrate_title">Automatický datový tok</string>
+    <string name="ps_settings_auto_bitrate_description">Konzole si datový tok volí sama: při ztrátě paketů ho sníží a pak zase zvýší. Vypnuto: drží se pevný datový tok níže.</string>
     <string name="ps_settings_video_queue_title">Fronta snímků</string>
     <string name="ps_settings_video_queue_description">Kolik snímků smí čekat na dekodér. Méně znamená nižší odezvu, více vyrovná nestabilní síť.</string>
     <string name="ps_settings_video_queue_few">Málo (nejnižší odezva)</string>
@@ -55,4 +57,14 @@
     <string name="ps_settings_audio_buffer_high">Vysoká (nejméně výpadků)</string>
     <string name="ps_settings_swap_channels_title">Prohodit levý a pravý kanál</string>
     <string name="ps_settings_swap_channels_description">Levý kanál hraje vpravo a pravý vlevo.</string>
+    <string-array name="stream_loader_lines_ps_wake">
+        <item>Budím %1$s z klidového režimu</item>
+        <item>Klepu na %1$s</item>
+        <item>Mačkám tlačítko PS na %1$s na dálku</item>
+    </string-array>
+    <string-array name="stream_loader_lines_ps_session">
+        <item>Otevírám relaci Remote Play</item>
+        <item>Podávám si ruku s %1$s</item>
+        <item>Prosím %1$s o obraz</item>
+    </string-array>
 </resources>

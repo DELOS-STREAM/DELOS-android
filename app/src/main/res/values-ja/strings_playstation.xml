@@ -43,6 +43,8 @@
     <string name="ps_settings_tab_network">ネットワーク</string>
     <string name="ps_settings_keyframe_title">フレーム欠落時にキーフレーム</string>
     <string name="ps_settings_keyframe_description">フレームが欠けるたびに、本体へ完全な新しいフレームを要求します。映像の回復が速くなる代わりに、一時的にデータが増えます。</string>
+    <string name="ps_settings_auto_bitrate_title">自動ビットレート</string>
+    <string name="ps_settings_auto_bitrate_description">本体がビットレートを自動で選び、パケットロスがあると下げ、その後また上げます。オフ：下の固定ビットレートを使います。</string>
     <string name="ps_settings_video_queue_title">フレームキュー</string>
     <string name="ps_settings_video_queue_description">デコーダーを待てるフレームの数。少ないほど遅延が小さく、多いほど不安定なネットワークでも滑らかです。</string>
     <string name="ps_settings_video_queue_few">少ない（最小遅延）</string>
@@ -55,4 +57,14 @@
     <string name="ps_settings_audio_buffer_high">高（途切れにくい）</string>
     <string name="ps_settings_swap_channels_title">左右を入れ替える</string>
     <string name="ps_settings_swap_channels_description">左チャンネルを右から、右チャンネルを左から再生します。</string>
+    <string-array name="stream_loader_lines_ps_wake">
+        <item>%1$s をレストモードから起動中</item>
+        <item>%1$s をノック中</item>
+        <item>%1$s の PS ボタンを遠くから押しています</item>
+    </string-array>
+    <string-array name="stream_loader_lines_ps_session">
+        <item>リモートプレイのセッションを開始中</item>
+        <item>%1$s と握手中</item>
+        <item>%1$s に映像をお願いしています</item>
+    </string-array>
 </resources>

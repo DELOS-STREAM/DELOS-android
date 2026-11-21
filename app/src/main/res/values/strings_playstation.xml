@@ -44,6 +44,8 @@
     <string name="ps_settings_tab_network">Network</string>
     <string name="ps_settings_keyframe_title">Keyframe after a lost frame</string>
     <string name="ps_settings_keyframe_description">Asks the console for a complete new frame whenever a frame is lost. The picture recovers faster, at the cost of a short burst of data.</string>
+    <string name="ps_settings_auto_bitrate_title">Automatic bitrate</string>
+    <string name="ps_settings_auto_bitrate_description">The console picks the bitrate itself and lowers it when the network drops packets, then raises it again. Off: the fixed bitrate below is held.</string>
     <string name="ps_settings_video_queue_title">Video frame queue</string>
     <string name="ps_settings_video_queue_description">How many frames may wait for the decoder. Fewer means lower latency; more smooths out an uneven network.</string>
     <string name="ps_settings_video_queue_few">Few (lowest latency)</string>
@@ -56,4 +58,14 @@
     <string name="ps_settings_audio_buffer_high">High (fewest dropouts)</string>
     <string name="ps_settings_swap_channels_title">Swap left and right</string>
     <string name="ps_settings_swap_channels_description">Plays the left channel on the right and the right on the left.</string>
+    <string-array name="stream_loader_lines_ps_wake">
+        <item>Waking %1$s from rest mode</item>
+        <item>Knocking on %1$s</item>
+        <item>Pressing the PS button on %1$s from afar</item>
+    </string-array>
+    <string-array name="stream_loader_lines_ps_session">
+        <item>Opening the Remote Play session</item>
+        <item>Shaking hands with %1$s</item>
+        <item>Asking %1$s for the picture</item>
+    </string-array>
 </resources>

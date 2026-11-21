@@ -151,6 +151,8 @@ data class LaunchCard(
     val background: ImageBitmap?,
     val logo: ImageBitmap?,
     val streamParameters: String,
+    /** A PlayStation stream: the face-button shapes fly through the tunnel. */
+    val playStation: Boolean = false,
 )
 
 /** One information layout above either the native tunnel, reduced-motion scene, or legacy renderer. */
@@ -173,7 +175,7 @@ fun LaunchScene(
                     drawRect(calm)
                 }
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-                    HyperspaceTunnel(progress, opening, clock, Modifier.fillMaxSize())
+                    HyperspaceTunnel(progress, opening, clock, Modifier.fillMaxSize(), symbols = card.playStation)
                 else -> LegacyLaunchScene(card, stage, progress, opening, clock)
             }
         }

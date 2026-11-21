@@ -26,6 +26,8 @@ internal fun HyperspaceTunnel(
     opening: () -> Float,
     clock: () -> Float,
     modifier: Modifier = Modifier,
+    /** A PlayStation stream: the four face-button shapes fly through the tunnel with the streaks. */
+    symbols: Boolean = false,
 ) {
     val colors = LocalDelosColors.current
     // Composition-scoped ownership: no global shader/brush cache survives overlay disposal.
@@ -63,6 +65,7 @@ internal fun HyperspaceTunnel(
             shader.setFloatUniform("uTravel", run.travel)
             shader.setFloatUniform("uProgress", run.speedProgress)
             shader.setFloatUniform("uOpening", o)
+            shader.setFloatUniform("uSymbols", if (symbols) 1f else 0f)
             shader.setFloatUniform("uBg", colors.bg.red, colors.bg.green, colors.bg.blue)
             val g1 = HyperspaceConfig.ACCENT_GAIN
             val g2 = HyperspaceConfig.ACCENT2_GAIN
@@ -83,7 +86,7 @@ private class TunnelRun(var travel: Float, var speedProgress: Float) {
 // Immutable CONFIG values become shader constants, not redundant per-frame uniform updates.
 private val HYPERSPACE_SHADER = """
 uniform float2 uResolution;
-uniform float uTime, uProgress, uOpening, uTravel;
+uniform float uTime, uProgress, uOpening, uTravel, uSymbols;
 uniform float3 uBg, uGold, uCyan, uIndigo;
 
 const float2 uCenter = float2(${HyperspaceConfig.CENTER_X}, ${HyperspaceConfig.CENTER_Y});
@@ -104,6 +107,20 @@ float hash(float n) { return fract(sin(n * 127.1 + 311.7) * 43758.5453); }
 float segment(float2 p, float2 a, float2 b) {
     float2 ab = b - a;
     return length(p - a - ab * clamp(dot(p - a, ab) / max(dot(ab, ab), .000001), 0., 1.));
+}
+// Signed distances of the face-button shapes in a unit box (iq's formulas): an equilateral triangle (apex up on the screen) and a box
+float sdTriangle(float2 p, float r) {
+    const float k = 1.7320508;
+    p.y = -p.y;
+    p.x = abs(p.x) - r;
+    p.y = p.y + r / k;
+    if (p.x + k * p.y > 0.) p = float2(p.x - k * p.y, -k * p.x - p.y) / 2.;
+    p.x -= clamp(p.x, -2. * r, 0.);
+    return -length(p) * sign(p.y);
+}
+float sdBox(float2 p, float2 b) {
+    float2 d = abs(p) - b;
+    return length(max(d, 0.)) + min(max(d.x, d.y), 0.);
 }
 
 half4 main(float2 fragCoord) {
@@ -171,6 +188,34 @@ half4 main(float2 fragCoord) {
         float3 streak = mod(fi, 6.) < 1. ? uGold : (mod(fi, 6.) > 4. ? uIndigo : uCyan);
         float gain = smoothstep(.04, .16, radius) * (1. - smoothstep(1.8, 4., radius)) * (.45 + .8 * uProgress);
         color += (streak * (core + bloom) + float3(.08, .015, .16) * split) * gain;
+    }
+
+    // PlayStation: the four face-button shapes fly out of the throat like the streaks, flat outlines facing the viewer that grow
+    // with their depth (the same perspective as the streaks), turn slowly and fade in and out with it. They sit in the zoomed
+    // screen space without the lens pinch, so a circle stays round.
+    if (uSymbols > 0.) {
+        for (int s = 0; s < ${HyperspaceConfig.SYMBOL_COUNT}; s++) {
+            float fs = float(s);
+            float z = fract(hash(fs + 401.) + travel * (.075 + hash(fs + 433.) * .05));
+            float angle = (fs + hash(fs + 467.) * .8) * 6.2831853 / ${HyperspaceConfig.SYMBOL_COUNT.toFloat()};
+            float radius = .06 + pow(z, 2.6) * 1.9;
+            float size = .012 + pow(z, 2.2) * .2;
+            float2 p = screen - float2(cos(angle), sin(angle)) * radius;
+            if (dot(p, p) > size * size * 4.) continue;
+            float spin = hash(fs + 499.) * 6.2831853 + t * (hash(fs + 521.) - .5) * .9;
+            float cs = cos(spin), sn = sin(spin);
+            p = float2(cs * p.x - sn * p.y, sn * p.x + cs * p.y) / size;
+            float kind = mod(fs, 4.);
+            float d = kind < 1. ? abs(sdTriangle(p, .8))
+                : kind < 2. ? abs(length(p) - .72)
+                : kind < 3. ? min(segment(p, float2(-.62, -.62), float2(.62, .62)), segment(p, float2(-.62, .62), float2(.62, -.62)))
+                : abs(sdBox(p, float2(.62)));
+            float line = exp(-d * d / .0049);
+            float halo = exp(-d * 6.) * .22;
+            float envelope = smoothstep(.02, .2, z) * (1. - smoothstep(.72, 1., z));
+            float3 ink = kind < 1. ? uCyan : (kind < 2. ? uGold : (kind < 3. ? uIndigo : uCyan));
+            color += ink * (line + halo) * envelope * (.6 + .7 * uProgress) * ${HyperspaceConfig.SYMBOL_GAIN};
+        }
     }
 
     // Unzoomed viewport-periphery light, before cloud occlusion.

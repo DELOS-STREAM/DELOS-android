@@ -43,6 +43,8 @@
     <string name="ps_settings_tab_network">Мережа</string>
     <string name="ps_settings_keyframe_title">Ключовий кадр після втрати</string>
     <string name="ps_settings_keyframe_description">Щоразу, коли кадр втрачено, просить консоль надіслати повний новий кадр. Зображення відновлюється швидше ціною короткого сплеску даних.</string>
+    <string name="ps_settings_auto_bitrate_title">Автоматичний бітрейт</string>
+    <string name="ps_settings_auto_bitrate_description">Консоль сама обирає бітрейт: знижує його при втраті пакетів, а потім знову підвищує. Вимкнено: діє фіксований бітрейт нижче.</string>
     <string name="ps_settings_video_queue_title">Черга кадрів</string>
     <string name="ps_settings_video_queue_description">Скільки кадрів може чекати на декодер. Менше — нижча затримка; більше — плавніше в нестабільній мережі.</string>
     <string name="ps_settings_video_queue_few">Мало (найнижча затримка)</string>
@@ -55,4 +57,14 @@
     <string name="ps_settings_audio_buffer_high">Високий (найменше перебоїв)</string>
     <string name="ps_settings_swap_channels_title">Поміняти лівий і правий</string>
     <string name="ps_settings_swap_channels_description">Лівий канал звучить праворуч, а правий — ліворуч.</string>
+    <string-array name="stream_loader_lines_ps_wake">
+        <item>Пробуджую %1$s з режиму спокою</item>
+        <item>Стукаю до %1$s</item>
+        <item>Натискаю кнопку PS на %1$s здалеку</item>
+    </string-array>
+    <string-array name="stream_loader_lines_ps_session">
+        <item>Відкриваю сеанс Remote Play</item>
+        <item>Тисну руку %1$s</item>
+        <item>Прошу в %1$s зображення</item>
+    </string-array>
 </resources>

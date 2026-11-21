@@ -60,8 +60,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
     private fun connect() {
         val c = console
-        val name = c?.name ?: "PlayStation"
-        listener.stageStarting(name)
+        listener.stageStarting(STAGE_WAKE)
         try {
             if (c == null) throw PsException("console $consoleId is not paired")
             val address = InetAddress.getByName(c.address)
@@ -85,20 +84,24 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             synchronized(ready) { if (sessionId == null) ready.wait(10_000) }
             val id = sessionId ?: throw PsException("the console sent no session id")
             session.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, 1, 0x59)); session.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, 1, 0x59)); session.send(PsCtrl.DISPLAY_DEVICES, ByteArray(4))
-            listener.stageComplete(name)
+            listener.stageComplete(STAGE_WAKE)
             if (!running) return
             listener.stageStarting(STAGE_STREAM)
             ps5 = c.console.target.ps5
-            val s = PsStream(address, c.console.target, id, session.crypt, request, streamListener(request), psPrefs.getBoolean(PsPrefs.KEYFRAME_ON_LOSS, false))
+            val s = PsStream(address, c.console.target, id, session.crypt, request, streamListener(request),
+                keyframeOnLoss = psPrefs.getBoolean(PsPrefs.KEYFRAME_ON_LOSS, false), holdBitrate = !PsPrefs.autoBitrate(psPrefs))
             stream = s
             s.start()
         } catch (e: Exception) {
             Log.w(TAG, "connect", e)
-            if (running) listener.stageFailed(if (stream == null) name else STAGE_STREAM, 0, -1)
+            if (running) listener.stageFailed(if (stream == null) STAGE_WAKE else STAGE_STREAM, 0, -1)
         }
     }
 
-    /** The stream the settings ask for, within what Remote Play offers (docs/research/ps-remote-play-protocol.md, 9). */
+    /**
+     * The stream the settings ask for, within what Remote Play offers (docs/research/ps-remote-play-protocol.md, 9). The bitrate is the
+     * console's ceiling: a fixed one is held, the automatic one is the most this size takes and the console moves below it.
+     */
     private fun request(target: PsTarget): PsStreamRequest {
         val size = RESOLUTIONS.lastOrNull { it.second <= prefs.height } ?: RESOLUTIONS.first()
         val maxHeight = if (target.ps5) 1080 else 720
@@ -108,7 +111,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             prefs.enableHdr -> PsCodec.HEVC_HDR
             else -> PsCodec.HEVC
         }
-        return PsStreamRequest(width = w, height = h, fps = if (prefs.fps >= 60) 60 else 30, bitrateKbps = prefs.bitrate.coerceIn(2_000, 100_000), codec = codec)
+        val bitrate = if (PsPrefs.autoBitrate(psPrefs)) PsPrefs.autoCeilingKbps(h)
+            else prefs.bitrate.coerceIn(PsPrefs.MIN_BITRATE_KBPS, PsPrefs.MAX_BITRATE_KBPS)
+        return PsStreamRequest(width = w, height = h, fps = if (prefs.fps >= 60) 60 else 30, bitrateKbps = bitrate, codec = codec)
     }
 
     private fun streamListener(request: PsStreamRequest) = object : PsStreamListener {
@@ -468,7 +473,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         const val EXTRA_CONSOLE = "ps_console"
 
         private const val TAG = "PsConnection"
-        private const val STAGE_STREAM = "Remote Play"
+        // The stage names the loader tells a line for (StreamLoader.STAGE_LINES)
+        private const val STAGE_WAKE = "PlayStation wake"
+        private const val STAGE_STREAM = "Remote Play session"
         private const val PS_PORT = 9295
         private const val SILENCE_MS = 10_000L
         private const val MOTION_RATE_HZ: Short = 200

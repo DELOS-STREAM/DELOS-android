@@ -24,6 +24,26 @@ object PsPrefs {
     /** "few" | "normal" | "many", default "few": video frames that may wait for the decoder before the oldest are dropped. */
     const val VIDEO_QUEUE = "ps_video_queue"
 
+    /** Boolean, default true: the console sets the bitrate itself from the loss DELOS reports, up to [autoCeilingKbps]. */
+    const val AUTO_BITRATE = "ps_auto_bitrate"
+
+    /**
+     * The range of a fixed bitrate. Remote Play takes the bitrate as a ceiling; a PS5 at 1080p60 is reported to send about 30–50 Mbit/s
+     * at most (protocol spec, 9 [UNVERIFIED]), so more would not change the picture.
+     */
+    const val MIN_BITRATE_KBPS = 2_000
+    const val MAX_BITRATE_KBPS = 50_000
+
+    fun autoBitrate(prefs: SharedPreferences): Boolean = prefs.getBoolean(AUTO_BITRATE, true)
+
+    /** The ceiling of the automatic bitrate for a stream [height] lines high: the most that size uses. */
+    fun autoCeilingKbps(height: Int): Int = when {
+        height <= 360 -> 4_000
+        height <= 540 -> 8_000
+        height <= 720 -> 20_000
+        else -> MAX_BITRATE_KBPS
+    }
+
     private const val RESOLUTION = "list_resolution"
     private const val FPS = "list_fps"
     private const val FORMAT = "video_format"
@@ -40,7 +60,8 @@ object PsPrefs {
                 .putString(RESOLUTION, "1920x1080")
                 .putString(FPS, "60")
                 .putString(FORMAT, "forceh265")
-                .putInt(BITRATE, PreferenceConfiguration.getDefaultBitrate("1920x1080", "60", "forceh265", false, false))
+                .putInt(BITRATE, PreferenceConfiguration.getDefaultBitrate("1920x1080", "60", "forceh265", false, false)
+                    .coerceIn(MIN_BITRATE_KBPS, MAX_BITRATE_KBPS))
                 .apply()
         }
         return prefs

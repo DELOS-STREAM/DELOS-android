@@ -220,26 +220,42 @@ private fun psRows(
     prefs: SharedPreferences,
 ): List<PsRow> {
     val res = textResources()
+    val auto = values[PsPrefs.AUTO_BITRATE] as? Boolean ?: true
     val classic = tab.classic.mapNotNull { key -> catalog.all.firstOrNull { it.key == key } }
         .filter { it.key !in (caps?.hidden ?: emptySet()) }
-        .map { spec ->
+        .flatMap { spec ->
             val current = values[spec.key] ?: spec.default
             val device = if (spec.kind == SettingKind.CHOICE) caps?.choices(res, spec, values) ?: spec.choices else spec.choices
             val choices = PS_CHOICES[spec.key]?.let { allowed -> device.filter { it.value in allowed } } ?: device
+            val bitrate = spec.key == BITRATE_KEY
             val value = when (spec.kind) {
                 SettingKind.TOGGLE -> RowValue.Toggle(current as? Boolean ?: false) { stream.write(spec, it) }
                 SettingKind.CHOICE -> RowValue.Choice(spec.choiceLabel(res, current, choices), { dir ->
                     nextSettingChoice(current, choices, dir)?.let { stream.write(spec, it.value) }
                 }, options = choices.map { it.label }, selected = choices.indexOfFirst { it.value == current },
                     onPick = { i -> choices.getOrNull(i)?.let { stream.write(spec, it.value) } })
-                SettingKind.SLIDER -> RowValue.Slider((current as? Number)?.toInt() ?: spec.min,
-                    spec.min, spec.max, spec.step, spec.unit, spec.divisor) { stream.write(spec, it) }
+                // The bitrate within what the console streams (PsPrefs.MAX_BITRATE_KBPS)
+                SettingKind.SLIDER -> if (bitrate) RowValue.Slider(((current as? Number)?.toInt() ?: PsPrefs.MIN_BITRATE_KBPS)
+                    .coerceIn(PsPrefs.MIN_BITRATE_KBPS, PsPrefs.MAX_BITRATE_KBPS), PsPrefs.MIN_BITRATE_KBPS, PsPrefs.MAX_BITRATE_KBPS,
+                    spec.step, spec.unit, spec.divisor) { stream.write(spec, it) }
+                    else RowValue.Slider((current as? Number)?.toInt() ?: spec.min, spec.min, spec.max, spec.step, spec.unit, spec.divisor) { stream.write(spec, it) }
                 else -> RowValue.Info(current?.toString().orEmpty())
             }
-            PsRow(spec.key, spec.icon, spec.label, spec.description, SettingsHelp.details(res, spec, values, choices), value,
-                enabled = caps != null && stream.enabled(spec, caps), impact = impact(spec.key, values))
+            val row = PsRow(spec.key, spec.icon, spec.label, spec.description, SettingsHelp.details(res, spec, values, choices), value,
+                enabled = caps != null && stream.enabled(spec, caps) && !(bitrate && auto), impact = impact(spec.key, values))
+            // Automatic bitrate sits right above the bitrate it replaces
+            if (bitrate) listOf(autoBitrateRow(res, auto, prefs), row) else listOf(row)
         }
     return classic + psOnlyRows(tab, values, prefs)
+}
+
+private const val BITRATE_KEY = "seekbar_bitrate_kbps"
+
+/** The console picks its bitrate from the loss DELOS reports (PsPrefs.AUTO_BITRATE); the fixed bitrate row is off while it does. */
+private fun autoBitrateRow(res: android.content.res.Resources, on: Boolean, prefs: SharedPreferences): PsRow {
+    val text = res.getString(R.string.ps_settings_auto_bitrate_description)
+    return PsRow(PsPrefs.AUTO_BITRATE, Symbols.NETWORK_CHECK, res.getString(R.string.ps_settings_auto_bitrate_title), text, text,
+        RowValue.Toggle(on) { prefs.edit().putBoolean(PsPrefs.AUTO_BITRATE, it).apply() })
 }
 
 /** The PlayStation-only rows of [tab], written straight to the [PsPrefs] keys; [values] makes them follow every change of the file. */

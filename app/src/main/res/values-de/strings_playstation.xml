@@ -43,6 +43,8 @@
     <string name="ps_settings_tab_network">Netzwerk</string>
     <string name="ps_settings_keyframe_title">Keyframe nach verlorenem Bild</string>
     <string name="ps_settings_keyframe_description">Fordert bei jedem verlorenen Bild ein vollständiges neues Bild von der Konsole an. Das Bild erholt sich schneller, kostet aber kurz mehr Daten.</string>
+    <string name="ps_settings_auto_bitrate_title">Automatische Bitrate</string>
+    <string name="ps_settings_auto_bitrate_description">Die Konsole wählt die Bitrate selbst, senkt sie bei Paketverlust und hebt sie danach wieder an. Aus: Die feste Bitrate darunter gilt.</string>
     <string name="ps_settings_video_queue_title">Bildwarteschlange</string>
     <string name="ps_settings_video_queue_description">Wie viele Bilder auf den Decoder warten dürfen. Weniger bedeutet geringere Latenz, mehr gleicht ein ungleichmäßiges Netzwerk aus.</string>
     <string name="ps_settings_video_queue_few">Wenige (geringste Latenz)</string>
@@ -55,4 +57,14 @@
     <string name="ps_settings_audio_buffer_high">Hoch (wenigste Aussetzer)</string>
     <string name="ps_settings_swap_channels_title">Links und rechts tauschen</string>
     <string name="ps_settings_swap_channels_description">Spielt den linken Kanal rechts und den rechten links ab.</string>
+    <string-array name="stream_loader_lines_ps_wake">
+        <item>Wecke %1$s aus dem Ruhemodus</item>
+        <item>Klopfe bei %1$s an</item>
+        <item>Drücke aus der Ferne die PS-Taste von %1$s</item>
+    </string-array>
+    <string-array name="stream_loader_lines_ps_session">
+        <item>Öffne die Remote-Play-Sitzung</item>
+        <item>Begrüße %1$s per Handschlag</item>
+        <item>Bitte %1$s um das Bild</item>
+    </string-array>
 </resources>

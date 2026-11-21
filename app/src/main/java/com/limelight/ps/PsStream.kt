@@ -42,6 +42,11 @@ class PsStream(
     private val listener: PsStreamListener,
     /** Ask for a keyframe whenever frames go missing, not only when one cannot be rebuilt (PsPrefs.KEYFRAME_ON_LOSS). */
     private val keyframeOnLoss: Boolean = false,
+    /**
+     * A fixed bitrate: the loss the congestion report tells the console is held at 3 % so sporadic Wi-Fi loss does not lower it.
+     * Automatic bitrate (false): the real loss goes out and the console lowers and raises its bitrate with the network (5.8).
+     */
+    private val holdBitrate: Boolean = true,
 ) : AutoCloseable {
     private val v12 = target.takionVersion >= 12
     private val socket = DatagramSocket()
@@ -311,8 +316,10 @@ class PsStream(
     private fun sendCongestion() {
         val gk = gkSend ?: return
         val received = assembler.unitsReceived.also { assembler.unitsReceived = 0 }
-        // Sporadic Wi-Fi loss is reported as at most 3 %: FEC hides it, and a higher figure makes the console drop its bitrate (5.8)
-        val lost = assembler.unitsLost.also { assembler.unitsLost = 0 }.coerceAtMost(received * 3 / 100)
+        // A fixed bitrate reports sporadic Wi-Fi loss as at most 3 %: FEC hides it, and a higher figure makes the console drop its
+        // bitrate (5.8). Automatic bitrate reports the real loss
+        val measured = assembler.unitsLost.also { assembler.unitsLost = 0 }
+        val lost = if (holdBitrate) measured.coerceAtMost(received * 3 / 100) else measured
         val position = takePosition(15)
         val d = ByteBuffer.allocate(15).order(ByteOrder.BIG_ENDIAN).apply {
             put(5); putShort(0); putShort(received.coerceAtMost(0xFFFF).toShort()); putShort(lost.coerceAtMost(0xFFFF).toShort()); putInt(0); putInt(0)

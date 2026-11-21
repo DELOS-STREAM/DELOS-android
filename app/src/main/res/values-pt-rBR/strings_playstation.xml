@@ -43,6 +43,8 @@
     <string name="ps_settings_tab_network">Rede</string>
     <string name="ps_settings_keyframe_title">Quadro-chave após perda</string>
     <string name="ps_settings_keyframe_description">Pede ao console um quadro completo novo sempre que um quadro se perde. A imagem se recupera mais rápido, ao custo de um breve pico de dados.</string>
+    <string name="ps_settings_auto_bitrate_title">Taxa de bits automática</string>
+    <string name="ps_settings_auto_bitrate_description">O console escolhe a taxa de bits, reduz quando a rede perde pacotes e depois aumenta de novo. Desligado: mantém a taxa fixa abaixo.</string>
     <string name="ps_settings_video_queue_title">Fila de quadros</string>
     <string name="ps_settings_video_queue_description">Quantos quadros podem esperar pelo decodificador. Menos significa menor latência; mais suaviza uma rede instável.</string>
     <string name="ps_settings_video_queue_few">Poucos (menor latência)</string>
@@ -55,4 +57,14 @@
     <string name="ps_settings_audio_buffer_high">Alto (menos falhas)</string>
     <string name="ps_settings_swap_channels_title">Trocar esquerda e direita</string>
     <string name="ps_settings_swap_channels_description">Toca o canal esquerdo à direita e o direito à esquerda.</string>
+    <string-array name="stream_loader_lines_ps_wake">
+        <item>Acordando o %1$s do modo de descanso</item>
+        <item>Batendo na porta do %1$s</item>
+        <item>Apertando de longe o botão PS do %1$s</item>
+    </string-array>
+    <string-array name="stream_loader_lines_ps_session">
+        <item>Abrindo a sessão de Remote Play</item>
+        <item>Cumprimentando o %1$s</item>
+        <item>Pedindo a imagem ao %1$s</item>
+    </string-array>
 </resources>

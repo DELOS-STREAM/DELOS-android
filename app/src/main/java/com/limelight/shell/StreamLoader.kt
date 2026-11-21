@@ -174,6 +174,9 @@ class StreamLoader private constructor(
             "audio stream" to R.array.stream_loader_lines_audio_stream,
             "input stream" to R.array.stream_loader_lines_input_stream,
             "unlocking" to R.array.stream_loader_lines_unlocking,
+            // PlayStation streams (PsConnection's stage names)
+            "playstation wake" to R.array.stream_loader_lines_ps_wake,
+            "remote play session" to R.array.stream_loader_lines_ps_session,
         )
 
         @JvmStatic fun greeting(res: Resources, pcName: String): String = res.getString(R.string.stream_loader_greeting, pcName)
@@ -215,21 +218,23 @@ class StreamLoader private constructor(
 
         @JvmStatic fun show(activity: DelosStreamActivity, config: PreferenceConfiguration): StreamLoader {
             val intent = activity.intent
-            val title = intent.getStringExtra(DelosStreamActivity.EXTRA_APP_NAME).orEmpty()
+            // A PlayStation stream: the console's name as the title, the PlayStation theme and the face-button shapes in the tunnel
+            val playStation = intent.hasExtra(com.limelight.ps.PsConnection.EXTRA_CONSOLE)
             val pcName = intent.getStringExtra(DelosStreamActivity.EXTRA_PC_NAME) ?: activity.getString(R.string.stream_result_default_pc)
+            val title = if (playStation) pcName else intent.getStringExtra(DelosStreamActivity.EXTRA_APP_NAME).orEmpty()
             val pcUuid = intent.getStringExtra(DelosStreamActivity.EXTRA_PC_UUID)
             val appId = intent.getIntExtra(DelosStreamActivity.EXTRA_APP_ID, 0)
-            val cover = if (Build.VERSION.SDK_INT < 33) pcUuid?.let { loadCover(activity, it, appId) } else null
-            val logo = LaunchHandoff.logo
+            val cover = if (Build.VERSION.SDK_INT < 33 && !playStation) pcUuid?.let { loadCover(activity, it, appId) } else null
+            val logo = if (playStation) null else LaunchHandoff.logo
             val hue = ((title.hashCode() and 0x7fffffff) % 360).toFloat()
             val info = parameters(activity.resources, config, 0, config.width, config.height)
             val card = LaunchCard(0, title, greeting(activity.resources, pcName),
                 GameArt("$pcUuid/$appId", hue, (hue + 35f) % 360f, Symbols.SPORTS_ESPORTS, cover),
-                LaunchHandoff.background, logo, info)
+                if (playStation) null else LaunchHandoff.background, logo, info, playStation = playStation)
             val view = ComposeView(activity)
             val appearance = AppearanceStore { ProfileStore.currentSettings(activity) }.appearance.value
             val loader = StreamLoader(activity, view, pcName, info, appearance.reducedMotion)
-            val colors = delosColors(appearance, systemAccentHue(activity))
+            val colors = if (playStation) com.limelight.shell.ps.playStationColors() else delosColors(appearance, systemAccentHue(activity))
             view.setContent {
                 CompositionLocalProvider(LocalDelosColors provides colors) {
                     Stage(textScale = appearance.uiScale / 100f) { LoaderScene(loader, card, appearance.reducedMotion) }

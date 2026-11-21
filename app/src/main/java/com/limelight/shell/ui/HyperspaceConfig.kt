@@ -53,6 +53,10 @@ internal object HyperspaceConfig {
     const val CLOUD_FLASH_GAIN = .11f
     const val CLOUD_DRIFT = .04f
 
+    // PlayStation streams: the face-button shapes in flight (four kinds in turn) and their brightness
+    const val SYMBOL_COUNT = 16
+    const val SYMBOL_GAIN = .55f
+
     const val CONTRAST = 1.12f
     const val EXPOSURE = 1.55f
     const val EDGE_BLOOM = .16f

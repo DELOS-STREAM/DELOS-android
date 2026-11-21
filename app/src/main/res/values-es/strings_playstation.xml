@@ -43,6 +43,8 @@
     <string name="ps_settings_tab_network">Red</string>
     <string name="ps_settings_keyframe_title">Fotograma clave tras una pérdida</string>
     <string name="ps_settings_keyframe_description">Pide a la consola un fotograma completo nuevo cada vez que se pierde uno. La imagen se recupera antes, a cambio de un breve pico de datos.</string>
+    <string name="ps_settings_auto_bitrate_title">Tasa de bits automática</string>
+    <string name="ps_settings_auto_bitrate_description">La consola elige la tasa de bits, la baja cuando la red pierde paquetes y luego la vuelve a subir. Desactivada: se mantiene la tasa fija de abajo.</string>
     <string name="ps_settings_video_queue_title">Cola de fotogramas</string>
     <string name="ps_settings_video_queue_description">Cuántos fotogramas pueden esperar al decodificador. Menos implica menor latencia; más suaviza una red irregular.</string>
     <string name="ps_settings_video_queue_few">Pocos (menor latencia)</string>
@@ -55,4 +57,14 @@
     <string name="ps_settings_audio_buffer_high">Alto (menos cortes)</string>
     <string name="ps_settings_swap_channels_title">Intercambiar izquierda y derecha</string>
     <string name="ps_settings_swap_channels_description">Reproduce el canal izquierdo a la derecha y el derecho a la izquierda.</string>
+    <string-array name="stream_loader_lines_ps_wake">
+        <item>Despertando %1$s del modo de reposo</item>
+        <item>Llamando a la puerta de %1$s</item>
+        <item>Pulsando a distancia el botón PS de %1$s</item>
+    </string-array>
+    <string-array name="stream_loader_lines_ps_session">
+        <item>Abriendo la sesión de Remote Play</item>
+        <item>Saludando a %1$s</item>
+        <item>Pidiendo la imagen a %1$s</item>
+    </string-array>
 </resources>

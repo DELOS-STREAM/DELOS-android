@@ -43,6 +43,8 @@
     <string name="ps_settings_tab_network">네트워크</string>
     <string name="ps_settings_keyframe_title">프레임 손실 시 키프레임</string>
     <string name="ps_settings_keyframe_description">프레임이 손실될 때마다 본체에 완전한 새 프레임을 요청합니다. 화면이 더 빨리 회복되지만 잠시 데이터가 늘어납니다.</string>
+    <string name="ps_settings_auto_bitrate_title">자동 비트레이트</string>
+    <string name="ps_settings_auto_bitrate_description">본체가 비트레이트를 직접 고르고, 패킷 손실이 생기면 낮췄다가 다시 올립니다. 끄면 아래의 고정 비트레이트를 유지합니다.</string>
     <string name="ps_settings_video_queue_title">프레임 대기열</string>
     <string name="ps_settings_video_queue_description">디코더를 기다릴 수 있는 프레임 수입니다. 적을수록 지연이 낮고, 많을수록 불안정한 네트워크에서 부드럽습니다.</string>
     <string name="ps_settings_video_queue_few">적게 (최저 지연)</string>
@@ -55,4 +57,14 @@
     <string name="ps_settings_audio_buffer_high">높음 (끊김 최소)</string>
     <string name="ps_settings_swap_channels_title">왼쪽과 오른쪽 바꾸기</string>
     <string name="ps_settings_swap_channels_description">왼쪽 채널을 오른쪽에서, 오른쪽 채널을 왼쪽에서 재생합니다.</string>
+    <string-array name="stream_loader_lines_ps_wake">
+        <item>%1$s을(를) 휴식 모드에서 깨우는 중</item>
+        <item>%1$s의 문을 두드리는 중</item>
+        <item>멀리서 %1$s의 PS 버튼을 누르는 중</item>
+    </string-array>
+    <string-array name="stream_loader_lines_ps_session">
+        <item>리모트 플레이 세션을 여는 중</item>
+        <item>%1$s와(과) 악수하는 중</item>
+        <item>%1$s에게 화면을 부탁하는 중</item>
+    </string-array>
 </resources>
