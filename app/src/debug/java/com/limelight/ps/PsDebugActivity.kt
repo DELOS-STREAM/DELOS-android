@@ -20,6 +20,10 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.webkit.CookieManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import java.net.InetAddress
 import java.util.Base64
 import kotlin.concurrent.thread
@@ -40,6 +44,39 @@ class PsDebugActivity : Activity() {
     private var stream: PsStream? = null
     private var codec: MediaCodec? = null
     private var pad = PsControllerState()
+    private var web: WebView? = null
+    private lateinit var root: FrameLayout
+
+    /** Sony's sign-in page in a WebView; the redirect with the code is caught here and never loaded (spec 3.1). */
+    private fun signIn() {
+        CookieManager.getInstance().removeAllCookies(null)
+        val w = WebView(this)
+        w.settings.javaScriptEnabled = true
+        w.settings.domStorageEnabled = true
+        w.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                val code = PsOAuth.codeFrom(request.url.toString()) ?: return false
+                closeWeb()
+                thread {
+                    try {
+                        val id = PsAccountId.toBase64(PsOAuth.accountId(code))
+                        prefs.edit().putString("account", id).apply()
+                        runOnUiThread { accountField.setText(id) }
+                        say("Signed in: account id $id")
+                    } catch (e: Exception) { say("PSN sign-in failed: ${e.message}") }
+                }
+                return true
+            }
+        }
+        web = w
+        root.addView(w, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        w.loadUrl(PsOAuth.authorizeUrl())
+        say("Sign in on Sony's page; DELOS only receives the account id")
+    }
+
+    private fun closeWeb() = runOnUiThread { web?.let { root.removeView(it); it.destroy() }; web = null }
+
+    override fun onBackPressed() { if (web != null) closeWeb() else @Suppress("DEPRECATION") super.onBackPressed() }
 
     private val prefs by lazy { getSharedPreferences("ps_debug", Context.MODE_PRIVATE) }
 
@@ -54,6 +91,7 @@ class PsDebugActivity : Activity() {
         accountField = EditText(this).apply { hint = "PSN account id (base64, 12 characters)"; setText(prefs.getString("account", "")); setTextColor(Color.WHITE) }
         pinField = EditText(this).apply { hint = "8-digit PIN from the console"; setTextColor(Color.WHITE) }
         column.addView(accountField); column.addView(pinField)
+        button("Sign in to PSN (fills the account id)") { signIn() }
         button("Search the network") { search() }
         button("Register (Settings › System › Remote Play › Pair Device open on the PS5)") { register() }
         button("Wake the registered console") { wake() }
@@ -63,6 +101,7 @@ class PsDebugActivity : Activity() {
         column.addView(log)
         panel = ScrollView(this).apply { addView(column) }
         root.addView(panel)
+        this.root = root
         setContentView(root)
         say("Saved console: ${prefs.getString("nickname", "none")}")
     }
