@@ -2,6 +2,9 @@ package com.limelight.shell.ps
 
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import com.limelight.shell.ui.Motion
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -317,8 +320,9 @@ private fun PinStep(screen: Screen.PairPs, step: PsPairStep.Pin) {
 }
 
 /**
- * The PIN pad (prototype F): 1–9, then Clear, 0 and erase, in a glass panel. The keys are the letter picker's (Settings search): a dense
- * grid where a focused key does not grow, its ring lies inside its edge and its fill and digit light up; the D-pad moves, A types.
+ * The PIN pad (prototype F): 1–9, then Clear, 0 and erase, in a glass panel. Every key is a raised tile, lighter than the panel and
+ * outlined, so the grid reads at a glance; the two function keys are a step darker. A focused key fills with the accent like the
+ * prototype's and keeps the letter picker's inner ring (no growth: the grid is dense). The D-pad moves, A types.
  */
 @Composable
 private fun PinPad(first: FocusRequester, type: (Char) -> Unit, erase: () -> Unit, clear: () -> Unit) {
@@ -330,13 +334,13 @@ private fun PinPad(first: FocusRequester, type: (Char) -> Unit, erase: () -> Uni
     ) {
         listOf("123", "456", "789").forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(PinKey.KEYS.gap.px)) {
-                row.forEach { d -> PinKey(if (d == '1') Modifier.focusRequester(first) else Modifier, { type(d) }) { lit -> PinLabel(d.toString(), lit, 40) } }
+                row.forEach { d -> PinKey(if (d == '1') Modifier.focusRequester(first) else Modifier, { type(d) }) { lit -> PinLabel(d.toString(), lit, 42) } }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(PinKey.KEYS.gap.px)) {
-            PinKey(Modifier, clear, Cue.BACK) { lit -> PinLabel(stringResource(R.string.ps_clear), lit, 26) }
-            PinKey(Modifier, { type('0') }) { lit -> PinLabel("0", lit, 40) }
-            PinKey(Modifier, erase, Cue.BACK) { lit -> Symbol(Symbols.BACKSPACE, 36.tpx, if (lit) colors.accent else colors.text2, filled = lit) }
+            PinKey(Modifier, clear, Cue.BACK, function = true) { lit -> PinLabel(stringResource(R.string.ps_clear), lit, 26) }
+            PinKey(Modifier, { type('0') }) { lit -> PinLabel("0", lit, 42) }
+            PinKey(Modifier, erase, Cue.BACK, function = true) { lit -> Symbol(Symbols.BACKSPACE, 38.tpx, if (lit) colors.onAccent else colors.text, filled = lit) }
         }
     }
 }
@@ -344,18 +348,20 @@ private fun PinPad(first: FocusRequester, type: (Char) -> Unit, erase: () -> Uni
 @Composable
 private fun PinLabel(text: String, lit: Boolean, size: Int) {
     val colors = LocalDelosColors.current
-    BasicText(text, maxLines = 1, style = TextStyle(color = if (lit) colors.accent else colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = size.tpx))
+    BasicText(text, maxLines = 1, style = TextStyle(color = if (lit) colors.onAccent else colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = size.tpx))
 }
 
-/** One key of the [PinPad], with [LetterPicker]'s focus look; [content] gets whether the key is focused. */
+/** One key of the [PinPad]; [content] gets whether the key is focused. [function]: Clear and erase, a step darker than the digits. */
 @Composable
-private fun PinKey(modifier: Modifier, onClick: () -> Unit, cue: Cue = Cue.SELECT, content: @Composable (Boolean) -> Unit) {
+private fun PinKey(modifier: Modifier, onClick: () -> Unit, cue: Cue = Cue.SELECT, function: Boolean = false, content: @Composable (Boolean) -> Unit) {
     val colors = LocalDelosColors.current
     var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(PinKey.CORNER.px)
+    val fill by animateColorAsState(if (focused) colors.accent else if (function) colors.surface2 else colors.surface3, tween(Motion.FADE), label = "pinKey")
     Box(
         modifier.size(PinKey.WIDTH.px, PinKey.HEIGHT.px)
             .focusEffects(onClick, corner = PinKey.CORNER, focusScale = LetterPicker.KEY_LOOK.scale, ring = LetterPicker.KEY_RING, glow = null, clickCue = cue, onFocusChange = { focused = it })
-            .clip(RoundedCornerShape(PinKey.CORNER.px)).background(if (focused) colors.surface2 else colors.surface),
+            .clip(shape).background(fill).border(1.px, colors.line, shape),
         contentAlignment = Alignment.Center,
     ) { content(focused) }
 }
@@ -365,8 +371,8 @@ internal object PinKey {
     const val WIDTH = 136f
     const val HEIGHT = 92f
     const val CORNER = 18f
-    const val PAD = 24f
-    val KEYS = FocusGap(LetterPicker.KEY_LOOK, WIDTH, 14f)
+    const val PAD = 26f
+    val KEYS = FocusGap(LetterPicker.KEY_LOOK, WIDTH, 18f)
 }
 
 @Composable
