@@ -48,12 +48,6 @@
     <string name="ps_settings_video_queue_few">Мало (найнижча затримка)</string>
     <string name="ps_settings_video_queue_normal">Звичайно</string>
     <string name="ps_settings_video_queue_many">Багато (найплавніше)</string>
-    <string name="ps_settings_background_title">Лишатися під’єднаним у фоні</string>
-    <string name="ps_settings_background_description">Тримає трансляцію під’єднаною якийсь час після виходу з DELOS, щоб повернутися без нового під’єднання.</string>
-    <string name="ps_settings_background_off">Вимкнено</string>
-    <string name="ps_settings_background_1">1 хвилина</string>
-    <string name="ps_settings_background_5">5 хвилин</string>
-    <string name="ps_settings_background_15">15 хвилин</string>
     <string name="ps_settings_audio_buffer_title">Аудіобуфер</string>
     <string name="ps_settings_audio_buffer_description">Скільки звуку DELOS тримає перед відтворенням. Низький має найменшу затримку, високий долає перебої в слабкій мережі.</string>
     <string name="ps_settings_audio_buffer_low">Низький (найменша затримка)</string>

@@ -48,12 +48,6 @@
     <string name="ps_settings_video_queue_few">少（最低延迟）</string>
     <string name="ps_settings_video_queue_normal">普通</string>
     <string name="ps_settings_video_queue_many">多（最流畅）</string>
-    <string name="ps_settings_background_title">在后台保持连接</string>
-    <string name="ps_settings_background_description">离开 DELOS 后让串流保持连接一段时间，返回时无需重新连接。</string>
-    <string name="ps_settings_background_off">关闭</string>
-    <string name="ps_settings_background_1">1 分钟</string>
-    <string name="ps_settings_background_5">5 分钟</string>
-    <string name="ps_settings_background_15">15 分钟</string>
     <string name="ps_settings_audio_buffer_title">音频缓冲</string>
     <string name="ps_settings_audio_buffer_description">DELOS 在播放前保留的声音量。低延迟最小；高可在弱网络中减少断音。</string>
     <string name="ps_settings_audio_buffer_low">低（最低延迟）</string>

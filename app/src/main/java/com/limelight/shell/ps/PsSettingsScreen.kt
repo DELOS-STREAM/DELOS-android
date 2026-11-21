@@ -269,11 +269,6 @@ private fun psOnlyRows(tab: PsSettingsTab, values: Map<String, *>, prefs: Shared
                 listOf("few", "normal", "many"), values[PsPrefs.VIDEO_QUEUE] as? String ?: "few",
                 listOf(R.string.ps_settings_video_queue_few, R.string.ps_settings_video_queue_normal, R.string.ps_settings_video_queue_many).map { res.getString(it) },
             ) { editor, v -> editor.putString(PsPrefs.VIDEO_QUEUE, v) },
-            choice(PsPrefs.BACKGROUND_MINUTES, Symbols.SCHEDULE, R.string.ps_settings_background_title, R.string.ps_settings_background_description,
-                listOf(0, 1, 5, 15), values[PsPrefs.BACKGROUND_MINUTES] as? Int ?: 0,
-                listOf(R.string.ps_settings_background_off, R.string.ps_settings_background_1, R.string.ps_settings_background_5,
-                    R.string.ps_settings_background_15).map { res.getString(it) },
-            ) { editor, v -> editor.putInt(PsPrefs.BACKGROUND_MINUTES, v) },
         )
         PsSettingsTab.AUDIO -> listOf(
             choice(PsPrefs.AUDIO_BUFFER, Symbols.TIMER, R.string.ps_settings_audio_buffer_title, R.string.ps_settings_audio_buffer_description,

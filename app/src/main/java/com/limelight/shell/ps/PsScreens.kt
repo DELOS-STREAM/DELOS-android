@@ -141,16 +141,10 @@ fun PsStartContent(profileName: String?) {
     }
 }
 
-/**
- * The extra that names the console for the stream. The lead's `PsConnection.EXTRA_CONSOLE` has the same value; this switches to it when
- * the stream integration merges.
- */
-private const val EXTRA_PS_CONSOLE = "ps_console"
-
 /** Starts the PlayStation stream in DelosStreamActivity; the loader and the companion show the console and "PlayStation". */
 private fun psStreamIntent(context: android.content.Context, consoleId: String, name: String): Intent =
     Intent(context, com.limelight.DelosStreamActivity::class.java)
-        .putExtra(EXTRA_PS_CONSOLE, consoleId)
+        .putExtra(com.limelight.ps.PsConnection.EXTRA_CONSOLE, consoleId)
         .putExtra(com.limelight.DelosStreamActivity.EXTRA_PC_NAME, name)
         .putExtra(com.limelight.DelosStreamActivity.EXTRA_APP_NAME, "PlayStation") // l10n-ignore
 

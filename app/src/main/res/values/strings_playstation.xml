@@ -49,12 +49,6 @@
     <string name="ps_settings_video_queue_few">Few (lowest latency)</string>
     <string name="ps_settings_video_queue_normal">Normal</string>
     <string name="ps_settings_video_queue_many">Many (smoothest)</string>
-    <string name="ps_settings_background_title">Stay connected in the background</string>
-    <string name="ps_settings_background_description">Keeps the stream connected for a while after you leave DELOS, so you can come back without reconnecting.</string>
-    <string name="ps_settings_background_off">Off</string>
-    <string name="ps_settings_background_1">1 minute</string>
-    <string name="ps_settings_background_5">5 minutes</string>
-    <string name="ps_settings_background_15">15 minutes</string>
     <string name="ps_settings_audio_buffer_title">Audio buffer</string>
     <string name="ps_settings_audio_buffer_description">How much sound DELOS holds back before playing it. Low has the least delay; high rides out dropouts on a weak network.</string>
     <string name="ps_settings_audio_buffer_low">Low (lowest delay)</string>

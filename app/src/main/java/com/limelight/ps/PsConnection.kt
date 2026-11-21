@@ -48,10 +48,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     private var connectThread: Thread? = null
 
     /** The console this stream plays, for the activity's title and the loader. */
-    val console: PsConsole? = PsConsoleStore.get(appContext).consoles.value.firstOrNull { it.id == consoleId }
-
-    /** How long the stream may stay connected after the player leaves DELOS (PsPrefs.BACKGROUND_MINUTES). */
-    fun keepAliveMillis(): Long = PsPrefs.backgroundMillis(psPrefs)
+    val console: com.limelight.shell.ps.PsConsole? = PsConsoleStore.get(appContext).consoles.value.firstOrNull { it.id == consoleId }
 
     override fun start(audioRenderer: AudioRenderer, videoDecoderRenderer: VideoDecoderRenderer, connectionListener: NvConnectionListener) {
         audio = audioRenderer

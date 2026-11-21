@@ -48,12 +48,6 @@
     <string name="ps_settings_video_queue_few">적게 (최저 지연)</string>
     <string name="ps_settings_video_queue_normal">보통</string>
     <string name="ps_settings_video_queue_many">많이 (가장 부드럽게)</string>
-    <string name="ps_settings_background_title">백그라운드에서 연결 유지</string>
-    <string name="ps_settings_background_description">DELOS를 나간 뒤에도 잠시 스트림 연결을 유지해 다시 연결하지 않고 돌아올 수 있습니다.</string>
-    <string name="ps_settings_background_off">끔</string>
-    <string name="ps_settings_background_1">1분</string>
-    <string name="ps_settings_background_5">5분</string>
-    <string name="ps_settings_background_15">15분</string>
     <string name="ps_settings_audio_buffer_title">오디오 버퍼</string>
     <string name="ps_settings_audio_buffer_description">재생 전에 DELOS가 미리 담아 두는 소리의 양입니다. 낮음은 지연이 가장 적고, 높음은 약한 네트워크에서 끊김을 견딥니다.</string>
     <string name="ps_settings_audio_buffer_low">낮음 (최소 지연)</string>

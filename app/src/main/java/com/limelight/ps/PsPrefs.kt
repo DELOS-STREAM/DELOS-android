@@ -2,6 +2,7 @@ package com.limelight.ps
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.limelight.preferences.PreferenceConfiguration
 
 /**
  * The PlayStation stream settings, separate from every PC profile: their own preferences file. The classic stream keys
@@ -23,10 +24,27 @@ object PsPrefs {
     /** "few" | "normal" | "many", default "few": video frames that may wait for the decoder before the oldest are dropped. */
     const val VIDEO_QUEUE = "ps_video_queue"
 
-    /** Int 0 | 1 | 5 | 15, default 0: minutes the stream stays connected after leaving DELOS. */
-    const val BACKGROUND_MINUTES = "ps_background_minutes"
+    private const val RESOLUTION = "list_resolution"
+    private const val FPS = "list_fps"
+    private const val FORMAT = "video_format"
+    private const val BITRATE = "seekbar_bitrate_kbps"
 
-    fun prefs(context: Context): SharedPreferences = context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+    /**
+     * The settings file, with the PlayStation defaults written the first time: 1080p, 60 fps, HEVC and the bitrate DELOS
+     * recommends for them (the classic keys' own defaults are a PC's).
+     */
+    fun prefs(context: Context): SharedPreferences {
+        val prefs = context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+        if (!prefs.contains(RESOLUTION)) {
+            prefs.edit()
+                .putString(RESOLUTION, "1920x1080")
+                .putString(FPS, "60")
+                .putString(FORMAT, "forceh265")
+                .putInt(BITRATE, PreferenceConfiguration.getDefaultBitrate("1920x1080", "60", "forceh265", false, false))
+                .apply()
+        }
+        return prefs
+    }
 
     /** Audio frames (10 ms each) buffered before playback starts, and the most kept before the oldest are dropped. */
     fun audioBuffer(prefs: SharedPreferences): Pair<Int, Int> = when (prefs.getString(AUDIO_BUFFER, "low")) {
@@ -41,6 +59,4 @@ object PsPrefs {
         "many" -> 8
         else -> 2
     }
-
-    fun backgroundMillis(prefs: SharedPreferences): Long = prefs.getInt(BACKGROUND_MINUTES, 0) * 60_000L
 }

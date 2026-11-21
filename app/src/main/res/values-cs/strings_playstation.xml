@@ -48,12 +48,6 @@
     <string name="ps_settings_video_queue_few">Málo (nejnižší odezva)</string>
     <string name="ps_settings_video_queue_normal">Normálně</string>
     <string name="ps_settings_video_queue_many">Hodně (nejplynulejší)</string>
-    <string name="ps_settings_background_title">Zůstat připojený na pozadí</string>
-    <string name="ps_settings_background_description">Po odchodu z aplikace DELOS nechá stream chvíli připojený, takže se vrátíš bez nového připojování.</string>
-    <string name="ps_settings_background_off">Vypnuto</string>
-    <string name="ps_settings_background_1">1 minuta</string>
-    <string name="ps_settings_background_5">5 minut</string>
-    <string name="ps_settings_background_15">15 minut</string>
     <string name="ps_settings_audio_buffer_title">Zvuková vyrovnávací paměť</string>
     <string name="ps_settings_audio_buffer_description">Kolik zvuku DELOS podrží, než ho přehraje. Nízká má nejmenší zpoždění, vysoká překoná výpadky na slabé síti.</string>
     <string name="ps_settings_audio_buffer_low">Nízká (nejmenší zpoždění)</string>
