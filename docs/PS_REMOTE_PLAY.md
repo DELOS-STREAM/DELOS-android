@@ -10,9 +10,10 @@ clean-room specification in [research/ps-remote-play-protocol.md](research/ps-re
 
 Covered: discovery, wake, PSN sign-in, registration with the console PIN, session init and ctrl, the Takion stream connection
 with BIG/BANG and the stream keys, video reassembly with Reed-Solomon recovery, Opus audio, controller input, the shell UI
-(prototype F in `build/ps-pairing-proto/`). Not covered yet: Senkusha (RTT/MTU measurement; the spec's fallback of MTU 1454
-and RTT 1 ms is used), internet play, microphone, DualSense haptics and adaptive triggers, the stream menu and DELOS's video
-path (upscalers, frame pacing) for PlayStation streams.
+(prototype F in `build/ps-pairing-proto/`), PlayStation settings, and the stream in DELOS's own stream activity (decoder,
+SGSR upscalers, frame pacing, overlay, stream menu, controller handling). Not covered yet: Senkusha (RTT/MTU measurement;
+the spec's fallback of MTU 1454 and RTT 1 ms is used), internet play, microphone, DualSense haptics and adaptive triggers,
+more than one controller, keeping a stream connected in the background.
 
 ## Behavior
 
@@ -30,9 +31,19 @@ path (upscalers, frame pacing) for PlayStation streams.
    background (`PlayStationBackground`: light ribbons and drifting face-button shapes), cross-faded with the user's background
    in 700 ms (instantly with reduced motion). The profile chip sits in the bottom-left corner in both modes; the DELOS logo
    stays top-left.
-7. Pairing flow `Screen.PairPs`: Find (search, circles), Sign in, PIN (8-digit pad for the controller), Done (Play now or back
-   to Start). A console circle starts `PsStreamActivity`: wake, ctrl retried while the console wakes, the stream, the hyperspace
-   loader in blue until the first frame.
+7. Pairing flow `Screen.PairPs`: Find (search, circles), Sign in (`PsSignInActivity`, Sony's page full screen), PIN (8-digit
+   pad for the controller), Done (Play now or back to Start).
+8. Streams run in `DelosStreamActivity` behind the `StreamConnection` interface: `NvConnection` for PCs, `PsConnection` for
+   consoles (intent extra `PsConnection.EXTRA_CONSOLE`). `PsConnection` wakes the console, retries ctrl while it wakes, and
+   feeds the decoder renderer as moonlight-common-c does (parameter sets before each keyframe, unwrapped frame numbers; a
+   keyframe request and dropped frames until it arrives on `DR_NEED_IDR` or a full queue). Audio: Opus through `PsOpus`
+   (JNI over the bundled libopus, packet-loss concealment) into the Android audio renderer. Input: the controller handler's
+   buttons, sticks, triggers, motion (deg/s, m/s² → rad/s, g, orientation integrated from the gyro) and touchpad become the
+   console's controller state; rumble, light bar and RTT come back. Keyboard, mouse, clipboard, commands and the runtime
+   bitrate are not offered for a console.
+9. PlayStation settings (`Screen.PsSettings`, the button under the console circles) are a file of their own (`PsPrefs`,
+   `ps_settings`): the classic stream keys plus keyframe-on-loss, video queue depth, audio buffer and swapped channels.
+   Defaults on first use: 1080p, 60 fps, HEVC, DELOS's recommended bitrate. Remote Play offers 360p to 1080p at 30 or 60 fps.
 
 ## Code map
 
@@ -48,10 +59,11 @@ path (upscalers, frame pacing) for PlayStation streams.
 | `ps/PsStream.kt` | Stream connection: handshake, reliable DATA, BIG/BANG, STREAMINFO, AV, heartbeats, congestion, input |
 | `ps/PsVideo.kt`, `ps/PsFec.kt` | AV header parsing, frame reassembly, Reed-Solomon erasure decoding |
 | `ps/PsFeedback.kt` | Controller state packet and button/touch events |
-| `ps/PsAudioPlayer.kt`, `ps/PsOAuth.kt` | Opus playback with a jitter buffer; PSN sign-in |
+| `ps/PsConnection.kt`, `ps/PsOpus.kt`, `jni/moonlight-core/ps_opus.c` | The stream behind `StreamConnection`; Opus decoder |
+| `ps/PsPrefs.kt`, `ps/PsOAuth.kt` | PlayStation settings file and defaults; PSN sign-in |
 | `shell/ps/PsShell.kt`, `shell/ps/PsScreens.kt` | Mode, blue theme, console store; mode switch, start content, pairing steps |
-| `shell/ps/PsBackground.kt`, `shell/ps/PsStreamActivity.kt` | PlayStation background; the stream activity |
-| `src/debug/.../ps/PsDebugActivity.kt` | Debug-build bench: search, register, wake, connect, HEVC on a SurfaceView |
+| `shell/ps/PsSettingsScreen.kt`, `shell/ps/PsSignInActivity.kt`, `shell/ps/PsBackground.kt` | Settings screen; sign-in page; background |
+| `src/debug/.../ps/PsDebugActivity.kt` | Debug-build bench: search, register, wake, connect, HEVC on a SurfaceView (no sound) |
 
 ## Verification
 
@@ -63,10 +75,16 @@ path (upscalers, frame pacing) for PlayStation streams.
 
 ### Not verified
 
-- The stream against wired Ethernet; right stick, triggers, touchpad; HDR; haptics.
-- `PsStreamActivity` launched from the shell against the console (the bench path is verified).
+- The stream against wired Ethernet; right stick, triggers, touchpad, motion and rumble with a game; HDR; haptics.
+- Audio by ear through `PsOpus` (the decoder runs; sound not checked by a person).
 
 ## Evidence (2026-11-21)
 
 AYN Odin 2 Portal Max, Android 13, debug build of the branch: the bench's search found `PS5-113` (192.168.0.148, PS5,
 status 200, firmware 14230000, target PS5 1.0).
+
+## Evidence (2026-11-22)
+
+Odin, debug build: the console circle started `DelosStreamActivity` with `PsConnection`; the PS5 delivered HEVC 1080p at
+about 60 fps (Qualcomm decoder statistics 26–60 frames/s on Wi-Fi to Wi-Fi), the picture showed the running game, the stream
+menu opened, and Disconnect returned to the shell without errors. No controller input was sent.
