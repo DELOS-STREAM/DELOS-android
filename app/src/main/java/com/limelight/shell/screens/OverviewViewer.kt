@@ -37,6 +37,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -400,10 +401,12 @@ internal fun OverviewViewer(
                 } }
             }
             if (settled && player?.error != null) VideoError(player.error!!, steam = native != null, Modifier.fillMaxSize())
-            // Touch: a tap toggles the overlay, a double tap in the left or right third seeks 10 s, a swipe sideways browses and down closes.
+            // Touch: a tap toggles the overlay, a double tap in the left or right third seeks 5 s, a swipe sideways browses and down closes.
+            // Trackpad: a two-finger swipe sideways (a horizontal scroll) browses, once per swipe.
             // Mouse: a click plays or pauses. While the overlay is hidden over a playing video, a touch is YouTube's (an ad's Skip): this
             // layer is not there, so the touch reaches the player's surface, and the touch itself brings the overlay back.
             val passThrough = inWindow && video != null && !overlayShown
+            val browseScroll = remember { BrowseScroll() }
             if (!passThrough) {
                 var revealTap by remember { mutableStateOf(false) }
                 Box(Modifier.fillMaxSize()
@@ -440,6 +443,29 @@ internal fun OverviewViewer(
                             },
                             onDragCancel = { drag = Offset.Zero },
                         ) { change, amount -> change.consume(); drag += amount; controls.onInput() }
+                    }
+                    .pointerInput(shown) {
+                        // A horizontal scroll (a trackpad's two-finger swipe, a mouse's tilt wheel) browses once per swipe: the rest of
+                        // the swipe and its momentum, until the scrolling pauses, do nothing more (kept across items: [browseScroll])
+                        val s = browseScroll
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                if (event.type != PointerEventType.Scroll) continue
+                                val change = event.changes.firstOrNull() ?: continue
+                                val d = change.scrollDelta
+                                if (change.uptimeMillis - s.last > BROWSE_SCROLL_PAUSE_MS) { s.sum = 0f; s.fired = false }
+                                s.last = change.uptimeMillis
+                                if (abs(d.x) <= abs(d.y)) continue
+                                change.consume()
+                                controls.onInput()
+                                s.sum += d.x
+                                if (!s.fired && abs(s.sum) >= BROWSE_SCROLL_STEPS) {
+                                    s.fired = true
+                                    go(if (s.sum > 0f) shown + 1 else shown - 1)
+                                }
+                            }
+                        }
                     })
             }
             SeekFlash(dock, reduced)
@@ -476,3 +502,16 @@ private val VIEWER_KEYS = setOf(
     Key.Back, Key.Escape, Key.ButtonB,
     Key.ButtonY, Key.M, Key.Spacebar,
 )
+
+/** A horizontal scroll that browses the viewer: its running sum, its last event and whether this swipe browsed already. */
+private class BrowseScroll {
+    var sum = 0f
+    var last = 0L
+    var fired = false
+}
+
+/** A pause in the scrolling this long ends a swipe and its momentum (milliseconds). */
+private const val BROWSE_SCROLL_PAUSE_MS = 250L
+
+/** How much horizontal scroll browses: about one tilt-wheel notch, a short two-finger swipe. */
+private const val BROWSE_SCROLL_STEPS = 1f
