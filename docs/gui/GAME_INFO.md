@@ -693,8 +693,9 @@ Variant A · Dock of the media viewer prototypes (`build/player-proto/a.html`, i
    YouTube's own surface: while the dock is hidden over a playing video, the viewer's touch layer is not there, so a tap
    reaches the player (an ad's Skip, its links) and the same touch brings the dock back; with the dock up, taps belong
    to the dock. A tap that brings the dock back never hides it again.
-8. **Mouse:** moving shows the dock; a click on the picture plays or pauses; hovering the seek bar shows the time under
-   the pointer; buttons light up under it.
+8. **Mouse and trackpad:** moving shows the dock; a click on the picture plays or pauses; hovering the seek bar shows the
+   time under the pointer; buttons light up under it. A horizontal scroll (a trackpad's two-finger swipe, a tilt
+   wheel) browses once per swipe, to the next item when the content scrolls right (owner, 2026-11-21).
 9. **Reduced motion:** fades stay; the rises, the focus scale, the ring's glide, the slides and the flash's nudge go.
 
 **Videos** (`OverviewNativeVideo.kt`, `OverviewVideo.kt`, `YouTubeEmbeds.kt`). Trailers play only inside the app; nothing
