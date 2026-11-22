@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="title_frame_generation">Génération d’images</string>
-    <string name="summary_frame_generation">Affiche entre les images du stream des images prédites par le GPU. Nécessite un pilote GPU avec extrapolation (Adreno) ; SDR uniquement.</string>
+    <string name="summary_frame_generation">Affiche entre les images du jeu des images prédites par le GPU ; un jeu à 30 fps dans un stream à 60 fps compte comme 30. Nécessite un pilote GPU avec extrapolation (Adreno).</string>
     <string name="frame_generation_off">Désactivée</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
     <string name="help_list_frame_generation">Aucune attente ; les bords des objets rapides peuvent montrer de petites erreurs.</string>
     <string name="help_list_frame_generation_1">Seules les images du stream sont affichées.</string>
-    <string name="help_list_frame_generation_2">Une image prédite par image : 30 → 60 fps, 60 → 120 fps.</string>
-    <string name="help_list_frame_generation_3">Deux images prédites par image : 30 → 90 fps.</string>
-    <string name="help_list_frame_generation_4">Trois images prédites par image : 30 → 120 fps.</string>
+    <string name="help_list_frame_generation_2">Une image prédite par image du jeu : 30 → 60 fps, 60 → 120 fps.</string>
+    <string name="help_list_frame_generation_3">Deux images prédites par image du jeu : 30 → 90 fps.</string>
+    <string name="help_list_frame_generation_4">Trois images prédites par image du jeu : 30 → 120 fps.</string>
 </resources>

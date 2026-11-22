@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="title_frame_generation">Generación de fotogramas</string>
-    <string name="summary_frame_generation">Muestra fotogramas que predice la GPU entre los fotogramas de la transmisión. Requiere un controlador de GPU con extrapolación (Adreno); solo SDR.</string>
+    <string name="summary_frame_generation">Muestra fotogramas que predice la GPU entre los fotogramas del juego; un juego a 30 fps en una transmisión a 60 fps cuenta como 30. Requiere un controlador de GPU con extrapolación (Adreno).</string>
     <string name="frame_generation_off">Desactivada</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
     <string name="help_list_frame_generation">No añade espera; los bordes de objetos rápidos pueden mostrar pequeños errores.</string>
     <string name="help_list_frame_generation_1">Solo se muestran los fotogramas de la transmisión.</string>
-    <string name="help_list_frame_generation_2">Un fotograma predicho por fotograma: 30 → 60 fps, 60 → 120 fps.</string>
-    <string name="help_list_frame_generation_3">Dos fotogramas predichos por fotograma: 30 → 90 fps.</string>
-    <string name="help_list_frame_generation_4">Tres fotogramas predichos por fotograma: 30 → 120 fps.</string>
+    <string name="help_list_frame_generation_2">Un fotograma predicho por fotograma del juego: 30 → 60 fps, 60 → 120 fps.</string>
+    <string name="help_list_frame_generation_3">Dos fotogramas predichos por fotograma del juego: 30 → 90 fps.</string>
+    <string name="help_list_frame_generation_4">Tres fotogramas predichos por fotograma del juego: 30 → 120 fps.</string>
 </resources>

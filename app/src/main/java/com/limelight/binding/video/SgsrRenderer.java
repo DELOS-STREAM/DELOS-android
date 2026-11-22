@@ -148,8 +148,12 @@ public final class SgsrRenderer implements AutoCloseable {
     private volatile long displayPeriodNs;
     private volatile FrameGenerator frameGen;
     private boolean frameGenUnavailable, frameGenScheduled;
+    private long frameGenLogFrames;
     // When the last decoded frame is shown (its requested presentation time): generated steps follow it one refresh apart
     private long lastPresentTargetNs;
+    // Display refreshes (frame callbacks) since the newest picture of the game was presented; generated steps that came too late
+    private int refreshesSinceReal;
+    private long frameGenLate;
     private final Choreographer.FrameCallback frameGenTick = this::onFrameGenTick;
     // These refer to the latest decoded/reconstructed frame. Display ticks never advance decoding
     // or temporal history and never rebuild its mip pyramid unless that frame changes.
@@ -256,11 +260,11 @@ public final class SgsrRenderer implements AutoCloseable {
     /** Phase lock: the codec releases each frame with its target refresh as the buffer timestamp; SDR swaps honour it. */
     public void setPresentAtFrameTimestamp(boolean enabled) { presentAtFrameTimestamp = enabled; }
     /**
-     * Frame generation: [multiplier] frames shown per decoded frame (1 = off) on a display refreshing at [displayHz]. SDR only for
-     * now; without the driver's frame extrapolation it stays off. Applies from the next decoded frame.
+     * Frame generation: up to [multiplier] frames shown per frame of the game (1 = off) on a display refreshing at [displayHz];
+     * without the driver's frame extrapolation it stays off. Applies from the next decoded frame.
      */
     public void setFrameGeneration(int multiplier, float displayHz) {
-        frameGenMultiplier = tenBit ? 1 : Math.max(1, Math.min(4, multiplier));
+        frameGenMultiplier = Math.max(1, Math.min(4, multiplier));
         displayPeriodNs = displayHz > 1f ? (long) (1_000_000_000L / displayHz) : 0L;
     }
     /** Frames generated since the stream began (0 while frame generation is off or unavailable). */
@@ -669,17 +673,31 @@ public final class SgsrRenderer implements AutoCloseable {
                 scheduleArrivalTick();
                 return;
             }
-            // Frame generation keeps this frame (before the final pass, at the size that pass samples) as the newest of its pair
-            final FrameGenerator generator = frameGenerator();
+            // Frame generation keeps this frame (before the final pass, at the size that pass samples) as the newest of its pair;
+            // a repeat of the game's previous frame gives its refresh to the next generated step
+            FrameGenerator generator = frameGenerator();
+            boolean repeat = false;
             if (generator != null) {
-                generator.onRealFrame(source,sampledWidth,sampledHeight,texture.getTimestamp(),displayPeriodNs);
+                try {
+                    repeat = generator.onRealFrame(source,sampledWidth,sampledHeight,texture.getTimestamp(),displayPeriodNs);
+                    if (++frameGenLogFrames % 600 == 0) LimeLog.info("Frame generation: " + generator.generated() + " generated ("
+                            + frameGenLate + " late), " + generator.repeats() + " repeated frames of " + frameGenLogFrames
+                            + "; changed cells " + generator.recentChangedCells() + "; generated vs newest " + generator.generatedChanged());
+                }
+                catch (RuntimeException e) { stopFrameGeneration(generator,e); generator = null; }
             }
             statsFrameArrivalNs = arrivalNs;
             statsFrameArmed = true;
-            presentTimestampNs = presentAtFrameTimestamp ? texture.getTimestamp() : 0L;
-            presentCachedNormal();
-            presentTimestampNs = 0L;
-            if (generator != null && generator.hasStep()) scheduleFrameGen();
+            if (repeat && generator.paired()) {
+                // A repeat of the game's newest picture is not shown: the generated steps (or that picture) keep the display
+                if (generator.hasStep()) scheduleFrameGen();
+            } else {
+                presentTimestampNs = presentAtFrameTimestamp ? texture.getTimestamp() : 0L;
+                presentCachedNormal();
+                presentTimestampNs = 0L;
+                refreshesSinceReal = 0;
+                if (generator != null && generator.hasStep()) scheduleFrameGen();
+            }
             statsFrameArmed = false;
             final long swapEndNs=System.nanoTime();
             if (stages != null) {
@@ -786,21 +804,24 @@ public final class SgsrRenderer implements AutoCloseable {
     }
 
     /**
-     * A refresh between two decoded frames: the next generated step, presented on its refresh after the decoded frame
-     * (FrameGenerator.nextOffset). A decoded frame that is waiting, a full GPU or a refresh already gone drops the step (the display
-     * repeats the last image, as without generation); a decoded frame always wins.
+     * Every refresh between two pictures of the game: the step whose refresh this is (FrameGenerator.nextOffset), counted in display
+     * refreshes since the picture was presented. Both present one refresh after their callback, so a step presented on callback k
+     * shows k refreshes after the picture. A full GPU or a refresh already gone drops a step (the display keeps the last image).
      */
     private void onFrameGenTick(long frameTimeNanos) {
         frameGenScheduled = false;
         final FrameGenerator generator = frameGen;
         if (generator == null || closed.get() || !outputAttached || arrivalIsActive() || !generator.hasStep()) return;
         final long period = displayPeriodNs;
-        final long target = lastPresentTargetNs + generator.nextOffset() * period;
-        // The refresh before the target has not come yet: wait for it
-        if (target - frameTimeNanos > period * 3 / 2) { scheduleFrameGen(); return; }
         final long now = System.nanoTime();
-        if (frameQueue.pending() > 0 || heldFrame || target < now || gpuBusy(now)) {
+        refreshesSinceReal++;
+        while (generator.hasStep() && generator.nextOffset() < refreshesSinceReal) { generator.skipStep(); frameGenLate++; }
+        if (!generator.hasStep()) return;
+        if (generator.nextOffset() > refreshesSinceReal) { scheduleFrameGen(); return; }
+        final long target = lastPresentTargetNs + generator.nextOffset() * period;
+        if (heldFrame || gpuBusy(now)) {
             generator.skipStep();
+            frameGenLate++;
             if (generator.hasStep()) scheduleFrameGen();
             return;
         }
@@ -809,19 +830,29 @@ public final class SgsrRenderer implements AutoCloseable {
             if (acquireOutput()) {
                 drawProgram(cachedProgram,image,cachedWidth,cachedHeight,cachedSampledWidth,cachedSampledHeight,cachedReconstruction);
                 require(GLES31.glGetError()==GLES31.GL_NO_ERROR,"Frame generation draw");
-                EGLExt.eglPresentationTimeANDROID(display,window,target);
-                require(EGL14.eglSwapBuffers(display,window),"Frame generation swap");
+                if (tenBit) {
+                    // The HDR output presents as soon as it can: on this callback that is the step's refresh
+                    nativePresentHdr(hdrOutput,hdrActive,hdrMetadata);
+                    hdrFrameAcquired = false;
+                } else {
+                    EGLExt.eglPresentationTimeANDROID(display,window,target);
+                    require(EGL14.eglSwapBuffers(display,window),"Frame generation swap");
+                }
             }
         } catch (RuntimeException e) {
-            // Generation must never take the stream down: it stops, the decoded frames keep coming
-            LimeLog.warning("Frame generation stopped: " + e);
-            DiagLog.w("FrameGen","Frame generation stopped: " + e);
-            generator.close();
-            frameGen = null;
-            frameGenUnavailable = true;
+            stopFrameGeneration(generator,e);
             return;
         }
         if (generator.hasStep()) scheduleFrameGen();
+    }
+
+    /** Generation must never take the stream down: it stops for this stream, the decoded frames keep coming. */
+    private void stopFrameGeneration(FrameGenerator generator, RuntimeException e) {
+        LimeLog.warning("Frame generation stopped: " + e);
+        DiagLog.w("FrameGen","Frame generation stopped: " + e);
+        generator.close();
+        frameGen = null;
+        frameGenUnavailable = true;
     }
 
     private void onArrivalTick(long frameTimeNanos) {
@@ -933,6 +964,7 @@ public final class SgsrRenderer implements AutoCloseable {
             final long submitNs = System.nanoTime();
             int sequence = nativePresentHdr(hdrOutput,hdrActive,hdrMetadata);
             hdrFrameAcquired = false;
+            lastPresentTargetNs = submitNs;
             if (sequence > 0) {
                 if (!arrivalOnly) gpuInFlight.add(sequence,submitNs,hdrFences);
                 if (stages != null) displayTimestamps.add(sequence,statsFrameArrivalNs);

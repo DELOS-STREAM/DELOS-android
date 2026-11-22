@@ -1328,10 +1328,10 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
 
     /**
      * Frame generation needs the GL output stage (SgsrRenderer); with the upscaler off the stage runs as a pass-through (sharpen
-     * only at strength 0). SDR streams only for now (docs/VIDEO_FRAME_GENERATION_RESEARCH.md, phase 1).
+     * only at strength 0). docs/VIDEO_FRAME_GENERATION_RESEARCH.md, phase 1.
      */
     private boolean frameGenStage() {
-        return prefs.frameGenMultiplier > 1 && (videoFormat & MoonBridge.VIDEO_FORMAT_MASK_10BIT) == 0;
+        return prefs.frameGenMultiplier > 1;
     }
 
     private int getRequestedPyroWaveUpscalingMode() {
