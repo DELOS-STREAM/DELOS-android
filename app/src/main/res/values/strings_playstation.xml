@@ -80,4 +80,6 @@
         <item>Shaking hands with %1$s</item>
         <item>Asking %1$s for the picture</item>
     </string-array>
+    <string name="ps_settings_microphone_title">Microphone</string>
+    <string name="ps_settings_microphone_description">Sends the device microphone to the console for voice chat. Asks for microphone access the first time; mute it in the stream menu.</string>
 </resources>

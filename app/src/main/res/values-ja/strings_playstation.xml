@@ -79,4 +79,6 @@
         <item>%1$s と握手中</item>
         <item>%1$s に映像をお願いしています</item>
     </string-array>
+    <string name="ps_settings_microphone_title">マイク</string>
+    <string name="ps_settings_microphone_description">端末のマイクをボイスチャット用にコンソールへ送ります。初回はマイクへのアクセスを求めます。ミュートはストリームメニューで。</string>
 </resources>

@@ -79,4 +79,6 @@
         <item>Begrüße %1$s per Handschlag</item>
         <item>Bitte %1$s um das Bild</item>
     </string-array>
+    <string name="ps_settings_microphone_title">Mikrofon</string>
+    <string name="ps_settings_microphone_description">Sendet das Mikrofon des Geräts für den Sprachchat an die Konsole. Fragt beim ersten Mal nach Mikrofonzugriff; stummschalten im Stream-Menü.</string>
 </resources>

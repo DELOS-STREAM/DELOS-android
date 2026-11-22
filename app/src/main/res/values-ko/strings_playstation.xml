@@ -79,4 +79,6 @@
         <item>%1$s와(과) 악수하는 중</item>
         <item>%1$s에게 화면을 부탁하는 중</item>
     </string-array>
+    <string name="ps_settings_microphone_title">마이크</string>
+    <string name="ps_settings_microphone_description">기기 마이크를 음성 채팅용으로 콘솔에 보냅니다. 처음에 마이크 권한을 요청하며, 음소거는 스트림 메뉴에서 합니다.</string>
 </resources>

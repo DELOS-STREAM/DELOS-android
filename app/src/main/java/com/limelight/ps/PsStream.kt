@@ -473,6 +473,35 @@ class PsStream(
         send(d)
     }
 
+    // The microphone (8.5): a frame counter and the last two frames, repeated in every packet
+    private var micCounter = 0
+    private var micOneBack: ByteArray? = null
+    private var micTwoBack: ByteArray? = null
+
+    /**
+     * One 40-byte Opus frame of the microphone as an AUDIO datagram (8.5): the newest frame, then the one two back and the one
+     * before it (at the start the first frame fills both), encrypted at key position + 16 and authenticated with the GMAC.
+     */
+    @Synchronized
+    fun sendMicrophone(frame: ByteArray) {
+        val gk = gkSend ?: return
+        val oneBack = micOneBack ?: frame
+        val twoBack = micTwoBack ?: frame
+        micTwoBack = oneBack
+        micOneBack = frame
+        val payload = frame + twoBack + oneBack
+        val header = if (v12) 0x14 else 0x13
+        val position = takePosition(payload.size + 16)
+        gk.apply(payload, 0, payload.size, position + 16)
+        val counter = micCounter++
+        val d = ByteBuffer.allocate(header + payload.size).order(ByteOrder.BIG_ENDIAN).apply {
+            put(3); putShort(counter.toShort()); putShort((counter + 1).toShort()); putInt((2 shl 16) or 0x2821); put(5)
+            putInt(0); putInt(position.toInt()); put(0); if (v12) put(0); put(payload)
+        }.array()
+        gk.gmac(d, position).copyInto(d, 0x0A)
+        send(d)
+    }
+
     override fun close() {
         if (!running) return
         runCatching { sendMessage(1, 0, PsProtoWriter().uint(1, PsMsg.DISCONNECT.toLong()).message(10, PsProtoWriter().string(1, "Client Disconnecting")).toByteArray()) }

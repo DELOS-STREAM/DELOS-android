@@ -79,4 +79,6 @@
         <item>Podávám si ruku s %1$s</item>
         <item>Prosím %1$s o obraz</item>
     </string-array>
+    <string name="ps_settings_microphone_title">Mikrofon</string>
+    <string name="ps_settings_microphone_description">Posílá mikrofon zařízení do konzole pro hlasový chat. Poprvé požádá o přístup k mikrofonu; ztlumit jde ve stream menu.</string>
 </resources>

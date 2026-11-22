@@ -6,4 +6,6 @@
     <string name="stream_help_frame_generation_on">Schaltet die Bildgenerierung für diesen Stream ein oder aus; bei ausgeschaltetem Upscaler startet das Einschalten den Decoder einmal neu.</string>
     <string name="stream_help_multiplier">Wie viele Bilder pro Spielbild gezeigt werden: 2× macht aus 30 fps 60, 4× 120.</string>
     <string name="stream_help_create">Drückt die Erstellen-Taste der Konsole: Screenshots und Clips.</string>
+    <string name="stream_menu_row_microphone">Mikrofon</string>
+    <string name="stream_help_microphone">Sendet das Mikrofon dieses Geräts für den Sprachchat an die Konsole; aus schaltet es stumm.</string>
 </resources>

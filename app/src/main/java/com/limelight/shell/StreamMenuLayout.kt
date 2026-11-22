@@ -66,6 +66,9 @@ internal object MoreRow {
     /** A console stream's More row that presses its Create button (the dock's slot holds the Upscaler there). */
     const val CREATE = "Create"
 
+    /** A console stream's More row that mutes the microphone (shown while it is on, PsPrefs.MICROPHONE). */
+    const val MICROPHONE = "Microphone"
+
     /** The More slider row for the live gyro smoothing strength (shown where the Settings row is). */
     const val GYRO = "Gyro smoothing"
 

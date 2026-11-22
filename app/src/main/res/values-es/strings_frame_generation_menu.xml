@@ -6,4 +6,6 @@
     <string name="stream_help_frame_generation_on">Activa o desactiva la generación de fotogramas en esta transmisión; activarla con el escalador apagado reinicia el decodificador una vez.</string>
     <string name="stream_help_multiplier">Cuántos fotogramas se muestran por fotograma del juego: 2× convierte 30 fps en 60, 4× en 120.</string>
     <string name="stream_help_create">Pulsa el botón Crear de la consola: capturas y clips.</string>
+    <string name="stream_menu_row_microphone">Micrófono</string>
+    <string name="stream_help_microphone">Envía el micrófono de este dispositivo a la consola para el chat de voz; apagado lo silencia.</string>
 </resources>

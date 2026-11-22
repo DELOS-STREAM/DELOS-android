@@ -50,6 +50,11 @@ internal interface StreamMenuHost {
     /** Presses and releases the PS button ([ps]) or the Create button on the console. */
     fun pressConsoleButton(ps: Boolean) {}
 
+    /** A PlayStation stream with the microphone on (PsPrefs.MICROPHONE): whether it is sending, and muting it live. */
+    val microphoneAvailable: Boolean get() = false
+    val microphoneMuted: Boolean get() = true
+    fun setMicrophoneMuted(muted: Boolean) {}
+
     // Overlay and keyboard
     val overlayOn: Boolean
     val overlayCompact: Boolean

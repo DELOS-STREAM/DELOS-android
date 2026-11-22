@@ -6,4 +6,6 @@
     <string name="stream_help_frame_generation_on">为本次串流开启或关闭帧生成；在放大器关闭时开启会重启一次解码器。</string>
     <string name="stream_help_multiplier">每个游戏帧显示的帧数：2× 让 30 fps 变成 60，4× 变成 120。</string>
     <string name="stream_help_create">按下主机的创建按钮：截图和片段。</string>
+    <string name="stream_menu_row_microphone">麦克风</string>
+    <string name="stream_help_microphone">将本设备的麦克风发送到主机用于语音聊天；关闭即静音。</string>
 </resources>

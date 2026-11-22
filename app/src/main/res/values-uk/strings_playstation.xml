@@ -79,4 +79,6 @@
         <item>Тисну руку %1$s</item>
         <item>Прошу в %1$s зображення</item>
     </string-array>
+    <string name="ps_settings_microphone_title">Мікрофон</string>
+    <string name="ps_settings_microphone_description">Надсилає мікрофон пристрою на консоль для голосового чату. Уперше просить доступ до мікрофона; вимкнути звук можна в меню трансляції.</string>
 </resources>

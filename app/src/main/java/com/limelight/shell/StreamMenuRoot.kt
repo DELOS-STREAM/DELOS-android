@@ -514,6 +514,7 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
             add(MenuKey.TOUCH_SENSITIVITY)
             add(MoreRow.RUMBLE)
             add(if (host.playStation) MoreRow.CREATE else MenuKey.SCREEN_BRIGHTNESS)
+            if (host.microphoneAvailable) add(MoreRow.MICROPHONE)
             if (host.gyroSmoothingAvailable) add(MoreRow.GYRO)
         }
         MenuPage.BRIGHTNESS -> listOf(MenuKey.SCREEN_BRIGHTNESS)
@@ -589,6 +590,8 @@ private fun PageRows(
             if (host.playStation) KeyedRow(Symbols.CONSOLE_CREATE, R.string.ps_menu_create, MoreRow.CREATE, RowValue.Action { close { host.pressConsoleButton(ps = false) } })
             else KeyedRow(Symbols.BRIGHTNESS_MEDIUM, R.string.stream_menu_row_screen_brightness, MenuKey.SCREEN_BRIGHTNESS,
                 RowValue.Slider(host.brightnessPercent, 5, 100, 5, " %") { toggle { host.setBrightness(it) } })
+            if (host.microphoneAvailable) KeyedRow(Symbols.MICROPHONE, R.string.stream_menu_row_microphone, MoreRow.MICROPHONE,
+                RowValue.Toggle(!host.microphoneMuted) { toggle { host.setMicrophoneMuted(!it) } })
             if (host.gyroSmoothingAvailable) {
                 // Applies at once and is kept for this game (never the profile, which is the Settings slider's); changesTick recomposes the value
                 KeyedRow(Symbols.SMOOTHING, R.string.stream_menu_row_gyro_smoothing, MoreRow.GYRO, RowValue.Slider(host.gyroSmoothing, 0, 100, 5, " %", minText = stringResource(R.string.stream_menu_gyro_off, 0)) {

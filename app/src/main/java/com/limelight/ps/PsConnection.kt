@@ -234,6 +234,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             thread(name = "ps-watchdog", isDaemon = true) { watchdog() }
             listener.stageComplete(STAGE_STREAM)
             listener.connectionStarted()
+            startMicrophone()
         }
 
         override fun onVideoFrame(frame: ByteArray, index: Int) {
@@ -303,6 +304,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         // The audio renderer is set up only when the console sent an audio header (AudioSource)
         val hadAudio = audioSource != null
         audioSource?.close(); audioSource = null
+        microphone?.close(); microphone = null
         if (restOnStop) runCatching { ctrl?.send(PsCtrl.GOTO_BED) }.onFailure { Log.w(TAG, "rest mode: ${it.message}") }
         val s = stream; val info = streamInfo; val request = sessionRequest
         if (parkOnStop && !restOnStop && s != null && s.alive && info != null && request != null) PsSessionPark.park(consoleId, s, ctrl, request, info)
@@ -406,6 +408,32 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     private fun update(change: (PsControllerState) -> PsControllerState) {
         val next = synchronized(padLock) { change(pad).also { pad = it } }
         stream?.updateController(next)
+    }
+
+    // --- Microphone (8.5, #124) ------------------------------------------------------------------------------------------------
+
+    @Volatile private var microphone: PsMicrophone? = null
+
+    /** Whether the microphone is on for this stream (the setting and the permission). */
+    val microphoneAvailable: Boolean get() = microphone != null
+    val microphoneMuted: Boolean get() = microphone?.muted != false
+
+    /** The setting and the record-audio permission allow it: the console is told (MIC_CONNECT) and capture starts, unmuted. */
+    private fun startMicrophone() {
+        if (!psPrefs.getBoolean(PsPrefs.MICROPHONE, false)) return
+        if (appContext.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            Log.i(TAG, "microphone on in the settings but not permitted")
+            return
+        }
+        runCatching { ctrl?.send(PsCtrl.MIC_CONNECT, byteArrayOf(0, 0)) }
+        microphone = PsMicrophone { frame -> stream?.sendMicrophone(frame) }.also { it.start() }
+    }
+
+    /** Mutes or unmutes the microphone: capture stops sending and the console shows the state (MIC_TOGGLE, 4.5). */
+    fun setMicrophoneMuted(muted: Boolean) {
+        val mic = microphone ?: return
+        mic.muted = muted
+        runCatching { ctrl?.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, (if (muted) 0 else 1).toByte(), 0x59)) }
     }
 
     /** A press of [button] from the stream menu (PS or Create, which a handheld's controls may not have): down, then up 120 ms later. */

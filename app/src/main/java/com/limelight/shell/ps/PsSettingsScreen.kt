@@ -282,6 +282,12 @@ private fun unlockBitrateRow(res: android.content.res.Resources, on: Boolean, en
 @Composable
 private fun psOnlyRows(tab: PsSettingsTab, values: Map<String, *>, prefs: SharedPreferences): List<PsRow> {
     val res = textResources()
+    val context = LocalContext.current
+    // The microphone needs the record-audio permission: turning it on asks for it first and stays off when refused
+    val askMicrophone = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) prefs.edit().putBoolean(PsPrefs.MICROPHONE, true).apply()
+    }
     fun toggle(key: String, icon: String, @StringRes label: Int, @StringRes description: Int, default: Boolean): PsRow {
         val on = values[key] as? Boolean ?: default
         return PsRow(key, icon, res.getString(label), res.getString(description), res.getString(description),
@@ -313,6 +319,15 @@ private fun psOnlyRows(tab: PsSettingsTab, values: Map<String, *>, prefs: Shared
             ) { editor, v -> editor.putString(PsPrefs.AUDIO_BUFFER, v) },
             toggle(PsPrefs.SWAP_CHANNELS, Symbols.SWAP_HORIZ, R.string.ps_settings_swap_channels_title, R.string.ps_settings_swap_channels_description,
                 false),
+            run {
+                val on = values[PsPrefs.MICROPHONE] as? Boolean ?: false
+                val text = res.getString(R.string.ps_settings_microphone_description)
+                PsRow(PsPrefs.MICROPHONE, Symbols.MICROPHONE, res.getString(R.string.ps_settings_microphone_title), text, text, RowValue.Toggle(on) { want ->
+                    val permitted = context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    if (!want || permitted) prefs.edit().putBoolean(PsPrefs.MICROPHONE, want).apply()
+                    else askMicrophone.launch(android.Manifest.permission.RECORD_AUDIO)
+                })
+            },
         )
         else -> emptyList()
     }

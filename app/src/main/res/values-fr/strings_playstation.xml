@@ -79,4 +79,6 @@
         <item>Je serre la main de %1$s</item>
         <item>Je demande l’image à %1$s</item>
     </string-array>
+    <string name="ps_settings_microphone_title">Micro</string>
+    <string name="ps_settings_microphone_description">Envoie le micro de l’appareil à la console pour le chat vocal. Demande l’accès au micro la première fois ; coupez-le dans le menu du stream.</string>
 </resources>

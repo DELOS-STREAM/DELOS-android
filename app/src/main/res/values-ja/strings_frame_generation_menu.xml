@@ -6,4 +6,6 @@
     <string name="stream_help_frame_generation_on">このストリームのフレーム生成をオン／オフします。アップスケーラーがオフのときにオンにするとデコーダーを一度再起動します。</string>
     <string name="stream_help_multiplier">ゲームの 1 フレームあたりに表示するフレーム数：2× で 30 fps が 60、4× で 120 になります。</string>
     <string name="stream_help_create">本体のクリエイトボタンを押します：スクリーンショットとクリップ。</string>
+    <string name="stream_menu_row_microphone">マイク</string>
+    <string name="stream_help_microphone">この端末のマイクをボイスチャット用にコンソールへ送ります。オフでミュートします。</string>
 </resources>

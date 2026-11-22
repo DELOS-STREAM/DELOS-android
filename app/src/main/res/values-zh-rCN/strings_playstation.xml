@@ -79,4 +79,6 @@
         <item>正在和 %1$s 握手</item>
         <item>正在向 %1$s 要画面</item>
     </string-array>
+    <string name="ps_settings_microphone_title">麦克风</string>
+    <string name="ps_settings_microphone_description">将设备麦克风发送到主机用于语音聊天。首次会请求麦克风权限；可在串流菜单中静音。</string>
 </resources>

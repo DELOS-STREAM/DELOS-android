@@ -21,6 +21,9 @@ object PsPrefs {
     /** Boolean, default false: left and right audio channels swapped. */
     const val SWAP_CHANNELS = "ps_swap_channels"
 
+    /** Boolean, default false: the device microphone goes to the console's voice chat (needs the record-audio permission). */
+    const val MICROPHONE = "ps_microphone"
+
     /** "few" | "normal" | "many", default "few": video frames that may wait for the decoder before the oldest are dropped. */
     const val VIDEO_QUEUE = "ps_video_queue"
 

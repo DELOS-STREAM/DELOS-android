@@ -79,4 +79,6 @@
         <item>Cumprimentando o %1$s</item>
         <item>Pedindo a imagem ao %1$s</item>
     </string-array>
+    <string name="ps_settings_microphone_title">Microfone</string>
+    <string name="ps_settings_microphone_description">Envia o microfone do dispositivo ao console para o chat de voz. Pede acesso na primeira vez; silencie no menu do stream.</string>
 </resources>

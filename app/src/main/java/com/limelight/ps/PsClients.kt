@@ -167,6 +167,7 @@ class PsCtrl(private val host: InetAddress, private val port: Int, val console: 
         const val LOGIN_PIN_REQ = 0x0004
         const val GOTO_BED = 0x0050
         const val MIC_TOGGLE = 0x0036
+        const val MIC_CONNECT = 0x0030
         const val DISPLAY_DEVICES = 0x0910
         const val ENABLE_DUALSENSE = 0x0013
         const val DUALSENSE_CONNECT = 0x0011
