@@ -169,6 +169,10 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             feeder?.offer(frame, index)
         }
 
+        override fun onVideoLost() { feeder?.lost() }
+
+        override fun onVideoProfile(width: Int, height: Int, videoHeader: ByteArray) { feeder?.profile(width, height, videoHeader) }
+
         override fun onAudio(opus: ByteArray, frameIndex: Int) {
             lastPacketMs = SystemClock.uptimeMillis()
             audioSource?.offer(opus, frameIndex)
@@ -351,19 +355,25 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     /**
      * Hands frames to the decoder renderer on its own thread, in the shape moonlight-common-c does (callbacks.c): before each keyframe
      * its parameter sets one by one with their buffer type, then the picture. Frame numbers are the console's 16-bit indices unwrapped
-     * to a counter from 1. When the decoder needs a keyframe, or the queue overflows, the console is asked for one and frames are
-     * dropped until it comes.
+     * to a counter from 1. When a frame is lost, the decoder needs a keyframe, or the queue overflows, frames are dropped until a
+     * keyframe (an IDR, or a picture whose first slice is an I slice) comes, and the console is asked again every second (7.3).
      */
     private inner class VideoFeeder(private val renderer: VideoDecoderRenderer, private val hevc: Boolean, header: ByteArray, depth: Int) {
         private val queue = ArrayBlockingQueue<Pair<ByteArray, Int>>(depth)
         private val parameterSets = LinkedHashMap<Int, ByteArray>()
+        // HEVC: the PPS's num_extra_slice_header_bits, read to reach a slice's type
+        @Volatile private var extraSliceBits = 0
         @Volatile private var active = true
         @Volatile private var waitForKeyframe = true
+        // While waiting: when it began and when a keyframe was last asked for, and how often
+        @Volatile private var waitSinceMs = 0L
+        @Volatile private var askedAtMs = 0L
+        private var requests = 0
         private var lastIndex = -1
         private var frameNumber = 0
         private val worker = Thread(::run, "ps-video-feeder")
 
-        init { for (nal in Nal.split(header)) if (isParameterSet(nal)) parameterSets[nalType(nal)] = nal }
+        init { setParameterSets(header) }
 
         fun start() = worker.start()
 
@@ -373,16 +383,45 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             keyframeNeeded()
         }
 
+        /** The stream lost a frame and asked for a keyframe already: drop pictures until one comes. */
+        fun lost() = startWaiting(asked = true)
+
+        /** Another adaptive profile: its parameter sets replace the current ones before the next keyframe. */
+        fun profile(width: Int, height: Int, header: ByteArray) {
+            Log.i(TAG, "video profile ${width}x$height")
+            setParameterSets(header)
+        }
+
+        private fun setParameterSets(header: ByteArray) {
+            synchronized(parameterSets) { for (nal in Nal.split(header)) if (isParameterSet(nal)) parameterSets[nalType(nal)] = nal }
+            parameterSets[34]?.let { extraSliceBits = hevcExtraSliceBits(it) }
+        }
+
         private fun keyframeNeeded() {
-            if (!waitForKeyframe) Log.i(TAG, "waiting for a keyframe")
-            waitForKeyframe = true
+            startWaiting(asked = false)
             stream?.requestKeyframe()
+        }
+
+        private fun startWaiting(asked: Boolean) {
+            val now = SystemClock.uptimeMillis()
+            if (!waitForKeyframe) { Log.i(TAG, "waiting for a keyframe"); waitSinceMs = now; requests = 0 }
+            waitForKeyframe = true
+            askedAtMs = now
+            requests++
+            if (asked && waitSinceMs == 0L) waitSinceMs = now
         }
 
         private fun run() {
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_DISPLAY)
             while (active) {
-                val (frame, index) = try { queue.poll(100, TimeUnit.MILLISECONDS) ?: continue } catch (_: InterruptedException) { return }
+                val next = try { queue.poll(100, TimeUnit.MILLISECONDS) } catch (_: InterruptedException) { return }
+                // Still waiting a second after the last request: the request or its answer was lost, ask again
+                if (waitForKeyframe && SystemClock.uptimeMillis() - askedAtMs >= 1000) {
+                    askedAtMs = SystemClock.uptimeMillis()
+                    requests++
+                    stream?.requestKeyframe()
+                }
+                val (frame, index) = next ?: continue
                 frameNumber += if (lastIndex < 0) 1 else ((index - lastIndex) and 0xFFFF).coerceAtLeast(1)
                 lastIndex = index
                 submit(frame, frameNumber)
@@ -393,17 +432,26 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             val nals = Nal.split(frame)
             val picture = ArrayList<ByteArray>(nals.size)
             var keyframe = false
+            var firstSlice = true
             for (nal in nals) {
-                if (isParameterSet(nal)) { parameterSets[nalType(nal)] = nal; continue }
-                if (isKeyframe(nal)) keyframe = true
+                if (isParameterSet(nal)) {
+                    synchronized(parameterSets) { parameterSets[nalType(nal)] = nal }
+                    if (hevc && nalType(nal) == 34) extraSliceBits = hevcExtraSliceBits(nal)
+                    continue
+                }
+                if (isSlice(nal) && firstSlice) { firstSlice = false; if (isKeyframe(nal)) keyframe = true }
                 picture += nal
             }
             if (picture.isEmpty()) return
             if (waitForKeyframe && !keyframe) return
-            if (keyframe) waitForKeyframe = false
+            if (keyframe && waitForKeyframe) {
+                waitForKeyframe = false
+                if (waitSinceMs > 0) Log.i(TAG, "keyframe after ${SystemClock.uptimeMillis() - waitSinceMs} ms, $requests requests")
+                waitSinceMs = 0
+            }
             val now = SystemClock.uptimeMillis() * 1000
             val type = if (keyframe) MoonBridge.FRAME_TYPE_IDR else MoonBridge.FRAME_TYPE_PFRAME
-            if (keyframe) for ((nalType, nal) in parameterSets) {
+            if (keyframe) for ((nalType, nal) in synchronized(parameterSets) { parameterSets.entries.map { it.key to it.value } }) {
                 val result = renderer.submitDecodeUnit(nal, nal.size, bufferType(nalType), number, type, 0.toChar(), now, now)
                 if (result == MoonBridge.DR_NEED_IDR) { keyframeNeeded(); return }
             }
@@ -418,7 +466,14 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
         private fun isParameterSet(nal: ByteArray) = nalType(nal).let { if (hevc) it in 32..34 else it == 7 || it == 8 }
 
-        private fun isKeyframe(nal: ByteArray) = nalType(nal).let { if (hevc) it in 16..21 else it == 5 }
+        private fun isSlice(nal: ByteArray) = nalType(nal).let { if (hevc) it in 0..21 else it in 1..5 }
+
+        /** An IDR (or HEVC IRAP), or an I slice in another NAL type, which the console may answer a keyframe request with (7.3). */
+        private fun isKeyframe(nal: ByteArray): Boolean {
+            val type = nalType(nal)
+            if (if (hevc) type in 16..21 else type == 5) return true
+            return runCatching { Nal.sliceType(nal, hevc, extraSliceBits) }.getOrNull() == Nal.SLICE_I
+        }
 
         private fun bufferType(nalType: Int) = when (nalType) {
             32 -> MoonBridge.BUFFER_TYPE_VPS
@@ -433,22 +488,37 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         }
     }
 
+    /** HEVC PPS: num_extra_slice_header_bits (after pps id, sps id and two flags), needed to reach a slice header's type. */
+    private fun hevcExtraSliceBits(pps: ByteArray): Int = runCatching {
+        val r = Nal.BitReader(Nal.rbsp(pps, Nal.payloadOffset(pps) + 2))
+        r.ue(); r.ue(); r.bit(); r.bit(); r.bits(3)
+    }.getOrDefault(0)
+
     // --- Audio -------------------------------------------------------------------------------------------------------------------
 
     /**
-     * The console's Opus units (7.4) into the audio renderer: a jitter buffer ordered by frame index (PsPrefs.AUDIO_BUFFER), played one
-     * frame per unit on its own thread, a missing frame concealed by Opus; mono becomes stereo, and the channels can be swapped.
+     * The console's Opus units (7.4) into the audio renderer: a jitter buffer keyed by the 16-bit frame index (PsPrefs.AUDIO_BUFFER),
+     * filled to its start depth once and then played continuously, one frame per unit on its own thread (the renderer's blocking
+     * write paces it). A unit that is late by more than a frame is concealed by Opus when later units are there; only after
+     * [AUDIO_GAP_MS] without any unit does the buffer start over. Mono becomes stereo, and the channels can be swapped.
      */
     private inner class AudioSource(header: ByteArray) : AutoCloseable {
         private val channels = u(header[0])
         private val rate = ByteBuffer.wrap(header, 2, 4).order(ByteOrder.BIG_ENDIAN).int
         private val frameSamples = ByteBuffer.wrap(header, 6, 4).order(ByteOrder.BIG_ENDIAN).int.takeIf { it > 0 } ?: 480
+        private val frameMs = (frameSamples * 1000L / rate).coerceAtLeast(1)
         private val opus = PsOpus(rate, channels)
-        private val queue = TreeMap<Int, ByteArray>()
+        // Keyed by the index modulo 2^16 (the console's counter wraps): order is the distance from [next], not the key
+        private val queue = HashMap<Int, ByteArray>()
         private val startFrames: Int
         private val maxFrames: Int
         private val swap = psPrefs.getBoolean(PsPrefs.SWAP_CHANNELS, false)
         private var next = -1
+        private var lastUnitMs = 0L
+        // For the log, per 10 s: concealed frames and restarts of the buffer
+        private var concealed = 0
+        private var restarts = 0
+        private var statsAtMs = 0L
         @Volatile private var active = true
         private val worker = Thread(::run, "ps-audio")
 
@@ -464,11 +534,21 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             worker.start()
         }
 
+        private fun distance(index: Int) = (index - next) and 0xFFFF
+
         fun offer(packet: ByteArray, frameIndex: Int) {
+            val index = frameIndex and 0xFFFF
             synchronized(queue) {
-                if (next >= 0 && ((frameIndex - next) and 0xFFFF) > 0x8000) return
-                queue.putIfAbsent(frameIndex, packet)
-                while (queue.size > maxFrames) queue.pollFirstEntry()?.let { if (next >= 0) next = (it.key + 1) and 0xFFFF }
+                lastUnitMs = SystemClock.uptimeMillis()
+                // Behind the frame being played: too late
+                if (next >= 0 && distance(index) > 0x8000) return
+                queue.putIfAbsent(index, packet)
+                // Too deep (the console's clock runs ahead): the oldest units go
+                while (queue.size > maxFrames) {
+                    val oldest = if (next >= 0) queue.keys.minByOrNull(::distance)!! else queue.keys.first()
+                    queue.remove(oldest)
+                    if (next >= 0 && oldest == next) next = (next + 1) and 0xFFFF
+                }
                 (queue as Object).notifyAll()
             }
         }
@@ -482,24 +562,40 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                     if (next < 0) {
                         while (active && queue.size < startFrames) (queue as Object).wait(50)
                         if (!active) return
-                        next = queue.firstKey()
+                        // The oldest unit: the one the others are furthest ahead of
+                        next = queue.keys.minByOrNull { k -> queue.keys.maxOf { (it - k) and 0xFFFF } }!!
                     }
-                    // Wait one frame for the next unit; a missing one is concealed
-                    if (!queue.containsKey(next) && queue.isNotEmpty()) (queue as Object).wait(frameSamples * 1000L / rate)
-                    if (queue.isEmpty()) { next = -1; continue }
+                    // The next unit may be a little late: wait up to one frame
+                    if (!queue.containsKey(next)) (queue as Object).wait(frameMs)
+                    if (!queue.containsKey(next) && queue.isEmpty()) {
+                        // Nothing at all: a short hiccup is waited out frame by frame, a real gap starts the buffer over
+                        if (SystemClock.uptimeMillis() - lastUnitMs > AUDIO_GAP_MS) { next = -1; restarts++ }
+                        continue
+                    }
                     packet = queue.remove(next)
+                    if (packet == null) concealed++
                     next = (next + 1) and 0xFFFF
                 }
                 val samples = opus.decode(packet, decoded, frameSamples)
-                if (samples <= 0) continue
-                for (i in 0 until samples) {
-                    val l = decoded[i * channels]
-                    val r = if (channels > 1) decoded[i * channels + 1] else l
-                    stereo[i * 2] = if (swap) r else l
-                    stereo[i * 2 + 1] = if (swap) l else r
+                if (samples > 0) {
+                    for (i in 0 until samples) {
+                        val l = decoded[i * channels]
+                        val r = if (channels > 1) decoded[i * channels + 1] else l
+                        stereo[i * 2] = if (swap) r else l
+                        stereo[i * 2 + 1] = if (swap) l else r
+                    }
+                    audio?.playDecodedAudio(if (samples == frameSamples) stereo else stereo.copyOf(samples * 2))
                 }
-                audio?.playDecodedAudio(if (samples == frameSamples) stereo else stereo.copyOf(samples * 2))
+                logStats()
             }
+        }
+
+        private fun logStats() {
+            val now = SystemClock.uptimeMillis()
+            if (statsAtMs == 0L) statsAtMs = now
+            if (now - statsAtMs < 10_000) return
+            if (concealed > 0 || restarts > 0) Log.i(TAG, "audio 10 s: $concealed frames concealed, $restarts restarts, depth ${synchronized(queue) { queue.size }}")
+            concealed = 0; restarts = 0; statsAtMs = now
         }
 
         override fun close() {
@@ -520,6 +616,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         private const val STAGE_STREAM = "Remote Play session"
         private const val PS_PORT = 9295
         private const val SILENCE_MS = 10_000L
+        /** Audio: this long without any unit is a real gap, after which the jitter buffer fills to its start depth again. */
+        private const val AUDIO_GAP_MS = 200L
         private const val MOTION_RATE_HZ: Short = 200
         private const val G = 9.80665f
         private const val TOUCH_WIDTH = 1920
@@ -563,4 +661,59 @@ internal object Nal {
 
     /** The first byte after the start code. */
     fun payloadOffset(nal: ByteArray): Int = if (nal.size > 3 && nal[2].toInt() == 0) 4 else 3
+
+    /** The slice type I (H.264 2 and 7, HEVC 2) as [sliceType] reports it. */
+    const val SLICE_I = 2
+
+    /**
+     * The slice type of a first slice: H.264 first_mb_in_slice then slice_type (mod 5); HEVC first_slice_segment_in_pic_flag, for
+     * IRAP types no_output_of_prior_pics_flag, the PPS id, [extraBits] reserved bits, then slice_type. Null when it is not the
+     * picture's first slice (HEVC) or cannot be read.
+     */
+    fun sliceType(nal: ByteArray, hevc: Boolean, extraBits: Int): Int? {
+        val start = payloadOffset(nal)
+        val r = BitReader(rbsp(nal, start + if (hevc) 2 else 1))
+        if (!hevc) { r.ue(); return r.ue() % 5 }
+        val type = (nal[start].toInt() shr 1) and 0x3F
+        if (r.bit() == 0) return null
+        if (type in 16..23) r.bit()
+        r.ue()
+        r.bits(extraBits)
+        return r.ue()
+    }
+
+    /** The payload from [from] without emulation-prevention bytes (00 00 03 → 00 00), at most the first 64 bytes. */
+    fun rbsp(nal: ByteArray, from: Int): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        var zeros = 0
+        var i = from
+        while (i < nal.size && out.size() < 64) {
+            val b = nal[i].toInt() and 0xFF
+            if (zeros >= 2 && b == 3) { zeros = 0; i++; continue }
+            zeros = if (b == 0) zeros + 1 else 0
+            out.write(b)
+            i++
+        }
+        return out.toByteArray()
+    }
+
+    /** Reads bits and Exp-Golomb numbers from the start of [data]; past the end it throws. */
+    class BitReader(private val data: ByteArray) {
+        private var position = 0
+
+        fun bit(): Int {
+            if (position >= data.size * 8) throw IndexOutOfBoundsException("past the end")
+            val b = (data[position / 8].toInt() shr (7 - position % 8)) and 1
+            position++
+            return b
+        }
+
+        fun bits(n: Int): Int { var v = 0; repeat(n) { v = (v shl 1) or bit() }; return v }
+
+        fun ue(): Int {
+            var zeros = 0
+            while (bit() == 0) { zeros++; if (zeros > 31) throw IllegalStateException("bad Exp-Golomb code") }
+            return (1 shl zeros) - 1 + bits(zeros)
+        }
+    }
 }

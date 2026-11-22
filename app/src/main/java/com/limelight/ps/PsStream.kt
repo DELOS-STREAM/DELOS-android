@@ -17,6 +17,10 @@ import java.util.concurrent.TimeUnit
 /** What the stream reports to its user (the stream activity through [PsConnection], or the debug bench). */
 interface PsStreamListener {
     fun onStreamInfo(width: Int, height: Int, videoHeader: ByteArray, audioHeader: ByteArray?) {}
+    /** A frame could not be rebuilt (FEC failed): the following pictures reference it, so the decoder waits for a keyframe (7.3). */
+    fun onVideoLost() {}
+    /** The console switched to another adaptive profile (7.2): its size and parameter sets apply from the next keyframe. */
+    fun onVideoProfile(width: Int, height: Int, videoHeader: ByteArray) {}
     /** A complete Annex-B access unit. */
     fun onVideoFrame(frame: ByteArray, index: Int) {}
     fun onAudio(opus: ByteArray, frameIndex: Int) {}
@@ -80,6 +84,13 @@ class PsStream(
     private var historySeq = 0
     private var state = PsControllerState()
     private val history = ArrayDeque<ByteArray>()
+    // The adaptive profiles of STREAMINFO (resolution entries) and the one the frames use (7.2, adaptive resolution)
+    @Volatile private var profiles: List<PsProtoMessage> = emptyList()
+    private var profile = 0
+    // Video statistics for the log, per 10 s: complete frames, frames FEC restored, frames lost
+    private var framesComplete = 0
+    private var framesRecovered = 0
+    private var framesLost = 0
 
     fun start() {
         socket.connect(InetSocketAddress(host, 9296))
@@ -104,6 +115,7 @@ class PsStream(
         timers.scheduleWithFixedDelay(::sendCongestion, 200, 200, TimeUnit.MILLISECONDS)
         timers.scheduleWithFixedDelay({ sendFeedbackState() }, 200, 200, TimeUnit.MILLISECONDS)
         timers.scheduleWithFixedDelay(::stopIdleHaptics, 50, 50, TimeUnit.MILLISECONDS)
+        timers.scheduleWithFixedDelay(::logVideo, 10, 10, TimeUnit.SECONDS)
     }
 
     // DualSense haptics as rumble: a PS5 that is told the controller is a DualSense sends its effects as PCM for the voice coils
@@ -333,6 +345,7 @@ class PsStream(
 
     private fun onStreamInfo(info: PsProtoMessage) {
         val res = info.messages(1).firstOrNull() ?: return
+        profiles = info.messages(1)
         listener.onStreamInfo(res.uint(1)?.toInt() ?: 0, res.uint(2)?.toInt() ?: 0, res.bytes(3) ?: ByteArray(0), info.bytes(2))
         sendMessage(9, 0, PsMsg.simple(PsMsg.STREAMINFOACK))
         val controller = PsProtoWriter().bool(2, true).uint(3, if (target.ps5) 6 else 2)
@@ -348,10 +361,19 @@ class PsStream(
         recvPosition = maxOf(recvPosition, position)
         if (packet.video) {
             for (r in assembler.add(packet)) when (r) {
-                is PsFrameAssembler.Result.Frame -> listener.onVideoFrame(r.data, r.index)
-                is PsFrameAssembler.Result.Lost -> requestIdr(r.from, r.to)
+                is PsFrameAssembler.Result.Frame -> {
+                    framesComplete++
+                    if (r.recovered) framesRecovered++
+                    if (r.adaptiveIndex != profile) switchProfile(r.adaptiveIndex)
+                    listener.onVideoFrame(r.data, r.index)
+                }
+                is PsFrameAssembler.Result.Lost -> { framesLost++; requestIdr(r.from, r.to); listener.onVideoLost() }
             }
-            assembler.takeLoss()?.let { (a, b) -> if (keyframeOnLoss) requestIdr(a, b) else corrupt(a, b) }
+            // Whole frames missing: CORRUPTFRAME tells the console not to reference them; with keyframe-on-loss it starts over
+            assembler.takeLoss()?.let { (a, b) ->
+                framesLost += ((b - a) and 0xFFFF) + 1
+                if (keyframeOnLoss) { requestIdr(a, b); listener.onVideoLost() } else corrupt(a, b)
+            }
         } else if (packet.audioMarker == 2) {
             onHaptics(packet.payload)
         } else {
@@ -363,6 +385,23 @@ class PsStream(
                 if (size > 0 && from + size <= packet.payload.size) listener.onAudio(packet.payload.copyOfRange(from, from + size), packet.frameIndex + i)
             }
         }
+    }
+
+    /** Frames of another adaptive profile: its size and parameter sets go to the listener first (7.2, 7.3 step 6). */
+    private fun switchProfile(index: Int) {
+        val p = profiles.getOrNull(index)
+        profile = index
+        if (p == null) { Log.w(TAG, "adaptive profile $index unknown (${profiles.size} in STREAMINFO)"); return }
+        val width = p.uint(1)?.toInt() ?: 0
+        val height = p.uint(2)?.toInt() ?: 0
+        Log.i(TAG, "adaptive profile $index: ${width}x$height")
+        listener.onVideoProfile(width, height, p.bytes(3) ?: ByteArray(0))
+    }
+
+    private fun logVideo() {
+        val complete = framesComplete; val recovered = framesRecovered; val lost = framesLost
+        framesComplete = 0; framesRecovered = 0; framesLost = 0
+        if (recovered > 0 || lost > 0) Log.i(TAG, "video 10 s: $complete frames, $recovered restored by FEC, $lost lost")
     }
 
     private fun corrupt(from: Int, to: Int) =
