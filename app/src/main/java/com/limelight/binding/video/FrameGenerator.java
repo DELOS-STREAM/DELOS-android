@@ -99,6 +99,7 @@ final class FrameGenerator implements AutoCloseable {
     private boolean useWarp;
     private float driverScore = -1f, warpScore = -1f;
     private long evaluations, switches;
+    private boolean warpBroken;
     // For the log
     private long generated, repeats, refinements;
     private final int[] recentChanged = new int[12];
@@ -181,7 +182,7 @@ final class FrameGenerator implements AutoCloseable {
             }
             lastPictureCells = changed;
             // Every other moving picture: which way would have predicted it better from the pair before it
-            if (frames >= 2 && changed >= MOVING_PAIR_CELLS && offered == (OFFERS_EXTRAPOLATION | OFFERS_MOTION_ESTIMATION)
+            if (frames >= 2 && changed >= MOVING_PAIR_CELLS && offered == (OFFERS_EXTRAPOLATION | OFFERS_MOTION_ESTIMATION) && !warpBroken
                     && holdError > 0 && evaluations++ % 2 == 0) {
                 evaluate(source, holdError);
             }
@@ -218,15 +219,28 @@ final class FrameGenerator implements AutoCloseable {
         if (error != 0) throw new IllegalStateException("glExtrapolateTex2DQCOM error 0x" + Integer.toHexString(error));
         diff(output, next);
         final float driver = diffError / (float) holdError;
-        ensureMotion();
-        drawWarp(ring[newest], 1f);
-        diff(output, next);
-        final float warp = diffError / (float) holdError;
+        final float warp;
+        try {
+            ensureMotion();
+            drawWarp(ring[newest], 1f);
+            diff(output, next);
+            warp = diffError / (float) holdError;
+        } catch (RuntimeException e) {
+            breakWarp(e);
+            return;
+        }
         driverScore = driverScore < 0 ? driver : driverScore * .8f + driver * .2f;
         warpScore = warpScore < 0 ? warp : warpScore * .8f + warp * .2f;
         boolean warpBetter = useWarp ? !(driverScore * 100 < warpScore * SWITCH_PERCENT) : warpScore * 100 < driverScore * SWITCH_PERCENT;
         if (warpBetter != useWarp) switches++;
         useWarp = warpBetter;
+    }
+
+    /** The own warp failed on this device (a shader, a read-back): the driver's extrapolation alone generates from now on. */
+    private void breakWarp(RuntimeException e) {
+        LimeLog.warning("Frame generation: own warp off: " + e);
+        warpBroken = true;
+        useWarp = false;
     }
 
     /** Whether a generated frame belongs before the next picture. */
@@ -249,12 +263,19 @@ final class FrameGenerator implements AutoCloseable {
         float t = nextOffset() / (float) refreshes;
         nextStep++;
         if (useWarp) {
-            ensureMotion();
-            drawWarp(ring[newest], t);
-        } else {
-            int error = nativeExtrapolate(ring[1 - newest], ring[newest], output, t);
-            if (error != 0) throw new IllegalStateException("glExtrapolateTex2DQCOM error 0x" + Integer.toHexString(error));
+            try {
+                ensureMotion();
+                drawWarp(ring[newest], t);
+                generated++;
+                return output;
+            } catch (RuntimeException e) {
+                // The driver's extrapolation goes on where it exists; without it generation stops (the caller logs)
+                if ((offered & OFFERS_EXTRAPOLATION) == 0) throw e;
+                breakWarp(e);
+            }
         }
+        int error = nativeExtrapolate(ring[1 - newest], ring[newest], output, t);
+        if (error != 0) throw new IllegalStateException("glExtrapolateTex2DQCOM error 0x" + Integer.toHexString(error));
         generated++;
         return output;
     }
