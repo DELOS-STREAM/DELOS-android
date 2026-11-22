@@ -151,9 +151,11 @@ public final class SgsrRenderer implements AutoCloseable {
     private long frameGenLogFrames;
     // When the last decoded frame is shown (its requested presentation time): generated steps follow it one refresh apart
     private long lastPresentTargetNs;
-    // Display refreshes (frame callbacks) since the newest picture of the game was presented; generated steps that came too late
+    // Display refreshes since the newest picture of the game was presented, the vsync of the first one; steps dropped as late or
+    // for a busy GPU
     private int refreshesSinceReal;
-    private long frameGenLate;
+    private long realVsyncNs;
+    private long frameGenLate, frameGenBusy;
     private final Choreographer.FrameCallback frameGenTick = this::onFrameGenTick;
     // These refer to the latest decoded/reconstructed frame. Display ticks never advance decoding
     // or temporal history and never rebuild its mip pyramid unless that frame changes.
@@ -681,8 +683,8 @@ public final class SgsrRenderer implements AutoCloseable {
                 try {
                     repeat = generator.onRealFrame(source,sampledWidth,sampledHeight,texture.getTimestamp(),displayPeriodNs);
                     if (++frameGenLogFrames % 600 == 0) LimeLog.info("Frame generation: " + generator.generated() + " generated ("
-                            + frameGenLate + " late), " + generator.repeats() + " repeated frames of " + frameGenLogFrames
-                            + "; changed cells " + generator.recentChangedCells() + "; generated vs newest " + generator.generatedChanged());
+                            + frameGenLate + " late, " + frameGenBusy + " GPU busy), " + generator.repeats() + " repeated frames of "
+                            + frameGenLogFrames + "; changed cells " + generator.recentChangedCells() + "; " + generator.generatedChanged());
                 }
                 catch (RuntimeException e) { stopFrameGeneration(generator,e); generator = null; }
             }
@@ -814,14 +816,17 @@ public final class SgsrRenderer implements AutoCloseable {
         if (generator == null || closed.get() || !outputAttached || arrivalIsActive() || !generator.hasStep()) return;
         final long period = displayPeriodNs;
         final long now = System.nanoTime();
-        refreshesSinceReal++;
+        // Refreshes since the picture: the first callback after it is the refresh it shows on; later ones are counted on the vsync
+        // clock, so a callback the looper missed does not shift the steps
+        if (refreshesSinceReal == 0) { realVsyncNs = frameTimeNanos; refreshesSinceReal = 1; }
+        else refreshesSinceReal = 1 + Math.round((frameTimeNanos - realVsyncNs) / (float) period);
         while (generator.hasStep() && generator.nextOffset() < refreshesSinceReal) { generator.skipStep(); frameGenLate++; }
         if (!generator.hasStep()) return;
         if (generator.nextOffset() > refreshesSinceReal) { scheduleFrameGen(); return; }
         final long target = lastPresentTargetNs + generator.nextOffset() * period;
         if (heldFrame || gpuBusy(now)) {
             generator.skipStep();
-            frameGenLate++;
+            frameGenBusy++;
             if (generator.hasStep()) scheduleFrameGen();
             return;
         }

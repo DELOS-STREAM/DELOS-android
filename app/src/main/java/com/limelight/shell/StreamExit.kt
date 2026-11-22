@@ -82,7 +82,9 @@ object StreamExit {
             else -> game.getString(R.string.stream_exit_quitting_game)
         }
         val appearance = AppearanceStore { ProfileStore.currentSettings(game) }.appearance.value
-        val colors = delosColors(appearance, systemAccentHue(game))
+        // A console stream leaves in the PlayStation theme the shell returns to, as it arrived (StreamLoader)
+        val colors = if (game.intent.hasExtra(com.limelight.ps.PsConnection.EXTRA_CONSOLE)) com.limelight.shell.ps.playStationColors()
+            else delosColors(appearance, systemAccentHue(game))
         val portal = Portal((System.nanoTime() and 0x7fffffff).toInt(), if (quit) Symbols.POWER_SETTINGS_NEW else Symbols.HOME, label, pcName, cancellable = false)
         val shown = mutableStateOf<Portal?>(null)
         val feedback = Feedback(game).also { it.hapticsEnabled = appearance.haptics }

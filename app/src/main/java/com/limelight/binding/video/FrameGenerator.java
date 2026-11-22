@@ -30,14 +30,16 @@ final class FrameGenerator implements AutoCloseable {
     /** The difference grid: cells of 4 × 4 samples each. */
     private static final int CELLS_X = 64, CELLS_Y = 36;
     /**
-     * A cell changed when one of its samples moved by more than about 3 / 255 (the shader scales the difference by 8); a frame repeats
-     * the previous one when at most this many cells changed (re-encoding noise, not a new picture).
+     * A cell changed when one of its samples moved by more than about 3 / 255 (the shader scales the difference by 8). A frame repeats
+     * the previous picture when at most [MAX_CHANGED_CELLS] cells changed (re-encoding noise), or, after a picture that moved, when
+     * fewer than [REFINE_PERCENT] % of the cells that picture changed did: on fast motion the console's encoder sends the repeat as a
+     * refinement of the same picture (about 15–20 % of the cells, observed on the Odin), not a new one.
      */
-    private static final int CHANGED_LEVEL = 24, MAX_CHANGED_CELLS = CELLS_X * CELLS_Y / 200;
+    private static final int CHANGED_LEVEL = 24, MAX_CHANGED_CELLS = CELLS_X * CELLS_Y / 200, REFINE_PERCENT = 35;
     /** A pair that moved at least this many cells tells whether generated frames move and which way the motion vectors point. */
     private static final int MOVING_PAIR_CELLS = 60;
-    /** Samples in a row whose driver extrapolation stayed (nearly) the newest picture while the pair moved: then the warp takes over. */
-    private static final int STILL_SAMPLES_TO_SWITCH = 3;
+    /** The driver's step moved less than this share (in tenths) of the pair's changed cells: it did not follow the motion. */
+    private static final int STUCK_TENTHS = 3;
 
     private static final String FULLSCREEN = "#version 310 es\n" +
             "void main(){ vec2 p=vec2(float(gl_VertexID&1),float(gl_VertexID>>1)); gl_Position=vec4(p*2.0-1.0,0,1); }";
@@ -73,7 +75,14 @@ final class FrameGenerator implements AutoCloseable {
     private long generated, repeats;
     private final int[] recentChanged = new int[12];
     private int recentCount;
-    private int generatedChanged, pairChanged, stillSamples;
+    // Per pair: how far it moved (cells, from the repeat test), and whether its steps use the warp because the driver's did not move
+    private int pairCells, lastPictureCells;
+    private long refinements;
+    private boolean pairChecked, pairWarp;
+    // For the log: pairs checked and stuck, the latest check, the warp's latest move, how many refreshes the game's frames took
+    private long movingPairs, stuckPairs, warpSamples;
+    private int generatedChanged, pairChanged, warpMoved, warpPair;
+    private final int[] intervalRefreshes = new int[7];
     private int framebuffer, diffProgram, diffTexture;
     private final ByteBuffer diffPixels = ByteBuffer.allocateDirect(CELLS_X * CELLS_Y * 4).order(ByteOrder.nativeOrder());
     // The warp: a luma copy per ring slot, the motion between the pair, and the vectors' orientation (found on a moving pair)
@@ -120,14 +129,26 @@ final class FrameGenerator implements AutoCloseable {
         GLES31.glGetTexLevelParameteriv(GLES31.GL_TEXTURE_2D, 0, GLES31.GL_TEXTURE_INTERNAL_FORMAT, query, 0);
         final int format = query[0];
         if (w != width || h != height || format != internalFormat || ring[0] == 0) allocate(w, h, format);
+        pairCells = 0;
         if (frames > 0) {
             int changed = changedCells(source, ring[newest]);
             recentChanged[recentCount++ % recentChanged.length] = changed;
-            if (changed <= MAX_CHANGED_CELLS) {
+            boolean refinement = changed > MAX_CHANGED_CELLS && lastPictureCells >= MOVING_PAIR_CELLS
+                    && changed * 100 < lastPictureCells * REFINE_PERCENT;
+            if (changed <= MAX_CHANGED_CELLS || refinement) {
                 repeats++;
+                if (refinement) {
+                    // The same picture in better quality: it replaces the newest of the pair (its motion is estimated again)
+                    refinements++;
+                    GLES32.glCopyImageSubData(source, GLES31.GL_TEXTURE_2D, 0, 0, 0, 0, ring[newest], GLES31.GL_TEXTURE_2D, 0, 0, 0, 0, w, h, 1);
+                    motionReady = false;
+                }
                 return true;
             }
+            pairCells = lastPictureCells = changed;
         }
+        pairChecked = pairWarp = false;
+        motionReady = false;
         int slot = newest < 0 ? 0 : 1 - newest;
         GLES32.glCopyImageSubData(source, GLES31.GL_TEXTURE_2D, 0, 0, 0, 0, ring[slot], GLES31.GL_TEXTURE_2D, 0, 0, 0, 0, w, h, 1);
         long interval = frames > 0 ? timestampNs - newestTimestampNs : 0;
@@ -136,24 +157,21 @@ final class FrameGenerator implements AutoCloseable {
         steps = refreshes = nextStep = 1;
         if (frames > 0 && interval > 0 && periodNs > 0 && (intervalNs == 0 || interval <= intervalNs * MAX_GAP_INTERVALS)) {
             intervalNs = intervalNs == 0 ? interval : (intervalNs * 3 + interval) / 4;
-            refreshes = Math.max(1, Math.round(interval / (float) periodNs));
+            // The smoothed interval: arrival jitter must not change the plan (and t) from one game frame to the next
+            refreshes = Math.max(1, Math.round(intervalNs / (float) periodNs));
             steps = Math.min(refreshes, multiplier);
             frames++;
+            intervalRefreshes[Math.min(refreshes, intervalRefreshes.length - 1)]++;
         } else {
             // The first frame, or one after a gap: no pair to extrapolate from yet
             frames = 1;
             intervalNs = 0;
         }
-        if (mode == Mode.WARP) {
-            drawLuma(slot);
-            motionReady = false;
-            if (frames >= 2) estimateMotion();
-        }
         return false;
     }
 
     /** Whether a generated frame belongs before the next picture. */
-    boolean hasStep() { return frames >= 2 && nextStep < steps && (mode == Mode.DRIVER || motionReady); }
+    boolean hasStep() { return frames >= 2 && nextStep < steps; }
 
     /** Whether there is a pair to extrapolate from (a repeat of its newest picture adds nothing to show then). */
     boolean paired() { return frames >= 2; }
@@ -167,38 +185,52 @@ final class FrameGenerator implements AutoCloseable {
     /** The next step is not shown (a decoded frame or a busy GPU came first, or its refresh has passed). */
     void skipStep() { nextStep++; }
 
-    /** Generates the next step into the output texture and returns it; a driver error is returned as an exception. */
+    /**
+     * Generates the next step into the output texture and returns it; a driver error is returned as an exception. The driver's
+     * extrapolation first; on a pair that moved, its first step is checked, and when it stayed (nearly) the newest picture (a motion
+     * too large for the driver, as in a fast camera turn) this pair's steps are warped along the motion estimation instead.
+     */
     int generate() {
         float t = nextOffset() / (float) refreshes;
         nextStep++;
-        if (mode == Mode.DRIVER) {
+        if (mode == Mode.DRIVER && !pairWarp) {
             int error = nativeExtrapolate(ring[1 - newest], ring[newest], output, t);
             if (error != 0) throw new IllegalStateException("glExtrapolateTex2DQCOM error 0x" + Integer.toHexString(error));
-        } else {
-            drawWarp(ring[newest], t);
-        }
-        // Now and then: how far the generated picture moved from the newest one, next to how far the pair moved
-        if (generated++ % 30 == 0) {
-            generatedChanged = changedCells(output, ring[newest]);
-            pairChanged = changedCells(ring[1 - newest], ring[newest]);
-            if (mode == Mode.DRIVER && (offered & OFFERS_MOTION_ESTIMATION) != 0 && pairChanged >= MOVING_PAIR_CELLS) {
-                stillSamples = generatedChanged * 10 < pairChanged ? stillSamples + 1 : 0;
-                if (stillSamples >= STILL_SAMPLES_TO_SWITCH) {
-                    LimeLog.info("Frame generation: the driver's extrapolation does not move the picture (" + generatedChanged
-                            + " of " + pairChanged + " cells); own warp along motion estimation");
-                    mode = Mode.WARP;
-                    drawLuma(1 - newest);
-                    drawLuma(newest);
-                    estimateMotion();
+            if (!pairChecked && pairCells >= MOVING_PAIR_CELLS && (offered & OFFERS_MOTION_ESTIMATION) != 0) {
+                pairChecked = true;
+                movingPairs++;
+                generatedChanged = changedCells(output, ring[newest]);
+                pairChanged = pairCells;
+                if (generatedChanged * 10 < pairCells * STUCK_TENTHS) {
+                    stuckPairs++;
+                    pairWarp = true;
                 }
             }
         }
+        if (mode == Mode.WARP || pairWarp) {
+            if (!motionReady) {
+                drawLuma(1 - newest);
+                drawLuma(newest);
+                estimateMotion();
+            }
+            drawWarp(ring[newest], t);
+            if (warpSamples++ % 15 == 0) {
+                warpMoved = changedCells(output, ring[newest]);
+                warpPair = pairCells;
+            }
+        }
+        generated++;
         return output;
     }
 
-    /** The latest sample for the log: the mode, changed cells generated vs newest, the pair's own, and the texture format. */
+    /** For the log: the driver's checks on moving pairs, the warp's latest move, and the game's frame intervals in refreshes. */
     String generatedChanged() {
-        return mode + ": " + generatedChanged + " (pair " + pairChanged + ", format 0x" + Integer.toHexString(internalFormat) + ")";
+        StringBuilder out = new StringBuilder().append(mode).append(": refinements ").append(refinements).append(", moving pairs ")
+                .append(movingPairs).append(", driver stuck ")
+                .append(stuckPairs).append(" (last ").append(generatedChanged).append(" of ").append(pairChanged).append("), warp ")
+                .append(warpSamples).append(" (last ").append(warpMoved).append(" of ").append(warpPair).append("), intervals");
+        for (int i = 1; i < intervalRefreshes.length; i++) out.append(' ').append(i).append(':').append(intervalRefreshes[i]);
+        return out.append(", format 0x").append(Integer.toHexString(internalFormat)).toString();
     }
 
     /** The changed cells of the latest repeat tests, oldest first (for the log). */
