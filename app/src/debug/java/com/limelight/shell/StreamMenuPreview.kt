@@ -32,9 +32,10 @@ import kotlin.math.sin
 /**
  * Debug builds only: the real stream menu on a drawn game scene with fake state, started with
  * `adb shell am start -n io.github.meitoncz.delos.debug/com.limelight.shell.ShellActivity --es preview_screen stream_menu`
- * and optionally `--es preview_page <main|upscaler|bitrate|brightness|more|keys|commands|mouse|rumble>`, `--ei preview_focus <tile 0..8>`,
- * `--ei preview_row <row of the page to focus>`, `--ei preview_upscaler_mode <0..4, the Mode row's position; 4 = Sharpen only>`
- * and `--ez preview_animate true` (plays the entrance; without it the menu is already open). Handled by `ShellActivity`
+ * and optionally `--es preview_page <main|upscaler|bitrate|brightness|more|keys|commands|mouse|rumble|frame_gen>`,
+ * `--ei preview_focus <tile 0..8>`, `--ei preview_row <row of the page to focus>`, `--ei preview_upscaler_mode <0..4, the Mode
+ * row's position; 4 = Sharpen only>`, `--ez preview_ps true` (a PlayStation stream's menu) and `--ez preview_animate true` (plays
+ * the entrance; without it the menu is already open). Handled by `ShellActivity`
  * before the shell, so no profile is needed (docs/GUI.md, "Stream menu preview").
  */
 internal object StreamMenuPreview {
@@ -49,19 +50,21 @@ internal object StreamMenuPreview {
             "upscaler" -> MenuPage.UPSCALER
             "mouse" -> MenuPage.MOUSE
             "rumble" -> MenuPage.RUMBLE
+            "frame_gen" -> MenuPage.FRAME_GEN
             else -> MenuPage.MAIN
         }
         val focus = BarItem.entries.getOrElse(intent.getIntExtra("preview_focus", 0)) { BarItem.RESUME }
         val start = StreamMenuStart(page, focus, intent.getIntExtra("preview_row", 0), intent.getBooleanExtra("preview_animate", false))
         val upscalerMode = intent.getIntExtra("preview_upscaler_mode", 2)
-        return { StreamMenuPreviewScreen(start, upscalerMode) }
+        val console = intent.getBooleanExtra("preview_ps", false)
+        return { StreamMenuPreviewScreen(start, upscalerMode, console) }
     }
 }
 
 /** The menu over the scene; closing it (Resume, B) leaves the scene alone, a tap on it opens the menu again. */
 @Composable
-private fun StreamMenuPreviewScreen(start: StreamMenuStart, upscalerMode: Int) {
-    val host = remember { FakeStreamMenuHost(upscalerMode) }
+private fun StreamMenuPreviewScreen(start: StreamMenuStart, upscalerMode: Int, console: Boolean) {
+    val host = remember { FakeStreamMenuHost(upscalerMode).also { it.console = console } }
     var open by remember { mutableStateOf(true) }
     var session by remember { mutableIntStateOf(0) }
     host.onDismiss = { open = false }
@@ -164,6 +167,18 @@ internal class FakeStreamMenuHost(initialUpscalerMode: Int = 2, private val long
     override fun setUpscalingMode(mode: Int) { upscalerMode = mode }
     override fun setUpscalingSharpness(percent: Int) { upscalerSharpness = percent }
     override fun setSupersamplingLevel(level: Int) { this.level = level }
+
+    override val frameGenAvailable = true
+    private var multiplier by mutableIntStateOf(1)
+    private var choice = 2
+    override val frameGenMultiplier get() = multiplier
+    override val frameGenChoice get() = choice
+    override fun setFrameGenMultiplier(multiplier: Int) {
+        if (multiplier > 1) choice = multiplier
+        this.multiplier = multiplier
+    }
+    override val playStation get() = console
+    var console = false
 
     override fun sendClipboard() = Unit
     override fun getClipboard() = Unit
