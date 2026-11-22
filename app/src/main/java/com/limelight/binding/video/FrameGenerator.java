@@ -55,11 +55,26 @@ final class FrameGenerator implements AutoCloseable {
     private static final String LUMA = "#version 310 es\n" +
             "precision highp float; uniform sampler2D src; uniform vec2 outSize; out vec4 color;\n" +
             "void main(){ vec3 c=texture(src,gl_FragCoord.xy/outSize).rgb; color=vec4(dot(c,vec3(0.299,0.587,0.114)),0.0,0.0,1.0); }";
-    // The newest picture, sampled back along the motion: a pixel that moved by v over the pair moves by v·t over the step
+    /*
+     * The own warp: the newest picture moved t pair intervals along its motion. Per pixel the motion is the candidate that best
+     * explains the pair (the older picture moved by it matches the newest, on two taps): the half-size block field (median-
+     * filtered), the quarter-size one (twice the search range, for fast turns), the camera's fitted motion, or none (a still
+     * HUD, or nothing fits: the pixel holds). The chosen kind is then looked up again where the pixel comes from (one fixed-point
+     * step, q = p − t·v(q)). Vectors are in half-size luma pixels (lumaSize), older → newest.
+     */
     private static final String WARP = "#version 310 es\n" +
-            "precision highp float; uniform sampler2D src; uniform sampler2D motion; uniform vec2 outSize; uniform vec2 scale;\n" +
-            "uniform float t; out vec4 color;\n" +
-            "void main(){ vec2 uv=gl_FragCoord.xy/outSize; vec2 v=texture(motion,uv).rg*scale; color=texture(src,uv-v*t); }";
+            "precision highp float; uniform sampler2D src; uniform sampler2D older; uniform sampler2D fine; uniform sampler2D coarse;\n" +
+            "uniform vec2 outSize; uniform vec2 lumaSize; uniform vec4 camera; uniform vec2 cameraShift; uniform vec2 cameraCenter;\n" +
+            "uniform float useCamera; uniform float t; out vec4 color;\n" +
+            "vec2 cam(vec2 uv){ vec2 p=uv*lumaSize-cameraCenter; return vec2(camera.x*p.x+camera.y*p.y,camera.z*p.x+camera.w*p.y)+cameraShift; }\n" +
+            "vec2 motionOf(int k, vec2 uv){ return k==0 ? texture(fine,uv).rg : k==1 ? texture(coarse,uv).rg : k==2 ? cam(uv) : vec2(0.0); }\n" +
+            "float misfit(vec2 uv, vec2 v){ vec2 d=v/lumaSize; vec2 o=1.5/outSize; float e=0.0;\n" +
+            " vec3 a=abs(texture(older,uv-o-d).rgb-texture(src,uv-o).rgb); e+=max(a.r,max(a.g,a.b));\n" +
+            " vec3 b=abs(texture(older,uv+o-d).rgb-texture(src,uv+o).rgb); e+=max(b.r,max(b.g,b.b)); return e; }\n" +
+            "void main(){ vec2 uv=gl_FragCoord.xy/outSize; int best=3; float bestErr=misfit(uv,vec2(0.0));\n" +
+            " for(int k=0;k<3;k++){ if(k==2 && useCamera<0.5) continue; vec2 v=motionOf(k,uv); float e=misfit(uv,v)*(k==2?0.85:1.0);\n" +
+            "  if(e<bestErr){ bestErr=e; best=k; } }\n" +
+            " vec2 q=uv-t*motionOf(best,uv)/lumaSize; color=texture(src,uv-t*motionOf(best,q)/lumaSize); }";
 
     /** [onRealFrame] results: a new picture of the game, an identical repeat, or the same picture with changed details. */
     static final int NEW_PICTURE = 0, REPEAT = 1, UPDATE = 2;
@@ -91,12 +106,18 @@ final class FrameGenerator implements AutoCloseable {
     private final int[] intervalRefreshes = new int[7];
     private int framebuffer, diffProgram, diffTexture;
     private final ByteBuffer diffPixels = ByteBuffer.allocateDirect(CELLS_X * CELLS_Y * 4).order(ByteOrder.nativeOrder());
-    // The warp: a luma copy per ring slot, the motion between the pair, and the vectors' orientation (found on a moving pair)
-    private final int[] luma = new int[2];
-    private int lumaWidth, lumaHeight, motion, lumaProgram, warpProgram;
+    // The warp: luma copies per ring slot at half and quarter size, the motion between the pair at both, the cleaned-up fields the
+    // shader reads (half: median-filtered; quarter: on the half grid, in half-size pixels) and the camera's fitted motion
+    private final int[] luma = new int[2], lumaQuarter = new int[2];
+    private int lumaWidth, lumaHeight, quarterWidth, quarterHeight, blockX, blockY, motion, motionQuarter, fieldFine, fieldCoarse;
+    private int lumaProgram, warpProgram;
     private boolean motionReady;
-    private float signX = 1f, signY = 1f;
-    private boolean oriented;
+    private final MotionField.Affine cameraMotion = new MotionField.Affine();
+    private boolean cameraFitted;
+    private java.nio.FloatBuffer readback;
+    private float[] fineRaw, fine, coarseRaw, coarse;
+    // For the log: the latest field's longest vectors (half-size pixels), the share near the half-size maximum, the camera fit
+    private float maxFine, maxCoarse, shareNearMax, cameraInliers = -1f;
 
     private FrameGenerator(int multiplier, int offered) {
         this.multiplier = multiplier;
@@ -242,7 +263,10 @@ final class FrameGenerator implements AutoCloseable {
     String generatedChanged() {
         StringBuilder out = new StringBuilder().append(useWarp ? "warp" : "driver").append(" (errors vs hold: driver ")
                 .append(Math.round(driverScore * 100) / 100f).append(", warp ").append(Math.round(warpScore * 100) / 100f)
-                .append("; switches ").append(switches).append("), refinements ").append(refinements).append(", intervals");
+                .append("; switches ").append(switches).append("), refinements ").append(refinements)
+                .append(", motion: longest ").append(Math.round(maxFine)).append(" px half, ").append(Math.round(maxCoarse))
+                .append(" px quarter, ").append(Math.round(shareNearMax * 100)).append(" % near the half-size longest, camera fit ")
+                .append(cameraInliers < 0 ? "none" : Math.round(cameraInliers * 100) + " %").append(", intervals");
         for (int i = 1; i < intervalRefreshes.length; i++) out.append(' ').append(i).append(':').append(intervalRefreshes[i]);
         return out.append(", format 0x").append(Integer.toHexString(internalFormat)).toString();
     }
@@ -264,68 +288,91 @@ final class FrameGenerator implements AutoCloseable {
         motionReady = false;
     }
 
-    /** The motion of the current pair, estimated once per pair (or after a refinement replaced its newest picture). */
+    /**
+     * The motion of the current pair, estimated once per pair (or after a refinement replaced its newest picture): at half and quarter
+     * size, read back, the half-size field median-filtered, the quarter-size one put on the half grid, and the camera fitted to it.
+     */
     private void ensureMotion() {
         if (motionReady) return;
         drawLuma(1 - newest);
         drawLuma(newest);
         int error = nativeEstimateMotion(luma[1 - newest], luma[newest], motion);
+        if (error == 0) error = nativeEstimateMotion(lumaQuarter[1 - newest], lumaQuarter[newest], motionQuarter);
         if (error != 0) throw new IllegalStateException("glTexEstimateMotionQCOM error 0x" + Integer.toHexString(error));
+        final int w = lumaWidth / blockX, h = lumaHeight / blockY, cw = quarterWidth / blockX, ch = quarterHeight / blockY;
+        readField(motion, w, h, fineRaw);
+        readField(motionQuarter, cw, ch, coarseRaw);
+        error = GLES31.glGetError();
+        if (error != 0) throw new IllegalStateException("motion read-back error 0x" + Integer.toHexString(error));
+        MotionField.median3x3(fineRaw, fine, w, h);
+        MotionField.upsample(coarseRaw, cw, ch, lumaWidth / (float) quarterWidth, lumaHeight / (float) quarterHeight, coarse, w, h);
+        cameraFitted = MotionField.fitAffine(coarse, w, h, blockX, blockY, 1f, 4f, cameraMotion);
+        cameraInliers = cameraFitted ? cameraMotion.inliers / (float) cameraMotion.total : -1f;
+        maxFine = MotionField.maxLength(fineRaw, w * h);
+        maxCoarse = MotionField.maxLength(coarse, w * h);
+        shareNearMax = maxFine > 0 ? MotionField.shareAtLeast(fineRaw, w * h, maxFine * .9f) : 0f;
+        uploadField(fieldFine, fine, w, h);
+        uploadField(fieldCoarse, coarse, w, h);
         motionReady = true;
-        if (!oriented) orient();
     }
 
-    /** The luma of ring slot [slot] into its luma texture, at the motion estimation's size. */
+    /** A motion texture ([w] × [h], RGBA16F) read back into [out] (x, y per block). */
+    private void readField(int texture, int w, int h, float[] out) {
+        bindTarget(texture, w, h);
+        readback.clear();
+        GLES31.glReadPixels(0, 0, w, h, GLES31.GL_RGBA, GLES31.GL_FLOAT, readback);
+        for (int i = 0; i < w * h; i++) {
+            out[i * 2] = readback.get(i * 4);
+            out[i * 2 + 1] = readback.get(i * 4 + 1);
+        }
+    }
+
+    /** [field] (x, y per block) into [texture]. */
+    private void uploadField(int texture, float[] field, int w, int h) {
+        readback.clear();
+        for (int i = 0; i < w * h; i++) {
+            readback.put(field[i * 2]).put(field[i * 2 + 1]).put(0f).put(0f);
+        }
+        readback.flip();
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, texture);
+        GLES31.glTexSubImage2D(GLES31.GL_TEXTURE_2D, 0, 0, 0, w, h, GLES31.GL_RGBA, GLES31.GL_FLOAT, readback);
+    }
+
+    /** The luma of ring slot [slot] into its luma textures at half and quarter size (the motion estimation's input). */
     private void drawLuma(int slot) {
         if (lumaProgram == 0) lumaProgram = SgsrRenderer.program(FULLSCREEN, LUMA);
         if (luma[0] == 0) allocateWarp();
-        bindTarget(luma[slot], lumaWidth, lumaHeight);
         GLES31.glUseProgram(lumaProgram);
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, ring[slot]);
         GLES31.glUniform1i(GLES31.glGetUniformLocation(lumaProgram, "src"), 0);
+        bindTarget(luma[slot], lumaWidth, lumaHeight);
         GLES31.glUniform2f(GLES31.glGetUniformLocation(lumaProgram, "outSize"), lumaWidth, lumaHeight);
+        GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
+        bindTarget(lumaQuarter[slot], quarterWidth, quarterHeight);
+        GLES31.glUniform2f(GLES31.glGetUniformLocation(lumaProgram, "outSize"), quarterWidth, quarterHeight);
         GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
     }
 
-    /**
-     * Which way the vectors point: the older picture warped a full step along them must look like the newest one. Tried for both
-     * signs of x and y on a pair that moved; the smallest error wins.
-     */
-    private void orient() {
-        diff(ring[1 - newest], ring[newest]);
-        if (diffChanged < MOVING_PAIR_CELLS) return;
-        final int moved = diffError;
-        int best = Integer.MAX_VALUE;
-        float bestX = 1f, bestY = 1f;
-        for (float sx = -1f; sx <= 1f; sx += 2f) {
-            for (float sy = -1f; sy <= 1f; sy += 2f) {
-                signX = sx;
-                signY = sy;
-                drawWarp(ring[1 - newest], 1f);
-                diff(output, ring[newest]);
-                if (diffError < best) { best = diffError; bestX = sx; bestY = sy; }
-            }
-        }
-        signX = bestX;
-        signY = bestY;
-        oriented = true;
-        LimeLog.info("Frame generation: motion vectors oriented " + bestX + "," + bestY + " (error " + best + " of " + moved + ")");
-    }
-
-    /** [source] warped [t] pair intervals along the motion into the output texture. */
+    /** [source] (the newest picture) warped [t] pair intervals along the pair's motion into the output texture. */
     private void drawWarp(int source, float t) {
         if (warpProgram == 0) warpProgram = SgsrRenderer.program(FULLSCREEN, WARP);
         bindTarget(output, width, height);
         GLES31.glUseProgram(warpProgram);
-        GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, source);
-        GLES31.glUniform1i(GLES31.glGetUniformLocation(warpProgram, "src"), 0);
-        GLES31.glActiveTexture(GLES31.GL_TEXTURE1);
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, motion);
-        GLES31.glUniform1i(GLES31.glGetUniformLocation(warpProgram, "motion"), 1);
+        final int[] units = {source, ring[1 - newest], fieldFine, fieldCoarse};
+        final String[] names = {"src", "older", "fine", "coarse"};
+        for (int i = 0; i < units.length; i++) {
+            GLES31.glActiveTexture(GLES31.GL_TEXTURE0 + i);
+            GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, units[i]);
+            GLES31.glUniform1i(GLES31.glGetUniformLocation(warpProgram, names[i]), i);
+        }
         GLES31.glUniform2f(GLES31.glGetUniformLocation(warpProgram, "outSize"), width, height);
-        GLES31.glUniform2f(GLES31.glGetUniformLocation(warpProgram, "scale"), signX / lumaWidth, signY / lumaHeight);
+        GLES31.glUniform2f(GLES31.glGetUniformLocation(warpProgram, "lumaSize"), lumaWidth, lumaHeight);
+        final MotionField.Affine m = cameraMotion;
+        GLES31.glUniform4f(GLES31.glGetUniformLocation(warpProgram, "camera"), m.a, m.b, m.c, m.d);
+        GLES31.glUniform2f(GLES31.glGetUniformLocation(warpProgram, "cameraShift"), m.e, m.f);
+        GLES31.glUniform2f(GLES31.glGetUniformLocation(warpProgram, "cameraCenter"), m.cx, m.cy);
+        GLES31.glUniform1f(GLES31.glGetUniformLocation(warpProgram, "useCamera"), cameraFitted ? 1f : 0f);
         GLES31.glUniform1f(GLES31.glGetUniformLocation(warpProgram, "t"), t);
         GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
@@ -396,25 +443,45 @@ final class FrameGenerator implements AutoCloseable {
         reset();
     }
 
-    /** The luma pair at half the picture size, rounded down to whole search blocks, and the motion texture (one texel per block). */
+    /**
+     * The luma pairs at half and quarter the picture size, rounded down to whole search blocks, the motion textures (one texel per
+     * block) and the fields the warp reads (the half-size grid).
+     */
     private void allocateWarp() {
         GLES31.glGetIntegerv(GL_MOTION_ESTIMATION_SEARCH_BLOCK_X_QCOM, query, 0);
-        int blockX = Math.max(1, query[0]);
+        blockX = Math.max(1, query[0]);
         GLES31.glGetIntegerv(GL_MOTION_ESTIMATION_SEARCH_BLOCK_Y_QCOM, query, 0);
-        int blockY = Math.max(1, query[0]);
+        blockY = Math.max(1, query[0]);
         lumaWidth = Math.max(blockX, width / 2 / blockX * blockX);
         lumaHeight = Math.max(blockY, height / 2 / blockY * blockY);
-        luma[0] = texture(GLES30.GL_R8, lumaWidth, lumaHeight);
-        luma[1] = texture(GLES30.GL_R8, lumaWidth, lumaHeight);
-        motion = texture(GLES30.GL_RGBA16F, lumaWidth / blockX, lumaHeight / blockY);
-        LimeLog.info("Frame generation warp: luma " + lumaWidth + "x" + lumaHeight + ", search block " + blockX + "x" + blockY);
+        quarterWidth = Math.max(blockX, width / 4 / blockX * blockX);
+        quarterHeight = Math.max(blockY, height / 4 / blockY * blockY);
+        for (int i = 0; i < 2; i++) {
+            luma[i] = texture(GLES30.GL_R8, lumaWidth, lumaHeight);
+            lumaQuarter[i] = texture(GLES30.GL_R8, quarterWidth, quarterHeight);
+        }
+        final int w = lumaWidth / blockX, h = lumaHeight / blockY;
+        motion = texture(GLES30.GL_RGBA16F, w, h);
+        motionQuarter = texture(GLES30.GL_RGBA16F, quarterWidth / blockX, quarterHeight / blockY);
+        fieldFine = texture(GLES30.GL_RGBA16F, w, h);
+        fieldCoarse = texture(GLES30.GL_RGBA16F, w, h);
+        readback = ByteBuffer.allocateDirect(w * h * 4 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        fineRaw = new float[w * h * 2];
+        fine = new float[w * h * 2];
+        coarseRaw = new float[(quarterWidth / blockX) * (quarterHeight / blockY) * 2];
+        coarse = new float[w * h * 2];
+        LimeLog.info("Frame generation warp: luma " + lumaWidth + "x" + lumaHeight + " and " + quarterWidth + "x" + quarterHeight
+                + ", search block " + blockX + "x" + blockY);
     }
 
     private void deleteFrames() {
         if (ring[0] != 0) GLES31.glDeleteTextures(3, new int[]{ring[0], ring[1], output}, 0);
         ring[0] = ring[1] = output = 0;
-        if (luma[0] != 0) GLES31.glDeleteTextures(3, new int[]{luma[0], luma[1], motion}, 0);
-        luma[0] = luma[1] = motion = 0;
+        if (luma[0] != 0) {
+            GLES31.glDeleteTextures(8, new int[]{luma[0], luma[1], lumaQuarter[0], lumaQuarter[1], motion, motionQuarter, fieldFine,
+                    fieldCoarse}, 0);
+        }
+        luma[0] = luma[1] = lumaQuarter[0] = lumaQuarter[1] = motion = motionQuarter = fieldFine = fieldCoarse = 0;
     }
 
     @Override
