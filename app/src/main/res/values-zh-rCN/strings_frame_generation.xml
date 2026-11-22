@@ -6,9 +6,11 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">不会增加等待，但快速物体的边缘可能出现小错误。</string>
+    <string name="help_list_frame_generation">最适合 60 fps 的游戏；30 fps 时会有伪影。</string>
     <string name="help_list_frame_generation_1">只显示串流本身的帧。</string>
-    <string name="help_list_frame_generation_2">每个游戏帧一个预测帧：30 → 60 fps，60 → 120 fps。</string>
+    <string name="help_list_frame_generation_2">每个游戏帧一个预测帧：60 → 120 fps。</string>
     <string name="help_list_frame_generation_3">每个游戏帧两个预测帧：30 → 90 fps。</string>
     <string name="help_list_frame_generation_4">每个游戏帧三个预测帧：30 → 120 fps。</string>
+    <!-- The badge under the name of an experimental setting -->
+    <string name="setting_badge_experimental">实验性</string>
 </resources>

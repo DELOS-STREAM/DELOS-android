@@ -64,6 +64,9 @@ data class SettingSpec(
     val icon: String get() = settingIcon(key) ?: tab.icon
 }
 
+/** Settings whose rows carry the Experimental badge under their name. */
+fun isExperimentalSetting(key: String): Boolean = key == "list_frame_generation"
+
 /**
  * The icon of a settings row. Every row of the XML catalogue has its own entry here (the rule is tested by
  * `SettingIconsTest`); a glyph is shared only by rows with the same meaning. See docs/ICON_AUDIT.md.

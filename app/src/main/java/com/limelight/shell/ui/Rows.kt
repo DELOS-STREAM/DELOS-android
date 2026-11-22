@@ -172,6 +172,8 @@ fun SettingRow(
     override: RowOverride? = null,
     onFocused: (() -> Unit)? = null,
     impact: SettingImpact? = null,
+    /** An experimental setting: a small badge under the name. */
+    experimental: Boolean = false,
     /**
      * A custom game setting's reset: its choice popup ends with "Reset to profile value"; a custom slider's Options opens [contextMenu] instead of
      * its popup (the menu has both).
@@ -312,6 +314,7 @@ fun SettingRow(
                 // Cost-bearing rows: the chips on their own line above the title, on the same left edge; the title keeps the full width
                 if (impact != null) ImpactChips(impact, focused, Modifier.padding(bottom = 2.px))
                 MarqueeText(label, active = focused, style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx))
+                if (experimental) ExperimentalBadge(Modifier.padding(top = 6.px))
                 if (override != null) {
                     Row(Modifier.padding(top = 4.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.px)) {
                         CustomBadge()
@@ -367,6 +370,23 @@ private fun CustomBadge() {
     ) {
         Symbol(Symbols.TUNE, 17.tpx, colors.onAccent3, filled = true)
         BasicText("CUSTOM", style = TextStyle(color = colors.onAccent3, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = 14.tpx, letterSpacing = .06.em))
+    }
+}
+
+/** The badge of an experimental setting: an outlined pill in the secondary colour, the size of the CUSTOM badge. */
+@Composable
+private fun ExperimentalBadge(modifier: Modifier = Modifier) {
+    val colors = LocalDelosColors.current
+    val shape = CircleShape
+    Box(
+        modifier.height(26.px).border(1.5.px, colors.accent2, shape)
+            .padding(horizontal = 11.px),
+        contentAlignment = Alignment.Center,
+    ) {
+        BasicText(
+            stringResource(R.string.setting_badge_experimental).uppercase(androidx.compose.ui.platform.LocalConfiguration.current.locales[0]),
+            style = TextStyle(color = colors.accent2, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = 14.tpx, letterSpacing = .06.em),
+        )
     }
 }
 

@@ -179,7 +179,7 @@ fun PsSettingsScreen(profiles: ProfileStore, appearance: Appearance) {
                         rows.forEach { row ->
                             key(row.key) {
                                 SettingRow(row.icon, row.label, row.value, Modifier.focusedListRow(navigation, row.key),
-                                    enabled = row.enabled, impact = row.impact, onFocused = { focusedKey = row.key })
+                                    enabled = row.enabled, impact = row.impact, experimental = isExperimentalSetting(row.key), onFocused = { focusedKey = row.key })
                             }
                         }
                     }

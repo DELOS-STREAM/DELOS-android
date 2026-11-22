@@ -6,9 +6,11 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">No añade espera; los bordes de objetos rápidos pueden mostrar pequeños errores.</string>
+    <string name="help_list_frame_generation">Mejor con un juego a 60 fps; a 30 fps muestra artefactos.</string>
     <string name="help_list_frame_generation_1">Solo se muestran los fotogramas de la transmisión.</string>
-    <string name="help_list_frame_generation_2">Un fotograma predicho por fotograma del juego: 30 → 60 fps, 60 → 120 fps.</string>
+    <string name="help_list_frame_generation_2">Un fotograma previsto por fotograma del juego: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Dos fotogramas predichos por fotograma del juego: 30 → 90 fps.</string>
     <string name="help_list_frame_generation_4">Tres fotogramas predichos por fotograma del juego: 30 → 120 fps.</string>
+    <!-- The badge under the name of an experimental setting -->
+    <string name="setting_badge_experimental">Experimental</string>
 </resources>

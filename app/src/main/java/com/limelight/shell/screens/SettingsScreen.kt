@@ -383,7 +383,8 @@ private fun SectionHeading(label: String) {
 @Composable
 private fun SettingsItemRow(item: SettingsItem, modifier: Modifier = Modifier, hint: String? = null, focused: () -> Unit = {}) {
     SettingRow(item.icon, item.label, item.value, modifier,
-        description = hint, enabled = item.enabled, onFocused = focused, impact = item.impact)
+        description = hint, enabled = item.enabled, onFocused = focused, impact = item.impact,
+        experimental = com.limelight.shell.settings.isExperimentalSetting(item.key))
 }
 
 /** The L1 / R1 hint beside a row of tabs; its border sits [SHOULDER_OUTSET] inside the room it takes. */
@@ -692,7 +693,8 @@ private fun SettingsSearch(all: List<SettingsItem>, scale: Float) {
                                     shell.settingsFocus = item.key
                                     shell.navigate(Screen.Settings)
                                 }, Modifier.focusedListRow(navigation, item.key),
-                                    description = dotJoin(res, item.tab.label(res), item.section))
+                                    description = dotJoin(res, item.tab.label(res), item.section),
+                                    experimental = com.limelight.shell.settings.isExperimentalSetting(item.key))
                             }
                         }
                     }

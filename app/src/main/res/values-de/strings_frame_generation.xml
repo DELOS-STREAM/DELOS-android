@@ -6,9 +6,11 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">Keine Wartezeit; Kanten schneller Objekte können kleine Fehler zeigen.</string>
+    <string name="help_list_frame_generation">Am besten mit 60 fps im Spiel; bei 30 fps zeigt es Artefakte.</string>
     <string name="help_list_frame_generation_1">Nur die Bilder des Streams werden gezeigt.</string>
-    <string name="help_list_frame_generation_2">Ein vorhergesagtes Bild pro Spielbild: 30 → 60 fps, 60 → 120 fps.</string>
+    <string name="help_list_frame_generation_2">Ein vorhergesagtes Bild pro Spielbild: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Zwei vorhergesagte Bilder pro Spielbild: 30 → 90 fps.</string>
     <string name="help_list_frame_generation_4">Drei vorhergesagte Bilder pro Spielbild: 30 → 120 fps.</string>
+    <!-- The badge under the name of an experimental setting -->
+    <string name="setting_badge_experimental">Experimentell</string>
 </resources>

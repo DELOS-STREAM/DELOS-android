@@ -6,9 +6,11 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">Без очікування; краї швидких об’єктів можуть мати дрібні помилки.</string>
+    <string name="help_list_frame_generation">Найкраще з грою на 60 fps; на 30 fps є артефакти.</string>
     <string name="help_list_frame_generation_1">Показуються лише кадри трансляції.</string>
-    <string name="help_list_frame_generation_2">Один передбачений кадр на кадр гри: 30 → 60 fps, 60 → 120 fps.</string>
+    <string name="help_list_frame_generation_2">Один передбачений кадр на кадр гри: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Два передбачені кадри на кадр гри: 30 → 90 fps.</string>
     <string name="help_list_frame_generation_4">Три передбачені кадри на кадр гри: 30 → 120 fps.</string>
+    <!-- The badge under the name of an experimental setting -->
+    <string name="setting_badge_experimental">Експериментально</string>
 </resources>
