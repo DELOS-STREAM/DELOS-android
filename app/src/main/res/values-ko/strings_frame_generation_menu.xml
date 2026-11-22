@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stream_menu_row_multiplier">배수</string>
+    <string name="stream_help_frame_generation">프레임 생성: 게임 프레임 사이에 예측한 프레임입니다. 변경은 이 스트림에 즉시 적용됩니다.</string>
+    <string name="stream_help_frame_generation_on">이 스트림의 프레임 생성을 켜거나 끕니다. 업스케일러가 꺼진 상태에서 켜면 디코더가 한 번 다시 시작됩니다.</string>
+    <string name="stream_help_multiplier">게임 프레임 하나당 보여 주는 프레임 수: 2×는 30 fps를 60으로, 4×는 120으로 만듭니다.</string>
+</resources>

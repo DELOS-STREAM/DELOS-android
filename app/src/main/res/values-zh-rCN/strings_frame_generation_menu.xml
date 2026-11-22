@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stream_menu_row_multiplier">倍数</string>
+    <string name="stream_help_frame_generation">帧生成：在游戏帧之间预测的帧。更改立即对本次串流生效。</string>
+    <string name="stream_help_frame_generation_on">为本次串流开启或关闭帧生成；在放大器关闭时开启会重启一次解码器。</string>
+    <string name="stream_help_multiplier">每个游戏帧显示的帧数：2× 让 30 fps 变成 60，4× 变成 120。</string>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stream_menu_row_multiplier">Násobič</string>
+    <string name="stream_help_frame_generation">Generování snímků: snímky předpovězené mezi snímky hry. Změny platí hned, pro tento stream.</string>
+    <string name="stream_help_frame_generation_on">Zapne nebo vypne generování snímků pro tento stream; zapnutí při vypnutém upscaleru jednou restartuje dekodér.</string>
+    <string name="stream_help_multiplier">Kolik snímků se ukáže na jeden snímek hry: 2× udělá z 30 fps 60, 4× 120.</string>
+</resources>

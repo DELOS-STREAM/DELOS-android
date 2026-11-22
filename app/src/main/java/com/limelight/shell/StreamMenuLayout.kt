@@ -23,21 +23,21 @@ internal enum class BarItem { RESUME, KEYBOARD, OVERLAY, BRIGHTNESS, BITRATE, UP
 
 /**
  * What the popover above the dock shows; [MAIN] is no popover (the dock alone).
- * [RUMBLE] is the live rumble feel selection, opened from the More page.
+ * [RUMBLE] is the live rumble feel selection and [FRAME_GEN] frame generation, opened from the More page.
  */
-internal enum class MenuPage { MAIN, MORE, KEYS, COMMANDS, BRIGHTNESS, BITRATE, UPSCALER, MOUSE, RUMBLE }
+internal enum class MenuPage { MAIN, MORE, KEYS, COMMANDS, BRIGHTNESS, BITRATE, UPSCALER, FRAME_GEN, MOUSE, RUMBLE }
 
 /** The page B goes back to: the dock for the pages of a tile, More for the pages that More opens. */
 internal fun MenuPage.parent(): MenuPage? = when (this) {
     MenuPage.MAIN -> null
-    MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE -> MenuPage.MORE
+    MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE, MenuPage.FRAME_GEN -> MenuPage.MORE
     else -> MenuPage.MAIN
 }
 
 /** The tile that opens this page, directly or through More. */
 internal fun MenuPage.barItem(): BarItem? = when (this) {
     MenuPage.MAIN -> null
-    MenuPage.MORE, MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE -> BarItem.MORE
+    MenuPage.MORE, MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE, MenuPage.FRAME_GEN -> BarItem.MORE
     MenuPage.BRIGHTNESS -> BarItem.BRIGHTNESS
     MenuPage.BITRATE -> BarItem.BITRATE
     MenuPage.UPSCALER -> BarItem.UPSCALER
@@ -54,6 +54,9 @@ internal object MoreRow {
 
     /** The More row that opens the live rumble feel page. */
     const val RUMBLE = "Rumble feel"
+
+    /** The More row that opens the frame generation page (its switch and multiplier). */
+    const val FRAME_GEN = "Frame generation"
 
     /** The More slider row for the live gyro smoothing strength (shown where the Settings row is). */
     const val GYRO = "Gyro smoothing"
@@ -90,6 +93,8 @@ internal object MenuKey {
     const val MODE = "Mode"
     const val SUPERSAMPLING_QUALITY = "Supersampling quality"
     const val SHARPNESS = "Sharpness"
+    const val FRAME_GEN_ON = "Frame generation on"
+    const val MULTIPLIER = "Multiplier"
     const val LOCAL_MOUSE_CURSOR = "Local mouse cursor"
     const val SEND_CLIPBOARD = "Send clipboard"
     const val GET_CLIPBOARD = "Get clipboard"
@@ -112,6 +117,7 @@ internal fun MenuPage.openedByRow(): String? = when (this) {
     MenuPage.COMMANDS -> MoreRow.COMMANDS
     MenuPage.MOUSE -> MoreRow.MOUSE
     MenuPage.RUMBLE -> MoreRow.RUMBLE
+    MenuPage.FRAME_GEN -> MoreRow.FRAME_GEN
     else -> null
 }
 
@@ -428,7 +434,7 @@ internal fun popoverWidth(page: MenuPage, g: DockGeometry = DockGeometry.Standar
         MenuPage.BRIGHTNESS -> 780f
         MenuPage.BITRATE -> 860f
         MenuPage.UPSCALER -> 980f
-        MenuPage.MORE, MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE -> 920f
+        MenuPage.MORE, MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE, MenuPage.FRAME_GEN -> 920f
     }
     // A stage narrower than the card keeps its margins and the card gets what is left
     return minOf(natural, g.popoverMaxRight - g.popoverMinLeft)
@@ -548,6 +554,7 @@ internal fun pageTitle(res: Resources, page: MenuPage, supersampling: Boolean): 
     MenuPage.BRIGHTNESS -> res.getString(R.string.stream_menu_title_brightness)
     MenuPage.BITRATE -> res.getString(R.string.stream_menu_title_bitrate)
     MenuPage.UPSCALER -> res.getString(if (supersampling) R.string.stream_menu_title_supersampling else R.string.stream_menu_title_upscaler)
+    MenuPage.FRAME_GEN -> res.getString(R.string.title_frame_generation)
     MenuPage.MOUSE -> res.getString(R.string.stream_menu_title_mouse)
     MenuPage.RUMBLE -> res.getString(R.string.stream_menu_title_rumble)
 }
@@ -561,6 +568,7 @@ internal fun pageHelpKey(page: MenuPage): String = when (page) {
     MenuPage.BRIGHTNESS -> MenuKey.SCREEN_BRIGHTNESS
     MenuPage.BITRATE -> MenuKey.BITRATE
     MenuPage.UPSCALER -> MenuKey.UPSCALING
+    MenuPage.FRAME_GEN -> MenuKey.FRAME_GEN_ON
     MenuPage.MOUSE -> MenuKey.TOUCHSCREEN_MODE
     MenuPage.RUMBLE -> MoreRow.RUMBLE
 }

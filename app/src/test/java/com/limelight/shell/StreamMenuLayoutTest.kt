@@ -282,7 +282,8 @@ class StreamMenuLayoutTest {
     fun everyHelpAPopoverCanShowFitsItsReservedLines() {
         val footerKeys = mapOf(
             MenuPage.MORE to listOf(MoreRow.KEYS, "Send clipboard", "Get clipboard", MoreRow.COMMANDS, "Task manager", "Zoom", MoreRow.MOUSE,
-                "On-screen controls", MoreRow.OSC_OPACITY, MoreRow.ANDROID_KEYBOARD, "Touch sensitivity", MoreRow.RUMBLE, MoreRow.GYRO, MoreRow.GYRO_DISABLED),
+                "On-screen controls", MoreRow.OSC_OPACITY, MoreRow.ANDROID_KEYBOARD, "Touch sensitivity", MoreRow.RUMBLE, MoreRow.FRAME_GEN,
+                MoreRow.GYRO, MoreRow.GYRO_DISABLED),
             // The labels of key combinations and commands come from the user and the host
             MenuPage.KEYS to listOf("Send keys", "Keys: Ctrl + Alt + Delete", "Keys: " + "K".repeat(40)),
             MenuPage.COMMANDS to listOf("Commands", "Command: Restart the game", "Command: " + "C".repeat(80)),
@@ -290,6 +291,7 @@ class StreamMenuLayoutTest {
             MenuPage.BITRATE to listOf("Bitrate", "Apply bitrate"),
             MenuPage.UPSCALER to listOf("Upscaling", "Supersampling on", "Supersampling quality", "Mode", "Sharpness"),
             MenuPage.MOUSE to listOf("Touchscreen mode", "Local mouse cursor"),
+            MenuPage.FRAME_GEN to listOf(MenuKey.FRAME_GEN_ON, MenuKey.MULTIPLIER),
             // Rumble feel page
             MenuPage.RUMBLE to listOf("Rumble feel") + RumblePresets.values().map { StreamMenuHelp.rumbleKey(it) },
         )

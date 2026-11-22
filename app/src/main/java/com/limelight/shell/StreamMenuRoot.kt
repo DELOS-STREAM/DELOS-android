@@ -509,6 +509,7 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
             if (host.keyboardAndMouse) add(MoreRow.ANDROID_KEYBOARD)
             add(MenuKey.TOUCH_SENSITIVITY)
             add(MoreRow.RUMBLE)
+            add(MoreRow.FRAME_GEN)
             if (host.gyroSmoothingAvailable) add(MoreRow.GYRO)
         }
         MenuPage.BRIGHTNESS -> listOf(MenuKey.SCREEN_BRIGHTNESS)
@@ -519,6 +520,7 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
             add(MenuKey.MODE)
             add(MenuKey.SHARPNESS)
         }
+        MenuPage.FRAME_GEN -> listOf(MenuKey.FRAME_GEN_ON, MenuKey.MULTIPLIER)
         MenuPage.MOUSE -> listOf(MenuKey.TOUCHSCREEN_MODE, MenuKey.LOCAL_MOUSE_CURSOR)
         MenuPage.RUMBLE -> RumblePresets.values().map { StreamMenuHelp.rumbleKey(it) }
     }
@@ -579,6 +581,9 @@ private fun PageRows(
             if (host.keyboardAndMouse) KeyedRow(Symbols.ANDROID_KEYBOARD, R.string.stream_menu_row_android_keyboard, MoreRow.ANDROID_KEYBOARD, RowValue.Action { close { host.toggleSystemKeyboard() } })
             KeyedRow(Symbols.TOUCH_SENSITIVITY, R.string.stream_menu_row_touch_sensitivity, MenuKey.TOUCH_SENSITIVITY, RowValue.Toggle(host.touchSensitivityOn) { toggle { host.toggleTouchSensitivity() } })
             KeyedRow(Symbols.VIBRATION, R.string.stream_menu_row_rumble_feel, MoreRow.RUMBLE, RowValue.Text(host.rumblePreset?.label(res) ?: stringResource(R.string.stream_menu_rumble_custom)) { openPage(MenuPage.RUMBLE) }, entry(MoreRow.RUMBLE))
+            KeyedRow(Symbols.ANIMATED, R.string.title_frame_generation, MoreRow.FRAME_GEN, RowValue.Text(
+                if (host.frameGenMultiplier > 1) "${host.frameGenMultiplier}×" else stringResource(R.string.common_off)) { openPage(MenuPage.FRAME_GEN) }, // l10n-ignore
+                entry(MoreRow.FRAME_GEN), enabled = host.frameGenAvailable)
             if (host.gyroSmoothingAvailable) {
                 // Applies at once and is kept for this game (never the profile, which is the Settings slider's); changesTick recomposes the value
                 KeyedRow(Symbols.SMOOTHING, R.string.stream_menu_row_gyro_smoothing, MoreRow.GYRO, RowValue.Slider(host.gyroSmoothing, 0, 100, 5, " %", minText = stringResource(R.string.stream_menu_gyro_off, 0)) {
@@ -643,6 +648,24 @@ private fun PageRows(
                 host.setUpscalingSharpness(it)
                 changesTick()
             }, enabled = available)
+        }
+        MenuPage.FRAME_GEN -> {
+            val available = host.frameGenAvailable
+            val multiplier = host.frameGenMultiplier
+            KeyedRow(Symbols.ANIMATED, R.string.stream_menu_row_enabled, MenuKey.FRAME_GEN_ON, RowValue.Toggle(multiplier > 1) {
+                host.setFrameGenMultiplier(if (it) host.frameGenChoice else 1)
+                changesTick()
+            }, Modifier.focusRequester(first), enabled = available)
+            // 2×, 3×, 4×: the labels of the setting's choices
+            val choices = listOf(R.string.frame_generation_2x, R.string.frame_generation_3x, R.string.frame_generation_4x).map { res.getString(it) }
+            val choice = (if (multiplier > 1) multiplier else host.frameGenChoice).coerceIn(2, 4)
+            KeyedRow(Symbols.HIGH_QUALITY, R.string.stream_menu_row_multiplier, MenuKey.MULTIPLIER, RowValue.Choice(choices[choice - 2], { direction ->
+                host.setFrameGenMultiplier(2 + Math.floorMod(choice - 2 + direction, choices.size))
+                changesTick()
+            }, options = choices, selected = choice - 2, onPick = { i ->
+                host.setFrameGenMultiplier(i + 2)
+                changesTick()
+            }), enabled = available)
         }
         MenuPage.MOUSE -> {
             val modes = remember { host.mouseModes() }

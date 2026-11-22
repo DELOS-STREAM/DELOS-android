@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stream_menu_row_multiplier">Множник</string>
+    <string name="stream_help_frame_generation">Генерація кадрів: передбачені кадри між кадрами гри. Зміни діють одразу, для цієї трансляції.</string>
+    <string name="stream_help_frame_generation_on">Вмикає або вимикає генерацію кадрів для цієї трансляції; увімкнення з вимкненим апскейлером один раз перезапускає декодер.</string>
+    <string name="stream_help_multiplier">Скільки кадрів показується на кадр гри: 2× робить із 30 fps 60, 4× — 120.</string>
+</resources>

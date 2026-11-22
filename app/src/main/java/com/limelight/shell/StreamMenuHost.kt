@@ -87,6 +87,11 @@ internal interface StreamMenuHost {
     fun setUpscalingSharpness(percent: Int)
     fun setSupersamplingLevel(level: Int)
 
+    // Frame generation: frames shown per game frame (1 = off); [frameGenChoice] the multiplier the switch turns on (2 to 4)
+    val frameGenAvailable: Boolean get() = false
+    val frameGenMultiplier: Int get() = 1
+    val frameGenChoice: Int get() = 2
+    fun setFrameGenMultiplier(multiplier: Int) {}
 
     // More
     fun sendClipboard()

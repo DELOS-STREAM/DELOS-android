@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stream_menu_row_multiplier">倍率</string>
+    <string name="stream_help_frame_generation">フレーム生成：ゲームのフレームの間に予測したフレーム。変更はこのストリームにすぐ適用されます。</string>
+    <string name="stream_help_frame_generation_on">このストリームのフレーム生成をオン／オフします。アップスケーラーがオフのときにオンにするとデコーダーを一度再起動します。</string>
+    <string name="stream_help_multiplier">ゲームの 1 フレームあたりに表示するフレーム数：2× で 30 fps が 60、4× で 120 になります。</string>
+</resources>

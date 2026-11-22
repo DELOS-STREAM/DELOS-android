@@ -458,6 +458,16 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override fun setSupersamplingLevel(level: Int) { upscaler.setSupersamplingLevel(level); upscalerChanged() }
         private fun upscalerChanged() = this@StreamMenu.menuSettingChanged(MenuSavedSetting.UPSCALER)
 
+        // Frame generation: live, for this stream (the stored setting stays the next stream's)
+        override val frameGenAvailable get() = upscaler.isFrameGenAvailable
+        override val frameGenMultiplier get() = upscaler.frameGenMultiplier
+        private var frameGenLastChoice = if (prefs.frameGenMultiplier > 1) prefs.frameGenMultiplier else 2
+        override val frameGenChoice get() = frameGenLastChoice
+        override fun setFrameGenMultiplier(multiplier: Int) {
+            if (multiplier > 1) frameGenLastChoice = multiplier
+            upscaler.setFrameGenMultiplier(multiplier)
+        }
+
         override fun sendClipboard() { game.sendClipboard(true) }
         override fun getClipboard() { game.getClipboard(0) }
         override fun sendTaskManager() { game.keyHandler.sendKeys(shortArrayOf(KeyboardTranslator.VK_LCONTROL.toShort(), KeyboardTranslator.VK_LSHIFT.toShort(), KeyboardTranslator.VK_ESCAPE.toShort())) }

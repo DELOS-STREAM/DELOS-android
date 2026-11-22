@@ -318,6 +318,9 @@ public final class StreamSurfaceController implements StreamSurfaceHost {
     public boolean isSupersamplingMode() { return decoder.isSupersamplingMode(); }
     public int getSupersamplingLevel() { return decoder.getSupersamplingLevel(); }
     public void setSupersamplingLevel(int level) { decoder.setSupersamplingLevel(level); }
+    public boolean isFrameGenAvailable() { return decoder != null && decoder.isFrameGenAvailable(); }
+    public int getFrameGenMultiplier() { return decoder != null ? decoder.getFrameGenMultiplier() : 1; }
+    public void setFrameGenMultiplier(int multiplier) { if (decoder != null) decoder.setFrameGenMultiplier(multiplier); }
 
     public void setHdrMode(boolean enabled, byte[] hdrMetadata) {
         LimeLog.info("Display HDR mode: " + (enabled ? "enabled" : "disabled"));

@@ -1273,6 +1273,36 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         }
     }
     public boolean isUpscalingRequested() { return sgsrRequested; }
+
+    /** Frame generation's multiplier for this stream (1 = off). */
+    public int getFrameGenMultiplier() { return prefs.frameGenMultiplier; }
+
+    /** Whether frame generation can run here: the GL output stage (not PyroWave's Vulkan one). */
+    public boolean isFrameGenAvailable() { return pyroWave == null && SgsrRenderer.isSupported(context); }
+
+    /**
+     * The stream menu's frame generation (1 = off, 2 to 4). A running output stage takes it at once and the surface asks for the new
+     * rate; turning it on without a stage (the upscaler off) adds the pass-through stage with a decoder reset, as the upscaler does.
+     * Off keeps such a stage, which then only passes frames through.
+     */
+    public void setFrameGenMultiplier(int multiplier) {
+        synchronized (codecRecoveryMonitor) {
+            if (stopping || pyroWave != null) return;
+            prefs.frameGenMultiplier = Math.max(1, Math.min(4, multiplier));
+            SgsrRenderer current = sgsr;
+            if (current != null) {
+                current.setFrameGeneration(prefs.frameGenMultiplier, displayRefreshHz());
+                try { applySurfaceFrameRate(renderTarget, targetFps * prefs.frameGenMultiplier); }
+                catch (Throwable t) { LimeLog.warning("applySurfaceFrameRate failed: " + t); }
+                return;
+            }
+            if (prefs.frameGenMultiplier <= 1 || sgsrFailed) return;
+            if (launchArrivalRequested && !launchArrivalComplete) cancelLaunchArrival("Video output pipeline changed during stream arrival");
+            codecRecoveryAttempts = 0;
+            codecRecoveryReason = "frame generation output stage requested";
+            codecRecoveryType.set(CR_RECOVERY_TYPE_RESET);
+        }
+    }
     public UpscalerStatus getUpscalingStatus() {
         PyroWaveRenderer pw = pyroWave;
         if (pw != null) {
