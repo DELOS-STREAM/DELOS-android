@@ -103,6 +103,7 @@ internal object MenuKey {
     const val SHARPNESS = "Sharpness"
     const val FRAME_GEN_ON = "Frame generation on"
     const val MULTIPLIER = "Multiplier"
+    const val KEEP_HUD = "Keep HUD still"
     const val LOCAL_MOUSE_CURSOR = "Local mouse cursor"
     const val SEND_CLIPBOARD = "Send clipboard"
     const val GET_CLIPBOARD = "Get clipboard"

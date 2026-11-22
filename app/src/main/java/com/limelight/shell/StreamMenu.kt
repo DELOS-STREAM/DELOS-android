@@ -467,6 +467,8 @@ class StreamMenu(private val game: DelosStreamActivity) {
             if (multiplier > 1) frameGenLastChoice = multiplier
             upscaler.setFrameGenMultiplier(multiplier)
         }
+        override val frameGenKeepHud get() = upscaler.isFrameGenKeepHud
+        override fun setFrameGenKeepHud(on: Boolean) { upscaler.setFrameGenKeepHud(on) }
 
         override fun sendClipboard() { game.sendClipboard(true) }
         override fun getClipboard() { game.getClipboard(0) }

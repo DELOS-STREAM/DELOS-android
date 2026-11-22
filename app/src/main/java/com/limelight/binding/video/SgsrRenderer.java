@@ -290,6 +290,11 @@ public final class SgsrRenderer implements AutoCloseable {
         updateDisplayPeriod();
     }
 
+    // Frame generation keeps still detail (a HUD) as in the newest picture (the stream menu's live test, owner 2026-11-22)
+    private volatile boolean frameGenKeepHud;
+
+    public void setFrameGenKeepHud(boolean on) { frameGenKeepHud = on; }
+
     private void updateDisplayPeriod() {
         final java.util.function.DoubleSupplier source = displayRefreshHz;
         final double hz = source != null ? source.getAsDouble() : 0;
@@ -926,6 +931,7 @@ public final class SgsrRenderer implements AutoCloseable {
             return;
         }
         try {
+            generator.setKeepStill(frameGenKeepHud);
             final int image = generator.generate();
             if (acquireOutput()) {
                 drawProgram(cachedProgram,image,cachedWidth,cachedHeight,cachedSampledWidth,cachedSampledHeight,cachedReconstruction);

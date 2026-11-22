@@ -6,4 +6,6 @@
     <string name="stream_help_frame_generation_on">为本次串流开启或关闭帧生成；在放大器关闭时开启会重启一次解码器。</string>
     <string name="stream_help_multiplier">每个游戏帧显示的帧数：2× 让 30 fps 变成 60，4× 变成 120。</string>
     <string name="stream_help_create">按下主机的创建按钮：截图和片段。</string>
+    <string name="stream_menu_row_keep_hud">固定 HUD</string>
+    <string name="stream_help_keep_hud_still">测试：HUD 等静止部分不随场景移动，因此不会重影。</string>
 </resources>

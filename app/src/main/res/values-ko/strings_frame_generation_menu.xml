@@ -6,4 +6,6 @@
     <string name="stream_help_frame_generation_on">이 스트림의 프레임 생성을 켜거나 끕니다. 업스케일러가 꺼진 상태에서 켜면 디코더가 한 번 다시 시작됩니다.</string>
     <string name="stream_help_multiplier">게임 프레임 하나당 보여 주는 프레임 수: 2×는 30 fps를 60으로, 4×는 120으로 만듭니다.</string>
     <string name="stream_help_create">본체의 만들기 버튼을 누릅니다: 스크린샷과 클립.</string>
+    <string name="stream_menu_row_keep_hud">HUD 고정</string>
+    <string name="stream_help_keep_hud_still">테스트: HUD 같은 정지 부분을 장면과 함께 움직이지 않아 겹쳐 보이지 않습니다.</string>
 </resources>

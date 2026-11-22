@@ -6,4 +6,6 @@
     <string name="stream_help_frame_generation_on">Вмикає або вимикає генерацію кадрів для цієї трансляції; увімкнення з вимкненим апскейлером один раз перезапускає декодер.</string>
     <string name="stream_help_multiplier">Скільки кадрів показується на кадр гри: 2× робить із 30 fps 60, 4× — 120.</string>
     <string name="stream_help_create">Натискає кнопку «Створити» на консолі: знімки екрана й кліпи.</string>
+    <string name="stream_menu_row_keep_hud">Не рухати HUD</string>
+    <string name="stream_help_keep_hud_still">Тест: нерухомі частини, як-от HUD, не рухаються зі сценою, тож не двоїться.</string>
 </resources>

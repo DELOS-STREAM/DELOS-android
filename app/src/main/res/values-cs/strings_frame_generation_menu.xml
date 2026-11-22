@@ -6,4 +6,6 @@
     <string name="stream_help_frame_generation_on">Zapne nebo vypne generování snímků pro tento stream; zapnutí při vypnutém upscaleru jednou restartuje dekodér.</string>
     <string name="stream_help_multiplier">Kolik snímků se ukáže na jeden snímek hry: 2× udělá z 30 fps 60, 4× 120.</string>
     <string name="stream_help_create">Stiskne na konzoli tlačítko Vytvořit: snímky obrazovky a klipy.</string>
+    <string name="stream_menu_row_keep_hud">Nehýbat s HUD</string>
+    <string name="stream_help_keep_hud_still">Test: nehybné části jako HUD zůstanou na místě a nehýbou se se scénou, takže se nezdvojí.</string>
 </resources>

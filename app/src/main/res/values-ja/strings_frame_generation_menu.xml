@@ -6,4 +6,6 @@
     <string name="stream_help_frame_generation_on">このストリームのフレーム生成をオン／オフします。アップスケーラーがオフのときにオンにするとデコーダーを一度再起動します。</string>
     <string name="stream_help_multiplier">ゲームの 1 フレームあたりに表示するフレーム数：2× で 30 fps が 60、4× で 120 になります。</string>
     <string name="stream_help_create">本体のクリエイトボタンを押します：スクリーンショットとクリップ。</string>
+    <string name="stream_menu_row_keep_hud">HUD を固定</string>
+    <string name="stream_help_keep_hud_still">テスト：HUD など静止部分をシーンと一緒に動かさず、二重表示を防ぎます。</string>
 </resources>

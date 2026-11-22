@@ -92,6 +92,9 @@ internal interface StreamMenuHost {
     val frameGenMultiplier: Int get() = 1
     val frameGenChoice: Int get() = 2
     fun setFrameGenMultiplier(multiplier: Int) {}
+    // Whether generated frames keep still detail (a HUD) as in the newest picture (a live test, for this stream)
+    val frameGenKeepHud: Boolean get() = false
+    fun setFrameGenKeepHud(on: Boolean) {}
 
     // More
     fun sendClipboard()

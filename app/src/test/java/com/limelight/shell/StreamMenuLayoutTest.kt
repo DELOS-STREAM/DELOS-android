@@ -292,7 +292,7 @@ class StreamMenuLayoutTest {
             MenuPage.BITRATE to listOf("Bitrate", "Apply bitrate"),
             MenuPage.UPSCALER to listOf("Upscaling", "Supersampling on", "Supersampling quality", "Mode", "Sharpness"),
             MenuPage.MOUSE to listOf("Touchscreen mode", "Local mouse cursor"),
-            MenuPage.FRAME_GEN to listOf(MenuKey.FRAME_GEN_ON, MenuKey.MULTIPLIER),
+            MenuPage.FRAME_GEN to listOf(MenuKey.FRAME_GEN_ON, MenuKey.MULTIPLIER, MenuKey.KEEP_HUD),
             // Rumble feel page
             MenuPage.RUMBLE to listOf("Rumble feel") + RumblePresets.values().map { StreamMenuHelp.rumbleKey(it) },
         )

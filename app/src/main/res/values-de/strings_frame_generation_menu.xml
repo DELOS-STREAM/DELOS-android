@@ -6,4 +6,6 @@
     <string name="stream_help_frame_generation_on">Schaltet die Bildgenerierung für diesen Stream ein oder aus; bei ausgeschaltetem Upscaler startet das Einschalten den Decoder einmal neu.</string>
     <string name="stream_help_multiplier">Wie viele Bilder pro Spielbild gezeigt werden: 2× macht aus 30 fps 60, 4× 120.</string>
     <string name="stream_help_create">Drückt die Erstellen-Taste der Konsole: Screenshots und Clips.</string>
+    <string name="stream_menu_row_keep_hud">HUD ruhig halten</string>
+    <string name="stream_help_keep_hud_still">Test: Ruhende Teile wie das HUD bleiben stehen statt mit der Szene zu wandern, ohne Doppelbild.</string>
 </resources>
