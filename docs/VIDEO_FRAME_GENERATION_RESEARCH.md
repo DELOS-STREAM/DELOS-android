@@ -5,7 +5,7 @@
 This is a research and design basis for generating extra frames from decoded stream video on Android, so that a
 60 fps stream fills a 120 Hz display (and 30 fps fills 60 Hz). It applies to every DELOS stream source.
 
-- Phase 1 is implemented: `binding/video/FrameGenerator.java` (with `MotionField.java` and
+- Phase 1 is implemented: `binding/video/FrameGenerator.java` (with
   `jni/pyrowave-renderer/sgsr_frame_generation.cpp`), run by `SgsrRenderer`. Setting `list_frame_generation` (off, 2×, 3×,
   4×; SDR and HDR) and, live for one stream, More → Frame generation in the stream menu. With the upscaler off the SGSR
   stage runs as a sharpen-only pass-through at strength 0.
@@ -14,15 +14,19 @@ This is a research and design basis for generating extra frames from decoded str
     as a new picture; one with changed details replaces the newest picture and is shown when no step takes its refresh.
     The plan uses the smoothed game interval.
   - **Prediction:** the driver's extrapolation or an own warp, whichever predicted the game's next picture better (every
-    other moving picture, error relative to holding). The warp estimates motion at half and quarter size, median-filters
-    the half-size field, fits the camera's affine motion to the quarter-size one, and picks per pixel the candidate that
-    best explains the pair (half, quarter, camera, none), with one fixed-point step.
+    other moving picture, error relative to holding). The warp moves the newest picture along `GL_QCOM_motion_estimation`
+    vectors (half-size luma, 8 × 8 blocks), sampled at the destination pixel.
+  - **Display refresh:** measured from consecutive frame callbacks (the rate read when the stage is rebuilt can be a passing
+    one during a rate switch).
   - **Presentation (HDR):** both latencies are measured from the present fences (picture about 7.5 ms from its first
     callback, generated image about 16 ms from its callback on the Odin); steps are presented on the callback that shows
     them on their refresh, and a picture that would show a refresh early waits for its slot.
 - Observed on the Odin (2026-11-22, PS5, GTA at 30 fps in a 60 fps HDR stream, 120 Hz), by the owner: smoother than
-  without generation, reads as 60 most of the time with motion blur off; fast camera turns show warping. The own warp
-  with hierarchical motion and the camera model is not yet observed [UNVERIFIED].
+  without generation, reads as 60 most of the time with motion blur off; fast camera turns show warping.
+- Tried and reverted (2026-11-22): a warp with motion at half and quarter size, a 3 × 3 median, a fitted affine camera
+  model, per-pixel choice among the candidates and damping on camera acceleration. On the Odin its fields read back almost
+  no motion (longest vector 3 px while the game moved), it lost the comparison to the driver, and the owner saw pixel
+  noise over the moving picture and less smoothness than the simpler warp.
 - Interpolation (one game frame of added latency) is not planned now (owner, 2026-11-22: +33 ms at 30 fps is too much);
   at most later as an experimental option.
 - The reference device is the AYN Odin 2 Portal Max (QCS8550, Adreno 740, Android 13, 1920 × 1080 at 120 Hz).
