@@ -60,35 +60,24 @@ final class FrameGenerator implements AutoCloseable {
             "precision highp float; uniform sampler2D src; uniform sampler2D motion; uniform vec2 outSize; uniform vec2 scale;\n" +
             "uniform float t; out vec4 color;\n" +
             "void main(){ vec2 uv=gl_FragCoord.xy/outSize; vec2 v=texture(motion,uv).rg*scale; color=texture(src,uv-v*t); }";
-    // The still detail of the pair at a quarter of the size, each texel for its 4 × 4 pixels: 1 where one of them has an edge
-    // across and down in the newest picture (a HUD's text, icons, a crosshair's dot) that did not move. An edge along one
-    // direction only looks unchanged while the scene slides along it, so both are required; a corner moved by a pixel changes
-    // by about its contrast, so a pixel is still only when it changed by under a quarter of it (re-encoding noise passes).
-    // Owner, 2026-11-22: a looser test marked most of a moving scene still and the output felt like 60 again.
-    // Every pixel counts, so a dot of a pixel or two is kept.
+    // The still detail of the pair at half size: 1 where the two pictures are identical and the newest has an edge (a HUD's text,
+    // icons, outlines), 0 elsewhere (moving content, or flat areas that look the same anyway)
     private static final String STILL = "#version 310 es\n" +
-            "precision highp float; uniform sampler2D a; uniform sampler2D b; uniform vec2 texel; out vec4 color;\n" +
+            "precision highp float; uniform sampler2D a; uniform sampler2D b; uniform vec2 outSize; uniform vec2 texel; out vec4 color;\n" +
             "float l(vec3 c){ return dot(c,vec3(0.299,0.587,0.114)); }\n" +
-            "void main(){ vec2 base=floor(gl_FragCoord.xy)*4.0; float s=0.0;\n" +
-            " for(int j=0;j<4;j++) for(int i=0;i<4;i++){ vec2 uv=(base+vec2(i,j)+0.5)*texel; vec3 nb=texture(b,uv).rgb;\n" +
-            "  vec3 e=abs(texture(a,uv).rgb-nb); float lc=l(nb);\n" +
-            "  float gx=max(abs(l(texture(b,uv+vec2(texel.x,0.0)).rgb)-lc),abs(l(texture(b,uv-vec2(texel.x,0.0)).rgb)-lc));\n" +
-            "  float gy=max(abs(l(texture(b,uv+vec2(0.0,texel.y)).rgb)-lc),abs(l(texture(b,uv-vec2(0.0,texel.y)).rgb)-lc));\n" +
-            "  float g=min(gx,gy); if(g>0.06 && max(e.r,max(e.g,e.b))<min(0.03,g*0.25)) s=1.0; }\n" +
-            " color=vec4(s,0.0,0.0,1.0); }";
-    // The mask grown by [reach] texels along [step] (one pass across, one down: a square around every still texel)
-    private static final String GROW = "#version 310 es\n" +
-            "precision highp float; uniform sampler2D src; uniform vec2 outSize; uniform vec2 step; uniform int reach; out vec4 color;\n" +
-            "void main(){ vec2 uv=gl_FragCoord.xy/outSize; float k=0.0;\n" +
-            " for(int i=-reach;i<=reach;i++) k=max(k,texture(src,uv+step*float(i)).r);\n" +
-            " color=vec4(k,0.0,0.0,1.0); }";
-    // A generated frame with the still detail kept: within the grown mask the newest picture is shown as it is, so a HUD the
-    // prediction moved along with the scene is not doubled; the scene right around it holds for that step
+            "void main(){ vec2 uv=gl_FragCoord.xy/outSize; vec3 nb=texture(b,uv).rgb; vec3 e=abs(texture(a,uv).rgb-nb);\n" +
+            " float lc=l(nb); float g=max(max(abs(l(texture(b,uv+vec2(texel.x,0.0)).rgb)-lc),abs(l(texture(b,uv-vec2(texel.x,0.0)).rgb)-lc)),\n" +
+            "  max(abs(l(texture(b,uv+vec2(0.0,texel.y)).rgb)-lc),abs(l(texture(b,uv-vec2(0.0,texel.y)).rgb)-lc)));\n" +
+            " color=vec4(max(e.r,max(e.g,e.b))<0.008 && g>0.06 ? 1.0 : 0.0,0.0,0.0,1.0); }";
+    // A generated frame with the still detail kept: near (within [radius]) still detail the newest picture is shown as it is, so a
+    // HUD the prediction moved along with the scene is not doubled; the scene right around it holds for that step
     private static final String KEEP = "#version 310 es\n" +
             "precision highp float; uniform sampler2D gen; uniform sampler2D newest; uniform sampler2D still; uniform vec2 outSize;\n" +
-            "out vec4 color;\n" +
-            "void main(){ vec2 uv=gl_FragCoord.xy/outSize;\n" +
-            " color=mix(texture(gen,uv),texture(newest,uv),smoothstep(0.15,0.6,texture(still,uv).r)); }";
+            "uniform vec2 radius; out vec4 color;\n" +
+            "void main(){ vec2 uv=gl_FragCoord.xy/outSize; float k=texture(still,uv).r;\n" +
+            " for(int i=0;i<12;i++){ float a=float(i)*0.523599; vec2 d=vec2(cos(a),sin(a))*radius;\n" +
+            "  k=max(k,max(max(texture(still,uv+d).r,texture(still,uv+d*0.75).r),max(texture(still,uv+d*0.5).r,texture(still,uv+d*0.25).r))); }\n" +
+            " color=mix(texture(gen,uv),texture(newest,uv),smoothstep(0.15,0.5,k)); }";
     /**
      * How far around still detail the newest picture is kept, in parts of the picture's height (about 38 px at 1080p): a HUD the
      * prediction moved on fast motion lands that far away (owner, 2026-11-22: 16 px still left doubles on fast motion).
@@ -101,9 +90,9 @@ final class FrameGenerator implements AutoCloseable {
     private final int offered;
     private final int[] ring = new int[2];
     private int output;
-    // Keeping the still detail (a HUD) out of the prediction: its mask for the current pair and the composed frame
-    private volatile boolean keepStill;
-    private int still, grown, composed, stillProgram, growProgram, keepProgram;
+    // Keeping the still detail (a HUD) out of the prediction, always (owner, 2026-11-22): its mask for the current pair and the
+    // composed frame
+    private int still, composed, stillProgram, keepProgram;
     private boolean stillReady;
     private int newest = -1;
     private int frames;
@@ -162,9 +151,6 @@ final class FrameGenerator implements AutoCloseable {
     void setMultiplier(int multiplier) { this.multiplier = multiplier; }
 
     int multiplier() { return multiplier; }
-
-    /** Whether still detail (a HUD) is kept as in the newest picture instead of being moved with the scene. */
-    void setKeepStill(boolean on) { keepStill = on; }
 
     /** Frames generated so far. */
     long generated() { return generated; }
@@ -294,23 +280,17 @@ final class FrameGenerator implements AutoCloseable {
             if (error != 0) throw new IllegalStateException("glExtrapolateTex2DQCOM error 0x" + Integer.toHexString(error));
         }
         generated++;
-        if (!keepStill) return output;
+        // A HUD the prediction moved along with the scene would be doubled: the still detail stays as in the newest picture
         if (!stillReady) drawStill();
         drawKeep();
         return composed;
     }
 
-    /** The still detail of the current pair into its quarter-size mask, grown by the keep radius; once per pair. */
+    /** The still detail of the current pair into its half-size mask, once per pair. */
     private void drawStill() {
-        if (stillProgram == 0) {
-            stillProgram = SgsrRenderer.program(FULLSCREEN, STILL);
-            growProgram = SgsrRenderer.program(FULLSCREEN, GROW);
-        }
-        final int w = Math.max(1, width / 4), h = Math.max(1, height / 4);
-        if (still == 0) {
-            still = texture(GLES30.GL_R8, w, h);
-            grown = texture(GLES30.GL_R8, w, h);
-        }
+        if (stillProgram == 0) stillProgram = SgsrRenderer.program(FULLSCREEN, STILL);
+        final int w = Math.max(1, width / 2), h = Math.max(1, height / 2);
+        if (still == 0) still = texture(GLES30.GL_R8, w, h);
         bindTarget(still, w, h);
         GLES31.glUseProgram(stillProgram);
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
@@ -319,25 +299,11 @@ final class FrameGenerator implements AutoCloseable {
         GLES31.glActiveTexture(GLES31.GL_TEXTURE1);
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, ring[newest]);
         GLES31.glUniform1i(GLES31.glGetUniformLocation(stillProgram, "b"), 1);
+        GLES31.glUniform2f(GLES31.glGetUniformLocation(stillProgram, "outSize"), w, h);
         GLES31.glUniform2f(GLES31.glGetUniformLocation(stillProgram, "texel"), 1f / width, 1f / height);
         GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
-        final int reach = Math.max(1, Math.round(KEEP_RADIUS * height / 4));
-        grow(still, grown, w, h, 1f / w, 0f, reach);
-        grow(grown, still, w, h, 0f, 1f / h, reach);
         stillReady = true;
-    }
-
-    /** One pass of growing the mask: [src] into [dst] by [reach] texels along ([stepX], [stepY]). */
-    private void grow(int src, int dst, int w, int h, float stepX, float stepY, int reach) {
-        bindTarget(dst, w, h);
-        GLES31.glUseProgram(growProgram);
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, src);
-        GLES31.glUniform1i(GLES31.glGetUniformLocation(growProgram, "src"), 0);
-        GLES31.glUniform2f(GLES31.glGetUniformLocation(growProgram, "outSize"), w, h);
-        GLES31.glUniform2f(GLES31.glGetUniformLocation(growProgram, "step"), stepX, stepY);
-        GLES31.glUniform1i(GLES31.glGetUniformLocation(growProgram, "reach"), reach);
-        GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
     }
 
     /** The generated frame with the still detail of the newest picture kept, into the composed texture. */
@@ -356,6 +322,7 @@ final class FrameGenerator implements AutoCloseable {
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, still);
         GLES31.glUniform1i(GLES31.glGetUniformLocation(keepProgram, "still"), 2);
         GLES31.glUniform2f(GLES31.glGetUniformLocation(keepProgram, "outSize"), width, height);
+        GLES31.glUniform2f(GLES31.glGetUniformLocation(keepProgram, "radius"), KEEP_RADIUS * height / width, KEEP_RADIUS);
         GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
     }
@@ -539,19 +506,19 @@ final class FrameGenerator implements AutoCloseable {
         ring[0] = ring[1] = output = 0;
         if (luma[0] != 0) GLES31.glDeleteTextures(3, new int[]{luma[0], luma[1], motion}, 0);
         luma[0] = luma[1] = motion = 0;
-        if (still != 0) GLES31.glDeleteTextures(2, new int[]{still, grown}, 0);
+        if (still != 0) GLES31.glDeleteTextures(1, new int[]{still}, 0);
         if (composed != 0) GLES31.glDeleteTextures(1, new int[]{composed}, 0);
-        still = grown = composed = 0;
+        still = composed = 0;
         stillReady = false;
     }
 
     @Override
     public void close() {
         deleteFrames();
-        for (int program : new int[]{diffProgram, lumaProgram, warpProgram, stillProgram, growProgram, keepProgram}) if (program != 0) GLES31.glDeleteProgram(program);
+        for (int program : new int[]{diffProgram, lumaProgram, warpProgram, stillProgram, keepProgram}) if (program != 0) GLES31.glDeleteProgram(program);
         if (diffTexture != 0) GLES31.glDeleteTextures(1, new int[]{diffTexture}, 0);
         if (framebuffer != 0) GLES31.glDeleteFramebuffers(1, new int[]{framebuffer}, 0);
-        diffProgram = lumaProgram = warpProgram = stillProgram = growProgram = keepProgram = diffTexture = framebuffer = 0;
+        diffProgram = lumaProgram = warpProgram = stillProgram = keepProgram = diffTexture = framebuffer = 0;
     }
 
     private static native int nativeInit();

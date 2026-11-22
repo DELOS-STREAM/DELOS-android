@@ -321,8 +321,6 @@ public final class StreamSurfaceController implements StreamSurfaceHost {
     public boolean isFrameGenAvailable() { return decoder != null && decoder.isFrameGenAvailable(); }
     public int getFrameGenMultiplier() { return decoder != null ? decoder.getFrameGenMultiplier() : 1; }
     public void setFrameGenMultiplier(int multiplier) { if (decoder != null) decoder.setFrameGenMultiplier(multiplier); }
-    public boolean isFrameGenKeepHud() { return decoder != null && decoder.isFrameGenKeepHud(); }
-    public void setFrameGenKeepHud(boolean on) { if (decoder != null) decoder.setFrameGenKeepHud(on); }
 
     public void setHdrMode(boolean enabled, byte[] hdrMetadata) {
         LimeLog.info("Display HDR mode: " + (enabled ? "enabled" : "disabled"));

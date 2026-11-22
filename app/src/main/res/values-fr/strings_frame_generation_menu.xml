@@ -6,6 +6,4 @@
     <string name="stream_help_frame_generation_on">Active ou désactive la génération d’images pour ce stream ; l’activer avec l’upscaler éteint redémarre le décodeur une fois.</string>
     <string name="stream_help_multiplier">Combien d’images sont affichées par image du jeu : 2× fait passer 30 fps à 60, 4× à 120.</string>
     <string name="stream_help_create">Appuie sur la touche Créer de la console : captures et clips.</string>
-    <string name="stream_menu_row_keep_hud">Garder le HUD fixe</string>
-    <string name="stream_help_keep_hud_still">Test : les parties fixes comme le HUD ne suivent pas la scène, donc pas de dédoublement.</string>
 </resources>

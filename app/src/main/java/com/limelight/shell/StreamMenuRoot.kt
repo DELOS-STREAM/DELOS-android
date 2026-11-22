@@ -524,7 +524,7 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
             add(MenuKey.MODE)
             add(MenuKey.SHARPNESS)
         }
-        MenuPage.FRAME_GEN -> listOf(MenuKey.FRAME_GEN_ON, MenuKey.MULTIPLIER, MenuKey.KEEP_HUD)
+        MenuPage.FRAME_GEN -> listOf(MenuKey.FRAME_GEN_ON, MenuKey.MULTIPLIER)
         MenuPage.MOUSE -> listOf(MenuKey.TOUCHSCREEN_MODE, MenuKey.LOCAL_MOUSE_CURSOR)
         MenuPage.RUMBLE -> RumblePresets.values().map { StreamMenuHelp.rumbleKey(it) }
     }
@@ -671,11 +671,6 @@ private fun PageRows(
                 host.setFrameGenMultiplier(i + 2)
                 changesTick()
             }), enabled = available)
-            // A live test (owner, 2026-11-22): still detail such as a HUD kept as in the newest picture, so it is not doubled
-            KeyedRow(Symbols.MAP_PIN, R.string.stream_menu_row_keep_hud, MenuKey.KEEP_HUD, RowValue.Toggle(host.frameGenKeepHud) {
-                host.setFrameGenKeepHud(it)
-                changesTick()
-            }, enabled = available)
         }
         MenuPage.MOUSE -> {
             val modes = remember { host.mouseModes() }

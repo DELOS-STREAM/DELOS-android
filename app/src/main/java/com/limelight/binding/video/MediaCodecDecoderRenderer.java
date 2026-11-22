@@ -1000,7 +1000,6 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             sgsr.setOverloadListener(this::onUpscalerOverload);
             sgsr.setPresentAtFrameTimestamp(prefs.framePacing == PreferenceConfiguration.FRAME_PACING_PHASE_LOCK);
             sgsr.setFrameGeneration(frameGenStage() ? prefs.frameGenMultiplier : 1, this::displayRefreshHz);
-            sgsr.setFrameGenKeepHud(frameGenKeepHud);
         }
         DirectLaunchArrival arrival = directLaunchArrival;
         // Error publication may race recovery; keep OES until its EGL detach is confirmed.
@@ -1277,17 +1276,6 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
 
     /** Frame generation's multiplier for this stream (1 = off). */
     public int getFrameGenMultiplier() { return prefs.frameGenMultiplier; }
-
-    // Frame generation keeps still detail (a HUD) as in the newest picture: the stream menu's live test, for this stream
-    private volatile boolean frameGenKeepHud;
-
-    public boolean isFrameGenKeepHud() { return frameGenKeepHud; }
-
-    public void setFrameGenKeepHud(boolean on) {
-        frameGenKeepHud = on;
-        SgsrRenderer current = sgsr;
-        if (current != null) current.setFrameGenKeepHud(on);
-    }
 
     /** Whether frame generation can run here: the GL output stage (not PyroWave's Vulkan one). */
     public boolean isFrameGenAvailable() { return pyroWave == null && SgsrRenderer.isSupported(context); }
