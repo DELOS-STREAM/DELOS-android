@@ -2,7 +2,7 @@
 <resources>
     <string name="stream_menu_tile_frame_gen">帧生成</string>
     <string name="stream_menu_row_multiplier">倍数</string>
-    <string name="stream_help_frame_generation">帧生成：在游戏帧之间预测的帧。更改立即对本次串流生效。</string>
+    <string name="stream_help_frame_generation">实验性帧生成。最适合 60 fps 的游戏；30 fps 的游戏会有伪影。更改立即对本次串流生效。</string>
     <string name="stream_help_frame_generation_on">为本次串流开启或关闭帧生成；在放大器关闭时开启会重启一次解码器。</string>
     <string name="stream_help_multiplier">每个游戏帧显示的帧数：2× 让 30 fps 变成 60，4× 变成 120。</string>
     <string name="stream_help_create">按下主机的创建按钮：截图和片段。</string>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="title_frame_generation">Génération d’images</string>
-    <string name="summary_frame_generation">Affiche entre les images du jeu des images prédites par le GPU ; un jeu à 30 fps dans un stream à 60 fps compte comme 30. Nécessite un pilote GPU avec extrapolation (Adreno).</string>
+    <string name="summary_frame_generation">Expérimental. Affiche entre les images du jeu des images prédites par le GPU. Idéal avec un jeu à 60 fps (60 → 120) ; un jeu à 30 fps montre des artefacts. Nécessite un pilote GPU avec extrapolation (Adreno).</string>
     <string name="frame_generation_off">Désactivée</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>

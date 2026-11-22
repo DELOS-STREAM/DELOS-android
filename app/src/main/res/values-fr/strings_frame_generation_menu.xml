@@ -2,7 +2,7 @@
 <resources>
     <string name="stream_menu_tile_frame_gen">Gén. d’images</string>
     <string name="stream_menu_row_multiplier">Multiplicateur</string>
-    <string name="stream_help_frame_generation">Génération d’images : images prédites entre celles du jeu. Les changements s’appliquent aussitôt, pour ce stream.</string>
+    <string name="stream_help_frame_generation">Génération d’images expérimentale. Idéal avec un jeu à 60 fps ; un jeu à 30 fps montre des artefacts. Les changements s’appliquent aussitôt, pour ce stream.</string>
     <string name="stream_help_frame_generation_on">Active ou désactive la génération d’images pour ce stream ; l’activer avec l’upscaler éteint redémarre le décodeur une fois.</string>
     <string name="stream_help_multiplier">Combien d’images sont affichées par image du jeu : 2× fait passer 30 fps à 60, 4× à 120.</string>
     <string name="stream_help_create">Appuie sur la touche Créer de la console : captures et clips.</string>

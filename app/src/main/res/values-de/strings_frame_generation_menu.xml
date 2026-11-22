@@ -2,7 +2,7 @@
 <resources>
     <string name="stream_menu_tile_frame_gen">Bildgen.</string>
     <string name="stream_menu_row_multiplier">Faktor</string>
-    <string name="stream_help_frame_generation">Bildgenerierung: vorhergesagte Bilder zwischen den Bildern des Spiels. Änderungen gelten sofort, für diesen Stream.</string>
+    <string name="stream_help_frame_generation">Experimentelle Bildgenerierung. Am besten mit einem Spiel mit 60 fps; ein Spiel mit 30 fps zeigt Artefakte. Änderungen gelten sofort, für diesen Stream.</string>
     <string name="stream_help_frame_generation_on">Schaltet die Bildgenerierung für diesen Stream ein oder aus; bei ausgeschaltetem Upscaler startet das Einschalten den Decoder einmal neu.</string>
     <string name="stream_help_multiplier">Wie viele Bilder pro Spielbild gezeigt werden: 2× macht aus 30 fps 60, 4× 120.</string>
     <string name="stream_help_create">Drückt die Erstellen-Taste der Konsole: Screenshots und Clips.</string>

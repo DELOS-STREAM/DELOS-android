@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="title_frame_generation">Geração de quadros</string>
-    <string name="summary_frame_generation">Mostra quadros previstos pela GPU entre os quadros do jogo; um jogo a 30 fps numa transmissão a 60 fps conta como 30. Requer um driver de GPU com extrapolação (Adreno).</string>
+    <string name="summary_frame_generation">Experimental. Mostra quadros previstos pela GPU entre os do jogo. Melhor com um jogo a 60 fps (60 → 120); um jogo a 30 fps mostra artefatos. Requer um driver de GPU com extrapolação (Adreno).</string>
     <string name="frame_generation_off">Desligada</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>

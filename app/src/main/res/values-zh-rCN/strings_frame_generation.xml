@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="title_frame_generation">帧生成</string>
-    <string name="summary_frame_generation">在游戏的帧之间显示由 GPU 预测的帧；60 fps 串流中的 30 fps 游戏按 30 计算。需要支持帧外推的 GPU 驱动（Adreno）。</string>
+    <string name="summary_frame_generation">实验性功能。在游戏的帧之间显示由 GPU 预测的帧。最适合 60 fps 的游戏（60 → 120）；30 fps 的游戏会有伪影。需要支持帧外推的 GPU 驱动（Adreno）。</string>
     <string name="frame_generation_off">关闭</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>

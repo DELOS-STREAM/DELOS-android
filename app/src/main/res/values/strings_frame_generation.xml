@@ -2,7 +2,7 @@
 <!-- Frame generation (docs/VIDEO_FRAME_GENERATION_RESEARCH.md). -->
 <resources>
     <string name="title_frame_generation">Frame generation</string>
-    <string name="summary_frame_generation">Shows frames the GPU predicts between the frames of the game; a 30 fps game in a 60 fps stream counts as 30. Needs a GPU driver with frame extrapolation (Adreno).</string>
+    <string name="summary_frame_generation">Experimental. Shows frames the GPU predicts between the frames of the game. Best with a game at 60 fps (60 → 120); a 30 fps game shows artefacts. Needs a GPU driver with frame extrapolation (Adreno).</string>
     <string name="frame_generation_off">Off</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>

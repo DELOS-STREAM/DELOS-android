@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="title_frame_generation">프레임 생성</string>
-    <string name="summary_frame_generation">게임 프레임 사이에 GPU가 예측한 프레임을 보여 줍니다. 60 fps 스트림 속 30 fps 게임은 30으로 봅니다. 프레임 외삽을 지원하는 GPU 드라이버(Adreno)가 필요합니다.</string>
+    <string name="summary_frame_generation">실험적 기능입니다. 게임 프레임 사이에 GPU가 예측한 프레임을 보여 줍니다. 60 fps 게임에서 가장 좋습니다(60 → 120). 30 fps 게임은 아티팩트가 보입니다. 프레임 외삽을 지원하는 GPU 드라이버(Adreno)가 필요합니다.</string>
     <string name="frame_generation_off">끄기</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
