@@ -161,6 +161,8 @@ public final class SgsrRenderer implements AutoCloseable {
     // HDR: the newest picture's present sequence; how long a picture takes from its first callback to the display and a generated
     // image from its callback (smoothed); presented images waiting for their display time; refreshes between shown images (log)
     private int realSeq = -1, lastHdrSequence = -1;
+    // Whether the newest picture was presented from the draw (its latency is measured; a held one presents from a callback)
+    private boolean realFromDraw;
     private long pictureLatencyNs, generatedLatencyNs;
     private final int[] shownSeq = new int[16];
     private final long[] shownVsyncNs = new long[16];
@@ -724,6 +726,7 @@ public final class SgsrRenderer implements AutoCloseable {
                     presentTimestampNs = 0L;
                     refreshesSinceReal = 0;
                     realSeq = lastHdrSequence;
+                    realFromDraw = true;
                     if (generator != null && generator.hasStep()) scheduleFrameGen();
                 }
             }
@@ -850,6 +853,7 @@ public final class SgsrRenderer implements AutoCloseable {
             try { presentCachedNormal(); }
             catch (RuntimeException e) { LimeLog.warning("Frame generation: held picture not shown: " + e); return; }
             realSeq = lastHdrSequence;
+            realFromDraw = false;
             // Counted as if it had been presented from the draw: it shows a generated image's latency after this callback
             realVsyncNs = frameTimeNanos + generatedLatencyNs - pictureLatencyNs;
             refreshesSinceReal = 1;
@@ -953,7 +957,7 @@ public final class SgsrRenderer implements AutoCloseable {
             if (status != 0 || presentNs <= 0) continue;
             final boolean generated = shownVsyncNs[i] != 0;
             if (generated) generatedLatencyNs = smoothLatency(generatedLatencyNs,presentNs - shownVsyncNs[i]);
-            else if (shownSeq[i] == realSeq && refreshesSinceReal > 0 && presentNs > realVsyncNs) {
+            else if (shownSeq[i] == realSeq && realFromDraw && refreshesSinceReal > 0 && presentNs > realVsyncNs) {
                 pictureLatencyNs = smoothLatency(pictureLatencyNs,presentNs - realVsyncNs);
             }
             if (lastShownNs > 0 && displayPeriodNs > 0) {
