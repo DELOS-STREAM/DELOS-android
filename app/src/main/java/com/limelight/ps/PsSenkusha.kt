@@ -100,7 +100,8 @@ internal class PsSenkusha(private val host: InetAddress) : AutoCloseable {
                 (0 until 3).any {
                     val tag = rng.nextInt()
                     val n = ping++
-                    send(ping(n, tag, candidate - 28, FILLER))
+                    // Larger than the interface takes with don't-fragment: the send fails, the candidate does not work
+                    if (runCatching { send(ping(n, tag, candidate - 28, FILLER)) }.isFailure) return@any false
                     awaitAv(probeMs) { isPong(it, n, tag) }
                 }
             }

@@ -86,10 +86,17 @@ class PsStream(
     private var historySeq = 0
     private var state = PsControllerState()
     private val history = ArrayDeque<ByteArray>()
-    /** Who gets the frames, sound and feedback: replaced when the session is parked or taken back (PsSessionPark). */
+    /**
+     * Who gets the frames, sound and feedback: replaced when the session is parked or taken back (PsSessionPark). A new listener
+     * gets the current adaptive profile again with the next frame.
+     */
     @Volatile var listener: PsStreamListener = listener
+        set(value) { field = value; profile = -1 }
     /** Whether the stream still runs (not closed). */
     val alive: Boolean get() = running
+    /** Milliseconds since the last datagram from the console. */
+    val quietMs: Long get() = (System.nanoTime() - lastReceiveNs) / 1_000_000L
+    @Volatile private var lastReceiveNs = System.nanoTime()
     // The adaptive profiles of STREAMINFO (resolution entries) and the one the frames use (7.2, adaptive resolution)
     @Volatile private var profiles: List<PsProtoMessage> = emptyList()
     private var profile = 0
@@ -242,6 +249,7 @@ class PsStream(
         while (running) {
             val p = DatagramPacket(buf, buf.size)
             try { socket.receive(p) } catch (_: Exception) { if (running) continue else return }
+            lastReceiveNs = System.nanoTime()
             val type = buf[0].toInt() and 0x0F
             try {
                 when (type) {

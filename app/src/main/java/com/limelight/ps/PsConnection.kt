@@ -79,14 +79,22 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             }
         } catch (e: Exception) {
             Log.w(TAG, "connect", e)
+            abandonSession()
             if (running) listener.stageFailed(if (stream == null) STAGE_WAKE else STAGE_STREAM, 0, -1)
         }
+    }
+
+    /** Closes what an unfinished or failed start opened (ctrl, stream): no console session may outlive [stop] or a failure. */
+    private fun abandonSession() {
+        runCatching { stream?.close() }; stream = null
+        runCatching { ctrl?.close() }; ctrl = null
     }
 
     /** A session this console left in the background: it streams again at once, from a keyframe (#121). */
     private fun resumeParked(c: com.limelight.shell.ps.PsConsole): Boolean {
         val (s, session, saved) = PsSessionPark.take(c.id) ?: return false
-        if (!s.alive) { runCatching { session?.close() }; return false }
+        // A parked session that went quiet (the console or the Wi-Fi gone while it waited) is not taken back
+        if (!s.alive || s.quietMs > PARK_QUIET_MS) { runCatching { s.close() }; runCatching { session?.close() }; return false }
         val (request, info) = saved
         ctrl = session
         stream = s
@@ -111,12 +119,13 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         var opened: PsCtrl? = null
         var lastError: Exception? = null
         for (attempt in 0 until ctrlTries) {
-            if (!running) return
+            if (!running) { opened?.close(); return }
             try { opened = PsCtrl(address, PS_PORT, c.console, request.codec).also { it.open() }; break }
             catch (e: Exception) { lastError = e; Thread.sleep(2000) }
         }
         val session = opened ?: throw lastError ?: PsException("no session")
         ctrl = session
+        if (!running) { abandonSession(); return }
         var sessionId: String? = null
         val ready = Object()
         thread(name = "ps-ctrl") {
@@ -125,18 +134,20 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         synchronized(ready) { if (sessionId == null) ready.wait(10_000) }
         val id = sessionId ?: throw PsException("the console sent no session id")
         session.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, 1, 0x59)); session.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, 1, 0x59)); session.send(PsCtrl.DISPLAY_DEVICES, ByteArray(4))
-        if (!running) return
+        if (!running) { abandonSession(); return }
         beforeStream()
         ps5 = c.console.target.ps5
         // The network test (6.4, #122): once per console while the app runs (a failure too, so a console that does not answer it
         // costs its wait once); a reconnect reuses the result
         val net = synchronized(NETWORK) { NETWORK[c.id] } ?: PsSenkusha(address).run().also { n -> synchronized(NETWORK) { NETWORK[c.id] = n } }
         val measured = request.copy(mtuIn = net.mtuIn, mtuOut = net.mtuOut, rttMs = net.rttMs, dontFragment = net.measured)
-        if (!running) return
+        if (!running) { abandonSession(); return }
         val s = PsStream(address, c.console.target, id, session.crypt, measured, streamListener(measured),
             keyframeOnLoss = psPrefs.getBoolean(PsPrefs.KEYFRAME_ON_LOSS, false), holdBitrate = !PsPrefs.autoBitrate(psPrefs))
         stream = s
         s.start()
+        // stop() ran meanwhile: it closed what it saw, this session is closed here
+        if (!running) abandonSession()
     }
 
     /**
@@ -145,9 +156,14 @@ class PsConnection(context: Context, private val consoleId: String, private val 
      */
     private fun reconnect(): Boolean {
         val c = console ?: return false
+        // A session that opens but never sends a packet is not tried for ever: three such reconnects in a row end the stream
+        consecutiveReconnects = if (packetSinceReconnect) 1 else consecutiveReconnects + 1
+        if (consecutiveReconnects > MAX_QUIET_RECONNECTS) { Log.i(TAG, "no packet after $MAX_QUIET_RECONNECTS reconnects"); return false }
+        packetSinceReconnect = false
         Log.i(TAG, "no packet for ${SILENCE_MS / 1000} s: reconnecting")
-        runCatching { stream?.close() }; stream = null
-        runCatching { ctrl?.close() }; ctrl = null
+        abandonSession()
+        // The path may have changed (another access point): Senkusha measures it again, and don't-fragment follows the new result
+        synchronized(NETWORK) { NETWORK.remove(c.id) }
         val until = SystemClock.uptimeMillis() + RECONNECT_MS
         while (running && SystemClock.uptimeMillis() < until) {
             try {
@@ -155,18 +171,26 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                 if (stream != null) {
                     lastPacketMs = SystemClock.uptimeMillis()
                     feeder?.lost()
+                    // The new ctrl session has no microphone until it is told again (8.5 step 1)
+                    microphone?.let { mic ->
+                        runCatching { ctrl?.send(PsCtrl.MIC_CONNECT, byteArrayOf(0, 0)) }
+                        setMicrophoneMuted(mic.muted)
+                    }
                     Log.i(TAG, "reconnected")
                     return true
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "reconnect: ${e.message}")
-                runCatching { stream?.close() }; stream = null
-                runCatching { ctrl?.close() }; ctrl = null
+                abandonSession()
                 Thread.sleep(1000)
             }
         }
         return false
     }
+
+    // Reconnects in a row that brought no packet, and whether one came since the last reconnect
+    private var consecutiveReconnects = 0
+    @Volatile private var packetSinceReconnect = true
 
     /**
      * Where the console is now: a broadcast search that stops at its answer (its host id is the paired MAC), so a console that
@@ -239,6 +263,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
         override fun onVideoFrame(frame: ByteArray, index: Int) {
             lastPacketMs = SystemClock.uptimeMillis()
+            packetSinceReconnect = true
             feeder?.offer(frame, index)
         }
 
@@ -248,6 +273,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
         override fun onAudio(opus: ByteArray, frameIndex: Int) {
             lastPacketMs = SystemClock.uptimeMillis()
+            packetSinceReconnect = true
             audioSource?.offer(opus, frameIndex)
         }
 
@@ -311,7 +337,12 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         microphone?.close(); microphone = null
         if (restOnStop) runCatching { ctrl?.send(PsCtrl.GOTO_BED) }.onFailure { Log.w(TAG, "rest mode: ${it.message}") }
         val s = stream; val info = streamInfo; val request = sessionRequest
-        if (parkOnStop && !restOnStop && s != null && s.alive && info != null && request != null) PsSessionPark.park(consoleId, s, ctrl, request, info)
+        if (parkOnStop && !restOnStop && s != null && s.alive && info != null && request != null) {
+            // Nothing stays held in the game while nobody plays: sticks centred, buttons and triggers released
+            synchronized(padLock) { pad = PsControllerState(); touches.clear() }
+            s.updateController(PsControllerState())
+            PsSessionPark.park(consoleId, s, ctrl, request, info)
+        }
         else { s?.close(); ctrl?.close() }
         stream = null
         ctrl = null
@@ -736,6 +767,14 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         private const val POOR_MS = 2_500L
         /** How long a reconnect after silence keeps trying. */
         private const val RECONNECT_MS = 20_000L
+        /** Reconnects in a row without a packet before the stream ends. */
+        private const val MAX_QUIET_RECONNECTS = 3
+        /** A parked session silent for longer than this is closed instead of taken back. */
+        private const val PARK_QUIET_MS = 5_000L
+
+        /** Closes a console session parked in the background: another stream (a PC's) starts and the console's must not compete. */
+        @JvmStatic
+        fun closeParkedSession() = PsSessionPark.closeAny()
         /** Audio: this long without any unit is a real gap, after which the jitter buffer fills to its start depth again. */
         private const val AUDIO_GAP_MS = 200L
         /** Senkusha's result per console id, for this process. */

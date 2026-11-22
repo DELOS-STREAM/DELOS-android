@@ -668,6 +668,8 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             decoderRenderer.setStreamDiagnostics(prefConfig.bitrate, isMetered, false);
             conn = new PsConnection(getApplicationContext(), psConsoleId, prefConfig);
         } else {
+            // A console session parked in the background would compete with this stream for the network
+            PsConnection.closeParkedSession();
             StreamConfiguration config = new StreamConfiguration.Builder()
                     .setResolution(
                             displayWidth,

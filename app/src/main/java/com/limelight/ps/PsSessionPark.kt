@@ -48,6 +48,10 @@ internal object PsSessionPark {
     @Synchronized
     private fun drop(stream: PsStream) { if (parked?.stream === stream) closeParked() }
 
+    /** Closes the parked session, if any (another stream starts). */
+    @Synchronized
+    fun closeAny() { if (parked != null) { Log.i(TAG, "parked session closed: another stream starts"); closeParked() } }
+
     private fun closeParked() { parked?.let(::close); parked = null }
 
     private fun close(p: Parked) {

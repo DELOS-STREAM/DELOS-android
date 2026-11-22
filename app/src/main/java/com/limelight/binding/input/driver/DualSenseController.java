@@ -34,8 +34,11 @@ public class DualSenseController extends AbstractController {
     /** Report offsets (report id at 0). */
     private static final int OUT_FLAG0 = 1, OUT_FLAG1 = 2, OUT_MOTOR_RIGHT = 3, OUT_MOTOR_LEFT = 4, OUT_RIGHT_TRIGGER = 11, OUT_LEFT_TRIGGER = 22,
             OUT_FLAG2 = 39, OUT_LIGHTBAR_SETUP = 42, OUT_PLAYER_LEDS = 44, OUT_RED = 45;
-    /** Sensor resolution (hid-playstation): counts per degree per second and per g. */
-    private static final float GYRO_PER_DEG_S = 1024f, ACCEL_PER_G = 8192f;
+    /**
+     * Raw sensor counts (hid-playstation without calibration data): the gyro's 32767 is 2048 deg/s (about 16 per deg/s); the
+     * accelerometer's 8192 is 1 g.
+     */
+    private static final float GYRO_PER_DEG_S = 32767f / 2048f, ACCEL_PER_G = 8192f;
 
     private final UsbDevice device;
     private final UsbDeviceConnection connection;
@@ -95,8 +98,11 @@ public class DualSenseController extends AbstractController {
     }
 
     private void readInput() {
-        // The light bar takes the colour only after its setup bit is sent once
-        synchronized (outputLock) { writeOutput(0, FLAG1_LIGHTBAR | FLAG1_PLAYER_LEDS, FLAG2_LIGHTBAR_SETUP); }
+        // The light bar takes a colour only after its setup is sent on its own (as hid-playstation does), then the colour
+        synchronized (outputLock) {
+            writeOutput(0, 0, FLAG2_LIGHTBAR_SETUP);
+            writeOutput(0, FLAG1_LIGHTBAR | FLAG1_PLAYER_LEDS, 0);
+        }
         notifyDeviceAdded();
         byte[] buffer = new byte[64];
         while (!stopped && !Thread.currentThread().isInterrupted()) {
