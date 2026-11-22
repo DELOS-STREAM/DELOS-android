@@ -146,7 +146,8 @@ public final class SgsrRenderer implements AutoCloseable {
     // Frame generation (FrameGenerator): the multiplier asked for (1 = off) and the display refresh it fills; GL thread state below
     private volatile int frameGenMultiplier = 1;
     private volatile long displayPeriodNs;
-    private long measuredPeriodNs;
+    // The display's current refresh rate (read for every new picture: the rate read when the stage was made can be a passing one)
+    private volatile java.util.function.DoubleSupplier displayRefreshHz;
     // HDR: whether the newest picture went out with a planned display time (phase lock): then its steps do too
     private boolean pictureScheduled;
     private volatile FrameGenerator frameGen;
@@ -280,12 +281,19 @@ public final class SgsrRenderer implements AutoCloseable {
     /** Phase lock: the codec releases each frame with its target refresh as the buffer timestamp; SDR swaps honour it. */
     public void setPresentAtFrameTimestamp(boolean enabled) { presentAtFrameTimestamp = enabled; }
     /**
-     * Frame generation: up to [multiplier] frames shown per frame of the game (1 = off) on a display refreshing at [displayHz];
-     * without the driver's frame extrapolation it stays off. Applies from the next decoded frame.
+     * Frame generation: up to [multiplier] frames shown per frame of the game (1 = off) on the display whose current refresh rate
+     * [refreshHz] reads; without the driver's frame extrapolation it stays off. Applies from the next decoded frame.
      */
-    public void setFrameGeneration(int multiplier, float displayHz) {
+    public void setFrameGeneration(int multiplier, java.util.function.DoubleSupplier refreshHz) {
         frameGenMultiplier = Math.max(1, Math.min(4, multiplier));
-        displayPeriodNs = displayHz > 1f ? (long) (1_000_000_000L / displayHz) : 0L;
+        displayRefreshHz = refreshHz;
+        updateDisplayPeriod();
+    }
+
+    private void updateDisplayPeriod() {
+        final java.util.function.DoubleSupplier source = displayRefreshHz;
+        final double hz = source != null ? source.getAsDouble() : 0;
+        displayPeriodNs = hz > 1 ? (long) (1_000_000_000L / hz) : 0L;
     }
     /** Frames generated since the stream began (0 while frame generation is off or unavailable). */
     public long getGeneratedFrames() {
@@ -699,6 +707,7 @@ public final class SgsrRenderer implements AutoCloseable {
             int kind = FrameGenerator.NEW_PICTURE;
             if (generator != null) {
                 try {
+                    updateDisplayPeriod();
                     kind = generator.onRealFrame(source,sampledWidth,sampledHeight,texture.getTimestamp(),displayPeriodNs);
                     if (++frameGenLogFrames % 600 == 0) LimeLog.info("Frame generation: " + generator.generated() + " generated ("
                             + frameGenLate + " late, " + frameGenBusy + " GPU busy), " + heldPictures + " pictures held for the grid, "
@@ -847,20 +856,6 @@ public final class SgsrRenderer implements AutoCloseable {
         frameGenScheduled = false;
         final FrameGenerator generator = frameGen;
         if (closed.get() || !outputAttached || arrivalIsActive()) return;
-        // The refresh the display really runs at, from consecutive callbacks: the rate read when the stage was made can be a
-        // passing one (the panel switches rates when the surface asks for another)
-        if (lastCallbackVsyncNs > 0) {
-            final long gap = frameTimeNanos - lastCallbackVsyncNs;
-            if (gap > 3_000_000L && gap < 40_000_000L) {
-                measuredPeriodNs = measuredPeriodNs == 0 ? gap : Math.min(measuredPeriodNs, (measuredPeriodNs * 7 + gap) / 8);
-                if (gap < measuredPeriodNs * 9 / 10) measuredPeriodNs = gap;
-                if (Math.abs(measuredPeriodNs - displayPeriodNs) * 10 > displayPeriodNs) {
-                    LimeLog.info("Frame generation: display refresh " + (1_000_000_000L / measuredPeriodNs) + " Hz (was "
-                            + (displayPeriodNs > 0 ? 1_000_000_000L / displayPeriodNs : 0) + ")");
-                    displayPeriodNs = measuredPeriodNs;
-                }
-            }
-        }
         final long period = displayPeriodNs;
         lastCallbackVsyncNs = frameTimeNanos;
         if (heldPictureSlotNs > 0) {

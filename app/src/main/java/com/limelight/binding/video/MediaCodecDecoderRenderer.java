@@ -999,7 +999,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             sgsr.setLatencyStages(latency);
             sgsr.setOverloadListener(this::onUpscalerOverload);
             sgsr.setPresentAtFrameTimestamp(prefs.framePacing == PreferenceConfiguration.FRAME_PACING_PHASE_LOCK);
-            sgsr.setFrameGeneration(frameGenStage() ? prefs.frameGenMultiplier : 1, displayRefreshHz());
+            sgsr.setFrameGeneration(frameGenStage() ? prefs.frameGenMultiplier : 1, this::displayRefreshHz);
         }
         DirectLaunchArrival arrival = directLaunchArrival;
         // Error publication may race recovery; keep OES until its EGL detach is confirmed.
@@ -1291,7 +1291,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             prefs.frameGenMultiplier = Math.max(1, Math.min(4, multiplier));
             SgsrRenderer current = sgsr;
             if (current != null) {
-                current.setFrameGeneration(prefs.frameGenMultiplier, displayRefreshHz());
+                current.setFrameGeneration(prefs.frameGenMultiplier, this::displayRefreshHz);
                 try { applySurfaceFrameRate(renderTarget, targetFps * prefs.frameGenMultiplier); }
                 catch (Throwable t) { LimeLog.warning("applySurfaceFrameRate failed: " + t); }
                 return;
