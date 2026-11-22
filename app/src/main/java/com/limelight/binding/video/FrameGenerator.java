@@ -38,8 +38,11 @@ final class FrameGenerator implements AutoCloseable {
     private static final int CHANGED_LEVEL = 24, MAX_CHANGED_CELLS = CELLS_X * CELLS_Y / 200, REFINE_PERCENT = 35;
     /** A pair that moved at least this many cells tells whether generated frames move and which way the motion vectors point. */
     private static final int MOVING_PAIR_CELLS = 60;
-    /** The driver's step moved less than this share (in tenths) of the pair's changed cells: it did not follow the motion. */
-    private static final int STUCK_TENTHS = 3;
+    /**
+     * The driver's step changed less than this share (in tenths) of the pair's changed cells: it did not move at all. Only that is
+     * clear from changed cells, which saturate on textured motion (a step that moved part of the way still changes most cells).
+     */
+    private static final int STUCK_TENTHS = 1;
 
     private static final String FULLSCREEN = "#version 310 es\n" +
             "void main(){ vec2 p=vec2(float(gl_VertexID&1),float(gl_VertexID>>1)); gl_Position=vec4(p*2.0-1.0,0,1); }";
@@ -121,12 +124,16 @@ final class FrameGenerator implements AutoCloseable {
     /** Decoded frames recognised as repeats of the previous one so far. */
     long repeats() { return repeats; }
 
+    /** [onRealFrame] results: a new picture of the game, an identical repeat, or the same picture with changed details. */
+    static final int NEW_PICTURE = 0, REPEAT = 1, UPDATE = 2;
+
     /**
      * A decoded frame was drawn into [source] ([w] × [h]). A new picture becomes the newest of the pair and the steps until the next
-     * one are planned from the interval to the previous picture and the display refresh ([periodNs]); a repeat of the newest picture
-     * changes nothing and returns true (its refresh may show the next generated step instead).
+     * one are planned from the interval to the previous picture and the display refresh ([periodNs]). A repeat changes no plan:
+     * when it differs at all (a refinement on fast motion, a small HUD change on a still scene) it replaces the newest picture and
+     * returns [UPDATE] (to be shown when no generated step takes its refresh), an identical one returns [REPEAT].
      */
-    boolean onRealFrame(int source, int w, int h, long timestampNs, long periodNs) {
+    int onRealFrame(int source, int w, int h, long timestampNs, long periodNs) {
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, source);
         GLES31.glGetTexLevelParameteriv(GLES31.GL_TEXTURE_2D, 0, GLES31.GL_TEXTURE_INTERNAL_FORMAT, query, 0);
         final int format = query[0];
@@ -142,13 +149,13 @@ final class FrameGenerator implements AutoCloseable {
             if (changed <= MAX_CHANGED_CELLS || refinement) {
                 repeats++;
                 lastWasRepeat = true;
-                if (refinement) {
-                    // The same picture in better quality: it replaces the newest of the pair (its motion is estimated again)
-                    refinements++;
-                    GLES32.glCopyImageSubData(source, GLES31.GL_TEXTURE_2D, 0, 0, 0, 0, ring[newest], GLES31.GL_TEXTURE_2D, 0, 0, 0, 0, w, h, 1);
-                    motionReady = false;
-                }
-                return true;
+                if (changed == 0) return REPEAT;
+                // The same picture with changed details: it replaces the newest of the pair (its motion is estimated again), so
+                // a detail that changed is never held back until the next picture
+                if (refinement) refinements++;
+                GLES32.glCopyImageSubData(source, GLES31.GL_TEXTURE_2D, 0, 0, 0, 0, ring[newest], GLES31.GL_TEXTURE_2D, 0, 0, 0, 0, w, h, 1);
+                motionReady = false;
+                return UPDATE;
             }
             pairCells = lastPictureCells = changed;
         }
@@ -173,7 +180,7 @@ final class FrameGenerator implements AutoCloseable {
             frames = 1;
             intervalNs = 0;
         }
-        return false;
+        return NEW_PICTURE;
     }
 
     /** Whether a generated frame belongs before the next picture. */

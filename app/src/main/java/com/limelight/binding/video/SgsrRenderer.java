@@ -156,6 +156,17 @@ public final class SgsrRenderer implements AutoCloseable {
     private int refreshesSinceReal;
     private long realVsyncNs;
     private long frameGenLate, frameGenBusy;
+    // HDR: the newest picture's present sequence; how long a picture takes from its first callback to the display and a generated
+    // image from its callback (smoothed); presented images waiting for their display time; refreshes between shown images (log)
+    private int realSeq = -1, lastHdrSequence = -1;
+    private long pictureLatencyNs, generatedLatencyNs;
+    private final int[] shownSeq = new int[16];
+    private final long[] shownVsyncNs = new long[16];
+    private int shownHead, shownCount;
+    private final long[] shownTimes = new long[3];
+    private long lastShownNs;
+    private boolean lastShownGenerated;
+    private final int[] gapsAfterPicture = new int[6], gapsAfterGenerated = new int[6];
     private final Choreographer.FrameCallback frameGenTick = this::onFrameGenTick;
     // These refer to the latest decoded/reconstructed frame. Display ticks never advance decoding
     // or temporal history and never rebuild its mip pyramid unless that frame changes.
@@ -676,28 +687,32 @@ public final class SgsrRenderer implements AutoCloseable {
                 return;
             }
             // Frame generation keeps this frame (before the final pass, at the size that pass samples) as the newest of its pair;
-            // a repeat of the game's previous frame gives its refresh to the next generated step
+            // a repeat of the game's previous picture gives its refresh to the next generated step
             FrameGenerator generator = frameGenerator();
-            boolean repeat = false;
+            int kind = FrameGenerator.NEW_PICTURE;
             if (generator != null) {
                 try {
-                    repeat = generator.onRealFrame(source,sampledWidth,sampledHeight,texture.getTimestamp(),displayPeriodNs);
+                    kind = generator.onRealFrame(source,sampledWidth,sampledHeight,texture.getTimestamp(),displayPeriodNs);
                     if (++frameGenLogFrames % 600 == 0) LimeLog.info("Frame generation: " + generator.generated() + " generated ("
                             + frameGenLate + " late, " + frameGenBusy + " GPU busy), " + generator.repeats() + " repeated frames of "
-                            + frameGenLogFrames + "; changed cells " + generator.recentChangedCells() + "; " + generator.generatedChanged());
+                            + frameGenLogFrames + "; changed cells " + generator.recentChangedCells() + "; " + generator.generatedChanged()
+                            + shownGaps());
                 }
                 catch (RuntimeException e) { stopFrameGeneration(generator,e); generator = null; }
             }
             statsFrameArrivalNs = arrivalNs;
             statsFrameArmed = true;
-            if (repeat && generator.paired()) {
-                // A repeat of the game's newest picture is not shown: the generated steps (or that picture) keep the display
+            if (tenBit && generator != null) pollShown();
+            if (kind != FrameGenerator.NEW_PICTURE && generator.paired()) {
                 if (generator.hasStep()) scheduleFrameGen();
+                // No step takes this refresh: a repeat with changed details is shown (the plan stays the picture's)
+                else if (kind == FrameGenerator.UPDATE) presentCachedNormal();
             } else {
                 presentTimestampNs = presentAtFrameTimestamp ? texture.getTimestamp() : 0L;
                 presentCachedNormal();
                 presentTimestampNs = 0L;
                 refreshesSinceReal = 0;
+                realSeq = lastHdrSequence;
                 if (generator != null && generator.hasStep()) scheduleFrameGen();
             }
             statsFrameArmed = false;
@@ -820,9 +835,18 @@ public final class SgsrRenderer implements AutoCloseable {
         // clock, so a callback the looper missed does not shift the steps
         if (refreshesSinceReal == 0) { realVsyncNs = frameTimeNanos; refreshesSinceReal = 1; }
         else refreshesSinceReal = 1 + Math.round((frameTimeNanos - realVsyncNs) / (float) period);
-        while (generator.hasStep() && generator.nextOffset() < refreshesSinceReal) { generator.skipStep(); frameGenLate++; }
+        // The refresh a step presented now shows on, counted from the picture's: the same when a generated image takes as long from
+        // its callback to the display as the picture took from its first callback; HDR measures both (pollShown) and corrects
+        int due = refreshesSinceReal;
+        if (tenBit) {
+            pollShown();
+            if (generatedLatencyNs > 0 && pictureLatencyNs > 0) {
+                due = Math.round((frameTimeNanos - realVsyncNs + generatedLatencyNs - pictureLatencyNs) / (float) period);
+            }
+        }
+        while (generator.hasStep() && generator.nextOffset() < due) { generator.skipStep(); frameGenLate++; }
         if (!generator.hasStep()) return;
-        if (generator.nextOffset() > refreshesSinceReal) { scheduleFrameGen(); return; }
+        if (generator.nextOffset() > due) { scheduleFrameGen(); return; }
         final long target = lastPresentTargetNs + generator.nextOffset() * period;
         if (heldFrame || gpuBusy(now)) {
             generator.skipStep();
@@ -837,7 +861,8 @@ public final class SgsrRenderer implements AutoCloseable {
                 require(GLES31.glGetError()==GLES31.GL_NO_ERROR,"Frame generation draw");
                 if (tenBit) {
                     // The HDR output presents as soon as it can: on this callback that is the step's refresh
-                    nativePresentHdr(hdrOutput,hdrActive,hdrMetadata);
+                    int sequence = nativePresentHdr(hdrOutput,hdrActive,hdrMetadata);
+                    if (sequence > 0) trackShown(sequence,frameTimeNanos);
                     hdrFrameAcquired = false;
                 } else {
                     EGLExt.eglPresentationTimeANDROID(display,window,target);
@@ -858,6 +883,58 @@ public final class SgsrRenderer implements AutoCloseable {
         generator.close();
         frameGen = null;
         frameGenUnavailable = true;
+    }
+
+    /** HDR: remembers a presented image until its display time is known (pollShown); [vsyncNs] the callback of a generated one, else 0. */
+    private void trackShown(int sequence, long vsyncNs) {
+        if (shownCount == shownSeq.length) { shownHead = (shownHead + 1) % shownSeq.length; shownCount--; }
+        int i = (shownHead + shownCount) % shownSeq.length;
+        shownSeq[i] = sequence;
+        shownVsyncNs[i] = vsyncNs;
+        shownCount++;
+    }
+
+    /**
+     * HDR: the display times that became known, in order. They give how long a generated image takes from its callback to the
+     * display and how long the newest picture took from its first callback (smoothed), and, for the log, the refreshes between
+     * consecutive images after a picture and after a generated step (an even 2 + 2 at 30 fps on 120 Hz with 2×).
+     */
+    private void pollShown() {
+        while (shownCount > 0 && hdrOutput != 0) {
+            final int i = shownHead;
+            final int status = nativeHdrFrameTimestamps(hdrOutput,shownSeq[i],shownTimes);
+            if (status == 1) return;
+            shownHead = (shownHead + 1) % shownSeq.length;
+            shownCount--;
+            final long presentNs = shownTimes[2];
+            if (status != 0 || presentNs <= 0) continue;
+            final boolean generated = shownVsyncNs[i] != 0;
+            if (generated) generatedLatencyNs = smoothLatency(generatedLatencyNs,presentNs - shownVsyncNs[i]);
+            else if (shownSeq[i] == realSeq && refreshesSinceReal > 0 && presentNs > realVsyncNs) {
+                pictureLatencyNs = smoothLatency(pictureLatencyNs,presentNs - realVsyncNs);
+            }
+            if (lastShownNs > 0 && displayPeriodNs > 0) {
+                int gap = Math.max(0, Math.min(5, Math.round((presentNs - lastShownNs) / (float) displayPeriodNs)));
+                (lastShownGenerated ? gapsAfterGenerated : gapsAfterPicture)[gap]++;
+            }
+            lastShownNs = presentNs;
+            lastShownGenerated = generated;
+        }
+    }
+
+    private static long smoothLatency(long smoothed, long sample) {
+        return sample <= 0 ? smoothed : smoothed == 0 ? sample : (smoothed * 7 + sample) / 8;
+    }
+
+    /** For the log (HDR): refreshes between shown images, after a picture and after a generated step. */
+    private String shownGaps() {
+        if (!tenBit) return "";
+        StringBuilder out = new StringBuilder("; latency picture ").append(pictureLatencyNs / 100_000 / 10f).append(" ms, generated ")
+                .append(generatedLatencyNs / 100_000 / 10f).append(" ms; shown gaps after picture");
+        for (int g = 0; g < 6; g++) out.append(' ').append(g).append(':').append(gapsAfterPicture[g]);
+        out.append(", after generated");
+        for (int g = 0; g < 6; g++) out.append(' ').append(g).append(':').append(gapsAfterGenerated[g]);
+        return out.toString();
     }
 
     private void onArrivalTick(long frameTimeNanos) {
@@ -971,7 +1048,11 @@ public final class SgsrRenderer implements AutoCloseable {
             hdrFrameAcquired = false;
             lastPresentTargetNs = submitNs;
             if (sequence > 0) {
-                if (!arrivalOnly) gpuInFlight.add(sequence,submitNs,hdrFences);
+                lastHdrSequence = sequence;
+                if (!arrivalOnly) {
+                    gpuInFlight.add(sequence,submitNs,hdrFences);
+                    if (frameGen != null) trackShown(sequence,0L);
+                }
                 if (stages != null) displayTimestamps.add(sequence,statsFrameArrivalNs);
             }
         }
