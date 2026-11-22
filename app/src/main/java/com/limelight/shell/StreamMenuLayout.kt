@@ -27,20 +27,28 @@ internal enum class BarItem { RESUME, KEYBOARD, OVERLAY, BRIGHTNESS, BITRATE, UP
  */
 internal enum class MenuPage { MAIN, MORE, KEYS, COMMANDS, BRIGHTNESS, BITRATE, UPSCALER, FRAME_GEN, MOUSE, RUMBLE }
 
-/** The page B goes back to: the dock for the pages of a tile, More for the pages that More opens. */
-internal fun MenuPage.parent(): MenuPage? = when (this) {
+/**
+ * The page B goes back to: the dock for the pages of a tile, More for the pages that More opens. A console stream's dock has
+ * Frame generation as a tile ([playStation]).
+ */
+internal fun MenuPage.parent(playStation: Boolean = false): MenuPage? = when (this) {
     MenuPage.MAIN -> null
-    MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE, MenuPage.FRAME_GEN -> MenuPage.MORE
+    MenuPage.FRAME_GEN -> if (playStation) MenuPage.MAIN else MenuPage.MORE
+    MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE -> MenuPage.MORE
     else -> MenuPage.MAIN
 }
 
-/** The tile that opens this page, directly or through More. */
-internal fun MenuPage.barItem(): BarItem? = when (this) {
+/**
+ * The tile that opens this page, directly or through More. On a console stream ([playStation]) the Bitrate slot holds the
+ * Upscaler and the Upscaler slot Frame generation (Create moved to More), so the dock keeps its nine tiles.
+ */
+internal fun MenuPage.barItem(playStation: Boolean = false): BarItem? = when (this) {
     MenuPage.MAIN -> null
-    MenuPage.MORE, MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE, MenuPage.FRAME_GEN -> BarItem.MORE
+    MenuPage.MORE, MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE -> BarItem.MORE
+    MenuPage.FRAME_GEN -> if (playStation) BarItem.UPSCALER else BarItem.MORE
     MenuPage.BRIGHTNESS -> BarItem.BRIGHTNESS
     MenuPage.BITRATE -> BarItem.BITRATE
-    MenuPage.UPSCALER -> BarItem.UPSCALER
+    MenuPage.UPSCALER -> if (playStation) BarItem.BITRATE else BarItem.UPSCALER
 }
 
 /** The labels of the rows of More that open a page of their own (the focus returns to them). */
@@ -57,6 +65,9 @@ internal object MoreRow {
 
     /** The More row that opens the frame generation page (its switch and multiplier). */
     const val FRAME_GEN = "Frame generation"
+
+    /** A console stream's More row that presses its Create button (the dock's slot holds the Upscaler there). */
+    const val CREATE = "Create"
 
     /** The More slider row for the live gyro smoothing strength (shown where the Settings row is). */
     const val GYRO = "Gyro smoothing"
@@ -112,12 +123,12 @@ internal fun gyroSmoothingShown(sdk: Int, hasDeviceSensors: Boolean): Boolean =
 internal fun gyroSmoothingHelpKey(enabled: Boolean): String = if (enabled) MoreRow.GYRO else MoreRow.GYRO_DISABLED
 
 /** The row of the parent page that opened this page (by its label), or null when the dock's tile did. */
-internal fun MenuPage.openedByRow(): String? = when (this) {
+internal fun MenuPage.openedByRow(playStation: Boolean = false): String? = when (this) {
     MenuPage.KEYS -> MoreRow.KEYS
     MenuPage.COMMANDS -> MoreRow.COMMANDS
     MenuPage.MOUSE -> MoreRow.MOUSE
     MenuPage.RUMBLE -> MoreRow.RUMBLE
-    MenuPage.FRAME_GEN -> MoreRow.FRAME_GEN
+    MenuPage.FRAME_GEN -> if (playStation) null else MoreRow.FRAME_GEN
     else -> null
 }
 
@@ -128,14 +139,15 @@ internal data class PageExit(val page: MenuPage, val focusCircle: BarItem?, val 
  * B (or the back chevron) on [page]: one level up, to the row that opened it or to its tile on the dock.
  * Null on the dock itself: there B resumes the stream.
  */
-internal fun pageAfterBack(page: MenuPage): PageExit? {
-    val parent = page.parent() ?: return null
-    return if (parent == MenuPage.MAIN) PageExit(parent, page.barItem(), null) else PageExit(parent, null, page.openedByRow())
+internal fun pageAfterBack(page: MenuPage, playStation: Boolean = false): PageExit? {
+    val parent = page.parent(playStation) ?: return null
+    return if (parent == MenuPage.MAIN) PageExit(parent, page.barItem(playStation), null)
+        else PageExit(parent, null, page.openedByRow(playStation))
 }
 
 /** A tap outside the popover: the whole popover closes and its tile gets the focus. Null when none is open. */
-internal fun pageAfterDismiss(page: MenuPage): PageExit? =
-    if (page == MenuPage.MAIN) null else PageExit(MenuPage.MAIN, page.barItem(), null)
+internal fun pageAfterDismiss(page: MenuPage, playStation: Boolean = false): PageExit? =
+    if (page == MenuPage.MAIN) null else PageExit(MenuPage.MAIN, page.barItem(playStation), null)
 
 /** What a tap outside the menu's own controls does. */
 internal enum class OutsideTap { NONE, CLOSE_POPOVER, CLOSE_MENU }
@@ -434,7 +446,8 @@ internal fun popoverWidth(page: MenuPage, g: DockGeometry = DockGeometry.Standar
         MenuPage.BRIGHTNESS -> 780f
         MenuPage.BITRATE -> 860f
         MenuPage.UPSCALER -> 980f
-        MenuPage.MORE, MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE, MenuPage.FRAME_GEN -> 920f
+        MenuPage.MORE, MenuPage.KEYS, MenuPage.COMMANDS, MenuPage.MOUSE, MenuPage.RUMBLE -> 920f
+        MenuPage.FRAME_GEN -> 860f
     }
     // A stage narrower than the card keeps its margins and the card gets what is left
     return minOf(natural, g.popoverMaxRight - g.popoverMinLeft)
@@ -452,8 +465,9 @@ internal fun caretCenterX(anchorX: Float, left: Float, width: Float): Float =
 internal data class PopoverPlacement(val left: Float, val width: Float, val caretX: Float)
 
 /** The popover of [page] above its tile where that is on the stage: the row's [scroll] (a compact stage's) moves the tile and the caret with it. */
-internal fun popoverPlacement(page: MenuPage, g: DockGeometry = DockGeometry.Standard, scroll: Float = 0f): PopoverPlacement? {
-    val item = page.barItem() ?: return null
+internal fun popoverPlacement(page: MenuPage, g: DockGeometry = DockGeometry.Standard, scroll: Float = 0f,
+                              playStation: Boolean = false): PopoverPlacement? {
+    val item = page.barItem(playStation) ?: return null
     val anchor = tileCenterX(item, g) - scroll
     val width = popoverWidth(page, g)
     val left = popoverLeft(anchor, width, g)
@@ -574,13 +588,13 @@ internal fun pageHelpKey(page: MenuPage): String = when (page) {
 }
 
 /** The help key of a tile: the upscaler's tile is called Supersampling when the stream is supersampled. */
-internal fun circleHelpKey(item: BarItem, supersampling: Boolean): String = when (item) {
+internal fun circleHelpKey(item: BarItem, supersampling: Boolean, playStation: Boolean = false): String = when (item) {
     BarItem.RESUME -> MenuKey.RESUME
     BarItem.KEYBOARD -> MenuKey.KEYBOARD
     BarItem.OVERLAY -> MenuKey.OVERLAY
     BarItem.BRIGHTNESS -> MenuKey.BRIGHTNESS
-    BarItem.BITRATE -> MenuKey.BITRATE
-    BarItem.UPSCALER -> if (supersampling) MenuKey.SUPERSAMPLING else MenuKey.UPSCALER
+    BarItem.BITRATE -> if (!playStation) MenuKey.BITRATE else if (supersampling) MenuKey.SUPERSAMPLING else MenuKey.UPSCALER
+    BarItem.UPSCALER -> if (playStation) MoreRow.FRAME_GEN else if (supersampling) MenuKey.SUPERSAMPLING else MenuKey.UPSCALER
     BarItem.MORE -> MenuKey.MORE
     BarItem.DISCONNECT -> MenuKey.DISCONNECT
     BarItem.QUIT -> MenuKey.QUIT_GAME
@@ -626,7 +640,7 @@ internal const val RECOMMENDED_ROW = "Recommended bitrate"
 /** A PlayStation stream's help for the dock tiles that do something else on a console (StreamMenuHost.playStation). */
 internal val PS_HELP = mapOf(
     MenuKey.KEYBOARD to R.string.ps_menu_help_ps_button,
-    MenuKey.BITRATE to R.string.ps_menu_help_create,
+    MoreRow.CREATE to R.string.ps_menu_help_create,
     MenuKey.DISCONNECT to R.string.ps_menu_help_disconnect,
     MenuKey.QUIT_GAME to R.string.ps_menu_help_rest,
 )

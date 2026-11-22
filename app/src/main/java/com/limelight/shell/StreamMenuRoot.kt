@@ -111,7 +111,8 @@ internal fun StreamMenuRoot(
     val dock = remember(stageMetrics.stageWidth, stageMetrics.stageHeight, stageMetrics.shape, stageMetrics.textScale) { DockGeometry.forStage(stageMetrics) }
     val stagePixel = stageScale()
     // A compact stage's row of tiles scrolls: it starts where the tile the menu opens on (or whose page it opens on) is in view
-    val dockScroll = rememberScrollState((dockScrollFor(start.page.barItem() ?: start.focus, 0f, dock) * stagePixel).roundToInt())
+    val ps = host.playStation
+    val dockScroll = rememberScrollState((dockScrollFor(start.page.barItem(ps) ?: start.focus, 0f, dock) * stagePixel).roundToInt())
     // Where the row is, stage pixels: the popover's caret follows its tile (read only where the row scrolls, so nothing else recomposes with it)
     val rowScroll = if (dock.scrolls) dockScroll.value / stagePixel else 0f
     var headWidth by remember { mutableFloatStateOf(0f) }
@@ -131,7 +132,7 @@ internal fun StreamMenuRoot(
     var navigated by remember { mutableStateOf(start.animate) }
     var helpKey by remember(contentPage) { mutableStateOf(pageHelpKey(contentPage)) }
     // The tile whose help the caption shows and that wears the focus: the focused one, and the one that opened the popover while the focus is in it
-    var barHelpItem by remember { mutableStateOf(start.page.barItem() ?: start.focus) }
+    var barHelpItem by remember { mutableStateOf(start.page.barItem(ps) ?: start.focus) }
     var focusedItem by remember { mutableStateOf<BarItem?>(null) }
     // The row of More that gets the focus when More shows again (the row that opened a page above it)
     var entryRow by remember { mutableStateOf<String?>(null) }
@@ -146,7 +147,7 @@ internal fun StreamMenuRoot(
     // The popover: present from opening until it has animated out. Its geometry snaps when it opens from the dock
     // (after its content reported its size), and follows its target with a spring when another page replaces it.
     var popPresent by remember { mutableStateOf(start.page != MenuPage.MAIN) }
-    val geo = remember { PopoverGeometry(popoverPlacement(shownPage, dock, rowScroll)!!) }
+    val geo = remember { PopoverGeometry(popoverPlacement(shownPage, dock, rowScroll, ps)!!) }
     var natural by remember { mutableFloatStateOf(0f) }
     var snapNext by remember { mutableStateOf(start.page != MenuPage.MAIN) }
     var geoReady by remember { mutableStateOf(false) }
@@ -199,20 +200,20 @@ internal fun StreamMenuRoot(
     }
     // B: one level up, to the tile on the dock; on the dock it resumes (closes the menu)
     fun back() {
-        val exit = pageAfterBack(page)
+        val exit = pageAfterBack(page, ps)
         if (exit == null) close() else go(exit)
     }
     // A tap outside the tiles and the card: closes the popover, or the menu on the dock; never the stream
     fun outsideTap() {
         when (outsideTapAction(page, closing)) {
             OutsideTap.NONE -> Unit
-            OutsideTap.CLOSE_POPOVER -> pageAfterDismiss(page)?.let { go(it) }
+            OutsideTap.CLOSE_POPOVER -> pageAfterDismiss(page, ps)?.let { go(it) }
             OutsideTap.CLOSE_MENU -> close()
         }
     }
     // A tile that opens a page; its own tile again closes the popover; another tile's page morphs the card
     fun openPage(next: MenuPage) {
-        if (page == next) pageAfterDismiss(page)?.let { go(it) }
+        if (page == next) pageAfterDismiss(page, ps)?.let { go(it) }
         else {
             navigated = true
             morph = page != MenuPage.MAIN
@@ -225,7 +226,7 @@ internal fun StreamMenuRoot(
                 geoReady = false
                 // The card is at its tile before its first layout (an undispatched snap runs right here)
                 scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                    geo.place(popoverPlacement(next, dock, if (dock.scrolls) dockScroll.value / stagePixel else 0f)!!, snap = true)
+                    geo.place(popoverPlacement(next, dock, if (dock.scrolls) dockScroll.value / stagePixel else 0f, ps)!!, snap = true)
                 }
             }
             entryRow = null
@@ -315,11 +316,16 @@ internal fun StreamMenuRoot(
             toggle { host.toggleOverlay() }
         },
         BarCircleSpec(BarItem.BRIGHTNESS, Symbols.BRIGHTNESS_MEDIUM, res.getString(R.string.stream_menu_tile_brightness), opensPage = true) { openPage(MenuPage.BRIGHTNESS) },
-        // A console keeps its bitrate for the session: the tile presses its Create button instead
-        if (host.playStation) BarCircleSpec(BarItem.BITRATE, Symbols.CONSOLE_CREATE, res.getString(R.string.ps_menu_create)) {
-            close { host.pressConsoleButton(ps = false) }
-        } else BarCircleSpec(BarItem.BITRATE, Symbols.NETWORK_CHECK, res.getString(R.string.stream_menu_tile_bitrate), opensPage = true) { openPage(MenuPage.BITRATE) },
-        BarCircleSpec(BarItem.UPSCALER, Symbols.UPSCALER, res.getString(if (supersamplingMode) R.string.stream_menu_tile_supersampling else R.string.stream_menu_tile_upscaler),
+        // A console keeps its bitrate for the session: its slot holds the Upscaler and the Upscaler's slot Frame generation;
+        // Create moved to More (owner, 2026-11-22)
+        if (ps) BarCircleSpec(BarItem.BITRATE, Symbols.UPSCALER, res.getString(if (supersamplingMode) R.string.stream_menu_tile_supersampling else R.string.stream_menu_tile_upscaler),
+            on = host.upscalerRequested, state = upscalerStatus.pillText(res), opensPage = true) { openPage(MenuPage.UPSCALER) }
+        else BarCircleSpec(BarItem.BITRATE, Symbols.NETWORK_CHECK, res.getString(R.string.stream_menu_tile_bitrate), opensPage = true) { openPage(MenuPage.BITRATE) },
+        if (ps) BarCircleSpec(BarItem.UPSCALER, Symbols.ANIMATED, res.getString(R.string.stream_menu_tile_frame_gen), on = host.frameGenMultiplier > 1,
+            state = if (host.frameGenMultiplier > 1) "${host.frameGenMultiplier}×" else res.getString(R.string.common_off), opensPage = true) { // l10n-ignore
+            openPage(MenuPage.FRAME_GEN)
+        }
+        else BarCircleSpec(BarItem.UPSCALER, Symbols.UPSCALER, res.getString(if (supersamplingMode) R.string.stream_menu_tile_supersampling else R.string.stream_menu_tile_upscaler),
             on = host.upscalerRequested, state = upscalerStatus.pillText(res), opensPage = true) { openPage(MenuPage.UPSCALER) },
         BarCircleSpec(BarItem.MORE, Symbols.MORE_HORIZ, res.getString(R.string.stream_menu_tile_more), opensPage = true) { openPage(MenuPage.MORE) },
         BarCircleSpec(BarItem.DISCONNECT, Symbols.LOGOUT, res.getString(R.string.stream_menu_tile_disconnect)) { close { host.leave(quit = false) } },
@@ -336,7 +342,7 @@ internal fun StreamMenuRoot(
         streamMenuHelp(res, key, upscalerStatus, host.upscalerMode, host.mouseMode, host.rememberMouseMode, (host.bitrateResult as? BitrateResult.Failed)?.reason?.text(res)) +
             (StreamMenuHelp.rumblePreset(key)?.let { host.rumbleProblemText(res, it) }?.let { "\n" + res.getString(R.string.stream_menu_rumble_problem, it) }.orEmpty())
     )
-    val barHelpKey = circleHelpKey(barHelpItem, supersamplingMode)
+    val barHelpKey = circleHelpKey(barHelpItem, supersamplingMode, ps)
 
     LaunchedEffect(popOpen) {
         if (popOpen) {
@@ -350,7 +356,7 @@ internal fun StreamMenuRoot(
             geoReady = false
         }
     }
-    val placement = popoverPlacement(shownPage, dock, rowScroll)!!
+    val placement = popoverPlacement(shownPage, dock, rowScroll, ps)!!
     // A compact stage's open card lies over the game's name and the hints: they fade out while it does
     val headHidden = dock.compact && popOpen && dockHeadCovered(placement.left, placement.left + placement.width, dock.tilesLeft, dock.tilesLeft + headWidth)
     LaunchedEffect(placement, session) {
@@ -404,8 +410,8 @@ internal fun StreamMenuRoot(
                     title = host.gameName,
                     circles = circles,
                     requesters = circleFocus,
-                    focusItem = focusedItem ?: page.barItem() ?: barHelpItem,
-                    firstItem = start.page.barItem() ?: start.focus,
+                    focusItem = focusedItem ?: page.barItem(ps) ?: barHelpItem,
+                    firstItem = start.page.barItem(ps) ?: start.focus,
                     popOpen = popOpen,
                     caption = helpText(barHelpKey),
                     enter = { enterClock.value },
@@ -509,7 +515,7 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
             if (host.keyboardAndMouse) add(MoreRow.ANDROID_KEYBOARD)
             add(MenuKey.TOUCH_SENSITIVITY)
             add(MoreRow.RUMBLE)
-            add(MoreRow.FRAME_GEN)
+            add(if (host.playStation) MoreRow.CREATE else MoreRow.FRAME_GEN)
             if (host.gyroSmoothingAvailable) add(MoreRow.GYRO)
         }
         MenuPage.BRIGHTNESS -> listOf(MenuKey.SCREEN_BRIGHTNESS)
@@ -581,7 +587,9 @@ private fun PageRows(
             if (host.keyboardAndMouse) KeyedRow(Symbols.ANDROID_KEYBOARD, R.string.stream_menu_row_android_keyboard, MoreRow.ANDROID_KEYBOARD, RowValue.Action { close { host.toggleSystemKeyboard() } })
             KeyedRow(Symbols.TOUCH_SENSITIVITY, R.string.stream_menu_row_touch_sensitivity, MenuKey.TOUCH_SENSITIVITY, RowValue.Toggle(host.touchSensitivityOn) { toggle { host.toggleTouchSensitivity() } })
             KeyedRow(Symbols.VIBRATION, R.string.stream_menu_row_rumble_feel, MoreRow.RUMBLE, RowValue.Text(host.rumblePreset?.label(res) ?: stringResource(R.string.stream_menu_rumble_custom)) { openPage(MenuPage.RUMBLE) }, entry(MoreRow.RUMBLE))
-            KeyedRow(Symbols.ANIMATED, R.string.title_frame_generation, MoreRow.FRAME_GEN, RowValue.Text(
+            // A console: its Create button (Frame generation is a dock tile there); a PC: Frame generation's page
+            if (host.playStation) KeyedRow(Symbols.CONSOLE_CREATE, R.string.ps_menu_create, MoreRow.CREATE, RowValue.Action { close { host.pressConsoleButton(ps = false) } })
+            else KeyedRow(Symbols.ANIMATED, R.string.title_frame_generation, MoreRow.FRAME_GEN, RowValue.Text(
                 if (host.frameGenMultiplier > 1) "${host.frameGenMultiplier}×" else stringResource(R.string.common_off)) { openPage(MenuPage.FRAME_GEN) }, // l10n-ignore
                 entry(MoreRow.FRAME_GEN), enabled = host.frameGenAvailable)
             if (host.gyroSmoothingAvailable) {

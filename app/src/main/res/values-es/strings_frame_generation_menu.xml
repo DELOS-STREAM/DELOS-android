@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="stream_menu_tile_frame_gen">Gen. fotogramas</string>
     <string name="stream_menu_row_multiplier">Multiplicador</string>
     <string name="stream_help_frame_generation">Generación de fotogramas: fotogramas predichos entre los del juego. Los cambios se aplican al instante, para esta transmisión.</string>
     <string name="stream_help_frame_generation_on">Activa o desactiva la generación de fotogramas en esta transmisión; activarla con el escalador apagado reinicia el decodificador una vez.</string>
     <string name="stream_help_multiplier">Cuántos fotogramas se muestran por fotograma del juego: 2× convierte 30 fps en 60, 4× en 120.</string>
+    <string name="stream_help_create">Pulsa el botón Crear de la consola: capturas y clips.</string>
 </resources>
