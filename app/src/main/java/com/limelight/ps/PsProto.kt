@@ -70,6 +70,11 @@ object PsMsg {
     const val BIG = 0; const val BANG = 1; const val HEARTBEAT = 3; const val CORRUPTFRAME = 5; const val DISCONNECT = 8
     const val STREAMINFO = 13; const val STREAMINFOACK = 14; const val CONNECTIONQUALITY = 16; const val CONTROLLERCONNECTION = 21
     const val IDRREQUEST = 25
+    const val SENKUSHA = 12; const val TAKIONPROTOCOLREQUEST = 31; const val TAKIONPROTOCOLREQUESTACK = 32
 
     fun simple(type: Int): ByteArray = PsProtoWriter().uint(1, type.toLong()).toByteArray()
+
+    /** SENKUSHA (5.4, 6.4): the command and its payload message in field [field] of SenkushaPayload. */
+    fun senkusha(command: Int, field: Int, payload: PsProtoWriter): ByteArray =
+        PsProtoWriter().uint(1, SENKUSHA.toLong()).message(14, PsProtoWriter().uint(1, command.toLong()).message(field, payload)).toByteArray()
 }

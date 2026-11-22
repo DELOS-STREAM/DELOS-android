@@ -99,6 +99,7 @@ class PsStream(
     fun start() {
         socket.connect(InetSocketAddress(host, 9296))
         socket.receiveBufferSize = 0x19000 * 4
+        if (request.dontFragment) PsSenkusha.dontFragment(socket)
         handshake()
         Thread(::receiveLoop, "ps-takion-rx").apply { isDaemon = true; start() }
         timers.scheduleWithFixedDelay(::resend, 200, 200, TimeUnit.MILLISECONDS)
@@ -212,7 +213,7 @@ class PsStream(
 
     /** Sends a Takion message on [channel] (fragmented, reliable). */
     fun sendMessage(channel: Int, dataType: Int, message: ByteArray) {
-        val parts = PsTakionPackets.fragments(message, request.mtu)
+        val parts = PsTakionPackets.fragments(message, minOf(request.mtuIn, request.mtuOut))
         parts.forEachIndexed { i, (flags, data) ->
             val tsn: Int
             synchronized(this) { tsn = sendTsn++ }

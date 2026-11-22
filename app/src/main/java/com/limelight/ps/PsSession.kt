@@ -20,8 +20,12 @@ data class PsStreamRequest(
     val fps: Int = 60,
     val bitrateKbps: Int = 50_000,
     val codec: PsCodec = PsCodec.HEVC,
-    val mtu: Int = 1454,
+    /** Senkusha's results (6.4): the largest packet from and to the console, the round trip; the spec's fallback without it. */
+    val mtuIn: Int = 1454,
+    val mtuOut: Int = 1454,
     val rttMs: Int = 1,
+    /** "Don't fragment" on the stream socket: only with measured MTUs (5.1). */
+    val dontFragment: Boolean = false,
 )
 
 /** The pieces of the session start that are pure computation: ctrl headers (4.4), the DID (4.3), the launch spec (6.2), BIG (6.1). */
@@ -64,7 +68,7 @@ object PsSession {
         return buildString {
             append("{\"sessionId\":\"sessionId4321\",")
             append("\"streamResolutions\":[{\"resolution\":{\"width\":${request.width},\"height\":${request.height}},\"maxFps\":${request.fps},\"score\":10}],")
-            append("\"network\":{\"bwKbpsSent\":${request.bitrateKbps},\"bwLoss\":0.001000,\"mtu\":${request.mtu},\"rtt\":${request.rttMs},\"ports\":[53,2053]},")
+            append("\"network\":{\"bwKbpsSent\":${request.bitrateKbps},\"bwLoss\":0.001000,\"mtu\":${request.mtuIn},\"rtt\":${request.rttMs},\"ports\":[53,2053]},")
             append("\"slotId\":1,")
             append("\"appSpecification\":{\"minFps\":30,\"minBandwidth\":0,\"extTitleId\":\"ps3\",\"version\":1,\"timeLimit\":1,\"startTimeout\":100,\"afkTimeout\":100,\"afkTimeoutDisconnect\":100},")
             append("\"konan\":{\"ps3AccessToken\":\"accessToken\",\"ps3RefreshToken\":\"refreshToken\"},")

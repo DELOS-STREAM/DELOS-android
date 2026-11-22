@@ -128,7 +128,12 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         if (!running) return
         beforeStream()
         ps5 = c.console.target.ps5
-        val s = PsStream(address, c.console.target, id, session.crypt, request, streamListener(request),
+        // The network test (6.4, #122): once per console while the app runs (a failure too, so a console that does not answer it
+        // costs its wait once); a reconnect reuses the result
+        val net = synchronized(NETWORK) { NETWORK[c.id] } ?: PsSenkusha(address).run().also { n -> synchronized(NETWORK) { NETWORK[c.id] = n } }
+        val measured = request.copy(mtuIn = net.mtuIn, mtuOut = net.mtuOut, rttMs = net.rttMs, dontFragment = net.measured)
+        if (!running) return
+        val s = PsStream(address, c.console.target, id, session.crypt, measured, streamListener(measured),
             keyframeOnLoss = psPrefs.getBoolean(PsPrefs.KEYFRAME_ON_LOSS, false), holdBitrate = !PsPrefs.autoBitrate(psPrefs))
         stream = s
         s.start()
@@ -701,6 +706,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         private const val RECONNECT_MS = 20_000L
         /** Audio: this long without any unit is a real gap, after which the jitter buffer fills to its start depth again. */
         private const val AUDIO_GAP_MS = 200L
+        /** Senkusha's result per console id, for this process. */
+        private val NETWORK = HashMap<String, PsNetwork>()
         private const val MOTION_RATE_HZ: Short = 200
         private const val G = 9.80665f
         private const val TOUCH_WIDTH = 1920
