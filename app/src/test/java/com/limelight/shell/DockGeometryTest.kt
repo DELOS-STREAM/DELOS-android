@@ -158,9 +158,9 @@ class DockGeometryTest {
         // A card that starts 24 px or more right of the block leaves it alone
         assertFalse(dockHeadCovered(354f, 1100f, 80f, 330f))
         assertTrue(dockHeadCovered(353f, 1100f, 80f, 330f))
-        // On the widest compact stage the Bitrate card (860 wide, centred on its tile) starts right of a short name
+        // On the widest compact stage the Upscaler card (centred on its tile, the fifth) starts right of a short name
         val g = DockGeometry.forStage(stage(1200f, 720f, 300f))
-        val p = popoverPlacement(MenuPage.BITRATE, g, dockScrollFor(BarItem.BITRATE, 0f, g))!!
+        val p = popoverPlacement(MenuPage.UPSCALER, g, dockScrollFor(BarItem.BITRATE, 0f, g))!!
         assertFalse(dockHeadCovered(p.left, p.left + p.width, g.tilesLeft, g.tilesLeft + 250f))
         assertTrue(dockHeadCovered(p.left, p.left + p.width, g.tilesLeft, g.tilesLeft + 900f))
     }

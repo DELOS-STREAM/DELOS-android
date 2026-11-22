@@ -30,9 +30,10 @@ class StreamMenuLayoutTest {
             assertEquals(PageExit(MenuPage.MAIN, page.barItem(), null), pageAfterBack(page))
             assertEquals(PageExit(MenuPage.MAIN, page.barItem(), null), pageAfterDismiss(page))
         }
-        assertEquals(BarItem.UPSCALER, pageAfterBack(MenuPage.UPSCALER)?.focusCircle)
+        assertEquals(BarItem.BITRATE, pageAfterBack(MenuPage.UPSCALER)?.focusCircle)
+        assertEquals(BarItem.UPSCALER, pageAfterBack(MenuPage.FRAME_GEN)?.focusCircle)
         assertEquals(BarItem.BRIGHTNESS, pageAfterBack(MenuPage.BRIGHTNESS)?.focusCircle)
-        assertEquals(BarItem.BITRATE, pageAfterBack(MenuPage.BITRATE)?.focusCircle)
+        assertEquals(BarItem.BRIGHTNESS, pageAfterBack(MenuPage.BITRATE)?.focusCircle)
         assertEquals(BarItem.MORE, pageAfterBack(MenuPage.MORE)?.focusCircle)
     }
 
@@ -436,7 +437,7 @@ class StreamMenuLayoutTest {
         assertEquals("Supersampling", pageTitle(res, MenuPage.UPSCALER, supersampling = true))
         assertEquals("Upscaler", pageTitle(res, MenuPage.UPSCALER, supersampling = false))
         for (supersampling in listOf(false, true)) {
-            assertEquals(circleHelpKey(BarItem.UPSCALER, supersampling), pageTitle(res, MenuPage.UPSCALER, supersampling))
+            assertEquals(circleHelpKey(BarItem.BITRATE, supersampling), pageTitle(res, MenuPage.UPSCALER, supersampling))
         }
         for (page in MenuPage.entries.filter { it.parent() == MenuPage.MORE }) {
             assertTrue("$page has no row in More", page.openedByRow() != null)
