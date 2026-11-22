@@ -25,6 +25,8 @@ interface PsStreamListener {
     fun onVideoFrame(frame: ByteArray, index: Int) {}
     fun onAudio(opus: ByteArray, frameIndex: Int) {}
     fun onRumble(left: Int, right: Int) {}
+    /** DualSense trigger effects (data type 11, 8.4): each trigger's mode and 10 parameter bytes in the DualSense format. */
+    fun onTriggerEffects(leftMode: Int, rightMode: Int, left: ByteArray, right: ByteArray) {}
     /** The console's pad info (8.4): light bar colour and whether the game resets the motion origin. */
     fun onPadInfo(red: Int, green: Int, blue: Int, motionReset: Boolean) {}
     /** CONNECTIONQUALITY: the console's own rtt figure (a double, unit unknown) and its target bitrate. */
@@ -336,6 +338,7 @@ class PsStream(
                 whole.size >= 25 -> listener.onPadInfo(u(whole[9]), u(whole[10]), u(whole[11]), whole[12].toInt() != 0)
                 whole.size >= 17 -> listener.onPadInfo(u(whole[1]), u(whole[2]), u(whole[3]), whole[4].toInt() != 0)
             }
+            11 -> if (whole.size >= 25) listener.onTriggerEffects(u(whole[1]), u(whole[2]), whole.copyOfRange(5, 15), whole.copyOfRange(15, 25))
         }
     }
 

@@ -34,6 +34,7 @@ import com.limelight.utils.DelosToast;
 import com.limelight.LimeLog;
 import com.limelight.R;
 import com.limelight.binding.input.driver.AbstractController;
+import com.limelight.binding.input.driver.DualSenseController;
 import com.limelight.binding.input.driver.UsbDriverListener;
 import com.limelight.binding.input.driver.UsbDriverService;
 import com.limelight.nvstream.StreamConnection;
@@ -2439,6 +2440,19 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
+    /** DualSense trigger effects: only a DualSense DELOS drives over USB takes them (Android has no API for them). */
+    public void handleSetAdaptiveTriggers(short controllerNumber, byte eventFlags, byte typeLeft, byte typeRight, byte[] left, byte[] right) {
+        if (stopped) {
+            return;
+        }
+        for (int i = 0; i < usbDeviceContexts.size(); i++) {
+            UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
+            if (deviceContext.controllerNumber == controllerNumber && deviceContext.device instanceof DualSenseController) {
+                ((DualSenseController) deviceContext.device).setAdaptiveTriggers(eventFlags, typeLeft, typeRight, left, right);
+            }
+        }
+    }
+
     private SensorEventListener createSensorListener(final short controllerNumber, final byte motionType, final boolean needsDeviceOrientationCorrection) {
         return new SensorEventListener() {
             private float[] lastValues = new float[3];
@@ -2642,6 +2656,13 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     backgroundThreadHandler.removeCallbacks(deviceContext.setLedStateRunnable);
                     backgroundThreadHandler.post(deviceContext.setLedStateRunnable);
                 }
+            }
+        }
+
+        for (int i = 0; i < usbDeviceContexts.size(); i++) {
+            UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
+            if (deviceContext.controllerNumber == controllerNumber && deviceContext.device instanceof DualSenseController) {
+                ((DualSenseController) deviceContext.device).setLed(r, g, b);
             }
         }
     }

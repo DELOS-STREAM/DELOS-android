@@ -20,4 +20,10 @@ public interface NvConnectionListener {
     void setMotionEventState(short controllerNumber, byte motionType, short reportRateHz);
 
     void setControllerLED(short controllerNumber, byte r, byte g, byte b);
+
+    /**
+     * DualSense trigger effects: [eventFlags] 0x04 right and 0x08 left trigger change, each a mode and 10 parameter bytes in the
+     * DualSense output report format (a PC host's 0x5503, a PS5's data type 11). Only a DualSense DELOS drives itself takes them.
+     */
+    default void setAdaptiveTriggers(short controllerNumber, byte eventFlags, byte typeLeft, byte typeRight, byte[] left, byte[] right) {}
 }

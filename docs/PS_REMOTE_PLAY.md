@@ -8,12 +8,13 @@ clean-room specification in [research/ps-remote-play-protocol.md](research/ps-re
 
 ## Scope
 
-Covered: discovery, wake, PSN sign-in, registration with the console PIN, session init and ctrl, the Takion stream connection
-with BIG/BANG and the stream keys, video reassembly with Reed-Solomon recovery, Opus audio, controller input, the shell UI
-(prototype F in `build/ps-pairing-proto/`), PlayStation settings, and the stream in DELOS's own stream activity (decoder,
-SGSR upscalers, frame pacing, overlay, stream menu, controller handling). Not covered yet: Senkusha (RTT/MTU measurement;
-the spec's fallback of MTU 1454 and RTT 1 ms is used), internet play, microphone, DualSense haptics and adaptive triggers,
-more than one controller, keeping a stream connected in the background.
+Covered: discovery, wake, PSN sign-in, registration with the console PIN, session init and ctrl, the Senkusha network test,
+the Takion stream connection with BIG/BANG and the stream keys, video reassembly with Reed-Solomon recovery and loss recovery,
+Opus audio, the microphone, controller input with DualSense haptics as rumble and trigger effects to a wired DualSense, the
+shell UI (prototype F in `build/ps-pairing-proto/`), PlayStation settings, reconnecting after silence, a session kept while
+the app is in the background, and the stream in DELOS's own stream activity (decoder, SGSR upscalers, frame pacing, overlay,
+stream menu, controller handling). Not covered: internet play (#126, later); more than one controller (#123: the protocol
+announces one controller and its feedback packets carry no controller index); DualSense voice-coil haptics as audio.
 
 ## Behavior
 
@@ -49,6 +50,30 @@ more than one controller, keeping a stream connected in the background.
     50. The slider's track is coloured by resolution: green up to `PsPrefs.idealBitrateKbps` (30 Mbit/s at 1080p), orange up
     to `autoCeilingKbps` (50 Mbit/s at 1080p), red above, with a milestone at each boundary. The figures rest on the
     reported 30–50 Mbit/s of a PS5 at 1080p (protocol spec, section 9, unverified).
+11. Console address: every start runs a broadcast search that stops at the paired console's answer (host id = paired MAC), so
+    a console that moved to another address (Wi-Fi to Ethernet, a new lease) is found and its address stored.
+12. Senkusha (spec 6.4, `PsSenkusha`): UDP 9297, Takion v7 without encryption; protocol request, empty BIG, ten echo pings
+    for the round trip, binary searches for the largest packet from (MTU probes) and to (pings with don't-fragment) the
+    console. The results go to the launch spec, message fragmentation (the smaller MTU) and don't-fragment on the stream
+    socket. Any failure or more than 8 s gives the fallback 1454 / 1 ms; the result is kept per console for the process.
+13. Loss recovery (spec 7.3): a frame FEC cannot rebuild makes the feeder drop pictures until a keyframe (an IDR, or a
+    picture whose first slice is an I slice), the request repeats every second while it waits, and an adaptive profile
+    change (STREAMINFO resolution entries, the frames' adaptive index) switches the parameter sets. Video and audio loss are
+    logged every 10 s.
+14. Audio buffer: filled to its start depth once, then played continuously; a late unit is waited for one frame and
+    concealed, only 200 ms without any unit restarts it. Units are keyed by the 16-bit index, ordered by distance.
+15. Silence: 2.5 s without a packet shows the poor-connection notice; at 10 s a new session is opened (find, wake, ctrl,
+    stream) for up to 20 s while the stream screen, decoder and audio stay; only then does the stream end.
+16. Background: leaving the stream activity without leaving the stream (Home, another app) parks the session
+    (`PsSessionPark`) for 5 minutes with its heartbeats and acks running; starting the same console again takes it back
+    without a wake or a new session, from a keyframe.
+17. DualSense: the console is told the controller is a DualSense, so it sends haptics as voice-coil PCM (audio marker 0x02);
+    its mean level per channel drives the two rumble motors. Trigger effects (data type 11) go to `setAdaptiveTriggers`,
+    which a wired DualSense driven by `DualSenseController` (USB, "bind all USB" on) applies; PC hosts' 0x5503 effects take
+    the same path.
+18. Microphone (spec 8.5): the PlayStation setting (Audio tab) asks for the record-audio permission; during a stream the
+    voice source at 48 kHz mono goes out as 40-byte Opus frames (constant 32 kbit/s, restricted low delay), each datagram
+    with the two frames before it. The PS stream menu's More page mutes it (MIC_TOGGLE).
 
 ## Code map
 

@@ -1919,6 +1919,11 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     }
 
     @Override
+    public void setAdaptiveTriggers(short controllerNumber, byte eventFlags, byte typeLeft, byte typeRight, byte[] left, byte[] right) {
+        controllerHandler.handleSetAdaptiveTriggers(controllerNumber, eventFlags, typeLeft, typeRight, left, right);
+    }
+
+    @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         surfaceController.onSurfaceChanged(width, height);
 

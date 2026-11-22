@@ -47,6 +47,7 @@ static jmethodID BridgeClSetHdrModeMethod;
 static jmethodID BridgeClRumbleTriggersMethod;
 static jmethodID BridgeClSetMotionEventStateMethod;
 static jmethodID BridgeClSetControllerLEDMethod;
+static jmethodID BridgeClSetAdaptiveTriggersMethod;
 static jmethodID BridgeNativeLogMethod;
 static jbyteArray DecodedFrameBuffer;
 static jshortArray DecodedAudioBuffer;
@@ -193,6 +194,7 @@ Java_com_limelight_nvstream_jni_MoonBridge_init(JNIEnv *env, jclass clazz) {
             {&BridgeClRumbleTriggersMethod, "bridgeClRumbleTriggers", "(SSS)V"},
             {&BridgeClSetMotionEventStateMethod, "bridgeClSetMotionEventState", "(SBS)V"},
             {&BridgeClSetControllerLEDMethod, "bridgeClSetControllerLED", "(SBBB)V"},
+            {&BridgeClSetAdaptiveTriggersMethod, "bridgeClSetAdaptiveTriggers", "(SBBB[B[B)V"},
             {&BridgeNativeLogMethod, "bridgeNativeLog", "(ILjava/lang/String;[B)V"},
     };
 
@@ -546,6 +548,37 @@ void BridgeClSetControllerLED(uint16_t controllerNumber, uint8_t r, uint8_t g, u
     VoidUpcall(BridgeClSetControllerLEDMethod, controllerNumber, (jbyte)r, (jbyte)g, (jbyte)b);
 }
 
+// A DualSense's trigger effects from the host (Sunshine 0x5503): which triggers change, each mode and its 10 parameter bytes
+void BridgeClSetAdaptiveTriggers(uint16_t controllerNumber, uint8_t eventFlags, uint8_t typeLeft, uint8_t typeRight, uint8_t *left, uint8_t *right) {
+    JNIEnv* env = BeginUpcall();
+    if (env == NULL) {
+        return;
+    }
+
+    jbyteArray leftArray = (*env)->NewByteArray(env, DS_EFFECT_PAYLOAD_SIZE);
+    jbyteArray rightArray = leftArray != NULL ? (*env)->NewByteArray(env, DS_EFFECT_PAYLOAD_SIZE) : NULL;
+    if (leftArray == NULL || rightArray == NULL) {
+        // Out of memory: the effect is dropped
+        (*env)->ExceptionClear(env);
+        if (leftArray != NULL) {
+            (*env)->DeleteLocalRef(env, leftArray);
+        }
+        return;
+    }
+    (*env)->SetByteArrayRegion(env, leftArray, 0, DS_EFFECT_PAYLOAD_SIZE, (jbyte*)left);
+    (*env)->SetByteArrayRegion(env, rightArray, 0, DS_EFFECT_PAYLOAD_SIZE, (jbyte*)right);
+
+    (*env)->CallStaticVoidMethod(env, GlobalBridgeClass, BridgeClSetAdaptiveTriggersMethod, (jshort)controllerNumber,
+                                 (jbyte)eventFlags, (jbyte)typeLeft, (jbyte)typeRight, leftArray, rightArray);
+    if (UpcallThrew(env)) {
+        return;
+    }
+
+    // This runs on a thread attached from native code, where a local reference lives until the thread exits
+    (*env)->DeleteLocalRef(env, leftArray);
+    (*env)->DeleteLocalRef(env, rightArray);
+}
+
 // At most this many lines a second reach the diagnostic log; a flood stays in logcat only
 #define DIAG_LOG_LINES_PER_SECOND 60
 
@@ -629,6 +662,7 @@ static CONNECTION_LISTENER_CALLBACKS BridgeConnListenerCallbacks = {
         .rumbleTriggers = BridgeClRumbleTriggers,
         .setMotionEventState = BridgeClSetMotionEventState,
         .setControllerLED = BridgeClSetControllerLED,
+        .setAdaptiveTriggers = BridgeClSetAdaptiveTriggers,
 };
 
 static bool

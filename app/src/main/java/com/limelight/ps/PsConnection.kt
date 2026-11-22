@@ -253,6 +253,10 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
         override fun onRumble(left: Int, right: Int) = listener.rumble(0, (left * 257).toShort(), (right * 257).toShort())
 
+        // Both triggers' effects to a DualSense DELOS drives over USB (#125): 0x04 right, 0x08 left, as a PC host's 0x5503
+        override fun onTriggerEffects(leftMode: Int, rightMode: Int, left: ByteArray, right: ByteArray) =
+            listener.setAdaptiveTriggers(0, 0x0C, leftMode.toByte(), rightMode.toByte(), left, right)
+
         override fun onPadInfo(red: Int, green: Int, blue: Int, motionReset: Boolean) {
             listener.setControllerLED(0, red.toByte(), green.toByte(), blue.toByte())
             if (motionReset) synchronized(padLock) { orientation = floatArrayOf(0f, 0f, 0f, 1f) }
