@@ -15,7 +15,6 @@ import com.limelight.shell.ps.PsConsoleStore
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.util.TreeMap
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
@@ -47,6 +46,15 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     private val rttInfo = AtomicLong(0)
     private var qualityLogs = 0
     private var connectThread: Thread? = null
+    // The session's stream info and request, kept so a parked session can set up the decoder again (PsSessionPark)
+    @Volatile private var streamInfo: PsStreamInfo? = null
+    @Volatile private var sessionRequest: PsStreamRequest? = null
+
+    /**
+     * Set by the stream activity when it goes to the background without the user leaving the stream: [stop] parks the session
+     * (PsSessionPark) instead of closing it, so starting this console again resumes it (#121).
+     */
+    @Volatile var parkOnStop = false
 
     /** The console this stream plays, for the activity's title and the loader. */
     val console: com.limelight.shell.ps.PsConsole? = PsConsoleStore.get(appContext).consoles.value.firstOrNull { it.id == consoleId }
@@ -64,39 +72,95 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         listener.stageStarting(STAGE_WAKE)
         try {
             if (c == null) throw PsException("console $consoleId is not paired")
-            val address = locate(c)
-            runCatching { PsDiscovery.wake(address, c.console.target.ps5, c.console.registKey) }
-            val request = request(c.console.target)
-            // A console in rest mode takes a few seconds before the session starts; retry while it wakes
-            var opened: PsCtrl? = null
-            var lastError: Exception? = null
-            for (attempt in 0 until 15) {
-                if (!running) return
-                try { opened = PsCtrl(address, PS_PORT, c.console, request.codec).also { it.open() }; break }
-                catch (e: Exception) { lastError = e; Thread.sleep(2000) }
+            if (resumeParked(c)) return
+            openSession(c, ctrlTries = 15) {
+                listener.stageComplete(STAGE_WAKE)
+                listener.stageStarting(STAGE_STREAM)
             }
-            val session = opened ?: throw lastError ?: PsException("no session")
-            ctrl = session
-            var sessionId: String? = null
-            val ready = Object()
-            thread(name = "ps-ctrl") {
-                runCatching { session.readLoop { type, payload -> if (type == PsCtrl.SESSION_ID) { sessionId = PsCtrl.sessionId(payload); synchronized(ready) { ready.notifyAll() } } } }
-            }
-            synchronized(ready) { if (sessionId == null) ready.wait(10_000) }
-            val id = sessionId ?: throw PsException("the console sent no session id")
-            session.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, 1, 0x59)); session.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, 1, 0x59)); session.send(PsCtrl.DISPLAY_DEVICES, ByteArray(4))
-            listener.stageComplete(STAGE_WAKE)
-            if (!running) return
-            listener.stageStarting(STAGE_STREAM)
-            ps5 = c.console.target.ps5
-            val s = PsStream(address, c.console.target, id, session.crypt, request, streamListener(request),
-                keyframeOnLoss = psPrefs.getBoolean(PsPrefs.KEYFRAME_ON_LOSS, false), holdBitrate = !PsPrefs.autoBitrate(psPrefs))
-            stream = s
-            s.start()
         } catch (e: Exception) {
             Log.w(TAG, "connect", e)
             if (running) listener.stageFailed(if (stream == null) STAGE_WAKE else STAGE_STREAM, 0, -1)
         }
+    }
+
+    /** A session this console left in the background: it streams again at once, from a keyframe (#121). */
+    private fun resumeParked(c: com.limelight.shell.ps.PsConsole): Boolean {
+        val (s, session, saved) = PsSessionPark.take(c.id) ?: return false
+        if (!s.alive) { runCatching { session?.close() }; return false }
+        val (request, info) = saved
+        ctrl = session
+        stream = s
+        ps5 = c.console.target.ps5
+        listener.stageComplete(STAGE_WAKE)
+        listener.stageStarting(STAGE_STREAM)
+        val l = streamListener(request)
+        s.listener = l
+        l.onStreamInfo(info.width, info.height, info.videoHeader, info.audioHeader)
+        s.requestKeyframe()
+        return true
+    }
+
+    /**
+     * Finds and wakes the console, opens the ctrl session (retried [ctrlTries] times, 2 s apart, while a console in rest mode wakes),
+     * then the stream; [beforeStream] runs once the session id is there. Throws when a step fails.
+     */
+    private fun openSession(c: com.limelight.shell.ps.PsConsole, ctrlTries: Int, beforeStream: () -> Unit = {}) {
+        val address = locate(c)
+        runCatching { PsDiscovery.wake(address, c.console.target.ps5, c.console.registKey) }
+        val request = request(c.console.target)
+        var opened: PsCtrl? = null
+        var lastError: Exception? = null
+        for (attempt in 0 until ctrlTries) {
+            if (!running) return
+            try { opened = PsCtrl(address, PS_PORT, c.console, request.codec).also { it.open() }; break }
+            catch (e: Exception) { lastError = e; Thread.sleep(2000) }
+        }
+        val session = opened ?: throw lastError ?: PsException("no session")
+        ctrl = session
+        var sessionId: String? = null
+        val ready = Object()
+        thread(name = "ps-ctrl") {
+            runCatching { session.readLoop { type, payload -> if (type == PsCtrl.SESSION_ID) { sessionId = PsCtrl.sessionId(payload); synchronized(ready) { ready.notifyAll() } } } }
+        }
+        synchronized(ready) { if (sessionId == null) ready.wait(10_000) }
+        val id = sessionId ?: throw PsException("the console sent no session id")
+        session.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, 1, 0x59)); session.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, 1, 0x59)); session.send(PsCtrl.DISPLAY_DEVICES, ByteArray(4))
+        if (!running) return
+        beforeStream()
+        ps5 = c.console.target.ps5
+        val s = PsStream(address, c.console.target, id, session.crypt, request, streamListener(request),
+            keyframeOnLoss = psPrefs.getBoolean(PsPrefs.KEYFRAME_ON_LOSS, false), holdBitrate = !PsPrefs.autoBitrate(psPrefs))
+        stream = s
+        s.start()
+    }
+
+    /**
+     * After [SILENCE_MS] without a packet (Wi-Fi gone for a while, a roam): the old session is closed and a new one opened for up to
+     * [RECONNECT_MS], keeping the stream screen, the decoder and the audio; the feeder waits for the new session's keyframe (#120).
+     */
+    private fun reconnect(): Boolean {
+        val c = console ?: return false
+        Log.i(TAG, "no packet for ${SILENCE_MS / 1000} s: reconnecting")
+        runCatching { stream?.close() }; stream = null
+        runCatching { ctrl?.close() }; ctrl = null
+        val until = SystemClock.uptimeMillis() + RECONNECT_MS
+        while (running && SystemClock.uptimeMillis() < until) {
+            try {
+                openSession(c, ctrlTries = 3)
+                if (stream != null) {
+                    lastPacketMs = SystemClock.uptimeMillis()
+                    feeder?.lost()
+                    Log.i(TAG, "reconnected")
+                    return true
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "reconnect: ${e.message}")
+                runCatching { stream?.close() }; stream = null
+                runCatching { ctrl?.close() }; ctrl = null
+                Thread.sleep(1000)
+            }
+        }
+        return false
     }
 
     /**
@@ -141,7 +205,10 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
     private fun streamListener(request: PsStreamRequest) = object : PsStreamListener {
         override fun onStreamInfo(width: Int, height: Int, videoHeader: ByteArray, audioHeader: ByteArray?) {
-            if (started) return
+            // A new session after a reconnect: the decoder keeps running, the feeder takes the parameter sets and waits for a keyframe
+            if (started) { feeder?.profile(width, height, videoHeader); feeder?.lost(); return }
+            streamInfo = PsStreamInfo(width, height, videoHeader, audioHeader)
+            sessionRequest = request
             val format = when (request.codec) {
                 PsCodec.H264 -> MoonBridge.VIDEO_FORMAT_H264
                 PsCodec.HEVC -> MoonBridge.VIDEO_FORMAT_H265
@@ -201,13 +268,22 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         }
     }
 
-    /** A console that vanished (switched off, Wi-Fi gone) sends nothing; the stream ends after [SILENCE_MS] without a packet. */
+    /**
+     * A console that goes quiet (Wi-Fi gone, a roam): after [POOR_MS] the poor-connection notice shows, after [SILENCE_MS] a new
+     * session is tried ([reconnect]), and only when that fails the stream ends.
+     */
     private fun watchdog() {
+        var poor = false
         while (running) {
-            Thread.sleep(1000)
-            if (running && SystemClock.uptimeMillis() - lastPacketMs > SILENCE_MS) {
-                listener.connectionTerminated(-1)
-                return
+            Thread.sleep(500)
+            if (!running) return
+            val silent = SystemClock.uptimeMillis() - lastPacketMs
+            if (silent > POOR_MS != poor) {
+                poor = !poor
+                listener.connectionStatusUpdate(if (poor) MoonBridge.CONN_STATUS_POOR else MoonBridge.CONN_STATUS_OKAY)
+            }
+            if (silent > SILENCE_MS) {
+                if (!reconnect()) { if (running) listener.connectionTerminated(-1); return }
             }
         }
     }
@@ -223,8 +299,11 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         val hadAudio = audioSource != null
         audioSource?.close(); audioSource = null
         if (restOnStop) runCatching { ctrl?.send(PsCtrl.GOTO_BED) }.onFailure { Log.w(TAG, "rest mode: ${it.message}") }
-        stream?.close(); stream = null
-        ctrl?.close(); ctrl = null
+        val s = stream; val info = streamInfo; val request = sessionRequest
+        if (parkOnStop && !restOnStop && s != null && s.alive && info != null && request != null) PsSessionPark.park(consoleId, s, ctrl, request, info)
+        else { s?.close(); ctrl?.close() }
+        stream = null
+        ctrl = null
         if (started) {
             video?.stop(); video?.cleanup()
             started = false
@@ -616,6 +695,10 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         private const val STAGE_STREAM = "Remote Play session"
         private const val PS_PORT = 9295
         private const val SILENCE_MS = 10_000L
+        /** No packet for this long shows the poor-connection notice. */
+        private const val POOR_MS = 2_500L
+        /** How long a reconnect after silence keeps trying. */
+        private const val RECONNECT_MS = 20_000L
         /** Audio: this long without any unit is a real gap, after which the jitter buffer fills to its start depth again. */
         private const val AUDIO_GAP_MS = 200L
         private const val MOTION_RATE_HZ: Short = 200

@@ -45,7 +45,7 @@ class PsStream(
     private val sessionKey: String,
     private val rpCrypt: RpCrypt,
     private val request: PsStreamRequest,
-    private val listener: PsStreamListener,
+    listener: PsStreamListener,
     /** Ask for a keyframe whenever frames go missing, not only when one cannot be rebuilt (PsPrefs.KEYFRAME_ON_LOSS). */
     private val keyframeOnLoss: Boolean = false,
     /**
@@ -84,6 +84,10 @@ class PsStream(
     private var historySeq = 0
     private var state = PsControllerState()
     private val history = ArrayDeque<ByteArray>()
+    /** Who gets the frames, sound and feedback: replaced when the session is parked or taken back (PsSessionPark). */
+    @Volatile var listener: PsStreamListener = listener
+    /** Whether the stream still runs (not closed). */
+    val alive: Boolean get() = running
     // The adaptive profiles of STREAMINFO (resolution entries) and the one the frames use (7.2, adaptive resolution)
     @Volatile private var profiles: List<PsProtoMessage> = emptyList()
     private var profile = 0

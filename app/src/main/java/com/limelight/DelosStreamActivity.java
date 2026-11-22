@@ -1341,6 +1341,8 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     protected void onResume() {
         super.onResume();
         if (companionHost != null) companionHost.start();
+        // Back in front: leaving now (the stream menu, Back) ends the console session again
+        if (conn instanceof PsConnection) ((PsConnection) conn).setParkOnStop(false);
     }
 
     @Override
@@ -1402,6 +1404,8 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             setInputGrabState(false);
         }
 
+        // Going to the background without the user leaving the stream: a console session is kept for a while (PsSessionPark, #121)
+        if (conn instanceof PsConnection) ((PsConnection) conn).setParkOnStop(!isFinishing());
         super.onPause();
     }
 
