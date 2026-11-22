@@ -69,6 +69,12 @@ class PsConsoleStore(context: Context) {
         if (c.id != id) c else c.copy(name = name.trim().ifEmpty { c.console.nickname ?: c.name })
     })
 
+    /** The console [id] answered from [address] (another network interface, a new lease): it is found there from now on. */
+    fun moved(id: String, address: String) {
+        if (flow.value.none { it.id == id && it.address != address }) return
+        save(flow.value.map { c -> if (c.id != id) c else c.copy(address = address) })
+    }
+
     private fun save(list: List<PsConsole>) {
         val enc = Base64.getEncoder()
         val array = JSONArray()

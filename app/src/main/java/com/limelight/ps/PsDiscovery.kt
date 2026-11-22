@@ -63,9 +63,9 @@ object PsDiscovery {
 
     /**
      * Sends a search to [target] (a console or the broadcast address) for both PS4 and PS5 and collects the answers for
-     * [timeoutMs]. Blocking; call it off the main thread.
+     * [timeoutMs], or until an answer satisfies [stopWhen]. Blocking; call it off the main thread.
      */
-    fun search(target: InetAddress, timeoutMs: Int = 2000): List<PsHost> {
+    fun search(target: InetAddress, timeoutMs: Int = 2000, stopWhen: (PsHost) -> Boolean = { false }): List<PsHost> {
         val socket = bindPreferred() ?: return emptyList()
         socket.use { s ->
             s.broadcast = true
@@ -88,7 +88,9 @@ object PsDiscovery {
                 } catch (_: SocketTimeoutException) {
                     continue
                 }
-                parse(packet.address, packet.data, packet.length)?.let { found[it.hostId ?: it.address.hostAddress.orEmpty()] = it }
+                val host = parse(packet.address, packet.data, packet.length) ?: continue
+                found[host.hostId ?: host.address.hostAddress.orEmpty()] = host
+                if (stopWhen(host)) break
             }
             return found.values.toList()
         }

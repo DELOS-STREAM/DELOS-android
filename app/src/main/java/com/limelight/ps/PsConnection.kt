@@ -64,7 +64,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         listener.stageStarting(STAGE_WAKE)
         try {
             if (c == null) throw PsException("console $consoleId is not paired")
-            val address = InetAddress.getByName(c.address)
+            val address = locate(c)
             runCatching { PsDiscovery.wake(address, c.console.target.ps5, c.console.registKey) }
             val request = request(c.console.target)
             // A console in rest mode takes a few seconds before the session starts; retry while it wakes
@@ -97,6 +97,28 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             Log.w(TAG, "connect", e)
             if (running) listener.stageFailed(if (stream == null) STAGE_WAKE else STAGE_STREAM, 0, -1)
         }
+    }
+
+    /**
+     * Where the console is now: a broadcast search that stops at its answer (its host id is the paired MAC), so a console that
+     * moved to another address (Wi-Fi to Ethernet, a new lease; owner, 2026-11-22) is still found and remembered there. A
+     * console in rest mode answers too. Without an answer within 1.5 s the stored address is used.
+     */
+    private fun locate(c: com.limelight.shell.ps.PsConsole): InetAddress {
+        val answers = runCatching {
+            PsDiscovery.search(InetAddress.getByName("255.255.255.255"), 1500) { it.hostId.equals(c.id, ignoreCase = true) }
+        }.getOrDefault(emptyList())
+        val found = answers.firstOrNull { it.hostId.equals(c.id, ignoreCase = true) }
+        if (found == null) {
+            Log.i(TAG, "console not found by search (${answers.size} answers, host ids ${answers.map { it.hostId }}, paired ${c.id})")
+            return InetAddress.getByName(c.address)
+        }
+        val now = found.address.hostAddress.orEmpty()
+        if (now != c.address) {
+            Log.i(TAG, "console found at a new address")
+            PsConsoleStore.get(appContext).moved(c.id, now)
+        }
+        return found.address
     }
 
     /**
