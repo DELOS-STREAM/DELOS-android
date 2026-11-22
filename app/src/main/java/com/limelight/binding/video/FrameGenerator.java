@@ -78,6 +78,8 @@ final class FrameGenerator implements AutoCloseable {
     // Per pair: how far it moved (cells, from the repeat test), and whether its steps use the warp because the driver's did not move
     private int pairCells, lastPictureCells;
     private long refinements;
+    // Whether the previous decoded frame repeated or refined its picture
+    private boolean lastWasRepeat;
     private boolean pairChecked, pairWarp;
     // For the log: pairs checked and stuck, the latest check, the warp's latest move, how many refreshes the game's frames took
     private long movingPairs, stuckPairs, warpSamples;
@@ -133,10 +135,13 @@ final class FrameGenerator implements AutoCloseable {
         if (frames > 0) {
             int changed = changedCells(source, ring[newest]);
             recentChanged[recentCount++ % recentChanged.length] = changed;
-            boolean refinement = changed > MAX_CHANGED_CELLS && lastPictureCells >= MOVING_PAIR_CELLS
+            // A refinement directly follows its picture: after a repeat the next frame is the game's next picture, however little
+            // it moved (a slowing camera, a small object on a still scene)
+            boolean refinement = !lastWasRepeat && changed > MAX_CHANGED_CELLS && lastPictureCells >= MOVING_PAIR_CELLS
                     && changed * 100 < lastPictureCells * REFINE_PERCENT;
             if (changed <= MAX_CHANGED_CELLS || refinement) {
                 repeats++;
+                lastWasRepeat = true;
                 if (refinement) {
                     // The same picture in better quality: it replaces the newest of the pair (its motion is estimated again)
                     refinements++;
@@ -147,6 +152,7 @@ final class FrameGenerator implements AutoCloseable {
             }
             pairCells = lastPictureCells = changed;
         }
+        lastWasRepeat = false;
         pairChecked = pairWarp = false;
         motionReady = false;
         int slot = newest < 0 ? 0 : 1 - newest;
