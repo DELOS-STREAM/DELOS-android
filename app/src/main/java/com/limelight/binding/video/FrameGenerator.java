@@ -75,11 +75,14 @@ final class FrameGenerator implements AutoCloseable {
             "precision highp float; uniform sampler2D gen; uniform sampler2D newest; uniform sampler2D still; uniform vec2 outSize;\n" +
             "uniform vec2 radius; out vec4 color;\n" +
             "void main(){ vec2 uv=gl_FragCoord.xy/outSize; float k=texture(still,uv).r;\n" +
-            " for(int i=0;i<8;i++){ float a=float(i)*0.785398; vec2 d=vec2(cos(a),sin(a))*radius;\n" +
-            "  k=max(k,max(texture(still,uv+d).r,texture(still,uv+d*0.5).r)); }\n" +
+            " for(int i=0;i<12;i++){ float a=float(i)*0.523599; vec2 d=vec2(cos(a),sin(a))*radius;\n" +
+            "  k=max(k,max(max(texture(still,uv+d).r,texture(still,uv+d*0.75).r),max(texture(still,uv+d*0.5).r,texture(still,uv+d*0.25).r))); }\n" +
             " color=mix(texture(gen,uv),texture(newest,uv),smoothstep(0.15,0.5,k)); }";
-    /** How far around still detail the newest picture is kept, in parts of the picture's height (16 px at 1080p). */
-    private static final float KEEP_RADIUS = .015f;
+    /**
+     * How far around still detail the newest picture is kept, in parts of the picture's height (about 38 px at 1080p): a HUD the
+     * prediction moved on fast motion lands that far away (owner, 2026-11-22: 16 px still left doubles on fast motion).
+     */
+    private static final float KEEP_RADIUS = .035f;
 
     /** [onRealFrame] results: a new picture of the game, an identical repeat, or the same picture with changed details. */
     static final int NEW_PICTURE = 0, REPEAT = 1, UPDATE = 2;
