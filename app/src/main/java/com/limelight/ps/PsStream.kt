@@ -103,6 +103,47 @@ class PsStream(
         timers.scheduleWithFixedDelay({ sendMessage(1, 0, PsMsg.simple(PsMsg.HEARTBEAT)) }, 1, 1, TimeUnit.SECONDS)
         timers.scheduleWithFixedDelay(::sendCongestion, 200, 200, TimeUnit.MILLISECONDS)
         timers.scheduleWithFixedDelay({ sendFeedbackState() }, 200, 200, TimeUnit.MILLISECONDS)
+        timers.scheduleWithFixedDelay(::stopIdleHaptics, 50, 50, TimeUnit.MILLISECONDS)
+    }
+
+    // DualSense haptics as rumble: a PS5 that is told the controller is a DualSense sends its effects as PCM for the voice coils
+    // (audio marker 0x02, spec 7.1) instead of rumble messages, so the controller's motors follow the PCM's strength per channel
+    // (owner, 2026-11-22: no vibration on the Odin with PS5 games). Volatile: the receive thread writes, the timer stops it.
+    @Volatile private var hapticAtNs = 0L
+    @Volatile private var hapticLeft = 0
+    @Volatile private var hapticRight = 0
+    private var hapticUnits = 0L
+
+    /** One haptics unit (signed 16-bit stereo PCM) as the two motors' strength, 0 to 255: the mean level, scaled up. */
+    private fun onHaptics(pcm: ByteArray) {
+        val b = ByteBuffer.wrap(pcm).order(ByteOrder.LITTLE_ENDIAN)
+        var left = 0L
+        var right = 0L
+        var n = 0
+        while (b.remaining() >= 4) {
+            left += Math.abs(b.short.toInt())
+            right += Math.abs(b.short.toInt())
+            n++
+        }
+        if (n == 0) return
+        if (hapticUnits++ == 0L) Log.i(TAG, "First DualSense haptics unit: ${pcm.size} bytes")
+        hapticAtNs = System.nanoTime()
+        val l = minOf(255L, left * HAPTIC_GAIN / n / 128).toInt()
+        val r = minOf(255L, right * HAPTIC_GAIN / n / 128).toInt()
+        if (l != hapticLeft || r != hapticRight) {
+            hapticLeft = l
+            hapticRight = r
+            listener.onRumble(l, r)
+        }
+    }
+
+    /** Haptics that stopped arriving (the effect ended without silent units) stop the motors after 100 ms. */
+    private fun stopIdleHaptics() {
+        if ((hapticLeft != 0 || hapticRight != 0) && System.nanoTime() - hapticAtNs > 100_000_000L) {
+            hapticLeft = 0
+            hapticRight = 0
+            listener.onRumble(0, 0)
+        }
     }
 
     // --- Takion ---------------------------------------------------------------------------------------------------------------
@@ -311,7 +352,9 @@ class PsStream(
                 is PsFrameAssembler.Result.Lost -> requestIdr(r.from, r.to)
             }
             assembler.takeLoss()?.let { (a, b) -> if (keyframeOnLoss) requestIdr(a, b) else corrupt(a, b) }
-        } else if (packet.audioMarker != 2) {
+        } else if (packet.audioMarker == 2) {
+            onHaptics(packet.payload)
+        } else {
             val desc = packet.fecOrAudioDesc
             val size = desc ushr 8
             val sources = desc and 0xF
@@ -394,5 +437,9 @@ class PsStream(
         socket.close()
     }
 
-    companion object { private const val TAG = "PsStream" }
+    companion object {
+        private const val TAG = "PsStream"
+        /** Haptics PCM is quieter than a motor's full range: its mean level times this is the motor strength. */
+        private const val HAPTIC_GAIN = 4L
+    }
 }
