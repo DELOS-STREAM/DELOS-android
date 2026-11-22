@@ -60,18 +60,21 @@ final class FrameGenerator implements AutoCloseable {
             "precision highp float; uniform sampler2D src; uniform sampler2D motion; uniform vec2 outSize; uniform vec2 scale;\n" +
             "uniform float t; out vec4 color;\n" +
             "void main(){ vec2 uv=gl_FragCoord.xy/outSize; vec2 v=texture(motion,uv).rg*scale; color=texture(src,uv-v*t); }";
-    // The still detail of the pair at a quarter of the size, each texel for its 4 × 4 pixels: 1 where one of them is identical
-    // in both pictures (re-encoding noise aside) and has an edge in the newest (a HUD's text, icons, a crosshair's dot), 0
-    // elsewhere (moving content, or flat areas that look the same anyway). Every pixel counts, so a dot of a pixel or two is kept.
+    // The still detail of the pair at a quarter of the size, each texel for its 4 × 4 pixels: 1 where one of them has an edge
+    // across and down in the newest picture (a HUD's text, icons, a crosshair's dot) that did not move. An edge along one
+    // direction only looks unchanged while the scene slides along it, so both are required; a corner moved by a pixel changes
+    // by about its contrast, so a pixel is still only when it changed by under a quarter of it (re-encoding noise passes).
+    // Owner, 2026-11-22: a looser test marked most of a moving scene still and the output felt like 60 again.
+    // Every pixel counts, so a dot of a pixel or two is kept.
     private static final String STILL = "#version 310 es\n" +
             "precision highp float; uniform sampler2D a; uniform sampler2D b; uniform vec2 texel; out vec4 color;\n" +
             "float l(vec3 c){ return dot(c,vec3(0.299,0.587,0.114)); }\n" +
             "void main(){ vec2 base=floor(gl_FragCoord.xy)*4.0; float s=0.0;\n" +
             " for(int j=0;j<4;j++) for(int i=0;i<4;i++){ vec2 uv=(base+vec2(i,j)+0.5)*texel; vec3 nb=texture(b,uv).rgb;\n" +
             "  vec3 e=abs(texture(a,uv).rgb-nb); float lc=l(nb);\n" +
-            "  float g=max(max(abs(l(texture(b,uv+vec2(texel.x,0.0)).rgb)-lc),abs(l(texture(b,uv-vec2(texel.x,0.0)).rgb)-lc)),\n" +
-            "   max(abs(l(texture(b,uv+vec2(0.0,texel.y)).rgb)-lc),abs(l(texture(b,uv-vec2(0.0,texel.y)).rgb)-lc)));\n" +
-            "  if(max(e.r,max(e.g,e.b))<0.016 && g>0.06) s=1.0; }\n" +
+            "  float gx=max(abs(l(texture(b,uv+vec2(texel.x,0.0)).rgb)-lc),abs(l(texture(b,uv-vec2(texel.x,0.0)).rgb)-lc));\n" +
+            "  float gy=max(abs(l(texture(b,uv+vec2(0.0,texel.y)).rgb)-lc),abs(l(texture(b,uv-vec2(0.0,texel.y)).rgb)-lc));\n" +
+            "  float g=min(gx,gy); if(g>0.06 && max(e.r,max(e.g,e.b))<min(0.03,g*0.25)) s=1.0; }\n" +
             " color=vec4(s,0.0,0.0,1.0); }";
     // The mask grown by [reach] texels along [step] (one pass across, one down: a square around every still texel)
     private static final String GROW = "#version 310 es\n" +
