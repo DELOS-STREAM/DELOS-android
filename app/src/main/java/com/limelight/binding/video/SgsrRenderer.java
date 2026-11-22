@@ -295,10 +295,30 @@ public final class SgsrRenderer implements AutoCloseable {
         final double hz = source != null ? source.getAsDouble() : 0;
         displayPeriodNs = hz > 1 ? (long) (1_000_000_000L / hz) : 0L;
     }
-    /** Frames generated since the stream began (0 while frame generation is off or unavailable). */
-    public long getGeneratedFrames() {
-        FrameGenerator generator = frameGen;
-        return generator != null ? generator.generated() : 0;
+    // The previous reading of takeFrameGenRates
+    private FrameGenerator rateGenerator;
+    private long rateAtNs, ratePictures, rateGenerated;
+
+    /**
+     * The game's own frame rate (new pictures, without repeated frames) and the rate shown with the generated frames, per second
+     * since the previous call; null while frame generation is not running or on its first reading. Called by the statistics.
+     */
+    public float[] takeFrameGenRates() {
+        final FrameGenerator generator = frameGen;
+        final long now = System.nanoTime();
+        if (generator == null) { rateGenerator = null; return null; }
+        final long pictures = generator.pictures(), generated = generator.generated();
+        float[] rates = null;
+        if (generator == rateGenerator && now > rateAtNs) {
+            final float seconds = (now - rateAtNs) / 1e9f;
+            final float game = (pictures - ratePictures) / seconds;
+            rates = new float[] { game, game + (generated - rateGenerated) / seconds };
+        }
+        rateGenerator = generator;
+        rateAtNs = now;
+        ratePictures = pictures;
+        rateGenerated = generated;
+        return rates;
     }
     /** On the GL thread with the window current: turns on EGL frame timestamps for the SDR window surface. */
     private static boolean enableSdrTimestamps() {

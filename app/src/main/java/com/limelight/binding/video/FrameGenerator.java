@@ -90,7 +90,8 @@ final class FrameGenerator implements AutoCloseable {
     private float driverScore = -1f, warpScore = -1f;
     private long evaluations, switches;
     // For the log
-    private long generated, repeats, refinements;
+    // Volatile: the statistics read them from the decoder thread
+    private volatile long generated, repeats, refinements, pictures;
     private final int[] recentChanged = new int[12];
     private int recentCount;
     private final int[] intervalRefreshes = new int[7];
@@ -129,6 +130,9 @@ final class FrameGenerator implements AutoCloseable {
 
     /** Decoded frames recognised as repeats of the previous one so far. */
     long repeats() { return repeats; }
+
+    /** New pictures of the game so far (decoded frames that were neither repeats nor refinements). */
+    long pictures() { return pictures; }
 
     /** Refreshes the game's frame interval spans (the plan of the newest pair). */
     int plannedRefreshes() { return refreshes; }
@@ -196,6 +200,7 @@ final class FrameGenerator implements AutoCloseable {
             frames = 1;
             intervalNs = 0;
         }
+        pictures++;
         return NEW_PICTURE;
     }
 

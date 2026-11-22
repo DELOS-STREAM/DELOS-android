@@ -2808,6 +2808,8 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                 perfListener.onPerfUpdate(sb.toString());
                 // Delos: the same numbers for the Delos statistics panel
                 boolean hostLatency = lastTwo.framesWithHostProcessingLatency > 0;
+                // Frame generation: the game's own rate and the shown one ("60.0 / 120.0 FPS")
+                float[] frameGenRates = sgsr != null ? sgsr.takeFrameGenRates() : null;
                 perfListener.onPerfStats(new com.limelight.shell.StreamStats(
                         initialWidth, initialHeight, fps.totalFps, fps.receivedFps, fps.renderedFps,
                         (videoFormat & MoonBridge.VIDEO_FORMAT_MASK_AV1) != 0 ? "AV1" : (videoFormat & MoonBridge.VIDEO_FORMAT_MASK_H265) != 0 ? "HEVC" : "H.264",
@@ -2822,7 +2824,8 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                         sgsr != null ? sgsr.getSharpenCost() : null, null,
                         sgsr != null ? sgsr.getFrameQueueStats() : null,
                         latencySummary != null ? latencySummary.stage(LatencyStages.AVAILABLE_TO_PRESENT) : null,
-                        vrrActive));
+                        vrrActive,
+                        frameGenRates != null ? frameGenRates[0] : -1f, frameGenRates != null ? frameGenRates[1] : -1f));
             }
             globalVideoStats.add(activeWindowVideoStats);
             lastWindowVideoStats.copy(activeWindowVideoStats);
