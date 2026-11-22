@@ -136,7 +136,7 @@ fun PsStartContent(profileName: String?) {
             consoles.forEachIndexed { i, c ->
                 CircleItem(
                     Symbols.CONSOLE_PS5, c.name,
-                    onClick = { context.startActivity(psStreamIntent(context, c.id, c.name)) },
+                    onClick = { startPsStream(context, psStreamIntent(context, c.id, c.name)) },
                     modifier = if (i == 0) Modifier.focusRequester(first) else Modifier,
                     meta = stringResource(R.string.ps_console_meta), big = true, selected = i == 0,
                     contextMenu = ContextMenu(c.name, below = true, items = listOf(
@@ -165,6 +165,20 @@ private fun psStreamIntent(context: android.content.Context, consoleId: String, 
         .putExtra(com.limelight.ps.PsConnection.EXTRA_CONSOLE, consoleId)
         .putExtra(com.limelight.DelosStreamActivity.EXTRA_PC_NAME, name)
         .putExtra(com.limelight.DelosStreamActivity.EXTRA_APP_NAME, "PlayStation") // l10n-ignore
+
+/**
+ * Opens the stream window as a PC game does (Shell's launch): the stream runs in its own task, where the system slides a new
+ * window in from the side; a scale-up from the whole screen fades it in over this one instead.
+ */
+private fun startPsStream(context: android.content.Context, intent: Intent) {
+    var base: android.content.Context? = context
+    while (base is android.content.ContextWrapper && base !is android.app.Activity) base = base.baseContext
+    val root = (base as? android.app.Activity)?.window?.decorView
+    val options = root?.let {
+        com.limelight.display.DualScreen.placeOnMain(it.context, android.app.ActivityOptions.makeScaleUpAnimation(it, 0, 0, it.width, it.height)).toBundle()
+    }
+    context.startActivity(intent, options)
+}
 
 /** The three-step progress line of the pairing flow (variant A). */
 @Composable
@@ -413,7 +427,7 @@ private fun DoneStep(step: PsPairStep.Done) {
         Row(horizontalArrangement = Arrangement.spacedBy(18.px)) {
             PillButton(stringResource(R.string.ps_play_now), Symbols.PLAY_ARROW, {
                 shell.navigate(Screen.Start)
-                context.startActivity(psStreamIntent(context, step.consoleId, step.name))
+                startPsStream(context, psStreamIntent(context, step.consoleId, step.name))
             }, Modifier.focusRequester(first), primary = true)
             PillButton(stringResource(R.string.ps_back_to_start), Symbols.CHECK, { shell.navigate(Screen.Start) })
         }
