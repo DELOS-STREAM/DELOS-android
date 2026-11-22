@@ -115,6 +115,10 @@ final class FrameGenerator implements AutoCloseable {
     private boolean motionReady;
     private final MotionField.Affine cameraMotion = new MotionField.Affine();
     private boolean cameraFitted;
+    // The previous pair's camera shift (half-size pixels, NaN when none) and this pair's damping of t: a camera that changed speed
+    // or direction sharply is extrapolated less far, so a stop or a turn does not overshoot and snap back
+    private float previousShiftX = Float.NaN, previousShiftY = Float.NaN, damping = 1f;
+    private long dampedPairs;
     private java.nio.FloatBuffer readback;
     private float[] fineRaw, fine, coarseRaw, coarse;
     // For the log: the latest field's longest vectors (half-size pixels), the share near the half-size maximum, the camera fit
@@ -265,7 +269,7 @@ final class FrameGenerator implements AutoCloseable {
         if (useWarp) {
             try {
                 ensureMotion();
-                drawWarp(ring[newest], t);
+                drawWarp(ring[newest], t * damping);
                 generated++;
                 return output;
             } catch (RuntimeException e) {
@@ -287,7 +291,8 @@ final class FrameGenerator implements AutoCloseable {
                 .append("; switches ").append(switches).append("), refinements ").append(refinements)
                 .append(", motion: longest ").append(Math.round(maxFine)).append(" px half, ").append(Math.round(maxCoarse))
                 .append(" px quarter, ").append(Math.round(shareNearMax * 100)).append(" % near the half-size longest, camera fit ")
-                .append(cameraInliers < 0 ? "none" : Math.round(cameraInliers * 100) + " %").append(", intervals");
+                .append(cameraInliers < 0 ? "none" : Math.round(cameraInliers * 100) + " %").append(", damped pairs ").append(dampedPairs)
+                .append(", intervals");
         for (int i = 1; i < intervalRefreshes.length; i++) out.append(' ').append(i).append(':').append(intervalRefreshes[i]);
         return out.append(", format 0x").append(Integer.toHexString(internalFormat)).toString();
     }
@@ -329,6 +334,18 @@ final class FrameGenerator implements AutoCloseable {
         MotionField.upsample(coarseRaw, cw, ch, lumaWidth / (float) quarterWidth, lumaHeight / (float) quarterHeight, coarse, w, h);
         cameraFitted = MotionField.fitAffine(coarse, w, h, blockX, blockY, 1f, 4f, cameraMotion);
         cameraInliers = cameraFitted ? cameraMotion.inliers / (float) cameraMotion.total : -1f;
+        damping = 1f;
+        if (cameraFitted) {
+            if (!Float.isNaN(previousShiftX)) {
+                double change = Math.hypot(cameraMotion.e - previousShiftX, cameraMotion.f - previousShiftY);
+                double speed = Math.hypot(previousShiftX, previousShiftY);
+                if (speed > 4 && change > speed * .5) { damping = .6f; dampedPairs++; }
+            }
+            previousShiftX = cameraMotion.e;
+            previousShiftY = cameraMotion.f;
+        } else {
+            previousShiftX = previousShiftY = Float.NaN;
+        }
         maxFine = MotionField.maxLength(fineRaw, w * h);
         maxCoarse = MotionField.maxLength(coarse, w * h);
         shareNearMax = maxFine > 0 ? MotionField.shareAtLeast(fineRaw, w * h, maxFine * .9f) : 0f;
