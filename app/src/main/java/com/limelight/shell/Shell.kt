@@ -891,7 +891,7 @@ fun Shell(
                         StatusBar(
                             nav.takeIf { shell.screen.main }, pcName = pc?.name.takeIf { shell.screen.main }, pcOnline = pc?.online == true,
                             wifi = wifi, battery = battery, clock = clock,
-                            // The game overview goes back with the same button (its own back handler closes it), the dashboard has none
+                            // The game overview goes back with the same button (its own back handler closes it)
                             onBack = goBack.takeIf { shell.screen.back != null || shell.overviewGame != null },
                         )
                     }

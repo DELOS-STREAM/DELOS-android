@@ -35,8 +35,10 @@ sealed interface Screen {
     /** The left menu button opens the side menu on the main screens and the start screen, not during the first launch. */
     val sideMenu: Boolean get() = main || this == Start
 
+    /** The dashboard of the connected PC; back goes to the start screen (the PC / PlayStation choice). */
     data object Home : Screen {
         override val main get() = true
+        override val back: Screen get() = Start
     }
 
     data object Settings : Screen {
