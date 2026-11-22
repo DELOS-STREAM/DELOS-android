@@ -14,13 +14,15 @@ import java.nio.ByteOrder;
  * predicted from the two newest ones, so a 30 fps game fills a 60 or 120 Hz display without the latency of interpolation.
  * <p>
  * Two ways to predict, both on the Adreno driver: its frame extrapolation (GL_QCOM_frame_extrapolation), or an own warp of the
- * newest picture along the block motion its motion estimation (GL_QCOM_motion_estimation) finds between the pair. The driver's
- * extrapolation is tried first; when its frames do not move while the pair does, the warp takes over.
+ * newest picture along the block motion its motion estimation (GL_QCOM_motion_estimation) finds between the pair. Which one is
+ * used follows how well each predicted the game's next picture: every other moving picture, both predict it from the pair before
+ * it and the one with the smaller error (relative to simply holding the picture) generates the following steps. The driver tends
+ * to follow a moving camera, the warp small objects on a still scene.
  * <p>
- * The pace is the game's, not the stream's: a decoded frame that repeats the previous one (a 30 fps game in a 60 fps stream) is
- * recognised and left out of the pair, and a generated frame takes its refresh. Every step comes from the same pair, at
- * t = offset / refreshes of the game's frame interval, spread evenly over its refreshes (at most the chosen multiplier per game
- * frame); a generated frame is never fed back in. GL thread only (SgsrRenderer's), with its context current.
+ * The pace is the game's, not the stream's: a decoded frame that repeats the previous one (a 30 fps game in a 60 fps stream), or
+ * refines it on fast motion, is recognised and left out of the pair, and a generated frame takes its refresh. Every step comes from
+ * the same pair, at t = offset / refreshes of the game's frame interval, spread evenly over its refreshes (at most the chosen
+ * multiplier per game frame); a generated frame is never fed back in. GL thread only (SgsrRenderer's), with its context current.
  */
 final class FrameGenerator implements AutoCloseable {
     private static final int OFFERS_EXTRAPOLATION = 1, OFFERS_MOTION_ESTIMATION = 2;
@@ -30,28 +32,26 @@ final class FrameGenerator implements AutoCloseable {
     /** The difference grid: cells of 4 × 4 samples each. */
     private static final int CELLS_X = 64, CELLS_Y = 36;
     /**
-     * A cell changed when one of its samples moved by more than about 3 / 255 (the shader scales the difference by 8). A frame repeats
-     * the previous picture when at most [MAX_CHANGED_CELLS] cells changed (re-encoding noise), or, after a picture that moved, when
-     * fewer than [REFINE_PERCENT] % of the cells that picture changed did: on fast motion the console's encoder sends the repeat as a
-     * refinement of the same picture (about 15–20 % of the cells, observed on the Odin), not a new one.
+     * A cell changed when one of its samples moved by more than about 3 / 255 (the shader scales the largest difference by 8). A frame
+     * repeats the previous picture when at most [MAX_CHANGED_CELLS] cells changed (re-encoding noise), or, right after a picture that
+     * moved, when fewer than [REFINE_PERCENT] % of the cells that picture changed did: on fast motion the console's encoder sends the
+     * repeat as a refinement of the same picture (about 15–20 % of the cells, observed on the Odin), not a new one.
      */
     private static final int CHANGED_LEVEL = 24, MAX_CHANGED_CELLS = CELLS_X * CELLS_Y / 200, REFINE_PERCENT = 35;
-    /** A pair that moved at least this many cells tells whether generated frames move and which way the motion vectors point. */
+    /** A pair that changed at least this many cells moved enough to compare the two ways to predict and to orient the vectors. */
     private static final int MOVING_PAIR_CELLS = 60;
-    /**
-     * The driver's step changed less than this share (in tenths) of the pair's changed cells: it did not move at all. Only that is
-     * clear from changed cells, which saturate on textured motion (a step that moved part of the way still changes most cells).
-     */
-    private static final int STUCK_TENTHS = 1;
+    /** The other way must predict this much better (in percent of the current one's error) before it takes over. */
+    private static final int SWITCH_PERCENT = 90;
 
     private static final String FULLSCREEN = "#version 310 es\n" +
             "void main(){ vec2 p=vec2(float(gl_VertexID&1),float(gl_VertexID>>1)); gl_Position=vec4(p*2.0-1.0,0,1); }";
+    // Per cell: R the largest difference (×8, the repeat test), G the mean difference (×4, the prediction error)
     private static final String DIFF = "#version 310 es\n" +
             "precision highp float; uniform sampler2D a; uniform sampler2D b; out vec4 color;\n" +
-            "void main(){ vec2 cells=vec2(" + CELLS_X + ".0," + CELLS_Y + ".0); vec2 cell=floor(gl_FragCoord.xy); float d=0.0;\n" +
+            "void main(){ vec2 cells=vec2(" + CELLS_X + ".0," + CELLS_Y + ".0); vec2 cell=floor(gl_FragCoord.xy); float d=0.0; float s=0.0;\n" +
             " for(int j=0;j<4;j++) for(int i=0;i<4;i++){ vec2 uv=(cell+(vec2(i,j)+0.5)/4.0)/cells;\n" +
-            "  vec3 e=abs(texture(a,uv).rgb-texture(b,uv).rgb); d=max(d,max(e.r,max(e.g,e.b))); }\n" +
-            " color=vec4(min(d*8.0,1.0)); }";
+            "  vec3 e=abs(texture(a,uv).rgb-texture(b,uv).rgb); float m=max(e.r,max(e.g,e.b)); d=max(d,m); s+=m; }\n" +
+            " color=vec4(min(d*8.0,1.0),min(s/16.0*4.0,1.0),0.0,1.0); }";
     private static final String LUMA = "#version 310 es\n" +
             "precision highp float; uniform sampler2D src; uniform vec2 outSize; out vec4 color;\n" +
             "void main(){ vec3 c=texture(src,gl_FragCoord.xy/outSize).rgb; color=vec4(dot(c,vec3(0.299,0.587,0.114)),0.0,0.0,1.0); }";
@@ -61,10 +61,10 @@ final class FrameGenerator implements AutoCloseable {
             "uniform float t; out vec4 color;\n" +
             "void main(){ vec2 uv=gl_FragCoord.xy/outSize; vec2 v=texture(motion,uv).rg*scale; color=texture(src,uv-v*t); }";
 
-    private enum Mode { DRIVER, WARP }
+    /** [onRealFrame] results: a new picture of the game, an identical repeat, or the same picture with changed details. */
+    static final int NEW_PICTURE = 0, REPEAT = 1, UPDATE = 2;
 
     private final int offered;
-    private Mode mode;
     private final int[] ring = new int[2];
     private int output;
     private int newest = -1;
@@ -75,18 +75,19 @@ final class FrameGenerator implements AutoCloseable {
     private int steps, nextStep, refreshes;
     private final int[] query = new int[1];
     private volatile int multiplier;
-    private long generated, repeats;
-    private final int[] recentChanged = new int[12];
-    private int recentCount;
-    // Per pair: how far it moved (cells, from the repeat test), and whether its steps use the warp because the driver's did not move
-    private int pairCells, lastPictureCells;
-    private long refinements;
+    // The latest difference test: changed cells and the summed mean difference
+    private int diffChanged, diffError;
+    private int lastPictureCells;
     // Whether the previous decoded frame repeated or refined its picture
     private boolean lastWasRepeat;
-    private boolean pairChecked, pairWarp;
-    // For the log: pairs checked and stuck, the latest check, the warp's latest move, how many refreshes the game's frames took
-    private long movingPairs, stuckPairs, warpSamples;
-    private int generatedChanged, pairChanged, warpMoved, warpPair;
+    // The way that generates: the warp (else the driver's extrapolation), and the two ways' smoothed errors relative to holding
+    private boolean useWarp;
+    private float driverScore = -1f, warpScore = -1f;
+    private long evaluations, switches;
+    // For the log
+    private long generated, repeats, refinements;
+    private final int[] recentChanged = new int[12];
+    private int recentCount;
     private final int[] intervalRefreshes = new int[7];
     private int framebuffer, diffProgram, diffTexture;
     private final ByteBuffer diffPixels = ByteBuffer.allocateDirect(CELLS_X * CELLS_Y * 4).order(ByteOrder.nativeOrder());
@@ -100,7 +101,7 @@ final class FrameGenerator implements AutoCloseable {
     private FrameGenerator(int multiplier, int offered) {
         this.multiplier = multiplier;
         this.offered = offered;
-        this.mode = (offered & OFFERS_EXTRAPOLATION) != 0 ? Mode.DRIVER : Mode.WARP;
+        this.useWarp = (offered & OFFERS_EXTRAPOLATION) == 0;
     }
 
     /** A generator when the driver offers frame extrapolation or motion estimation in the current context, null otherwise. */
@@ -124,8 +125,8 @@ final class FrameGenerator implements AutoCloseable {
     /** Decoded frames recognised as repeats of the previous one so far. */
     long repeats() { return repeats; }
 
-    /** [onRealFrame] results: a new picture of the game, an identical repeat, or the same picture with changed details. */
-    static final int NEW_PICTURE = 0, REPEAT = 1, UPDATE = 2;
+    /** Refreshes the game's frame interval spans (the plan of the newest pair). */
+    int plannedRefreshes() { return refreshes; }
 
     /**
      * A decoded frame was drawn into [source] ([w] × [h]). A new picture becomes the newest of the pair and the steps until the next
@@ -138,9 +139,9 @@ final class FrameGenerator implements AutoCloseable {
         GLES31.glGetTexLevelParameteriv(GLES31.GL_TEXTURE_2D, 0, GLES31.GL_TEXTURE_INTERNAL_FORMAT, query, 0);
         final int format = query[0];
         if (w != width || h != height || format != internalFormat || ring[0] == 0) allocate(w, h, format);
-        pairCells = 0;
         if (frames > 0) {
-            int changed = changedCells(source, ring[newest]);
+            diff(source, ring[newest]);
+            final int changed = diffChanged, holdError = diffError;
             recentChanged[recentCount++ % recentChanged.length] = changed;
             // A refinement directly follows its picture: after a repeat the next frame is the game's next picture, however little
             // it moved (a slowing camera, a small object on a still scene)
@@ -157,10 +158,14 @@ final class FrameGenerator implements AutoCloseable {
                 motionReady = false;
                 return UPDATE;
             }
-            pairCells = lastPictureCells = changed;
+            lastPictureCells = changed;
+            // Every other moving picture: which way would have predicted it better from the pair before it
+            if (frames >= 2 && changed >= MOVING_PAIR_CELLS && offered == (OFFERS_EXTRAPOLATION | OFFERS_MOTION_ESTIMATION)
+                    && holdError > 0 && evaluations++ % 2 == 0) {
+                evaluate(source, holdError);
+            }
         }
         lastWasRepeat = false;
-        pairChecked = pairWarp = false;
         motionReady = false;
         int slot = newest < 0 ? 0 : 1 - newest;
         GLES32.glCopyImageSubData(source, GLES31.GL_TEXTURE_2D, 0, 0, 0, 0, ring[slot], GLES31.GL_TEXTURE_2D, 0, 0, 0, 0, w, h, 1);
@@ -183,6 +188,26 @@ final class FrameGenerator implements AutoCloseable {
         return NEW_PICTURE;
     }
 
+    /**
+     * Both ways predict [next] (the game's new picture) one full interval from the current pair; their errors, relative to holding
+     * the newest picture ([holdError]), are smoothed, and the clearly better way generates from now on.
+     */
+    private void evaluate(int next, int holdError) {
+        int error = nativeExtrapolate(ring[1 - newest], ring[newest], output, 1f);
+        if (error != 0) throw new IllegalStateException("glExtrapolateTex2DQCOM error 0x" + Integer.toHexString(error));
+        diff(output, next);
+        final float driver = diffError / (float) holdError;
+        ensureMotion();
+        drawWarp(ring[newest], 1f);
+        diff(output, next);
+        final float warp = diffError / (float) holdError;
+        driverScore = driverScore < 0 ? driver : driverScore * .8f + driver * .2f;
+        warpScore = warpScore < 0 ? warp : warpScore * .8f + warp * .2f;
+        boolean warpBetter = useWarp ? !(driverScore * 100 < warpScore * SWITCH_PERCENT) : warpScore * 100 < driverScore * SWITCH_PERCENT;
+        if (warpBetter != useWarp) switches++;
+        useWarp = warpBetter;
+    }
+
     /** Whether a generated frame belongs before the next picture. */
     boolean hasStep() { return frames >= 2 && nextStep < steps; }
 
@@ -198,50 +223,26 @@ final class FrameGenerator implements AutoCloseable {
     /** The next step is not shown (a decoded frame or a busy GPU came first, or its refresh has passed). */
     void skipStep() { nextStep++; }
 
-    /**
-     * Generates the next step into the output texture and returns it; a driver error is returned as an exception. The driver's
-     * extrapolation first; on a pair that moved, its first step is checked, and when it stayed (nearly) the newest picture (a motion
-     * too large for the driver, as in a fast camera turn) this pair's steps are warped along the motion estimation instead.
-     */
+    /** Generates the next step into the output texture and returns it; a driver error is returned as an exception. */
     int generate() {
         float t = nextOffset() / (float) refreshes;
         nextStep++;
-        if (mode == Mode.DRIVER && !pairWarp) {
+        if (useWarp) {
+            ensureMotion();
+            drawWarp(ring[newest], t);
+        } else {
             int error = nativeExtrapolate(ring[1 - newest], ring[newest], output, t);
             if (error != 0) throw new IllegalStateException("glExtrapolateTex2DQCOM error 0x" + Integer.toHexString(error));
-            if (!pairChecked && pairCells >= MOVING_PAIR_CELLS && (offered & OFFERS_MOTION_ESTIMATION) != 0) {
-                pairChecked = true;
-                movingPairs++;
-                generatedChanged = changedCells(output, ring[newest]);
-                pairChanged = pairCells;
-                if (generatedChanged * 10 < pairCells * STUCK_TENTHS) {
-                    stuckPairs++;
-                    pairWarp = true;
-                }
-            }
-        }
-        if (mode == Mode.WARP || pairWarp) {
-            if (!motionReady) {
-                drawLuma(1 - newest);
-                drawLuma(newest);
-                estimateMotion();
-            }
-            drawWarp(ring[newest], t);
-            if (warpSamples++ % 15 == 0) {
-                warpMoved = changedCells(output, ring[newest]);
-                warpPair = pairCells;
-            }
         }
         generated++;
         return output;
     }
 
-    /** For the log: the driver's checks on moving pairs, the warp's latest move, and the game's frame intervals in refreshes. */
+    /** For the log: the way in use, both ways' errors relative to holding the picture, and the game's frame intervals in refreshes. */
     String generatedChanged() {
-        StringBuilder out = new StringBuilder().append(mode).append(": refinements ").append(refinements).append(", moving pairs ")
-                .append(movingPairs).append(", driver stuck ")
-                .append(stuckPairs).append(" (last ").append(generatedChanged).append(" of ").append(pairChanged).append("), warp ")
-                .append(warpSamples).append(" (last ").append(warpMoved).append(" of ").append(warpPair).append("), intervals");
+        StringBuilder out = new StringBuilder().append(useWarp ? "warp" : "driver").append(" (errors vs hold: driver ")
+                .append(Math.round(driverScore * 100) / 100f).append(", warp ").append(Math.round(warpScore * 100) / 100f)
+                .append("; switches ").append(switches).append("), refinements ").append(refinements).append(", intervals");
         for (int i = 1; i < intervalRefreshes.length; i++) out.append(' ').append(i).append(':').append(intervalRefreshes[i]);
         return out.append(", format 0x").append(Integer.toHexString(internalFormat)).toString();
     }
@@ -263,6 +264,17 @@ final class FrameGenerator implements AutoCloseable {
         motionReady = false;
     }
 
+    /** The motion of the current pair, estimated once per pair (or after a refinement replaced its newest picture). */
+    private void ensureMotion() {
+        if (motionReady) return;
+        drawLuma(1 - newest);
+        drawLuma(newest);
+        int error = nativeEstimateMotion(luma[1 - newest], luma[newest], motion);
+        if (error != 0) throw new IllegalStateException("glTexEstimateMotionQCOM error 0x" + Integer.toHexString(error));
+        motionReady = true;
+        if (!oriented) orient();
+    }
+
     /** The luma of ring slot [slot] into its luma texture, at the motion estimation's size. */
     private void drawLuma(int slot) {
         if (lumaProgram == 0) lumaProgram = SgsrRenderer.program(FULLSCREEN, LUMA);
@@ -276,21 +288,14 @@ final class FrameGenerator implements AutoCloseable {
         GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
     }
 
-    /** The motion from the older to the newest picture of the pair; the first moving pair also tells the vectors' orientation. */
-    private void estimateMotion() {
-        int error = nativeEstimateMotion(luma[1 - newest], luma[newest], motion);
-        if (error != 0) throw new IllegalStateException("glTexEstimateMotionQCOM error 0x" + Integer.toHexString(error));
-        motionReady = true;
-        if (!oriented) orient();
-    }
-
     /**
      * Which way the vectors point: the older picture warped a full step along them must look like the newest one. Tried for both
-     * signs of x and y on a pair that moved; the closest wins.
+     * signs of x and y on a pair that moved; the smallest error wins.
      */
     private void orient() {
-        int moved = changedCells(ring[1 - newest], ring[newest]);
-        if (moved < MOVING_PAIR_CELLS) return;
+        diff(ring[1 - newest], ring[newest]);
+        if (diffChanged < MOVING_PAIR_CELLS) return;
+        final int moved = diffError;
         int best = Integer.MAX_VALUE;
         float bestX = 1f, bestY = 1f;
         for (float sx = -1f; sx <= 1f; sx += 2f) {
@@ -298,14 +303,14 @@ final class FrameGenerator implements AutoCloseable {
                 signX = sx;
                 signY = sy;
                 drawWarp(ring[1 - newest], 1f);
-                int left = changedCells(output, ring[newest]);
-                if (left < best) { best = left; bestX = sx; bestY = sy; }
+                diff(output, ring[newest]);
+                if (diffError < best) { best = diffError; bestX = sx; bestY = sy; }
             }
         }
         signX = bestX;
         signY = bestY;
         oriented = true;
-        LimeLog.info("Frame generation: motion vectors oriented " + bestX + "," + bestY + " (" + best + " of " + moved + " cells left)");
+        LimeLog.info("Frame generation: motion vectors oriented " + bestX + "," + bestY + " (error " + best + " of " + moved + ")");
     }
 
     /** [source] warped [t] pair intervals along the motion into the output texture. */
@@ -327,10 +332,10 @@ final class FrameGenerator implements AutoCloseable {
     }
 
     /**
-     * How many cells of a 64 × 36 grid differ between [a] and [b]: a small grid of differences drawn on the GPU and read back (about
-     * 9 KB, one short wait for this pass).
+     * Compares [a] and [b] on a 64 × 36 grid drawn on the GPU and read back (about 9 KB, one short wait for this pass): [diffChanged]
+     * the cells that changed, [diffError] the summed mean difference.
      */
-    private int changedCells(int a, int b) {
+    private void diff(int a, int b) {
         if (diffProgram == 0) {
             diffProgram = SgsrRenderer.program(FULLSCREEN, DIFF);
             diffTexture = texture(GLES31.GL_RGBA8, CELLS_X, CELLS_Y);
@@ -347,11 +352,13 @@ final class FrameGenerator implements AutoCloseable {
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
         diffPixels.clear();
         GLES31.glReadPixels(0, 0, CELLS_X, CELLS_Y, GLES31.GL_RGBA, GLES31.GL_UNSIGNED_BYTE, diffPixels);
-        int changed = 0;
+        int changed = 0, error = 0;
         for (int i = 0; i < CELLS_X * CELLS_Y; i++) {
             if ((diffPixels.get(i * 4) & 0xFF) > CHANGED_LEVEL) changed++;
+            error += diffPixels.get(i * 4 + 1) & 0xFF;
         }
-        return changed;
+        diffChanged = changed;
+        diffError = error;
     }
 
     /** Draws into [texture] ([w] × [h]) through the generator's own framebuffer. */

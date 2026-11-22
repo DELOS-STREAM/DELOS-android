@@ -155,7 +155,9 @@ public final class SgsrRenderer implements AutoCloseable {
     // for a busy GPU
     private int refreshesSinceReal;
     private long realVsyncNs;
-    private long frameGenLate, frameGenBusy;
+    private long frameGenLate, frameGenBusy, heldPictures;
+    // A new picture waiting for its slot on the game's grid (0: none), and the latest frame callback's vsync
+    private long heldPictureSlotNs, lastCallbackVsyncNs;
     // HDR: the newest picture's present sequence; how long a picture takes from its first callback to the display and a generated
     // image from its callback (smoothed); presented images waiting for their display time; refreshes between shown images (log)
     private int realSeq = -1, lastHdrSequence = -1;
@@ -694,7 +696,8 @@ public final class SgsrRenderer implements AutoCloseable {
                 try {
                     kind = generator.onRealFrame(source,sampledWidth,sampledHeight,texture.getTimestamp(),displayPeriodNs);
                     if (++frameGenLogFrames % 600 == 0) LimeLog.info("Frame generation: " + generator.generated() + " generated ("
-                            + frameGenLate + " late, " + frameGenBusy + " GPU busy), " + generator.repeats() + " repeated frames of "
+                            + frameGenLate + " late, " + frameGenBusy + " GPU busy), " + heldPictures + " pictures held for the grid, "
+                            + generator.repeats() + " repeated frames of "
                             + frameGenLogFrames + "; changed cells " + generator.recentChangedCells() + "; " + generator.generatedChanged()
                             + shownGaps());
                 }
@@ -708,12 +711,21 @@ public final class SgsrRenderer implements AutoCloseable {
                 // No step takes this refresh: a repeat with changed details is shown (the plan stays the picture's)
                 else if (kind == FrameGenerator.UPDATE) presentCachedNormal();
             } else {
-                presentTimestampNs = presentAtFrameTimestamp ? texture.getTimestamp() : 0L;
-                presentCachedNormal();
-                presentTimestampNs = 0L;
-                refreshesSinceReal = 0;
-                realSeq = lastHdrSequence;
-                if (generator != null && generator.hasStep()) scheduleFrameGen();
+                // HDR: a picture that would show a refresh before its slot on the game's grid waits for it (pictureSlotNs)
+                final long slot = generator != null && kind == FrameGenerator.NEW_PICTURE ? pictureSlotNs(generator) : 0L;
+                if (slot > 0) {
+                    heldPictureSlotNs = slot;
+                    heldPictures++;
+                    scheduleFrameGen();
+                } else {
+                    heldPictureSlotNs = 0L;
+                    presentTimestampNs = presentAtFrameTimestamp ? texture.getTimestamp() : 0L;
+                    presentCachedNormal();
+                    presentTimestampNs = 0L;
+                    refreshesSinceReal = 0;
+                    realSeq = lastHdrSequence;
+                    if (generator != null && generator.hasStep()) scheduleFrameGen();
+                }
             }
             statsFrameArmed = false;
             final long swapEndNs=System.nanoTime();
@@ -828,8 +840,23 @@ public final class SgsrRenderer implements AutoCloseable {
     private void onFrameGenTick(long frameTimeNanos) {
         frameGenScheduled = false;
         final FrameGenerator generator = frameGen;
-        if (generator == null || closed.get() || !outputAttached || arrivalIsActive() || !generator.hasStep()) return;
+        if (closed.get() || !outputAttached || arrivalIsActive()) return;
         final long period = displayPeriodNs;
+        lastCallbackVsyncNs = frameTimeNanos;
+        if (heldPictureSlotNs > 0) {
+            // The held picture goes out on the callback that shows it on its slot (or on any once generation stopped)
+            if (generator != null && frameTimeNanos + generatedLatencyNs < heldPictureSlotNs - period / 2) { scheduleFrameGen(); return; }
+            heldPictureSlotNs = 0L;
+            try { presentCachedNormal(); }
+            catch (RuntimeException e) { LimeLog.warning("Frame generation: held picture not shown: " + e); return; }
+            realSeq = lastHdrSequence;
+            // Counted as if it had been presented from the draw: it shows a generated image's latency after this callback
+            realVsyncNs = frameTimeNanos + generatedLatencyNs - pictureLatencyNs;
+            refreshesSinceReal = 1;
+            if (generator != null && generator.hasStep()) scheduleFrameGen();
+            return;
+        }
+        if (generator == null || !generator.hasStep()) return;
         final long now = System.nanoTime();
         // Refreshes since the picture: the first callback after it is the refresh it shows on; later ones are counted on the vsync
         // clock, so a callback the looper missed does not shift the steps
@@ -874,6 +901,22 @@ public final class SgsrRenderer implements AutoCloseable {
             return;
         }
         if (generator.hasStep()) scheduleFrameGen();
+    }
+
+    /**
+     * HDR, 2× and more: where a new picture belongs on the game's refresh grid, the previous picture's display plus its planned
+     * refreshes, when presenting it now would show it at least half a refresh before that (the console's frames arrive with network
+     * jitter); 0 to present it now. A picture is held at most about one refresh: the grid gives way to a later or much earlier one.
+     */
+    private long pictureSlotNs(FrameGenerator generator) {
+        final long period = displayPeriodNs;
+        if (!tenBit || period <= 0 || !generator.paired() || refreshesSinceReal <= 0 || pictureLatencyNs <= 0 || generatedLatencyNs <= 0
+                || lastCallbackVsyncNs <= 0) return 0L;
+        final long slot = realVsyncNs + pictureLatencyNs + (long) generator.plannedRefreshes() * period;
+        final long now = System.nanoTime();
+        final long nextVsync = lastCallbackVsyncNs + Math.max(0L, (now - lastCallbackVsyncNs + period - 1) / period) * period;
+        final long asap = nextVsync + pictureLatencyNs;
+        return asap < slot - period / 2 && asap >= slot - period * 3 / 2 ? slot : 0L;
     }
 
     /** Generation must never take the stream down: it stops for this stream, the decoded frames keep coming. */
