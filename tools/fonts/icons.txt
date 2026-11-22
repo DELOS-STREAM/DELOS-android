@@ -152,6 +152,7 @@ zoom_in = magnifying-glass-plus
 async_decode = queue
 upscaler = frame-corners
 upscaler_mode = stack
+frame_generation = stack-plus
 sharpness = aperture
 metered_network = cell-signal-full
 custom_resolution = ruler

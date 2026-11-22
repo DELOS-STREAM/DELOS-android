@@ -321,7 +321,7 @@ internal fun StreamMenuRoot(
         else BarCircleSpec(BarItem.BRIGHTNESS, Symbols.NETWORK_CHECK, res.getString(R.string.stream_menu_tile_bitrate), opensPage = true) { openPage(MenuPage.BITRATE) },
         BarCircleSpec(BarItem.BITRATE, Symbols.UPSCALER, res.getString(if (supersamplingMode) R.string.stream_menu_tile_supersampling else R.string.stream_menu_tile_upscaler),
             on = host.upscalerRequested, state = upscalerStatus.pillText(res), opensPage = true) { openPage(MenuPage.UPSCALER) },
-        BarCircleSpec(BarItem.UPSCALER, Symbols.ANIMATED, res.getString(R.string.stream_menu_tile_frame_gen), on = host.frameGenMultiplier > 1,
+        BarCircleSpec(BarItem.UPSCALER, Symbols.FRAME_GENERATION, res.getString(R.string.stream_menu_tile_frame_gen), on = host.frameGenMultiplier > 1,
             state = if (host.frameGenMultiplier > 1) "${host.frameGenMultiplier}×" else res.getString(R.string.common_off), opensPage = true) { // l10n-ignore
             openPage(MenuPage.FRAME_GEN)
         },
@@ -657,7 +657,7 @@ private fun PageRows(
         MenuPage.FRAME_GEN -> {
             val available = host.frameGenAvailable
             val multiplier = host.frameGenMultiplier
-            KeyedRow(Symbols.ANIMATED, R.string.stream_menu_row_enabled, MenuKey.FRAME_GEN_ON, RowValue.Toggle(multiplier > 1) {
+            KeyedRow(Symbols.FRAME_GENERATION, R.string.stream_menu_row_enabled, MenuKey.FRAME_GEN_ON, RowValue.Toggle(multiplier > 1) {
                 host.setFrameGenMultiplier(if (it) host.frameGenChoice else 1)
                 changesTick()
             }, Modifier.focusRequester(first), enabled = available)

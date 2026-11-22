@@ -141,6 +141,7 @@ object Symbols {
     const val ASYNC_DECODE = "\uE6AC"
     const val UPSCALER = "\uE626"
     const val UPSCALER_MODE = "\uE466"
+    const val FRAME_GENERATION = "\uEDF6"
     const val SHARPNESS = "\uE00A"
     const val METERED_NETWORK = "\uE142"
     const val CUSTOM_RESOLUTION = "\uE6B8"
