@@ -146,6 +146,7 @@ public final class SgsrRenderer implements AutoCloseable {
     // Frame generation (FrameGenerator): the multiplier asked for (1 = off) and the display refresh it fills; GL thread state below
     private volatile int frameGenMultiplier = 1;
     private volatile long displayPeriodNs;
+    private long measuredPeriodNs;
     private volatile FrameGenerator frameGen;
     private boolean frameGenUnavailable, frameGenScheduled;
     private long frameGenLogFrames;
@@ -844,6 +845,20 @@ public final class SgsrRenderer implements AutoCloseable {
         frameGenScheduled = false;
         final FrameGenerator generator = frameGen;
         if (closed.get() || !outputAttached || arrivalIsActive()) return;
+        // The refresh the display really runs at, from consecutive callbacks: the rate read when the stage was made can be a
+        // passing one (the panel switches rates when the surface asks for another)
+        if (lastCallbackVsyncNs > 0) {
+            final long gap = frameTimeNanos - lastCallbackVsyncNs;
+            if (gap > 3_000_000L && gap < 40_000_000L) {
+                measuredPeriodNs = measuredPeriodNs == 0 ? gap : Math.min(measuredPeriodNs, (measuredPeriodNs * 7 + gap) / 8);
+                if (gap < measuredPeriodNs * 9 / 10) measuredPeriodNs = gap;
+                if (Math.abs(measuredPeriodNs - displayPeriodNs) * 10 > displayPeriodNs) {
+                    LimeLog.info("Frame generation: display refresh " + (1_000_000_000L / measuredPeriodNs) + " Hz (was "
+                            + (displayPeriodNs > 0 ? 1_000_000_000L / displayPeriodNs : 0) + ")");
+                    displayPeriodNs = measuredPeriodNs;
+                }
+            }
+        }
         final long period = displayPeriodNs;
         lastCallbackVsyncNs = frameTimeNanos;
         if (heldPictureSlotNs > 0) {
