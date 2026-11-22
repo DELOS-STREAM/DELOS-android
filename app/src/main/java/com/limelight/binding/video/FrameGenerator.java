@@ -78,6 +78,11 @@ final class FrameGenerator implements AutoCloseable {
     // The latest difference test: changed cells and the summed mean difference
     private int diffChanged, diffError;
     private int lastPictureCells;
+    // How far the last two pairs moved (summed difference) and the share of a step this pair extrapolates: a pair that moved
+    // less than the one before (a camera slowing to a stop) is extrapolated less, so the stop does not overshoot and snap back
+    private int pairError, previousPairError;
+    private float damping = 1f;
+    private long dampedPairs;
     // Whether the previous decoded frame repeated or refined its picture
     private boolean lastWasRepeat;
     // The way that generates: the warp (else the driver's extrapolation), and the two ways' smoothed errors relative to holding
@@ -159,6 +164,12 @@ final class FrameGenerator implements AutoCloseable {
                 return UPDATE;
             }
             lastPictureCells = changed;
+            previousPairError = pairError;
+            pairError = holdError;
+            // Only a clear slow-down (under 70 %): the difference sum varies a little from pair to pair at a steady speed
+            damping = previousPairError > 0 && pairError * 10 < previousPairError * 7
+                    ? Math.max(.3f, pairError / (float) previousPairError) : 1f;
+            if (damping < 1f) dampedPairs++;
             // Every other moving picture: which way would have predicted it better from the pair before it
             if (frames >= 2 && changed >= MOVING_PAIR_CELLS && offered == (OFFERS_EXTRAPOLATION | OFFERS_MOTION_ESTIMATION)
                     && holdError > 0 && evaluations++ % 2 == 0) {
@@ -225,7 +236,7 @@ final class FrameGenerator implements AutoCloseable {
 
     /** Generates the next step into the output texture and returns it; a driver error is returned as an exception. */
     int generate() {
-        float t = nextOffset() / (float) refreshes;
+        float t = nextOffset() / (float) refreshes * damping;
         nextStep++;
         if (useWarp) {
             ensureMotion();
@@ -242,7 +253,8 @@ final class FrameGenerator implements AutoCloseable {
     String generatedChanged() {
         StringBuilder out = new StringBuilder().append(useWarp ? "warp" : "driver").append(" (errors vs hold: driver ")
                 .append(Math.round(driverScore * 100) / 100f).append(", warp ").append(Math.round(warpScore * 100) / 100f)
-                .append("; switches ").append(switches).append("), refinements ").append(refinements).append(", intervals");
+                .append("; switches ").append(switches).append("), refinements ").append(refinements).append(", damped pairs ")
+                .append(dampedPairs).append(", intervals");
         for (int i = 1; i < intervalRefreshes.length; i++) out.append(' ').append(i).append(':').append(intervalRefreshes[i]);
         return out.append(", format 0x").append(Integer.toHexString(internalFormat)).toString();
     }

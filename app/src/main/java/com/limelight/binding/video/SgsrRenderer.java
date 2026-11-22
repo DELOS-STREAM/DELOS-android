@@ -147,6 +147,8 @@ public final class SgsrRenderer implements AutoCloseable {
     private volatile int frameGenMultiplier = 1;
     private volatile long displayPeriodNs;
     private long measuredPeriodNs;
+    // HDR: whether the newest picture went out with a planned display time (phase lock): then its steps do too
+    private boolean pictureScheduled;
     private volatile FrameGenerator frameGen;
     private boolean frameGenUnavailable, frameGenScheduled;
     private long frameGenLogFrames;
@@ -881,18 +883,26 @@ public final class SgsrRenderer implements AutoCloseable {
         // clock, so a callback the looper missed does not shift the steps
         if (refreshesSinceReal == 0) { realVsyncNs = frameTimeNanos; refreshesSinceReal = 1; }
         else refreshesSinceReal = 1 + Math.round((frameTimeNanos - realVsyncNs) / (float) period);
-        // The refresh a step presented now shows on, counted from the picture's: the same when a generated image takes as long from
-        // its callback to the display as the picture took from its first callback; HDR measures both (pollShown) and corrects
-        int due = refreshesSinceReal;
-        if (tenBit) {
+        final boolean scheduled = !tenBit || pictureScheduled;
+        if (scheduled) {
+            // The picture has a planned display time (SDR, or phase lock with HDR): each step goes out with its own time, picture
+            // + offset refreshes, queued up to two and a half refreshes ahead (a generated image needs about two to the display)
+            while (generator.hasStep() && lastPresentTargetNs + generator.nextOffset() * period < now) { generator.skipStep(); frameGenLate++; }
+            if (!generator.hasStep()) return;
+            if (lastPresentTargetNs + generator.nextOffset() * period - frameTimeNanos > period * 5 / 2) { scheduleFrameGen(); return; }
+        } else {
+            // As soon as possible (HDR without phase lock): the refresh a step presented now shows on, counted from the picture's,
+            // corrected by how long each takes to the display (pollShown)
+            int due = refreshesSinceReal;
             pollShown();
             if (generatedLatencyNs > 0 && pictureLatencyNs > 0) {
                 due = Math.round((frameTimeNanos - realVsyncNs + generatedLatencyNs - pictureLatencyNs) / (float) period);
             }
+            while (generator.hasStep() && generator.nextOffset() < due) { generator.skipStep(); frameGenLate++; }
+            if (!generator.hasStep()) return;
+            if (generator.nextOffset() > due) { scheduleFrameGen(); return; }
         }
-        while (generator.hasStep() && generator.nextOffset() < due) { generator.skipStep(); frameGenLate++; }
-        if (!generator.hasStep()) return;
-        if (generator.nextOffset() > due) { scheduleFrameGen(); return; }
+        if (tenBit) pollShown();
         final long target = lastPresentTargetNs + generator.nextOffset() * period;
         if (heldFrame || gpuBusy(now)) {
             generator.skipStep();
@@ -906,8 +916,8 @@ public final class SgsrRenderer implements AutoCloseable {
                 drawProgram(cachedProgram,image,cachedWidth,cachedHeight,cachedSampledWidth,cachedSampledHeight,cachedReconstruction);
                 require(GLES31.glGetError()==GLES31.GL_NO_ERROR,"Frame generation draw");
                 if (tenBit) {
-                    // The HDR output presents as soon as it can: on this callback that is the step's refresh
-                    int sequence = nativePresentHdr(hdrOutput,hdrActive,hdrMetadata);
+                    // Phase lock: at its planned time; otherwise as soon as it can, which on this callback is the step's refresh
+                    int sequence = nativePresentHdr(hdrOutput,hdrActive,hdrMetadata,scheduled ? target : 0L);
                     if (sequence > 0) trackShown(sequence,frameTimeNanos);
                     hdrFrameAcquired = false;
                 } else {
@@ -929,7 +939,7 @@ public final class SgsrRenderer implements AutoCloseable {
      */
     private long pictureSlotNs(FrameGenerator generator) {
         final long period = displayPeriodNs;
-        if (!tenBit || period <= 0 || !generator.paired() || refreshesSinceReal <= 0 || pictureLatencyNs <= 0 || generatedLatencyNs <= 0
+        if (!tenBit || pictureScheduled || period <= 0 || !generator.paired() || refreshesSinceReal <= 0 || pictureLatencyNs <= 0 || generatedLatencyNs <= 0
                 || lastCallbackVsyncNs <= 0) return 0L;
         final long slot = realVsyncNs + pictureLatencyNs + (long) generator.plannedRefreshes() * period;
         final long now = System.nanoTime();
@@ -1106,9 +1116,12 @@ public final class SgsrRenderer implements AutoCloseable {
         statsFrameArmed = false;
         if (tenBit) {
             final long submitNs = System.nanoTime();
-            int sequence = nativePresentHdr(hdrOutput,hdrActive,hdrMetadata);
+            // Phase lock: the frame's target refresh, as the SDR path's eglPresentationTimeANDROID; otherwise as soon as possible
+            final long desiredNs = presentTimestampNs != 0L ? SgsrPacing.presentationTimeNs(presentTimestampNs,submitNs) : 0L;
+            int sequence = nativePresentHdr(hdrOutput,hdrActive,hdrMetadata,desiredNs);
             hdrFrameAcquired = false;
-            lastPresentTargetNs = submitNs;
+            pictureScheduled = desiredNs != 0L;
+            lastPresentTargetNs = desiredNs != 0L ? desiredNs : submitNs;
             if (sequence > 0) {
                 lastHdrSequence = sequence;
                 if (!arrivalOnly) {
@@ -1358,7 +1371,7 @@ public final class SgsrRenderer implements AutoCloseable {
     private static native int nativeAcquireHdr(long handle);
     private static native int nativeHdrWidth(long handle);
     private static native int nativeHdrHeight(long handle);
-    private static native int nativePresentHdr(long handle,boolean hdr,byte[] metadata);
+    private static native int nativePresentHdr(long handle,boolean hdr,byte[] metadata,long desiredPresentNs);
     private static native long nativeHdrGpuDone(long handle,int sequence);
     private static native int nativeGpuFenceCreate();
     private static native long nativeGpuFenceStatus(int fd);

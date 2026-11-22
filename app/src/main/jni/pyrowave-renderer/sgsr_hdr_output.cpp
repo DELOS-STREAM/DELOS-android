@@ -41,6 +41,7 @@ struct Api {
     void (*freeBuffer)(AHardwareBuffer *)=nullptr;
     int64_t (*latchTime)(ASurfaceTransactionStats *)=nullptr;
     int (*presentFence)(ASurfaceTransactionStats *)=nullptr;
+    void (*desiredPresentTime)(ASurfaceTransaction *,int64_t)=nullptr;
     bool load() {
         // libandroid stays loaded for outstanding transaction callbacks.
         static void *lib=dlopen("libandroid.so",RTLD_NOW);
@@ -57,6 +58,8 @@ struct Api {
         // Frame timing is optional: without it the stage timestamps are simply not available
         latchTime=reinterpret_cast<decltype(latchTime)>(dlsym(lib,"ASurfaceTransactionStats_getLatchTime"));
         presentFence=reinterpret_cast<decltype(presentFence)>(dlsym(lib,"ASurfaceTransactionStats_getPresentFenceFd"));
+        // Optional too: without it a frame presents as soon as it can
+        desiredPresentTime=reinterpret_cast<decltype(desiredPresentTime)>(dlsym(lib,"ASurfaceTransaction_setDesiredPresentTime"));
         return ok;
     }
 };
@@ -207,8 +210,9 @@ struct Output {
         glFinish();
         return -1;
     }
-    // Returns the sequence number of the presented frame, 0 when there was nothing to present.
-    uint32_t present(JNIEnv *env,jboolean hdr,jbyteArray metadata) {
+    // Returns the sequence number of the presented frame, 0 when there was nothing to present. [desiredNs] (CLOCK_MONOTONIC, 0 for
+    // as soon as possible) is the earliest time SurfaceFlinger shows it: the frame's refresh, as eglPresentationTimeANDROID for SDR.
+    uint32_t present(JNIEnv *env,jboolean hdr,jbyteArray metadata,jlong desiredNs) {
         if(current<0)return 0;
         // The buffer goes to SurfaceFlinger with the fence of this frame's GPU work, so it reads the picture only
         // once it is complete and the GL thread does not wait for the GPU. Release fences separately protect the
@@ -251,6 +255,7 @@ struct Output {
             light.maxContentLightLevel=value(20);light.maxFrameAverageLightLevel=value(22);
             api.smpte(t,pool->control,&mastering);api.cta(t,pool->control,&light);
         }else{api.smpte(t,pool->control,nullptr);api.cta(t,pool->control,nullptr);}
+        if(desiredNs>0&&api.desiredPresentTime) api.desiredPresentTime(t,desiredNs);
         api.complete(t,new Completion{pool,previous,seq},completed);api.apply(t);api.destroy(t);
         previous=current;current=-1;
         return seq;
@@ -267,7 +272,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_limelight_binding_video_SgsrRenderer
 extern "C" JNIEXPORT jint JNICALL Java_com_limelight_binding_video_SgsrRenderer_nativeAcquireHdr(JNIEnv *,jclass,jlong handle){return reinterpret_cast<Output *>(handle)->acquire();}
 extern "C" JNIEXPORT jint JNICALL Java_com_limelight_binding_video_SgsrRenderer_nativeHdrWidth(JNIEnv *,jclass,jlong handle){return reinterpret_cast<Output *>(handle)->width;}
 extern "C" JNIEXPORT jint JNICALL Java_com_limelight_binding_video_SgsrRenderer_nativeHdrHeight(JNIEnv *,jclass,jlong handle){return reinterpret_cast<Output *>(handle)->height;}
-extern "C" JNIEXPORT jint JNICALL Java_com_limelight_binding_video_SgsrRenderer_nativePresentHdr(JNIEnv *env,jclass,jlong handle,jboolean hdr,jbyteArray metadata){return jint(reinterpret_cast<Output *>(handle)->present(env,hdr,metadata));}
+extern "C" JNIEXPORT jint JNICALL Java_com_limelight_binding_video_SgsrRenderer_nativePresentHdr(JNIEnv *env,jclass,jlong handle,jboolean hdr,jbyteArray metadata,jlong desiredNs){return jint(reinterpret_cast<Output *>(handle)->present(env,hdr,metadata,desiredNs));}
 extern "C" JNIEXPORT void JNICALL Java_com_limelight_binding_video_SgsrRenderer_nativeDestroyHdr(JNIEnv *,jclass,jlong handle){delete reinterpret_cast<Output *>(handle);}
 // Whether the GPU work of presented frame {seq} has finished: -1 while it is still running, otherwise the signal time
 // of its fence (CLOCK_MONOTONIC ns), 0 when it finished but the kernel gives no time or the frame is no longer remembered.
