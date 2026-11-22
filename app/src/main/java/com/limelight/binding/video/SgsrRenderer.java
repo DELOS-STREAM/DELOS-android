@@ -787,8 +787,8 @@ public final class SgsrRenderer implements AutoCloseable {
         if (frameGen == null && !frameGenUnavailable) {
             frameGen = FrameGenerator.create(multiplier);
             frameGenUnavailable = frameGen == null;
-            String state = frameGen != null ? "Frame generation on: up to " + multiplier + " frames per decoded frame"
-                    : "Frame generation unavailable: the GPU driver has no frame extrapolation";
+            String state = frameGen != null ? "Frame generation on: up to " + multiplier + " frames per game frame"
+                    : "Frame generation unavailable: the GPU driver has neither frame extrapolation nor motion estimation";
             LimeLog.info(state);
             DiagLog.i("FrameGen",state);
         }

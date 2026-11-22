@@ -6,8 +6,13 @@ This is a research and design basis for generating extra frames from decoded str
 60 fps stream fills a 120 Hz display (and 30 fps fills 60 Hz). It applies to every DELOS stream source.
 
 - Phase 1 is implemented: `binding/video/FrameGenerator.java` with `jni/pyrowave-renderer/sgsr_frame_generation.cpp`, run
-  by `SgsrRenderer` (setting `list_frame_generation`: off, 2×, 3×, 4×; SDR only). With the upscaler off the SGSR stage runs
-  as a sharpen-only pass-through at strength 0. Cost and quality on the Odin are not measured yet [UNVERIFIED].
+  by `SgsrRenderer` (setting `list_frame_generation`: off, 2×, 3×, 4×; SDR and HDR). With the upscaler off the SGSR stage
+  runs as a sharpen-only pass-through at strength 0. The pace is the game's: a decoded frame that repeats the previous
+  picture (64 × 36 grid of differences, at most 0.5 % of cells changed) is not shown and its refresh gets a generated
+  step. Steps are counted in display refreshes since the picture was presented.
+- Observed on the Odin (2026-11-22, PS5, GTA at 30 fps in a 60 fps HDR stream, 120 Hz): the app context exposes
+  `GL_QCOM_frame_extrapolation`, calls are accepted, about every second decoded frame is found to be a repeat. Whether the
+  driver moves the picture (versus copying the newest frame) and the cost are not measured yet [UNVERIFIED].
 - The reference device is the AYN Odin 2 Portal Max (QCS8550, Adreno 740, Android 13, 1920 × 1080 at 120 Hz).
 - Facts carry a source; everything else is marked **[INFERENCE]** or **[UNVERIFIED]**.
 
