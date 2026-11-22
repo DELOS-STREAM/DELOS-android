@@ -44,7 +44,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     private var audioSource: AudioSource? = null
     @Volatile private var started = false
     @Volatile private var lastPacketMs = 0L
-    private val rttInfo = AtomicLong(-1)
+    private val rttInfo = AtomicLong(0)
+    private var qualityLogs = 0
     private var connectThread: Thread? = null
 
     /** The console this stream plays, for the activity's title and the loader. */
@@ -158,8 +159,14 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             if (motionReset) synchronized(padLock) { orientation = floatArrayOf(0f, 0f, 0f, 1f) }
         }
 
-        override fun onConnectionQuality(rttMs: Int, targetKbps: Int) {
-            if (rttMs >= 0) rttInfo.set(rttMs.toLong() shl 32)
+        // The console's own rtt figure does not match the link (about 190 for a 6 ms ping on the Odin, 2026-11-22): it is logged;
+        // the network latency shown is the round trip DELOS measures on the Takion acks
+        override fun onConnectionQuality(rtt: Double, targetKbps: Int) {
+            if (qualityLogs < 3) { qualityLogs++; Log.i(TAG, "connection quality: rtt=$rtt target=$targetKbps") }
+        }
+
+        override fun onRtt(rttMs: Int, varianceMs: Int) {
+            rttInfo.set((rttMs.toLong() shl 32) or (varianceMs.toLong() and 0xFFFFFFFFL))
         }
 
         override fun onEnded(reason: String) {

@@ -55,6 +55,8 @@ class PsProtoMessage(bytes: ByteArray) {
 
     fun uint(field: Int): Long? = varints[field]?.lastOrNull()
     fun bool(field: Int): Boolean? = uint(field)?.let { it != 0L }
+    /** A 64-bit field (wire type 1) read as a double. */
+    fun double(field: Int): Double? = uint(field)?.let { java.lang.Double.longBitsToDouble(it) }
     fun bytes(field: Int): ByteArray? = lengths[field]?.lastOrNull()
     fun string(field: Int): String? = bytes(field)?.toString(Charsets.UTF_8)
     fun message(field: Int): PsProtoMessage? = bytes(field)?.let { PsProtoMessage(it) }

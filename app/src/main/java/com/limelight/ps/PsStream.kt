@@ -23,8 +23,10 @@ interface PsStreamListener {
     fun onRumble(left: Int, right: Int) {}
     /** The console's pad info (8.4): light bar colour and whether the game resets the motion origin. */
     fun onPadInfo(red: Int, green: Int, blue: Int, motionReset: Boolean) {}
-    /** CONNECTIONQUALITY: the console's round-trip estimate and its target bitrate. */
-    fun onConnectionQuality(rttMs: Int, targetKbps: Int) {}
+    /** CONNECTIONQUALITY: the console's own rtt figure (a double, unit unknown) and its target bitrate. */
+    fun onConnectionQuality(rtt: Double, targetKbps: Int) {}
+    /** The round trip measured on the acks of reliable messages, smoothed, and its mean deviation, in milliseconds. */
+    fun onRtt(rttMs: Int, varianceMs: Int) {}
     fun onStatus(text: String) {}
     fun onEnded(reason: String) {}
 }
@@ -63,6 +65,10 @@ class PsStream(
     private val ecdh = PsEcdh()
     private val timers: ScheduledExecutorService = Executors.newScheduledThreadPool(2)
     private val unacked = ConcurrentHashMap<Int, Pair<ByteArray, Int>>()
+    // When each reliable message part was first sent: its ack gives a round-trip sample (not after a resend)
+    private val sentAtNs = ConcurrentHashMap<Int, Long>()
+    private var rttMs = -1f
+    private var rttVarianceMs = 0f
     @Volatile private var running = true
     @Volatile private var bang: PsProtoMessage? = null
     @Volatile private var streamInfo: PsProtoMessage? = null
@@ -158,13 +164,14 @@ class PsStream(
             val d = PsTakionPackets.control(consoleTag, position.toInt(), PsTakionPackets.CHUNK_DATA, flags, payload)
             macControl(d, position)
             unacked[tsn] = d to 0
+            sentAtNs[tsn] = System.nanoTime()
             send(d)
         }
     }
 
     private fun resend() {
         for ((tsn, entry) in unacked) {
-            if (entry.second >= 25) { unacked.remove(tsn); continue }
+            if (entry.second >= 25) { unacked.remove(tsn); sentAtNs.remove(tsn); continue }
             unacked[tsn] = entry.first to entry.second + 1
             send(entry.first)
         }
@@ -209,9 +216,22 @@ class PsStream(
             PsTakionPackets.CHUNK_DATA -> onData(c)
             PsTakionPackets.CHUNK_DATA_ACK -> {
                 val acked = ByteBuffer.wrap(c.payload).int
-                for (tsn in unacked.keys) if (acked - tsn >= 0) unacked.remove(tsn)
+                val now = System.nanoTime()
+                val sample = unacked[acked]?.takeIf { it.second == 0 }?.let { sentAtNs[acked] }?.let { (now - it) / 1_000_000f }
+                for (tsn in unacked.keys) if (acked - tsn >= 0) { unacked.remove(tsn); sentAtNs.remove(tsn) }
+                if (sample != null) onRttSample(sample)
             }
         }
+    }
+
+    /** Smoothed round trip and its mean deviation (RFC 6298 weights) from the acks of reliable messages. */
+    private fun onRttSample(ms: Float) {
+        if (rttMs < 0) { rttMs = ms; rttVarianceMs = ms / 2 }
+        else {
+            rttVarianceMs = rttVarianceMs * .75f + kotlin.math.abs(rttMs - ms) * .25f
+            rttMs = rttMs * .875f + ms * .125f
+        }
+        listener.onRtt(kotlin.math.round(rttMs).toInt(), kotlin.math.round(rttVarianceMs).toInt())
     }
 
     private fun onData(c: PsTakionPackets.Control) {
@@ -266,7 +286,7 @@ class PsStream(
             PsMsg.BANG -> bang = m.message(3)
             PsMsg.STREAMINFO -> m.message(15)?.let { if (gkRecv == null) streamInfo = it else onStreamInfo(it) }
             PsMsg.DISCONNECT -> { listener.onEnded(m.message(10)?.string(1) ?: "disconnected"); close() }
-            PsMsg.CONNECTIONQUALITY -> m.message(17)?.let { listener.onConnectionQuality(it.uint(5)?.toInt() ?: -1, it.uint(1)?.toInt() ?: 0) }
+            PsMsg.CONNECTIONQUALITY -> m.message(17)?.let { listener.onConnectionQuality(it.double(5) ?: -1.0, it.uint(1)?.toInt() ?: 0) }
         }
     }
 
