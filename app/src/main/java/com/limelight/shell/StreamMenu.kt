@@ -386,8 +386,8 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override val gameName: String = (if (game.conn is com.limelight.ps.PsConnection) game.intent.getStringExtra(DelosStreamActivity.EXTRA_PC_NAME) else null)
             ?: game.intent.getStringExtra(DelosStreamActivity.EXTRA_APP_NAME) ?: "Stream"
         override val playStation get() = game.conn is com.limelight.ps.PsConnection
-        override fun pressConsoleButton(ps: Boolean) {
-            (game.conn as? com.limelight.ps.PsConnection)?.tapButton(if (ps) com.limelight.ps.PsButton.PS else com.limelight.ps.PsButton.SHARE)
+        override fun pressCreateButton() {
+            (game.conn as? com.limelight.ps.PsConnection)?.tapButton(com.limelight.ps.PsButton.SHARE)
         }
         override val microphoneAvailable get() = (game.conn as? com.limelight.ps.PsConnection)?.microphoneAvailable == true
         override val microphoneMuted get() = (game.conn as? com.limelight.ps.PsConnection)?.microphoneMuted != false

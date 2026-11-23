@@ -109,11 +109,13 @@ internal fun StreamMenuRoot(
     val res = textResources()
     // The dock of this stage: the prototype's, or a compact stage's row that scrolls and nearer margins
     val stageMetrics = LocalStage.current
-    val dock = remember(stageMetrics.stageWidth, stageMetrics.stageHeight, stageMetrics.shape, stageMetrics.textScale) { DockGeometry.forStage(stageMetrics) }
-    val stagePixel = stageScale()
-    // A compact stage's row of tiles scrolls: it starts where the tile the menu opens on (or whose page it opens on) is in view
     val ps = host.playStation
-    val dockScroll = rememberScrollState((dockScrollFor(start.page.barItem() ?: start.focus, 0f, dock) * stagePixel).roundToInt())
+    val dock = remember(stageMetrics.stageWidth, stageMetrics.stageHeight, stageMetrics.shape, stageMetrics.textScale, ps) { DockGeometry.forStage(stageMetrics, ps) }
+    val stagePixel = stageScale()
+    // The tile the menu opens on: the first one where the row does not have the asked one
+    val startFocus = if (start.focus in dock.items) start.focus else BarItem.RESUME
+    // A compact stage's row of tiles scrolls: it starts where the tile the menu opens on (or whose page it opens on) is in view
+    val dockScroll = rememberScrollState((dockScrollFor(start.page.barItem() ?: startFocus, 0f, dock) * stagePixel).roundToInt())
     // Where the row is, stage pixels: the popover's caret follows its tile (read only where the row scrolls, so nothing else recomposes with it)
     val rowScroll = if (dock.scrolls) dockScroll.value / stagePixel else 0f
     var headWidth by remember { mutableFloatStateOf(0f) }
@@ -133,7 +135,7 @@ internal fun StreamMenuRoot(
     var navigated by remember { mutableStateOf(start.animate) }
     var helpKey by remember(contentPage) { mutableStateOf(pageHelpKey(contentPage)) }
     // The tile whose help the caption shows and that wears the focus: the focused one, and the one that opened the popover while the focus is in it
-    var barHelpItem by remember { mutableStateOf(start.page.barItem() ?: start.focus) }
+    var barHelpItem by remember { mutableStateOf(start.page.barItem() ?: startFocus) }
     var focusedItem by remember { mutableStateOf<BarItem?>(null) }
     // The row of More that gets the focus when More shows again (the row that opened a page above it)
     var entryRow by remember { mutableStateOf<String?>(null) }
@@ -301,15 +303,13 @@ internal fun StreamMenuRoot(
         sharp.animateTo(if (page == MenuPage.UPSCALER && !closing) 0f else 1f, tween(Motion.GRADIENT, easing = Motion.Ease))
     }
     // Composed already visible-bound, so the dock's first tile exists when the focus is requested
-    if (start.page == MenuPage.MAIN) InitialFocus(circleFocus.getValue(start.focus))
+    if (start.page == MenuPage.MAIN) InitialFocus(circleFocus.getValue(startFocus))
 
-    val circles = listOf(
+    val circles = listOfNotNull(
         BarCircleSpec(BarItem.RESUME, Symbols.RESUME, res.getString(R.string.stream_menu_tile_resume)) { close() },
         // The Delos keyboard takes the controller, so the menu closes first. A toggle without a state word: only the accent shows it.
-        // A console takes no keyboard: the tile presses its PS button (a handheld may have none)
-        if (host.playStation) BarCircleSpec(BarItem.KEYBOARD, Symbols.PAD_DUALSENSE_PS, res.getString(R.string.ps_menu_ps_button)) {
-            close { host.pressConsoleButton(ps = true) }
-        } else BarCircleSpec(BarItem.KEYBOARD, Symbols.KEYBOARD, res.getString(R.string.stream_menu_tile_keyboard), on = host.fullKeyboardOn, showState = false) {
+        // A console takes no keyboard: its row has no such tile
+        if (ps) null else BarCircleSpec(BarItem.KEYBOARD, Symbols.KEYBOARD, res.getString(R.string.stream_menu_tile_keyboard), on = host.fullKeyboardOn, showState = false) {
             close { host.toggleFullKeyboard() }
         },
         BarCircleSpec(BarItem.OVERLAY, Symbols.OVERLAY, res.getString(R.string.stream_menu_tile_overlay), on = host.overlayOn,
@@ -410,7 +410,7 @@ internal fun StreamMenuRoot(
                     circles = circles,
                     requesters = circleFocus,
                     focusItem = focusedItem ?: page.barItem() ?: barHelpItem,
-                    firstItem = start.page.barItem() ?: start.focus,
+                    firstItem = start.page.barItem() ?: startFocus,
                     popOpen = popOpen,
                     caption = helpText(barHelpKey),
                     enter = { enterClock.value },
@@ -589,7 +589,7 @@ private fun PageRows(
             KeyedRow(Symbols.TOUCH_SENSITIVITY, R.string.stream_menu_row_touch_sensitivity, MenuKey.TOUCH_SENSITIVITY, RowValue.Toggle(host.touchSensitivityOn) { toggle { host.toggleTouchSensitivity() } })
             KeyedRow(Symbols.VIBRATION, R.string.stream_menu_row_rumble_feel, MoreRow.RUMBLE, RowValue.Text(host.rumblePreset?.label(res) ?: stringResource(R.string.stream_menu_rumble_custom)) { openPage(MenuPage.RUMBLE) }, entry(MoreRow.RUMBLE))
             // A console: its Create button (Brightness is a dock tile there); a PC: the screen brightness
-            if (host.playStation) KeyedRow(Symbols.CONSOLE_CREATE, R.string.ps_menu_create, MoreRow.CREATE, RowValue.Action { close { host.pressConsoleButton(ps = false) } })
+            if (host.playStation) KeyedRow(Symbols.CONSOLE_CREATE, R.string.ps_menu_create, MoreRow.CREATE, RowValue.Action { close { host.pressCreateButton() } })
             else KeyedRow(Symbols.BRIGHTNESS_MEDIUM, R.string.stream_menu_row_screen_brightness, MenuKey.SCREEN_BRIGHTNESS,
                 RowValue.Slider(host.brightnessPercent, 5, 100, 5, " %") { toggle { host.setBrightness(it) } })
             if (host.microphoneAvailable) KeyedRow(Symbols.MICROPHONE, R.string.stream_menu_row_microphone, MoreRow.MICROPHONE,

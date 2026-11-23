@@ -45,10 +45,8 @@
     <string name="ps_settings_tab_network">网络</string>
     <string name="ps_settings_keyframe_title">丢帧后请求关键帧</string>
     <string name="ps_settings_keyframe_description">每当丢失一帧时，向主机请求一个完整的新帧。画面恢复更快，但会短暂增加数据量。</string>
-    <string name="ps_menu_ps_button">PS 按钮</string>
     <string name="ps_menu_create">创建</string>
     <string name="ps_menu_rest">待机模式</string>
-    <string name="ps_menu_help_ps_button">按下主机的 PS 按钮：打开控制中心。</string>
     <string name="ps_menu_help_create">按下主机的创建按钮：截图和片段。</string>
     <string name="ps_menu_help_disconnect">停止串流并返回 DELOS。游戏在主机上继续运行。</string>
     <string name="ps_menu_help_rest">让主机进入待机模式并停止串流。游戏会暂停，之后主机可以继续。</string>

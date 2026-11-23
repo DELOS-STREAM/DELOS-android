@@ -41,7 +41,9 @@ announces one controller and its feedback packets carry no controller index); Du
    (JNI over the bundled libopus, packet-loss concealment) into the Android audio renderer. Input: the controller handler's
    buttons, sticks, triggers, motion (deg/s, m/s² → rad/s, g, orientation integrated from the gyro) and touchpad become the
    console's controller state; rumble, light bar and RTT come back. Keyboard, mouse, clipboard, commands and the runtime
-   bitrate are not offered for a console.
+   bitrate are not offered for a console. The stream menu's dock shows eight tiles there, centred: no Keyboard tile
+   (`DockGeometry.PLAYSTATION_ITEMS`); Brightness in place of Bitrate, Rest mode in place of Quit, Create on the More page.
+   The PS button is not in the menu: it is mapped on the controller.
 9. PlayStation settings (`Screen.PsSettings`, the button under the console circles) are a file of their own (`PsPrefs`,
    `ps_settings`): the classic stream keys plus keyframe-on-loss, video queue depth, audio buffer and swapped channels.
    Defaults on first use: 1080p, 60 fps, HEVC, DELOS's recommended bitrate. Remote Play offers 360p to 1080p at 30 or 60 fps.

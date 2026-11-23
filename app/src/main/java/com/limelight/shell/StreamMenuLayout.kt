@@ -315,6 +315,9 @@ internal object StreamMenuLayout {
  * row scrolls sideways instead ([scrollMax], [dockScrollFor]), starting [COMPACT_SIDE] from the left edge; the dock sits lower (the
  * caption ends 48 px above the bottom) and the popover gets the margin of 48 on the sides and above, so it keeps the room a short stage
  * has. [textScale] is the interface scale, which the heights of the label and the caption follow on a compact stage.
+ *
+ * [items] are the tiles the row shows, in order: all nine, or a PlayStation stream's eight ([PLAYSTATION_ITEMS]). The row is laid out
+ * for them: centred as the nine are, or scrolling as far as they reach.
  */
 internal class DockGeometry(
     val width: Float,
@@ -324,12 +327,13 @@ internal class DockGeometry(
     private val textScale: Float = 1f,
     /** The stage's height: a low compact stage sets the two button hints side by side. */
     height: Float = StreamMenuLayout.STAGE_HEIGHT,
+    val items: List<BarItem> = BarItem.entries,
 ) {
     private val c = StreamMenuLayout
 
     val tile = c.TILE
     val gap = c.TILE_GAP
-    val tilesWidth = c.TILES_WIDTH
+    val tilesWidth = items.size * tile + (items.size - 1) * gap
     val tileRadius = c.TILE_RADIUS
     val icon = c.TILE_ICON
     val ring = c.RING
@@ -380,10 +384,19 @@ internal class DockGeometry(
     companion object {
         val Standard = DockGeometry(StreamMenuLayout.STAGE_WIDTH, StreamMenuLayout.POPOVER_MARGIN, compact = false)
 
-        /** The dock of this stage: the prototype's, or a compact stage's scrolling one. */
-        fun forStage(stage: com.limelight.shell.ui.StageMetrics): DockGeometry {
-            if (stage.shape != com.limelight.shell.ui.StageShape.COMPACT) return Standard
-            return DockGeometry(stage.stageWidth, COMPACT_MARGIN, compact = true, textScale = stage.textScale, height = stage.stageHeight)
+        /** A PlayStation stream's row: a console takes no keyboard, so that tile is not in it. */
+        val PLAYSTATION_ITEMS: List<BarItem> = BarItem.entries - BarItem.KEYBOARD
+
+        /** The prototype's dock with a PlayStation stream's row. */
+        val PlayStation = DockGeometry(StreamMenuLayout.STAGE_WIDTH, StreamMenuLayout.POPOVER_MARGIN, compact = false, items = PLAYSTATION_ITEMS)
+
+        /** The dock of this stage: the prototype's, or a compact stage's scrolling one; with a PlayStation stream's row for [playStation]. */
+        fun forStage(stage: com.limelight.shell.ui.StageMetrics, playStation: Boolean = false): DockGeometry {
+            if (stage.shape != com.limelight.shell.ui.StageShape.COMPACT) return if (playStation) PlayStation else Standard
+            return DockGeometry(
+                stage.stageWidth, COMPACT_MARGIN, compact = true, textScale = stage.textScale, height = stage.stageHeight,
+                items = if (playStation) PLAYSTATION_ITEMS else BarItem.entries,
+            )
         }
 
         /** A compact stage: the popover's margin, which is also the least margin of everything else. */
@@ -412,8 +425,8 @@ internal class DockGeometry(
 /** The dock's geometry of the stage the menu is shown on ([DockGeometry.forStage]); provided by [StreamMenuRoot]. */
 internal val LocalDockGeometry = androidx.compose.runtime.staticCompositionLocalOf { DockGeometry.Standard }
 
-/** The left edge of [item]'s tile in the row, stage pixels (on the stage: less the row's scroll). */
-internal fun tileLeft(item: BarItem, g: DockGeometry = DockGeometry.Standard): Float = g.tilesLeft + item.ordinal * (g.tile + g.gap)
+/** The left edge of [item]'s tile in the row, stage pixels (on the stage: less the row's scroll): by its place among the row's tiles. */
+internal fun tileLeft(item: BarItem, g: DockGeometry = DockGeometry.Standard): Float = g.tilesLeft + g.items.indexOf(item) * (g.tile + g.gap)
 
 /** The horizontal center of [item]'s tile in the row. */
 internal fun tileCenterX(item: BarItem, g: DockGeometry = DockGeometry.Standard): Float = tileLeft(item, g) + g.tile / 2f
@@ -641,7 +654,6 @@ internal const val RECOMMENDED_ROW = "Recommended bitrate"
 
 /** A PlayStation stream's help for the dock tiles that do something else on a console (StreamMenuHost.playStation). */
 internal val PS_HELP = mapOf(
-    MenuKey.KEYBOARD to R.string.ps_menu_help_ps_button,
     MoreRow.CREATE to R.string.ps_menu_help_create,
     MenuKey.DISCONNECT to R.string.ps_menu_help_disconnect,
     MenuKey.QUIT_GAME to R.string.ps_menu_help_rest,

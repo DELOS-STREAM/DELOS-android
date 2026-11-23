@@ -45,10 +45,8 @@
     <string name="ps_settings_tab_network">Мережа</string>
     <string name="ps_settings_keyframe_title">Ключовий кадр після втрати</string>
     <string name="ps_settings_keyframe_description">Щоразу, коли кадр втрачено, просить консоль надіслати повний новий кадр. Зображення відновлюється швидше ціною короткого сплеску даних.</string>
-    <string name="ps_menu_ps_button">Кнопка PS</string>
     <string name="ps_menu_create">Створити</string>
     <string name="ps_menu_rest">Режим спокою</string>
-    <string name="ps_menu_help_ps_button">Натискає кнопку PS на консолі: відкривається центр керування.</string>
     <string name="ps_menu_help_create">Натискає кнопку «Створити» на консолі: знімки екрана й кліпи.</string>
     <string name="ps_menu_help_disconnect">Зупиняє трансляцію й повертає до DELOS. Гра працює на консолі далі.</string>
     <string name="ps_menu_help_rest">Переводить консоль у режим спокою й зупиняє трансляцію. Гра лишається призупиненою, консоль може її продовжити.</string>

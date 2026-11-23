@@ -75,6 +75,23 @@ class DockGeometryTest {
     }
 
     @Test
+    fun aCompactPlayStationRowScrollsOverItsEightTiles() {
+        for ((name, s) in panels()) {
+            val g = DockGeometry.forStage(s, playStation = true)
+            assertEquals("$name tiles", 1508f, g.tilesWidth, 0f)
+            assertEquals("$name row", 1508f + 160f, g.rowWidth, 0f)
+            assertEquals("$name scroll range", g.rowWidth - g.width, g.scrollMax, .01f)
+            assertEquals("$name first tile", DockGeometry.COMPACT_SIDE, tileLeft(BarItem.RESUME, g), 0f)
+            // Overlay follows Resume directly; the last tile ends the side margin from the edge with the row at its end
+            assertEquals("$name second tile", tileLeft(BarItem.RESUME, g) + 194f, tileLeft(BarItem.OVERLAY, g), 0f)
+            val end = dockScrollFor(BarItem.QUIT, 0f, g)
+            assertEquals("$name end", g.scrollMax, end, .01f)
+            assertEquals("$name last tile", g.width - DockGeometry.COMPACT_SIDE, tileLeft(BarItem.QUIT, g) + g.tile - end, .01f)
+        }
+        assertTrue(DockGeometry.forStage(stage(1920f, 1080f, 369f), playStation = true) === DockGeometry.PlayStation)
+    }
+
+    @Test
     fun theFocusedTileIsWholeWithTheNextOnePeeking() {
         for ((name, s) in panels()) {
             val g = DockGeometry.forStage(s)

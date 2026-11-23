@@ -81,6 +81,24 @@ class StreamMenuLayoutTest {
     }
 
     @Test
+    fun aPlayStationRowOfEightTilesIsCentredWithoutTheKeyboardTile() {
+        val g = DockGeometry.PlayStation
+        assertEquals(BarItem.entries - BarItem.KEYBOARD, g.items)
+        assertEquals(1508f, g.tilesWidth, 0f)
+        assertEquals(206f, g.tilesLeft, 0f)
+        g.items.forEachIndexed { index, item ->
+            assertEquals("$item", 206f + index * 194f, tileLeft(item, g), 0f)
+            assertEquals("$item", tileCenterX(item, g), ringLeft(item, g) + c.RING / 2f, 0f)
+        }
+        assertEquals(c.STAGE_WIDTH - 206f, tileLeft(BarItem.QUIT, g) + c.TILE, 0f)
+        // A page's caret stands on its tile in this row too
+        for (page in listOf(MenuPage.BRIGHTNESS, MenuPage.UPSCALER, MenuPage.FRAME_GEN, MenuPage.MORE)) {
+            val p = popoverPlacement(page, g)!!
+            assertEquals("$page", tileCenterX(page.barItem()!!, g), p.left + p.caretX, .01f)
+        }
+    }
+
+    @Test
     fun theRingIsA186BoxCenteredOnItsTileAndReachesAbove() {
         for (item in BarItem.entries) assertEquals(tileCenterX(item), ringLeft(item) + c.RING / 2f, 0f)
         assertEquals(-18f, RING_TOP, 0f)

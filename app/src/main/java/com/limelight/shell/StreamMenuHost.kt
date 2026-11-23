@@ -42,13 +42,13 @@ internal interface StreamMenuHost {
     val keyboardAndMouse: Boolean get() = true
 
     /**
-     * A PlayStation stream: the dock's Keyboard and Bitrate tiles press the console's PS and Create buttons ([pressConsoleButton]),
+     * A PlayStation stream: the dock has no Keyboard tile, the More page presses the console's Create button ([pressCreateButton]),
      * and Quit puts the console in rest mode instead of quitting a game ([leave] with quit).
      */
     val playStation: Boolean get() = false
 
-    /** Presses and releases the PS button ([ps]) or the Create button on the console. */
-    fun pressConsoleButton(ps: Boolean) {}
+    /** Presses and releases the Create button on the console. */
+    fun pressCreateButton() {}
 
     /** A PlayStation stream with the microphone on (PsPrefs.MICROPHONE): whether it is sending, and muting it live. */
     val microphoneAvailable: Boolean get() = false
