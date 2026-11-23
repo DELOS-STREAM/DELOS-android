@@ -380,6 +380,34 @@ since the previous line.
 **Observed (Odin, PS5 game at 30 fps, 2026-11-23):** `steps driver 0 warp 297, vectors mean 16.1 px max 83.8 px, median
 changed 8.4 % (40 pairs)`; the maximum was 83.8 px in every line. The owner judged the picture clearly better with the median.
 
+## Implemented: pre-shift of the motion estimation (`FrameGenerator`, 2026-11-23)
+
+**Why:** `GL_QCOM_motion_estimation` takes no search range and no starting vector. Its window (about ±64 × ±54 picture px per
+pair at half-size luma [INFERENCE]) is smaller than a fast camera turn at 30 fps.
+
+**What it does:** a camera turn is nearly one shift of the whole picture and changes little from pair to pair.
+1. The mean vector of the previous pair's filtered field is taken on the GPU (one texel) and held within ±30 × ±25 luma px.
+   With that limit "no motion" always stays inside the window, so a camera that stops is measured correctly on the next pair.
+2. The older picture's luma is drawn moved by that shift; the driver estimates what is left.
+3. The median pass adds the shift back. The warp, the evaluation and the statistics use the sum.
+
+**Reach:** up to about twice the window for a steady turn, with the half-size precision and one estimation per pair.
+
+**When there is no shift:**
+- before the vectors' orientation is known, and without the vector median;
+- when the previous field is not that of this pair or of the one right before it (the driver's way ran, a restart, a new size);
+- after a cut or a sudden start: a pair whose difference is over three times the one before.
+- A device that cannot run a pass logs `pre-shift off` once and estimates unshifted as before.
+
+**Limits:** the first pair of a sudden fast turn still exceeds the window; fast objects in front of a still camera gain nothing;
+a strip as wide as the shift at the picture's border has no true match.
+
+**Log** (same line): `pre-shift on S of E pairs` (estimated pairs that started from a shift) and `shift mean G px` (its mean
+length on the measured shifted pairs, picture px). With the shift, `at cap` and `max x … y …` describe what the driver found
+**after** the shift: `at cap` should fall on steady fast turns while `vectors mean` and `max` rise above the old 83.8 px.
+
+**Not verified:** not built or run.
+
 ## Verification plan
 
 | Check | Method | Owner judges by eye |
