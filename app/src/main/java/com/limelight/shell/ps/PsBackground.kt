@@ -120,7 +120,9 @@ private val NAVY_TOP = lit(hsl(222f, 82f, 7f))
 private val NAVY_BOTTOM = lit(hsl(226f, 88f, 3f))
 private val GLOW_BLUE = lit(hsl(214f, 100f, 50f), .24f)
 private val GLOW_CYAN = lit(hsl(192f, 90f, 55f), .16f)
-private val RIBBON_LINE = arrayOf(lit(hsl(212f, 100f, 62f), .3f), lit(hsl(198f, 100f, 62f), .3f))
+// The lines' colour as the prototype shows them (the line over its own glow, toned): a light teal blue, the second greener
+private val RIBBON_LINE = arrayOf(lit(hsl(196f, 85f, 64f), .62f), lit(hsl(186f, 80f, 60f), .62f))
+private val RIBBON_GLOW = arrayOf(lit(hsl(196f, 85f, 60f), .1f), lit(hsl(186f, 80f, 58f), .1f))
 
 /** Adds one frame's drawing time to [cost] (sum, worst, frames, last log; ns) and logs the minute's figures when it is over. */
 private fun logCost(cost: LongArray, dust: PsDust, began: Long, ended: Long) {
@@ -155,8 +157,11 @@ private fun DrawScope.drawRibbons(w: Float, h: Float, t: Float, path: Path) {
             path.lineTo(x, y0 + sin(x * .0052f + t * sp + i * 2.1f) * 52f + sin(x * .011f - t * sp * 1.4f) * 16f)
             x += 16f
         }
+        val glow = RIBBON_GLOW[i]
+        drawPath(path, Brush.horizontalGradient(0f to glow.copy(alpha = 0f), .5f to glow, 1f to glow.copy(alpha = 0f), startX = 0f, endX = w),
+            style = Stroke(7f), blendMode = BlendMode.Plus)
         val line = RIBBON_LINE[i]
         drawPath(path, Brush.horizontalGradient(0f to line.copy(alpha = 0f), .5f to line, 1f to line.copy(alpha = 0f), startX = 0f, endX = w),
-            style = Stroke(1.2f), blendMode = BlendMode.Plus)
+            style = Stroke(1.4f), blendMode = BlendMode.Plus)
     }
 }
