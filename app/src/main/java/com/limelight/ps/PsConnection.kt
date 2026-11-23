@@ -402,48 +402,14 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     override fun sendControllerInput(controllerNumber: Short, activeGamepadMask: Short, buttonFlags: Int, leftTrigger: Byte, rightTrigger: Byte,
                                      leftStickX: Short, leftStickY: Short, rightStickX: Short, rightStickY: Short) {
         if (controllerNumber.toInt() != 0) return
-        // A pad without Create and a touchpad (a handheld's built-in controls, owner 2026-11-23): its Select (the upper left menu
-        // button) clicks the touchpad on a tap and holds Create while held (as Back and Guide on a PC stream); a PlayStation pad
-        // keeps its own buttons. The Odin's Home button never reaches apps.
-        val handheld = !firstPadIsPlayStation
-        val table = if (handheld) HANDHELD_BUTTONS else BUTTONS
+        // A pad without Create and a touchpad (a handheld's built-in controls, owner 2026-11-23): Select (the upper left menu
+        // button) clicks the touchpad, and Guide is Create: on the Odin that is holding the lower right Back button (a tap opens
+        // the stream menu, as on a PC stream); its Home button never reaches apps. A PlayStation pad keeps its own buttons.
+        val table = if (firstPadIsPlayStation) BUTTONS else HANDHELD_BUTTONS
         var buttons = 0
         for ((flag, button) in table) if (buttonFlags and flag != 0) buttons = buttons or button.mask
-        baseButtons = buttons
-        if (handheld) onSelect(buttonFlags and ControllerPacket.BACK_FLAG != 0)
-        update { it.copy(buttons = buttons or extraButtons, l2 = leftTrigger.toInt() and 0xFF, r2 = rightTrigger.toInt() and 0xFF,
+        update { it.copy(buttons = buttons, l2 = leftTrigger.toInt() and 0xFF, r2 = rightTrigger.toInt() and 0xFF,
             lx = leftStickX, ly = flip(leftStickY), rx = rightStickX, ry = flip(rightStickY)) }
-    }
-
-    // Select's tap and hold: the buttons the pad presses, the touchpad tap or Create hold on top of them, and the press in progress
-    @Volatile private var baseButtons = 0
-    @Volatile private var extraButtons = 0
-    private var selectDown = false
-    private var selectPress = 0
-
-    private fun onSelect(down: Boolean) {
-        if (down == selectDown) return
-        selectDown = down
-        val press = ++selectPress
-        if (down) {
-            thread(name = "ps-select", isDaemon = true) {
-                Thread.sleep(com.limelight.binding.input.GuideTapHold.HOLD_MS.toLong())
-                if (selectPress == press && selectDown) setExtra(PsButton.SHARE.mask, true)
-            }
-        } else if (extraButtons and PsButton.SHARE.mask != 0) {
-            setExtra(PsButton.SHARE.mask, false)
-        } else {
-            setExtra(PsButton.TOUCHPAD.mask, true)
-            thread(name = "ps-select", isDaemon = true) {
-                Thread.sleep(120)
-                setExtra(PsButton.TOUCHPAD.mask, false)
-            }
-        }
-    }
-
-    private fun setExtra(mask: Int, on: Boolean) {
-        extraButtons = if (on) extraButtons or mask else extraButtons and mask.inv()
-        update { it.copy(buttons = baseButtons or extraButtons) }
     }
 
     /** Gyro in deg/s and accel in m/s² from the controller handler, as rad/s and g with an orientation integrated from the gyro. */
@@ -843,9 +809,13 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             ControllerPacket.SPECIAL_BUTTON_FLAG to PsButton.PS, ControllerPacket.TOUCHPAD_FLAG to PsButton.TOUCHPAD,
         )
 
-        /** [BUTTONS] for a pad without Create and a touchpad: Select is handled as a tap or hold (onSelect), Home (Guide) is Create. */
-        private val HANDHELD_BUTTONS = BUTTONS.filter { it.first != ControllerPacket.BACK_FLAG }.map { (flag, button) ->
-            flag to if (flag == ControllerPacket.SPECIAL_BUTTON_FLAG) PsButton.SHARE else button
+        /** [BUTTONS] for a pad without Create and a touchpad: Select is the touchpad click, Guide (Back held on the Odin) is Create. */
+        private val HANDHELD_BUTTONS = BUTTONS.map { (flag, button) ->
+            flag to when (flag) {
+                ControllerPacket.BACK_FLAG -> PsButton.TOUCHPAD
+                ControllerPacket.SPECIAL_BUTTON_FLAG -> PsButton.SHARE
+                else -> button
+            }
         }
 
         /** Moonlight's stick Y is positive up; the console's is positive down. */
