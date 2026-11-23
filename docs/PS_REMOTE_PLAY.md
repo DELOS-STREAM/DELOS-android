@@ -74,6 +74,22 @@ announces one controller and its feedback packets carry no controller index); Du
 18. Microphone (spec 8.5): the PlayStation setting (Audio tab) asks for the record-audio permission; during a stream the
     voice source at 48 kHz mono goes out as 40-byte Opus frames (constant 32 kbit/s, restricted low delay), each datagram
     with the two frames before it. The PS stream menu's More page mutes it (MIC_TOGGLE).
+19. Handheld controls: with a pad that is not a PlayStation pad, Select is the touchpad click and Guide (on the Odin, Back
+    held; a tap opens the stream menu) is Create. Fingers on the screen are the touchpad's touches (gestures, no click).
+    The Odin's Home button never reaches apps. Rumble on a pad without a vibrator goes to the device (the PS settings default
+    `checkbox_vibrate_fallback` on).
+20. Gyro aiming (PS settings, Controls): the device's turn added to the right stick, always or while L2 is held, at three
+    sensitivities.
+21. Bitrate policy: with automatic bitrate and `ps_visible_loss` on (default) the congestion report carries only the loss FEC
+    could not repair, so harmless loss does not lower the bitrate.
+22. Statistics panel: the console's target bitrate, frames FEC repaired / lost, keyframe waits; frames carry their first
+    unit's arrival so the receive-to-decode figures include reassembly.
+23. Receive path: the receive thread runs at URGENT_DISPLAY; one AES call per packet keystream on per-thread buffers; the
+    MAC checked in place; frames copied once; a table-driven Reed-Solomon decode. Motion-only state at most every 4 ms, the
+    button history resent every 200 ms. The 10 s video log counts units that arrived after their short frame (whether a
+    reorder window would pay off).
+24. Faster start: the start screen searches for the paired consoles; a tap within a minute skips the search. A second
+    reconnect in a row steps the session down to 720p.
 
 ## Code map
 
