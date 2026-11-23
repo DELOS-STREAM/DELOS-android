@@ -567,6 +567,12 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         private var frameNumber = 0
         private val worker = Thread(::run, "ps-video-feeder")
 
+        // HEVC reference rewrite (spec 7.3.1): after a loss, P pictures are bridged to an older held picture instead of waiting
+        private val refs: PsHevcRefs? = if (hevc) PsHevcRefs() else null
+        @Volatile private var bridgingSinceMs = 0L
+        private var droppedInRow = 0
+        private var rewriteFailures = 0
+        private var refsLogMs = 0L
         init { setParameterSets(header) }
 
         fun start() = worker.start()
@@ -577,8 +583,17 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             keyframeNeeded()
         }
 
-        /** The stream lost a frame and asked for a keyframe already: drop pictures until one comes. */
-        fun lost() = startWaiting(asked = true)
+        /**
+         * The stream lost a frame and asked for a keyframe already: with the HEVC rewrite usable the following pictures are bridged
+         * until it comes; otherwise pictures are dropped until one comes.
+         */
+        fun lost() {
+            if (refs != null && refs.usable && rewriteFailures < 3 && !waitForKeyframe) {
+                if (bridgingSinceMs == 0L) bridgingSinceMs = SystemClock.uptimeMillis()
+                return
+            }
+            startWaiting(asked = true)
+        }
 
         /** Another adaptive profile: its parameter sets replace the current ones before the next keyframe. */
         fun profile(width: Int, height: Int, header: ByteArray) {
@@ -589,6 +604,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         private fun setParameterSets(header: ByteArray) {
             synchronized(parameterSets) { for (nal in Nal.split(header)) if (isParameterSet(nal)) parameterSets[nalType(nal)] = nal }
             parameterSets[34]?.let { extraSliceBits = hevcExtraSliceBits(it) }
+            refs?.let { r -> parameterSets[33]?.let { r.parameterSet(it, 33) }; parameterSets[34]?.let { r.parameterSet(it, 34) } }
         }
 
         private fun keyframeNeeded() {
@@ -632,6 +648,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                 if (isParameterSet(nal)) {
                     synchronized(parameterSets) { parameterSets[nalType(nal)] = nal }
                     if (hevc && nalType(nal) == 34) extraSliceBits = hevcExtraSliceBits(nal)
+                    refs?.parameterSet(nal, nalType(nal))
                     continue
                 }
                 if (isSlice(nal) && firstSlice) { firstSlice = false; if (isKeyframe(nal)) keyframe = true }
@@ -639,6 +656,26 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             }
             if (picture.isEmpty()) return
             if (waitForKeyframe && !keyframe) return
+            if (keyframe) bridgingSinceMs = 0
+            var rewritten = false
+            if (refs != null && refs.usable && rewriteFailures < 3) {
+                val before = refs.rewritten
+                if (!refs.process(picture)) {
+                    // No listed picture is held: drop it; after 3 in a row or 200 ms of bridging wait for the keyframe
+                    droppedInRow++
+                    val since = bridgingSinceMs
+                    if (droppedInRow >= 3 || (since > 0 && SystemClock.uptimeMillis() - since > 200)) { droppedInRow = 0; bridgingSinceMs = 0; keyframeNeeded() }
+                    return
+                }
+                droppedInRow = 0
+                rewritten = refs.rewritten != before
+                val now = SystemClock.uptimeMillis()
+                if (now - refsLogMs >= 10_000 && (refs.rewritten + refs.dropped + refs.consoleRecovered) > 0) {
+                    refsLogMs = now
+                    Log.i(TAG, "reference rewrite 10 s: ${refs.rewritten} rewritten, ${refs.dropped} dropped, ${refs.consoleRecovered} recovered by the console")
+                    refs.rewritten = 0; refs.dropped = 0; refs.consoleRecovered = 0
+                }
+            }
             if (keyframe && waitForKeyframe) {
                 waitForKeyframe = false
                 if (waitSinceMs > 0) Log.i(TAG, "keyframe after ${SystemClock.uptimeMillis() - waitSinceMs} ms, $requests requests")
@@ -650,7 +687,10 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                 if (result == MoonBridge.DR_NEED_IDR) { keyframeNeeded(); return }
             }
             val data = if (picture.size == 1) picture[0] else ByteArray(picture.sumOf { it.size }).also { out -> var at = 0; for (p in picture) { p.copyInto(out, at); at += p.size } }
-            if (renderer.submitDecodeUnit(data, data.size, MoonBridge.BUFFER_TYPE_PICDATA, number, type, 0.toChar(), receivedUs, completeUs) == MoonBridge.DR_NEED_IDR) keyframeNeeded()
+            if (renderer.submitDecodeUnit(data, data.size, MoonBridge.BUFFER_TYPE_PICDATA, number, type, 0.toChar(), receivedUs, completeUs) == MoonBridge.DR_NEED_IDR) {
+                if (rewritten && ++rewriteFailures >= 3) Log.w(TAG, "reference rewrite off for this stream: the decoder rejected rewritten pictures")
+                keyframeNeeded()
+            }
         }
 
         private fun nalType(nal: ByteArray): Int {
@@ -954,7 +994,8 @@ internal object Nal {
 
     /** Reads bits and Exp-Golomb numbers from the start of [data]; past the end it throws. */
     class BitReader(private val data: ByteArray) {
-        private var position = 0
+        var position = 0
+            private set
 
         fun bit(): Int {
             if (position >= data.size * 8) throw IndexOutOfBoundsException("past the end")

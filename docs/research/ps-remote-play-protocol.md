@@ -960,15 +960,151 @@ Test vector `fec_k3_m2`: the matrix for S = 3, F = 2, sources and parities. It m
      - H.264 slice_type 2 or 7;
      - HEVC slice_type 2, or NAL type 20 (IDR_N_LP) [OBS].
   4. Repeat the IDR request every 1 s while waiting.
-- **Optional (HEVC P frame with a missing reference):**
-  - The console's P slices carry an explicit short-term reference picture set in the slice header.
-  - The client may rewrite the `used_by_curr_pic_s0_flag` bits to point at an older reference it still has, instead of dropping the frame [OBS].
-  - Needs a bit-exact slice-header parser (ITU-T H.265 §7.3.6.1). Treat it as a later improvement.
+- **HEVC P frame with a missing reference:** rewrite its reference instead of dropping it; see 7.3.1.
 
 **Frame pacing:**
 - The console sends at the requested fps.
 - Decode with the platform low-latency path (Android `KEY_LOW_LATENCY`; VideoToolbox `kVTDecompressionPropertyKey_RealTime`).
 - Present with DELOS's existing pacing; there are no PTS on the wire, so the receive time is the timestamp.
+
+### 7.3.1 HEVC reference rewrite (PS5, optional)
+
+**Purpose:** after a lost frame, the pictures that follow reference a picture the decoder never got. Instead of dropping
+them until a keyframe, the client changes which earlier picture each P slice uses, to one the decoder still holds. The
+picture then decodes without an error. It is predicted from another picture than the encoder used, so it can show
+artefacts until the console references a good picture again or sends an I picture [INFERENCE]. H.264 streams are not
+rewritten [OBS: the reference only parses their reference, it never changes it].
+
+Clause numbers refer to ITU-T H.265 (v8, 08/2021).
+
+#### What the console sends
+
+| Fact | Marker |
+|---|---|
+| Slice NAL types are 1 (TRAIL_R) for P pictures and 20 (IDR_N_LP) for keyframes | [OBS: the reference accepts only these two] |
+| The reference reads the header of the **first NAL of the frame** only, and patches only that NAL | [OBS]. So a picture is one slice segment, or the reference misses the others [INFERENCE] |
+| `slice_type` follows `slice_pic_parameter_set_id` (and `slice_segment_address`) directly: the PPS has `dependent_slice_segments_enabled_flag` = 0, `num_extra_slice_header_bits` = 0 and `output_flag_present_flag` = 0; the SPS has `separate_colour_plane_flag` = 0 | [INFERENCE from the reference's parse order; verify from the PPS and SPS, below] |
+| A P slice has `short_term_ref_pic_set_sps_flag` = 0: the reference picture set is written in the slice header | [OBS: the reference handles only this case] |
+| `num_negative_pics` comes right after that flag: no `inter_ref_pic_set_prediction_flag` is present, which means the SPS has `num_short_term_ref_pic_sets` = 0 (7.3.7: the flag exists only when the set's index is not 0) | [INFERENCE] |
+| The set lists up to 16 earlier pictures (`num_negative_pics` ≤ 16, `num_positive_pics` = 0); entry i is the picture i + 1 frames back (every `delta_poc_s0_minus1` = 0, and the picture order count rises by 1 per frame index) | [OBS: the reference maps entry i to frame index − i − 1] [UNVERIFIED on a capture] |
+| Exactly one entry has `used_by_curr_pic_s0_flag` = 1: the picture this frame is predicted from. Normally entry 0; after a CORRUPTFRAME report the console picks an older one | [INFERENCE] |
+| `sps_max_sub_layers_minus1` = 0 (no sub-layer fields in `profile_tier_level`) | [OBS: the reference parses the SPS that way] |
+
+Because the set is explicit and each entry's flag is one bit, the rewrite is a **flip of flag bits in place**. No
+variable-length field changes, so the header keeps its length. A variable-length rewrite would be needed only if the wanted
+picture were **not listed** in the slice's set (then entries would have to be added); in that case give up (below).
+
+#### Fields to parse
+
+**SPS** (NAL type 33, 7.3.2.2), from the profile's `video_header` and from any in-band SPS:
+
+| Order | Field | Coding | Needed for |
+|---|---|---|---|
+| 1 | `sps_video_parameter_set_id` | u(4) | skip |
+| 2 | `sps_max_sub_layers_minus1` | u(3) | must be 0, else give up |
+| 3 | `sps_temporal_id_nesting_flag` | u(1) | skip |
+| 4 | `profile_tier_level(1, 0)`: 2 + 1 + 5 + 32 + 4 + 43 + 1 + 8 bits | 96 bits | skip |
+| 5 | `sps_seq_parameter_set_id` | ue(v) | skip |
+| 6 | `chroma_format_idc`; if 3: `separate_colour_plane_flag` u(1) | ue(v) | flag must be 0 (else a 2-bit `colour_plane_id` precedes the POC) |
+| 7 | `pic_width_in_luma_samples`, `pic_height_in_luma_samples` | ue(v) each | `slice_segment_address` width |
+| 8 | `conformance_window_flag`; if 1: four ue(v) | u(1) | skip |
+| 9 | `bit_depth_luma_minus8`, `bit_depth_chroma_minus8` | ue(v) each | skip |
+| 10 | `log2_max_pic_order_cnt_lsb_minus4` | ue(v), 0..12 | width of `slice_pic_order_cnt_lsb` |
+| 11 | `sps_sub_layer_ordering_info_present_flag`, then `sps_max_dec_pic_buffering_minus1`, `sps_max_num_reorder_pics`, `sps_max_latency_increase_plus1` | u(1), 3 × ue(v) | DPB size (log it) |
+| 12 | `log2_min_luma_coding_block_size_minus3`, `log2_diff_max_min_luma_coding_block_size` | ue(v) each | CTB size → `slice_segment_address` width |
+| 13 | `log2_min_luma_transform_block_size_minus2`, `log2_diff_max_min_luma_transform_block_size`, `max_transform_hierarchy_depth_inter`, `max_transform_hierarchy_depth_intra` | ue(v) each | skip |
+| 14 | `scaling_list_enabled_flag`; if 1: `sps_scaling_list_data_present_flag`, and if that is 1 the scaling list data | u(1) | if scaling list data is present, stop parsing here and assume the next two rows are 0 [INFERENCE] |
+| 15 | `amp_enabled_flag`, `sample_adaptive_offset_enabled_flag` | u(1) each | skip |
+| 16 | `pcm_enabled_flag`; if 1: 4 + 4 bits, two ue(v), 1 bit | u(1) | skip |
+| 17 | `num_short_term_ref_pic_sets` | ue(v) | must be 0 for the in-place rewrite; else give up |
+| 18 | (the sets, none) then `long_term_ref_pics_present_flag` | u(1) | log it; long-term fields come after the short-term set and do not move it |
+
+The minimum the reference uses is rows 1–10. Rows 11–18 turn its assumptions into checks.
+
+**PPS** (NAL type 34, 7.3.2.3): `pps_pic_parameter_set_id` ue(v), `pps_seq_parameter_set_id` ue(v),
+`dependent_slice_segments_enabled_flag` u(1), `output_flag_present_flag` u(1), `num_extra_slice_header_bits` u(3).
+
+**Slice segment header** (7.3.6.1), NAL type 1, after the 2-byte NAL header, on the RBSP (emulation prevention bytes removed):
+
+| Order | Field | Coding | Condition |
+|---|---|---|---|
+| 1 | `first_slice_segment_in_pic_flag` | u(1) | |
+| 2 | `no_output_of_prior_pics_flag` | u(1) | only NAL types 16–23 (not in a P picture) |
+| 3 | `slice_pic_parameter_set_id` | ue(v) | |
+| 4 | `dependent_slice_segment_flag` | u(1) | only if not first and the PPS enables it; if 1 the segment has no set of its own: leave it |
+| 5 | `slice_segment_address` | u(v), Ceil(Log2(PicSizeInCtbsY)) bits | only if not first. The reference reads it as ue(v) [OBS], which is only right by accident; use the standard's width |
+| 6 | `slice_reserved_flag[]` | `num_extra_slice_header_bits` × u(1) | |
+| 7 | `slice_type` | ue(v): 0 B, 1 P, 2 I | rewrite only P |
+| 8 | `pic_output_flag` | u(1) | only if the PPS has `output_flag_present_flag` |
+| 9 | `colour_plane_id` | u(2) | only if `separate_colour_plane_flag` |
+| 10 | `slice_pic_order_cnt_lsb` | u(log2_max_pic_order_cnt_lsb_minus4 + 4) | |
+| 11 | `short_term_ref_pic_set_sps_flag` | u(1) | must be 0 |
+| 12 | `num_negative_pics`, `num_positive_pics` | ue(v) each | ≤ 16; positive must be 0 |
+| 13 | per entry i: `delta_poc_s0_minus1[i]` ue(v), `used_by_curr_pic_s0_flag[i]` u(1) | | record each flag's **bit position** |
+
+With `num_short_term_ref_pic_sets` = 0 the set in the slice header has index 0, so `st_ref_pic_set()` (7.3.7) starts at
+`num_negative_pics` with no prediction flag.
+
+#### Algorithm
+
+**State:** a list of the last 16 pictures given to the decoder: frame index and picture order count LSB. An I picture clears
+it and becomes its only entry. A frame that is dropped (lost, FEC failed, or given up below) is never added.
+
+**For each P frame, before it goes to the decoder:**
+1. Parse the first slice header. Any parse failure or failed check above: pass the frame unchanged (no rewrite), as today.
+2. For entry i compute its picture: POC = current POC − Σ_{k ≤ i}(`delta_poc_s0_minus1[k]` + 1), compared modulo
+   2^(log2_max_pic_order_cnt_lsb) with the list (8.3.1, 8.3.2). Cross-check: it should be frame index − i − 1 [OBS]; log a
+   mismatch once.
+3. Let r be the entry with `used_by_curr_pic_s0_flag` = 1 (the first, if several). If its picture is in the list: nothing to
+   do, pass the frame.
+4. Otherwise find the smallest j > r, j < `num_negative_pics`, whose picture is in the list [OBS: the reference searches
+   towards older pictures only].
+5. **Found:** set flag j to 1 and every flag i < j to 0; leave the flags after j as they are [OBS]. Do the same in every
+   other slice segment NAL of the frame that has its own header (7.4.7.1 requires the same set in all slices of a picture)
+   [INFERENCE: the reference patches only the first].
+6. **Not found** (no listed picture is held): drop the frame, count it lost, report CORRUPTFRAME as for a lost frame, and after
+   3 such frames in a row, or 200 ms, fall back to the keyframe wait of 7.3 (IDRREQUEST, repeat every 1 s) [INFERENCE for the
+   limits; the reference only drops and counts].
+7. A rewritten or unchanged frame the decoder accepted is added to the list.
+
+**Patching bits and emulation prevention (7.4.2):**
+- The flags are found on the RBSP, but the frame holds the escaped NAL (`00 00 03` sequences). The reference flips the bit in
+  the escaped bytes and does not re-check the escaping [OBS]. That is wrong in two rare cases [INFERENCE]:
+  - clearing a bit can create `00 00 00`, `00 00 01`, `00 00 02` or `00 00 03` inside the NAL, which needs a new escape byte;
+  - setting a bit in one of the two zero bytes before an existing escape byte turns that `03` into payload for the decoder.
+- Exact method: unescape the NAL (or its first 64 bytes: the header of one slice with 16 entries is far shorter) to RBSP,
+  flip the bits, escape again, and splice the result in front of the untouched rest. When the unescaped prefix ends in the
+  middle of a `00 00` run, extend it until it does not. The NAL may change its length by a byte; in Annex B that is allowed.
+- Bits after the set (the rest of the header, the slice data, the CABAC payload) are not touched; nothing is re-aligned.
+
+**Why the older picture is still in the decoder (8.3.2):** a picture stays in the decoded picture buffer while the current
+picture's set lists it, used or not. Every candidate j is listed in the current slice's set, so the decoder holds it,
+provided the client really delivered it. Pictures the client dropped are "missing" entries with flag 0, which a decoder
+must tolerate (8.3.3.1 generates unavailable pictures only for some random-access cases) [UNVERIFIED for the Android
+hardware decoders: check on the device].
+
+#### Give up and wait for a keyframe when
+
+- the SPS or PPS checks fail (sub-layers, colour planes, SPS-level sets, extra header fields that cannot be skipped);
+- `short_term_ref_pic_set_sps_flag` = 1, or `num_positive_pics` ≠ 0, or `num_negative_pics` > 16;
+- no listed picture is held (step 6);
+- the decoder reports an error or asks for a keyframe after a rewritten frame;
+- the stream is H.264.
+
+#### Risks and what to log on a device
+
+| Risk | Check (log) |
+|---|---|
+| The console's headers differ from the table above | Once per stream: the parsed SPS values (`log2_max_pic_order_cnt_lsb`, `num_short_term_ref_pic_sets`, `long_term_ref_pics_present_flag`, max DPB), the PPS flags, and for the first 3 P frames `num_negative_pics`, every delta and flag, NAL count and types per frame |
+| Entry i is not "i + 1 frames back" | Count of POC / frame-index mismatches (step 2) |
+| Several slice segments per picture | Slice NALs per frame (max over 10 s) |
+| The console already re-references after CORRUPTFRAME, so the rewrite seldom runs | Per 10 s: frames whose used entry was not 0 (console-side recovery), frames rewritten, frames dropped for a missing reference, keyframe waits started |
+| Artefacts from predicting from another picture | The owner's eye after a forced loss (far from the router); the count of rewritten frames in a row before the next unrewritten or I frame (should be small: the console corrects within a few frames [INFERENCE]) |
+| The hardware decoder rejects or stalls on a rewritten frame | Decoder errors and `DR_NEED_IDR` within 2 frames after a rewrite; a counter that disables the rewrite for the stream after 3 such events |
+| Escaping changed the NAL | Count of rewrites where the escaped length changed (expected: almost never) |
+
+Test vectors do not exist yet: capture one P frame from a console and add the header bytes before and after a rewrite to
+`ps-remote-play-test-vectors.json` (Q: section 11).
 
 ### 7.4 Audio
 
