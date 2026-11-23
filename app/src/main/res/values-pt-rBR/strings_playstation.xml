@@ -92,11 +92,11 @@
     <string name="ps_settings_gyro_aim_l2">Com L2</string>
     <string name="ps_settings_gyro_aim_always">Sempre</string>
     <string name="ps_settings_gyro_aim_h_title">Mira por giroscópio: esquerda e direita</string>
-    <string name="ps_settings_gyro_aim_h_description">Quanto o analógico direito se move quando você gira o aparelho para a esquerda ou para a direita. Um valor alterado no menu da transmissão vale só para aquele jogo.</string>
+    <string name="ps_settings_gyro_aim_h_description">Quanto o analógico direito se move quando você gira o aparelho para a esquerda ou para a direita. O menu da transmissão altera o mesmo valor.</string>
     <string name="ps_settings_gyro_aim_v_title">Mira por giroscópio: cima e baixo</string>
-    <string name="ps_settings_gyro_aim_v_description">Quanto o analógico direito se move quando você inclina o aparelho para cima ou para baixo. Um valor alterado no menu da transmissão vale só para aquele jogo.</string>
-    <string name="stream_help_gyro_aiming_left_and_right">Sensibilidade lateral da mira por giroscópio. Vale na hora e fica salva para este jogo.</string>
-    <string name="stream_help_gyro_aiming_up_and_down">Sensibilidade vertical da mira por giroscópio. Vale na hora e fica salva para este jogo.</string>
+    <string name="ps_settings_gyro_aim_v_description">Quanto o analógico direito se move quando você inclina o aparelho para cima ou para baixo. O menu da transmissão altera o mesmo valor.</string>
+    <string name="stream_help_gyro_aiming_left_and_right">Sensibilidade lateral da mira por giroscópio. Vale na hora e fica salva.</string>
+    <string name="stream_help_gyro_aiming_up_and_down">Sensibilidade vertical da mira por giroscópio. Vale na hora e fica salva.</string>
     <string name="ps_notice">Aplicativo não oficial da comunidade. Não é afiliado à Sony Interactive Entertainment nem endossado por ela. “PlayStation” é uma marca registrada ou marca comercial da Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Tela sensível ao toque como touchpad</string>
     <string name="ps_settings_touchscreen_touchpad_description">Os dedos na tela agem como o touchpad do DualSense, para deslizar e tocar. Desligado: a tela ignora toques.</string>

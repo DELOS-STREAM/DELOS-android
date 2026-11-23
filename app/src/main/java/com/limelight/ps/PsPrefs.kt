@@ -30,8 +30,7 @@ object PsPrefs {
     /**
      * Int percent, [GYRO_AIM_MIN]..[GYRO_AIM_MAX] in steps of [GYRO_AIM_STEP]: how far the right stick moves per degree per second
      * of turn, sideways ([GYRO_AIM_H], default 100) and up and down ([GYRO_AIM_V], default 180: tilting is a smaller wrist
-     * movement than turning). These are the defaults; a game changed in the stream menu has its own pair under
-     * `<key>_<title id>` ([gyroAim], [setGyroAim]).
+     * movement than turning). One pair for every game: a PS5 does not say which game runs during Remote Play.
      */
     const val GYRO_AIM_H = "ps_gyro_aim_h"
     const val GYRO_AIM_V = "ps_gyro_aim_v"
@@ -44,22 +43,14 @@ object PsPrefs {
     /** Before the two axes had their own value: "low" | "normal" | "high" for both, moved to the new keys once ([prefs]). */
     private const val GYRO_AIM_SENSITIVITY_OLD = "ps_gyro_aim_sensitivity"
 
-    private fun gyroAimKey(key: String, titleId: String?): String? =
-        titleId?.filter { it.isLetterOrDigit() || it == '_' }?.takeIf { it.isNotEmpty() }?.let { "${key}_$it" }
+    /** The horizontal and vertical gyro aiming sensitivity (percent). */
+    fun gyroAim(prefs: SharedPreferences): Pair<Int, Int> =
+        prefs.getInt(GYRO_AIM_H, GYRO_AIM_H_DEFAULT).coerceIn(GYRO_AIM_MIN, GYRO_AIM_MAX) to
+            prefs.getInt(GYRO_AIM_V, GYRO_AIM_V_DEFAULT).coerceIn(GYRO_AIM_MIN, GYRO_AIM_MAX)
 
-    /** The horizontal and vertical gyro aiming sensitivity (percent) for the game [titleId]: its own values, else the defaults. */
-    fun gyroAim(prefs: SharedPreferences, titleId: String?): Pair<Int, Int> {
-        fun read(key: String, default: Int): Int {
-            val general = prefs.getInt(key, default)
-            return (gyroAimKey(key, titleId)?.let { prefs.getInt(it, general) } ?: general).coerceIn(GYRO_AIM_MIN, GYRO_AIM_MAX)
-        }
-        return read(GYRO_AIM_H, GYRO_AIM_H_DEFAULT) to read(GYRO_AIM_V, GYRO_AIM_V_DEFAULT)
-    }
-
-    /** Stores one axis' sensitivity for the game [titleId], or as the default when the game is not known. */
-    fun setGyroAim(prefs: SharedPreferences, titleId: String?, horizontal: Boolean, percent: Int) {
-        val key = if (horizontal) GYRO_AIM_H else GYRO_AIM_V
-        prefs.edit().putInt(gyroAimKey(key, titleId) ?: key, percent.coerceIn(GYRO_AIM_MIN, GYRO_AIM_MAX)).apply()
+    /** Stores one axis' sensitivity. */
+    fun setGyroAim(prefs: SharedPreferences, horizontal: Boolean, percent: Int) {
+        prefs.edit().putInt(if (horizontal) GYRO_AIM_H else GYRO_AIM_V, percent.coerceIn(GYRO_AIM_MIN, GYRO_AIM_MAX)).apply()
     }
 
     /** "few" | "normal" | "many", default "few": video frames that may wait for the decoder before the oldest are dropped. */

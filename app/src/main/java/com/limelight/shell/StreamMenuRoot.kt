@@ -595,7 +595,7 @@ private fun PageRows(
             if (host.microphoneAvailable) KeyedRow(Symbols.MICROPHONE, R.string.stream_menu_row_microphone, MoreRow.MICROPHONE,
                 RowValue.Toggle(!host.microphoneMuted) { toggle { host.setMicrophoneMuted(!it) } })
             if (host.gyroAimAvailable) {
-                // Apply at once and are kept for the game in front on the console; changesTick recomposes the value
+                // Apply at once and are stored: the same values as the PlayStation settings' rows; changesTick recomposes the value
                 KeyedRow(Symbols.GYRO_AIM_SENSITIVITY, R.string.ps_settings_gyro_aim_h_title, MoreRow.GYRO_AIM_H,
                     RowValue.Slider(host.gyroAimSensitivity(true), PsPrefs.GYRO_AIM_MIN, PsPrefs.GYRO_AIM_MAX, PsPrefs.GYRO_AIM_STEP, " %") {
                         host.setGyroAimSensitivity(true, it)

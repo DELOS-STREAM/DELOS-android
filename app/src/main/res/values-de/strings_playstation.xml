@@ -92,11 +92,11 @@
     <string name="ps_settings_gyro_aim_l2">Bei L2</string>
     <string name="ps_settings_gyro_aim_always">Immer</string>
     <string name="ps_settings_gyro_aim_h_title">Gyro-Zielen: links und rechts</string>
-    <string name="ps_settings_gyro_aim_h_description">Wie weit sich der rechte Stick bewegt, wenn du das Gerät nach links oder rechts drehst. Ein im Stream-Menü geänderter Wert gilt nur für das jeweilige Spiel.</string>
+    <string name="ps_settings_gyro_aim_h_description">Wie weit sich der rechte Stick bewegt, wenn du das Gerät nach links oder rechts drehst. Das Stream-Menü ändert denselben Wert.</string>
     <string name="ps_settings_gyro_aim_v_title">Gyro-Zielen: oben und unten</string>
-    <string name="ps_settings_gyro_aim_v_description">Wie weit sich der rechte Stick bewegt, wenn du das Gerät nach oben oder unten neigst. Ein im Stream-Menü geänderter Wert gilt nur für das jeweilige Spiel.</string>
-    <string name="stream_help_gyro_aiming_left_and_right">Empfindlichkeit des Gyro-Zielens zur Seite. Gilt sofort und bleibt für dieses Spiel gespeichert.</string>
-    <string name="stream_help_gyro_aiming_up_and_down">Empfindlichkeit des Gyro-Zielens nach oben und unten. Gilt sofort und bleibt für dieses Spiel gespeichert.</string>
+    <string name="ps_settings_gyro_aim_v_description">Wie weit sich der rechte Stick bewegt, wenn du das Gerät nach oben oder unten neigst. Das Stream-Menü ändert denselben Wert.</string>
+    <string name="stream_help_gyro_aiming_left_and_right">Empfindlichkeit des Gyro-Zielens zur Seite. Gilt sofort und bleibt gespeichert.</string>
+    <string name="stream_help_gyro_aiming_up_and_down">Empfindlichkeit des Gyro-Zielens nach oben und unten. Gilt sofort und bleibt gespeichert.</string>
     <string name="ps_notice">Inoffizielle Community-App. Nicht mit Sony Interactive Entertainment verbunden und nicht von Sony Interactive Entertainment unterstützt. „PlayStation“ ist eine eingetragene Marke oder Marke von Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Touchscreen als Touchpad</string>
     <string name="ps_settings_touchscreen_touchpad_description">Finger auf dem Bildschirm wirken als Touchpad des DualSense, für Wischen und Berührungen. Aus: Der Bildschirm ignoriert Berührungen.</string>

@@ -92,11 +92,11 @@
     <string name="ps_settings_gyro_aim_l2">Avec L2</string>
     <string name="ps_settings_gyro_aim_always">Toujours</string>
     <string name="ps_settings_gyro_aim_h_title">Visée gyroscopique : gauche et droite</string>
-    <string name="ps_settings_gyro_aim_h_description">Déplacement du stick droit quand tu tournes l\'appareil vers la gauche ou la droite. Une valeur modifiée dans le menu du stream n\'est gardée que pour ce jeu.</string>
+    <string name="ps_settings_gyro_aim_h_description">Déplacement du stick droit quand tu tournes l\'appareil vers la gauche ou la droite. Le menu du stream modifie la même valeur.</string>
     <string name="ps_settings_gyro_aim_v_title">Visée gyroscopique : haut et bas</string>
-    <string name="ps_settings_gyro_aim_v_description">Déplacement du stick droit quand tu inclines l\'appareil vers le haut ou le bas. Une valeur modifiée dans le menu du stream n\'est gardée que pour ce jeu.</string>
-    <string name="stream_help_gyro_aiming_left_and_right">Sensibilité latérale de la visée gyroscopique. S\'applique aussitôt et reste enregistrée pour ce jeu.</string>
-    <string name="stream_help_gyro_aiming_up_and_down">Sensibilité verticale de la visée gyroscopique. S\'applique aussitôt et reste enregistrée pour ce jeu.</string>
+    <string name="ps_settings_gyro_aim_v_description">Déplacement du stick droit quand tu inclines l\'appareil vers le haut ou le bas. Le menu du stream modifie la même valeur.</string>
+    <string name="stream_help_gyro_aiming_left_and_right">Sensibilité latérale de la visée gyroscopique. S\'applique aussitôt et reste enregistrée.</string>
+    <string name="stream_help_gyro_aiming_up_and_down">Sensibilité verticale de la visée gyroscopique. S\'applique aussitôt et reste enregistrée.</string>
     <string name="ps_notice">Application communautaire non officielle. Elle n\'est ni affiliée à Sony Interactive Entertainment ni approuvée par elle. « PlayStation » est une marque déposée ou une marque commerciale de Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Écran tactile comme pavé tactile</string>
     <string name="ps_settings_touchscreen_touchpad_description">Les doigts sur l’écran agissent comme le pavé tactile de la DualSense, pour glisser et toucher. Désactivé : l’écran ignore les touchers.</string>

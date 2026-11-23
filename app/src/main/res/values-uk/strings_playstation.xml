@@ -92,11 +92,11 @@
     <string name="ps_settings_gyro_aim_l2">З L2</string>
     <string name="ps_settings_gyro_aim_always">Завжди</string>
     <string name="ps_settings_gyro_aim_h_title">Прицілювання гіроскопом: ліворуч і праворуч</string>
-    <string name="ps_settings_gyro_aim_h_description">Наскільки рухається правий стік, коли ти повертаєш пристрій ліворуч або праворуч. Значення, змінене в меню трансляції, зберігається лише для тієї гри.</string>
+    <string name="ps_settings_gyro_aim_h_description">Наскільки рухається правий стік, коли ти повертаєш пристрій ліворуч або праворуч. Меню трансляції змінює те саме значення.</string>
     <string name="ps_settings_gyro_aim_v_title">Прицілювання гіроскопом: вгору і вниз</string>
-    <string name="ps_settings_gyro_aim_v_description">Наскільки рухається правий стік, коли ти нахиляєш пристрій вгору або вниз. Значення, змінене в меню трансляції, зберігається лише для тієї гри.</string>
-    <string name="stream_help_gyro_aiming_left_and_right">Чутливість прицілювання гіроскопом убік. Діє одразу й зберігається для цієї гри.</string>
-    <string name="stream_help_gyro_aiming_up_and_down">Чутливість прицілювання гіроскопом вгору і вниз. Діє одразу й зберігається для цієї гри.</string>
+    <string name="ps_settings_gyro_aim_v_description">Наскільки рухається правий стік, коли ти нахиляєш пристрій вгору або вниз. Меню трансляції змінює те саме значення.</string>
+    <string name="stream_help_gyro_aiming_left_and_right">Чутливість прицілювання гіроскопом убік. Діє одразу й зберігається.</string>
+    <string name="stream_help_gyro_aiming_up_and_down">Чутливість прицілювання гіроскопом вгору і вниз. Діє одразу й зберігається.</string>
     <string name="ps_notice">Неофіційний застосунок спільноти. Не пов’язаний із Sony Interactive Entertainment і не схвалений нею. «PlayStation» є зареєстрованою торговельною маркою або торговельною маркою Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Сенсорний екран як тачпад</string>
     <string name="ps_settings_touchscreen_touchpad_description">Пальці на екрані працюють як тачпад DualSense для свайпів і дотиків. Вимкнено: екран ігнорує дотики.</string>

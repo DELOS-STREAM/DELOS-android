@@ -92,11 +92,11 @@
     <string name="ps_settings_gyro_aim_l2">L2 時</string>
     <string name="ps_settings_gyro_aim_always">常に</string>
     <string name="ps_settings_gyro_aim_h_title">ジャイロエイム：左右</string>
-    <string name="ps_settings_gyro_aim_h_description">本体を左右に向けたときに右スティックが動く量です。ストリームメニューで変更した値は、そのゲームにだけ保存されます。</string>
+    <string name="ps_settings_gyro_aim_h_description">本体を左右に向けたときに右スティックが動く量です。ストリームメニューでも同じ値を変更できます。</string>
     <string name="ps_settings_gyro_aim_v_title">ジャイロエイム：上下</string>
-    <string name="ps_settings_gyro_aim_v_description">本体を上下に傾けたときに右スティックが動く量です。ストリームメニューで変更した値は、そのゲームにだけ保存されます。</string>
-    <string name="stream_help_gyro_aiming_left_and_right">ジャイロエイムの左右の感度です。すぐに反映され、このゲーム用に保存されます。</string>
-    <string name="stream_help_gyro_aiming_up_and_down">ジャイロエイムの上下の感度です。すぐに反映され、このゲーム用に保存されます。</string>
+    <string name="ps_settings_gyro_aim_v_description">本体を上下に傾けたときに右スティックが動く量です。ストリームメニューでも同じ値を変更できます。</string>
+    <string name="stream_help_gyro_aiming_left_and_right">ジャイロエイムの左右の感度です。すぐに反映され、保存されます。</string>
+    <string name="stream_help_gyro_aiming_up_and_down">ジャイロエイムの上下の感度です。すぐに反映され、保存されます。</string>
     <string name="ps_notice">非公式のコミュニティアプリです。Sony Interactive Entertainment とは提携しておらず、同社の承認も受けていません。“PlayStation”は Sony Interactive Entertainment Inc. の登録商標または商標です。</string>
     <string name="ps_settings_touchscreen_touchpad_title">タッチスクリーンをタッチパッドに</string>
     <string name="ps_settings_touchscreen_touchpad_description">画面上の指が DualSense のタッチパッドとして働き、スワイプやタッチに使えます。オフ：画面はタッチを無視します。</string>

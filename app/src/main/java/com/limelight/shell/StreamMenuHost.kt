@@ -57,7 +57,7 @@ internal interface StreamMenuHost {
 
     /**
      * A PlayStation stream with gyro aiming on (PsPrefs.GYRO_AIM): the sensitivity sideways ([horizontal]) and up and down, in
-     * percent; a change applies at once and is kept for the game in front on the console.
+     * percent; a change applies at once and is stored (the same values as the PlayStation settings' rows).
      */
     val gyroAimAvailable: Boolean get() = false
     fun gyroAimSensitivity(horizontal: Boolean): Int = 100

@@ -17,8 +17,6 @@ data class PsHost(
     val protocolVersion: String?,
     val requestPort: Int,
     val runningApp: String?,
-    /** The title id of the game or app in front (`running-app-titleid`), null when none runs or the console does not say. */
-    val runningTitleId: String? = null,
 ) {
     val awake: Boolean get() = status == 200
     val standby: Boolean get() = status == 620
@@ -59,7 +57,7 @@ object PsDiscovery {
             address, ps5 = protocol == PS5_PROTOCOL || type.equals("PS5", ignoreCase = true), status = status,
             hostId = headers["host-id"], name = headers["host-name"], systemVersion = headers["system-version"],
             protocolVersion = protocol, requestPort = headers["host-request-port"]?.toIntOrNull() ?: 9295,
-            runningApp = headers["running-app-name"], runningTitleId = headers["running-app-titleid"]?.takeIf { it.isNotBlank() },
+            runningApp = headers["running-app-name"],
         )
     }
 

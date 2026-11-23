@@ -93,11 +93,11 @@
     <string name="ps_settings_gyro_aim_l2">While L2</string>
     <string name="ps_settings_gyro_aim_always">Always</string>
     <string name="ps_settings_gyro_aim_h_title">Gyro aiming: left and right</string>
-    <string name="ps_settings_gyro_aim_h_description">How far the right stick moves when you turn the device left or right. A value changed in the stream menu is kept for that game only.</string>
+    <string name="ps_settings_gyro_aim_h_description">How far the right stick moves when you turn the device left or right. The stream menu changes the same value.</string>
     <string name="ps_settings_gyro_aim_v_title">Gyro aiming: up and down</string>
-    <string name="ps_settings_gyro_aim_v_description">How far the right stick moves when you tilt the device up or down. A value changed in the stream menu is kept for that game only.</string>
-    <string name="stream_help_gyro_aiming_left_and_right">Sideways gyro aiming sensitivity. Applies at once and is kept for this game.</string>
-    <string name="stream_help_gyro_aiming_up_and_down">Up and down gyro aiming sensitivity. Applies at once and is kept for this game.</string>
+    <string name="ps_settings_gyro_aim_v_description">How far the right stick moves when you tilt the device up or down. The stream menu changes the same value.</string>
+    <string name="stream_help_gyro_aiming_left_and_right">Sideways gyro aiming sensitivity. Applies at once and is kept.</string>
+    <string name="stream_help_gyro_aiming_up_and_down">Up and down gyro aiming sensitivity. Applies at once and is kept.</string>
     <string name="ps_notice">Unofficial community app. Not affiliated with or endorsed by Sony Interactive Entertainment. “PlayStation” is a registered trademark or trademark of Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Touchscreen as touchpad</string>
     <string name="ps_settings_touchscreen_touchpad_description">Fingers on the screen act as the DualSense touchpad, for swipes and touches. Off: the screen ignores touches.</string>
