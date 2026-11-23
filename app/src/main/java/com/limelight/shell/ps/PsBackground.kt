@@ -120,7 +120,6 @@ private val NAVY_TOP = lit(hsl(222f, 82f, 7f))
 private val NAVY_BOTTOM = lit(hsl(226f, 88f, 3f))
 private val GLOW_BLUE = lit(hsl(214f, 100f, 50f), .24f)
 private val GLOW_CYAN = lit(hsl(192f, 90f, 55f), .16f)
-private val RIBBON_BAND = arrayOf(lit(hsl(212f, 100f, 62f), .2f), lit(hsl(198f, 100f, 62f), .2f))
 private val RIBBON_LINE = arrayOf(lit(hsl(212f, 100f, 62f), .3f), lit(hsl(198f, 100f, 62f), .3f))
 
 /** Adds one frame's drawing time to [cost] (sum, worst, frames, last log; ns) and logs the minute's figures when it is over. */
@@ -144,12 +143,11 @@ private fun DrawScope.drawGlow(w: Float, h: Float, t: Float) {
     drawRect(Brush.radialGradient(0f to GLOW_CYAN, 1f to GLOW_CYAN.copy(alpha = 0f), center = b, radius = w * .42f), size = Size(w, h), blendMode = BlendMode.Plus)
 }
 
-/** Two soft bands of light that sweep across the screen in long waves. */
+/** Two thin lines of light that sweep across the screen in long waves (owner, 2026-11-23: the lines only, no wide blue band). */
 private fun DrawScope.drawRibbons(w: Float, h: Float, t: Float, path: Path) {
     for (i in 0 until 2) {
         val y0 = h * (.58f + i * .16f)
         val sp = .16f + i * .07f
-        val thick = 34f + i * 18f
         path.rewind()
         var x = -40f
         path.moveTo(x, y0)
@@ -157,9 +155,6 @@ private fun DrawScope.drawRibbons(w: Float, h: Float, t: Float, path: Path) {
             path.lineTo(x, y0 + sin(x * .0052f + t * sp + i * 2.1f) * 52f + sin(x * .011f - t * sp * 1.4f) * 16f)
             x += 16f
         }
-        val band = RIBBON_BAND[i]
-        drawPath(path, Brush.horizontalGradient(0f to band.copy(alpha = 0f), .45f to band, 1f to band.copy(alpha = 0f), startX = 0f, endX = w),
-            style = Stroke(thick), blendMode = BlendMode.Plus)
         val line = RIBBON_LINE[i]
         drawPath(path, Brush.horizontalGradient(0f to line.copy(alpha = 0f), .5f to line, 1f to line.copy(alpha = 0f), startX = 0f, endX = w),
             style = Stroke(1.2f), blendMode = BlendMode.Plus)
