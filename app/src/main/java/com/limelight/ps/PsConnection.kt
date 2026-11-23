@@ -443,8 +443,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     @Volatile private var aimX = 0f
     @Volatile private var aimY = 0f
     private val gyroAim = psPrefs.getString(PsPrefs.GYRO_AIM, "off") ?: "off"
-    // Stick units per deg/s: full deflection at 120 deg/s at the normal sensitivity
-    private val aimScale = 32767f / 120f * when (psPrefs.getString(PsPrefs.GYRO_AIM_SENSITIVITY, "normal")) { "low" -> .6f; "high" -> 1.6f; else -> 1f }
+    // Stick units per deg/s past the game's dead zone: full deflection at 40 deg/s at the normal sensitivity (owner, 2026-11-23:
+    // 120 deg/s was too slow)
+    private val aimScale = 32767f / 40f * when (psPrefs.getString(PsPrefs.GYRO_AIM_SENSITIVITY, "normal")) { "low" -> .5f; "high" -> 2f; else -> 1f }
 
     private fun aiming() = gyroAim == "always" || (gyroAim == "aim" && aimHeld)
     private fun aimedX(): Short = (baseRx + (if (aiming()) aimX else 0f)).coerceIn(-32768f, 32767f).toInt().toShort()
@@ -464,9 +465,18 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                     it.copy(gyroX = gx, gyroY = gy, gyroZ = gz, orientX = orientation[0], orientY = orientation[1], orientZ = orientation[2], orientW = orientation[3])
                 }
                 if (gyroAim != "off") {
-                    // DualShock axes (the controller handler's): y turns left, x tilts up; the stick's x is right, its y (console) down
-                    aimX = -y * aimScale
-                    aimY = -x * aimScale
+                    // Axes as the controller handler sends a handheld's sensor: x is up tilt, z is negative turning left (yaw
+                    // about the device's own vertical axis), y is positive rolling left; turning and rolling both aim sideways.
+                    // The stick's x is right, its y (console) down. Below 1.5 deg/s (sensor noise) nothing moves; past it the
+                    // stick starts at the games' usual dead zone, so a slow turn already aims.
+                    val vx = z - y
+                    val vy = -x
+                    val speed = kotlin.math.hypot(vx, vy)
+                    if (speed < AIM_NOISE) { aimX = 0f; aimY = 0f } else {
+                        val stick = (AIM_DEAD_ZONE + (speed - AIM_NOISE) * aimScale).coerceAtMost(32767f)
+                        aimX = vx / speed * stick
+                        aimY = vy / speed * stick
+                    }
                     if (aiming()) update { it.copy(rx = aimedX(), ry = aimedY()) }
                 }
             }
@@ -909,6 +919,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         }
         /** L2 past this (of 255) is aiming, for gyro aiming while L2 is held. */
         private const val AIM_TRIGGER = 64
+        /** Gyro aiming: turn rates below this (deg/s) are sensor noise; past it the stick starts at this dead zone (of 32767). */
+        private const val AIM_NOISE = 1.5f
+        private const val AIM_DEAD_ZONE = 6000f
         private const val G = 9.80665f
         private const val TOUCH_WIDTH = 1920
         private const val TOUCH_HEIGHT_DUALSENSE = 1079

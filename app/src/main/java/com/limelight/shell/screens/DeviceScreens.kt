@@ -83,11 +83,12 @@ fun StartScreen(profiles: Profiles, store: ProfileStore, pcs: List<Pc>, startup:
     val paired = pcs.filter { it.paired }.sortedBy { it.name.lowercase() }
     val focusPc = paired.firstOrNull { it.uuid == startup.defaultPc } ?: paired.firstOrNull { it.online } ?: paired.firstOrNull()
     val first = remember { FocusRequester() }
-    InitialFocus(first, focusPc?.uuid)
+    val playStation by com.limelight.shell.ps.PsMode.active.collectAsStateWithLifecycle()
+    // Coming back from the PlayStation tab the PC circles are new: the focus goes to the first PC again, not the profile chip
+    InitialFocus(first, focusPc?.uuid to playStation)
     // The PC the focus is on, for the companion screen's card of it (null on the "Pair a new PC" circle: the welcome or fallback card shows)
     var focusedUuid by remember { mutableStateOf<String?>(null) }
     PublishCompanionPc(paired.firstOrNull { it.uuid == focusedUuid }, PcContext.START, startup.defaultPc)
-    val playStation by com.limelight.shell.ps.PsMode.active.collectAsStateWithLifecycle()
     // L1 / R1 switch between the PCs and the PlayStation consoles (prototype F), through the shell's shoulder hook
     androidx.compose.runtime.DisposableEffect(shell) {
         val handler: (Int) -> Unit = { dir -> com.limelight.shell.ps.PsMode.set(dir > 0) }
