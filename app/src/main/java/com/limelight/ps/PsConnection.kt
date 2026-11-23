@@ -380,7 +380,13 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     override fun sendTouchEvent(eventType: Byte, pointerId: Int, x: Float, y: Float, pressureOrDistance: Float, contactAreaMajor: Float, contactAreaMinor: Float, rotation: Short) = MoonBridge.LI_ERR_UNSUPPORTED
     override fun sendPenEvent(eventType: Byte, toolType: Byte, penButtons: Byte, x: Float, y: Float, pressureOrDistance: Float, contactAreaMajor: Float, contactAreaMinor: Float, rotation: Short, tilt: Byte) = MoonBridge.LI_ERR_UNSUPPORTED
     override fun sendUtf8Text(text: String) {}
-    override fun sendControllerArrivalEvent(controllerNumber: Byte, activeGamepadMask: Short, type: Byte, supportedButtonFlags: Int, capabilities: Short) = 0
+    override fun sendControllerArrivalEvent(controllerNumber: Byte, activeGamepadMask: Short, type: Byte, supportedButtonFlags: Int, capabilities: Short): Int {
+        if (controllerNumber.toInt() == 0) firstPadIsPlayStation = type == MoonBridge.LI_CTYPE_PS
+        return 0
+    }
+
+    // Whether the controller that plays is a PlayStation pad (it has its own Create button and touchpad)
+    @Volatile private var firstPadIsPlayStation = false
     override fun sendControllerBatteryEvent(controllerNumber: Byte, batteryState: Byte, batteryPercentage: Byte) {}
 
     // --- Controller --------------------------------------------------------------------------------------------------------------
@@ -396,8 +402,11 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     override fun sendControllerInput(controllerNumber: Short, activeGamepadMask: Short, buttonFlags: Int, leftTrigger: Byte, rightTrigger: Byte,
                                      leftStickX: Short, leftStickY: Short, rightStickX: Short, rightStickY: Short) {
         if (controllerNumber.toInt() != 0) return
+        // A pad without Create and a touchpad (a handheld's built-in controls, owner 2026-11-23): its Select (the upper left menu
+        // button) clicks the touchpad and its Home (Guide) presses Create; a PlayStation pad keeps its own buttons
+        val table = if (firstPadIsPlayStation) BUTTONS else HANDHELD_BUTTONS
         var buttons = 0
-        for ((flag, button) in BUTTONS) if (buttonFlags and flag != 0) buttons = buttons or button.mask
+        for ((flag, button) in table) if (buttonFlags and flag != 0) buttons = buttons or button.mask
         update { it.copy(buttons = buttons, l2 = leftTrigger.toInt() and 0xFF, r2 = rightTrigger.toInt() and 0xFF,
             lx = leftStickX, ly = flip(leftStickY), rx = rightStickX, ry = flip(rightStickY)) }
     }
@@ -798,6 +807,15 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             ControllerPacket.PLAY_FLAG to PsButton.OPTIONS, ControllerPacket.BACK_FLAG to PsButton.SHARE,
             ControllerPacket.SPECIAL_BUTTON_FLAG to PsButton.PS, ControllerPacket.TOUCHPAD_FLAG to PsButton.TOUCHPAD,
         )
+
+        /** [BUTTONS] for a pad without Create and a touchpad: Select is the touchpad click, Home (Guide) is Create. */
+        private val HANDHELD_BUTTONS = BUTTONS.map { (flag, button) ->
+            flag to when (flag) {
+                ControllerPacket.BACK_FLAG -> PsButton.TOUCHPAD
+                ControllerPacket.SPECIAL_BUTTON_FLAG -> PsButton.SHARE
+                else -> button
+            }
+        }
 
         /** Moonlight's stick Y is positive up; the console's is positive down. */
         private fun flip(y: Short): Short = (-y.toInt()).coerceIn(-32768, 32767).toShort()
