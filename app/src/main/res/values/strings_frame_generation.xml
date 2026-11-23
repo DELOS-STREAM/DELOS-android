@@ -8,7 +8,7 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">DELOS frame generation. Best at 60 fps; 30 fps shows artefacts.</string>
+    <string name="help_list_frame_generation">DELOS Tide is the frame generation built into DELOS for streamed video. The GPU estimates the motion between two frames of the stream and predicts the frames in between, so motion looks smoother without extra delay. Best with a game at 60 fps; at 30 fps fast motion shows artefacts. Needs an Adreno GPU with motion estimation.</string>
     <string name="help_list_frame_generation_1">Only the frames of the stream are shown.</string>
     <string name="help_list_frame_generation_2">One predicted frame per game frame: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Two predicted frames per game frame: 30 → 90 fps.</string>

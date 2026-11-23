@@ -53,9 +53,12 @@ class SettingsHelpFitTest {
 
     private val problems = mutableListOf<String>()
 
+    /** Settings whose help may scroll the box (owner, 2026-11-23: DELOS Tide explains what it is in full). */
+    private val scrolling = setOf("list_frame_generation")
+
     private fun assertFits(what: String, text: String) {
         if (text.isBlank()) problems += "Empty help for $what"
-        else if (renderedLines(text) > SettingsHelp.MAX_LINES)
+        else if (renderedLines(text) > SettingsHelp.MAX_LINES && scrolling.none { what.startsWith(it) })
             problems += "Help for $what needs ${renderedLines(text)} lines (max ${SettingsHelp.MAX_LINES}):\n$text"
     }
 

@@ -7,7 +7,7 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">A geração de quadros do DELOS para vídeo transmitido. Melhor a 60 fps; a 30 fps mostra artefatos.</string>
+    <string name="help_list_frame_generation">DELOS Tide é a geração de quadros integrada ao DELOS para vídeo transmitido. A GPU estima o movimento entre dois quadros do stream e prevê os quadros intermediários, então o movimento fica mais suave sem atraso extra. Melhor com um jogo a 60 fps; a 30 fps o movimento rápido mostra artefatos. Requer uma GPU Adreno com estimativa de movimento.</string>
     <string name="help_list_frame_generation_1">Só os quadros da transmissão são mostrados.</string>
     <string name="help_list_frame_generation_2">Um quadro previsto por quadro do jogo: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Dois quadros previstos por quadro do jogo: 30 → 90 fps.</string>

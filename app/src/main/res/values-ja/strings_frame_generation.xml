@@ -7,7 +7,7 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">ストリーム映像のための DELOS のフレーム生成です。60 fps で最適。30 fps ではアーティファクトが出ます。</string>
+    <string name="help_list_frame_generation">DELOS Tide は DELOS に組み込まれたストリーム映像用のフレーム生成です。GPU がストリームの 2 フレーム間の動きを推定して中間のフレームを予測するため、遅延を増やさずに動きが滑らかに見えます。60 fps のゲームで最適。30 fps では速い動きにアーティファクトが出ます。動き推定に対応した Adreno GPU が必要です。</string>
     <string name="help_list_frame_generation_1">ストリームのフレームだけを表示します。</string>
     <string name="help_list_frame_generation_2">ゲームの 1 フレームごとに予測フレーム 1 枚：60 → 120 fps。</string>
     <string name="help_list_frame_generation_3">ゲームの 1 フレームごとに予測フレーム 2 枚：30 → 90 fps。</string>

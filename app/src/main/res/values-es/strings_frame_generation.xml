@@ -7,7 +7,7 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">La generación de fotogramas de DELOS para vídeo transmitido. Mejor a 60 fps; a 30 fps muestra artefactos.</string>
+    <string name="help_list_frame_generation">DELOS Tide es la generación de fotogramas integrada en DELOS para vídeo transmitido. La GPU estima el movimiento entre dos fotogramas del stream y predice los intermedios, así el movimiento se ve más fluido sin retardo extra. Mejor con un juego a 60 fps; a 30 fps el movimiento rápido muestra artefactos. Necesita una GPU Adreno con estimación de movimiento.</string>
     <string name="help_list_frame_generation_1">Solo se muestran los fotogramas de la transmisión.</string>
     <string name="help_list_frame_generation_2">Un fotograma previsto por fotograma del juego: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Dos fotogramas predichos por fotograma del juego: 30 → 90 fps.</string>

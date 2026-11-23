@@ -7,7 +7,7 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">Die Bildgenerierung von DELOS für gestreamtes Video. Am besten mit 60 fps; bei 30 fps zeigt sie Artefakte.</string>
+    <string name="help_list_frame_generation">DELOS Tide ist die in DELOS eingebaute Bildgenerierung für gestreamtes Video. Die GPU schätzt die Bewegung zwischen zwei Bildern des Streams und berechnet die Bilder dazwischen, sodass Bewegung ohne zusätzliche Verzögerung flüssiger wirkt. Am besten mit einem Spiel bei 60 fps; bei 30 fps zeigen schnelle Bewegungen Artefakte. Benötigt eine Adreno-GPU mit Bewegungsschätzung.</string>
     <string name="help_list_frame_generation_1">Nur die Bilder des Streams werden gezeigt.</string>
     <string name="help_list_frame_generation_2">Ein vorhergesagtes Bild pro Spielbild: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Zwei vorhergesagte Bilder pro Spielbild: 30 → 90 fps.</string>

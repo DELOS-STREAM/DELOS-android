@@ -7,7 +7,7 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">Генерація кадрів застосунку DELOS для трансляції відео. Найкраще на 60 fps; на 30 fps є артефакти.</string>
+    <string name="help_list_frame_generation">DELOS Tide — вбудована в застосунок DELOS генерація кадрів для трансляції відео. Графічний процесор оцінює рух між двома кадрами трансляції та передбачає проміжні кадри, тож рух виглядає плавніше без додаткової затримки. Найкраще з грою на 60 fps; на 30 fps швидкий рух має артефакти. Потрібен GPU Adreno з оцінкою руху.</string>
     <string name="help_list_frame_generation_1">Показуються лише кадри трансляції.</string>
     <string name="help_list_frame_generation_2">Один передбачений кадр на кадр гри: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Два передбачені кадри на кадр гри: 30 → 90 fps.</string>

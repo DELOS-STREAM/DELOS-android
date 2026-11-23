@@ -7,7 +7,7 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">Generování snímků aplikace DELOS pro streamované video. Nejlépe na 60 fps; na 30 fps má artefakty.</string>
+    <string name="help_list_frame_generation">DELOS Tide je generování snímků vestavěné v aplikaci DELOS pro streamované video. Grafický čip odhadne pohyb mezi dvěma snímky streamu a dopočítá snímky mezi nimi, takže pohyb působí plynuleji bez zpoždění navíc. Nejlépe se hrou na 60 fps; na 30 fps má rychlý pohyb artefakty. Potřebuje grafiku Adreno s odhadem pohybu.</string>
     <string name="help_list_frame_generation_1">Ukazují se jen snímky streamu.</string>
     <string name="help_list_frame_generation_2">Jeden předpovězený snímek na snímek hry: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Dva předpovězené snímky na snímek hry: 30 → 90 fps.</string>

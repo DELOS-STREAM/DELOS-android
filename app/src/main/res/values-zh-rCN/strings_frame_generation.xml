@@ -7,7 +7,7 @@
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">DELOS 为串流视频提供的帧生成。最适合 60 fps；30 fps 时会有伪影。</string>
+    <string name="help_list_frame_generation">DELOS Tide 是 DELOS 内置的串流视频帧生成。GPU 估算串流中两帧之间的运动并预测中间帧，因此运动更流畅，且不增加延迟。最适合 60 fps 的游戏；30 fps 时快速运动会有伪影。需要支持运动估算的 Adreno GPU。</string>
     <string name="help_list_frame_generation_1">只显示串流本身的帧。</string>
     <string name="help_list_frame_generation_2">每个游戏帧一个预测帧：60 → 120 fps。</string>
     <string name="help_list_frame_generation_3">每个游戏帧两个预测帧：30 → 90 fps。</string>
