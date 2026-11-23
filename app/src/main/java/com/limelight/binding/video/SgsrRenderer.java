@@ -510,7 +510,10 @@ public final class SgsrRenderer implements AutoCloseable {
         GLES31.glFramebufferTexture2D(GLES31.GL_FRAMEBUFFER,GLES31.GL_COLOR_ATTACHMENT0,GLES31.GL_TEXTURE_2D,colorTexture,0);
         require(GLES31.glCheckFramebufferStatus(GLES31.GL_FRAMEBUFFER)==GLES31.GL_FRAMEBUFFER_COMPLETE,"SGSR framebuffer");
         GLES31.glBindFramebuffer(GLES31.GL_FRAMEBUFFER,0);
-        if (tenBit && !arrivalOnly) createHdrOutput(output);
+        if (tenBit && !arrivalOnly) {
+            clearParent(output);
+            createHdrOutput(output);
+        }
         outputAttached = !arrivalOnly;
         if (arrivalOnly) ensureArrival(width,height);
         texture = new SurfaceTexture(externalTexture);
@@ -523,6 +526,35 @@ public final class SgsrRenderer implements AutoCloseable {
             handler.post(drawTask);
         },frameHandler);
         LimeLog.info("SGSR 1 initialized: " + width + "x" + height + ", sharpness=" + sharpness + ", P010=" + tenBit);
+    }
+
+    /**
+     * Replaces the stream window's own last buffer with one black frame at the window's size before the P010 layer goes over it.
+     * That buffer is otherwise the decoder's last picture from before this stage (stale, coded size): on a stream coded 1088 rows
+     * high and cropped to 1080 (a PS5's) SurfaceFlinger scales the window's space by 1080 / 1088, so the layer covered only 1072
+     * rows and the old picture showed in a strip at the bottom; a mode change could show it whole (owner, 2026-11-23).
+     */
+    private void clearParent(Surface output) {
+        int[] attrs = {EGL14.EGL_RED_SIZE,8, EGL14.EGL_GREEN_SIZE,8, EGL14.EGL_BLUE_SIZE,8, EGL14.EGL_ALPHA_SIZE,8,
+                EGL14.EGL_SURFACE_TYPE,EGL14.EGL_WINDOW_BIT, EGL14.EGL_RENDERABLE_TYPE,0x40, EGL14.EGL_NONE};
+        EGLConfig[] configs = new EGLConfig[1];
+        int[] count = new int[1];
+        if (!EGL14.eglChooseConfig(display,attrs,0,configs,0,1,count,0) || count[0] == 0) return;
+        android.opengl.EGLContext clearContext = EGL14.eglCreateContext(display,configs[0],EGL14.EGL_NO_CONTEXT,
+                new int[]{EGL14.EGL_CONTEXT_CLIENT_VERSION,3,EGL14.EGL_NONE},0);
+        android.opengl.EGLSurface surface = clearContext == EGL14.EGL_NO_CONTEXT ? EGL14.EGL_NO_SURFACE
+                : EGL14.eglCreateWindowSurface(display,configs[0],output,new int[]{EGL14.EGL_NONE},0);
+        try {
+            if (surface != EGL14.EGL_NO_SURFACE && EGL14.eglMakeCurrent(display,surface,surface,clearContext)) {
+                GLES31.glClearColor(0f,0f,0f,1f);
+                GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT);
+                EGL14.eglSwapBuffers(display,surface);
+            } else LimeLog.warning("SGSR: the stream window could not be cleared");
+        } finally {
+            EGL14.eglMakeCurrent(display,window,window,context);
+            if (surface != EGL14.EGL_NO_SURFACE) EGL14.eglDestroySurface(display,surface);
+            if (clearContext != EGL14.EGL_NO_CONTEXT) EGL14.eglDestroyContext(display,clearContext);
+        }
     }
 
     private void createHdrOutput(Surface output) {
