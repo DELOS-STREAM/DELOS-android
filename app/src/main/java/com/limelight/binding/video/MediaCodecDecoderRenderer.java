@@ -210,6 +210,9 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     private volatile LatencyStages latency;
     private volatile boolean sgsrFailed;
     private volatile boolean sgsrRequested;
+    // A pass-through stage left from frame generation turned off with the upscaler off: kept to avoid a decoder reset, it is no
+    // upscaler and is not stopping (owner, 2026-11-23: the menu showed "Stopping" for good)
+    private volatile boolean passThroughKept;
     private volatile boolean sgsrHdrActive;
     // Delos: the Vulkan renderer of a PyroWave stream; MediaCodec stays unused while it exists
     // Written by setup() and cleanup(), read by the stream menu, the stats thread and the HDR callback
@@ -965,6 +968,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         // Delos: an explicit codec reset changes output locally; the network session stays connected.
         boolean stageWanted = sgsrRequested || frameGenStage();
         if ((!stageWanted || sgsrFailed || sgsrOutputMismatch()) && sgsr != null) { sgsr.close(); sgsr = null; }
+        passThroughKept = false;
         if (sgsr == null && !sgsrFailed && stageWanted) {
             sgsr = SgsrRenderer.create(context, surfaceHost, renderTarget, initialWidth, initialHeight,
                     sgsrRequested ? prefs.sgsrSharpness : 0,
@@ -1290,6 +1294,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             if (stopping || pyroWave != null) return;
             prefs.frameGenMultiplier = Math.max(1, Math.min(4, multiplier));
             SgsrRenderer current = sgsr;
+            if (current != null && !sgsrRequested) passThroughKept = prefs.frameGenMultiplier <= 1;
             if (current != null) {
                 current.setFrameGeneration(prefs.frameGenMultiplier, this::displayRefreshHz);
                 try { applySurfaceFrameRate(renderTarget, targetFps * prefs.frameGenMultiplier); }
@@ -1318,7 +1323,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         if (sgsrFailed) return UpscalerStatus.UNAVAILABLE;
         if (sgsrRequested && sgsr == null) return UpscalerStatus.STARTING;
         // A stage kept only for frame generation (sharpen only at 0) is no upscaler
-        if (!sgsrRequested && sgsr != null && !frameGenStage()) return UpscalerStatus.STOPPING;
+        if (!sgsrRequested && sgsr != null && !frameGenStage() && !passThroughKept) return UpscalerStatus.STOPPING;
         return sgsr != null && sgsrRequested ? UpscalerStatus.ON : UpscalerStatus.OFF;
     }
     public void setUpscalingSharpness(int value) {
