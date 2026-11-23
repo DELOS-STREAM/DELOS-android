@@ -80,29 +80,42 @@ final class FrameGenerator implements AutoCloseable {
             " for(int y=0;y<size.y;y++) for(int x=0;x<size.x;x++){ vec2 v=texelFetch(field,ivec2(x,y),0).rg;\n" +
             "  if(abs(v.x)<1000.0 && abs(v.y)<1000.0){ s+=v; n+=1.0; } }\n" +
             " color=vec4(clamp(s/max(n,1.0),-limit,limit),0.0,1.0); }";
+    // Per block, the better of the two estimates: the plain one (a) and the pre-shifted one with its shift added back (b). Each
+    // is tested on this block of the newer luma against the older luma where the vector says it came from (16 samples, each the
+    // mean of 2 × 2 texels); b is taken only when its difference is smaller. Both are vectors the driver measured: nothing is
+    // blended and "no motion" is not offered. B is 1 where the plain estimate stayed (for the log)
+    private static final String CHOOSE = "#version 310 es\n" +
+            "precision highp float; uniform sampler2D plain; uniform sampler2D shifted; uniform sampler2D shift; uniform sampler2D older;\n" +
+            "uniform sampler2D newer; uniform vec2 block; uniform vec2 scale; out vec4 color;\n" +
+            "float miss(vec2 origin, vec2 v){ float e=0.0; for(int j=0;j<4;j++) for(int i=0;i<4;i++){\n" +
+            "  vec2 uv=origin+(vec2(i,j)*0.25+0.125)*block; e+=abs(texture(newer,uv).r-texture(older,uv-v*scale).r); } return e; }\n" +
+            "void main(){ ivec2 p=ivec2(gl_FragCoord.xy); vec2 a=texelFetch(plain,p,0).rg;\n" +
+            " vec2 b=texelFetch(shifted,p,0).rg+texelFetch(shift,ivec2(0),0).rg; vec2 origin=vec2(p)*block;\n" +
+            " bool keep=!(miss(origin,b)<miss(origin,a)); color=vec4(keep ? a : b, keep ? 1.0 : 0.0, 1.0); }";
     // The block vectors without their outliers: each block takes the vector median of its 3 × 3 neighbourhood, the neighbour's
     // vector (its own first) with the smallest summed distance to the other eight. The result is always a vector the driver
-    // measured nearby, never a blend and never "no motion". The pre-shift the estimation started from is added back
+    // measured nearby, never a blend and never "no motion"
     private static final String MEDIAN = "#version 310 es\n" +
-            "precision highp float; uniform sampler2D motion; uniform sampler2D shift; uniform float shifted; out vec4 color;\n" +
+            "precision highp float; uniform sampler2D motion; out vec4 color;\n" +
             "void main(){ ivec2 p=ivec2(gl_FragCoord.xy); ivec2 last=textureSize(motion,0)-ivec2(1); vec2 n[9];\n" +
             " for(int j=0;j<3;j++) for(int i=0;i<3;i++) n[j*3+i]=texelFetch(motion,clamp(p+ivec2(i-1,j-1),ivec2(0),last),0).rg;\n" +
             " vec2 best=n[4]; float least=1e30;\n" +
             " for(int a=0;a<9;a++){ float s=0.0; for(int b=0;b<9;b++){ vec2 d=abs(n[a]-n[b]); s+=d.x+d.y; }\n" +
             "  if(s<least || (a==4 && s<=least)){ least=s; best=n[a]; } }\n" +
-            " if(shifted>0.5) best+=texelFetch(shift,ivec2(0),0).rg;\n" +
             " color=vec4(best,0.0,1.0); }";
-    // For the log, per block, as bytes so the read-back needs no float format: R the filtered vector's length (of
-    // [STATS_LENGTH] luma px), G how far the median moved it (of [STATS_CHANGE] luma px), B and A the driver's own vector on
-    // each axis (of [STATS_LENGTH] luma px). With [what] 1: the pre-shift on each axis in R and G instead
+    // For the log, per block, as bytes so the read-back needs no float format. [what] 0: R the filtered vector's length (of
+    // [STATS_LENGTH] luma px), G how far the median moved it from its input (of [STATS_CHANGE] luma px), B and A the plain
+    // estimate on each axis (of [STATS_LENGTH] luma px). 1: the pre-shift on each axis in R and G. 2: R is 1 where the plain
+    // estimate was kept
     private static final String STATS = "#version 310 es\n" +
-            "precision highp float; uniform sampler2D raw; uniform sampler2D filtered; uniform sampler2D shift; uniform float shifted;\n" +
-            "uniform int what; out vec4 color;\n" +
-            "void main(){ ivec2 p=ivec2(gl_FragCoord.xy); vec2 g=shifted>0.5 ? texelFetch(shift,ivec2(0),0).rg : vec2(0.0);\n" +
-            " if(what==1){ color=vec4(min(abs(g)/" + STATS_LENGTH + ".0,vec2(1.0)),0.0,1.0); return; }\n" +
-            " vec2 f=texelFetch(filtered,p,0).rg; vec2 r=texelFetch(raw,p,0).rg;\n" +
-            " color=vec4(min(length(f)/" + STATS_LENGTH + ".0,1.0),min(length(f-g-r)/" + STATS_CHANGE + ".0,1.0),\n" +
-            "  min(abs(r.x)/" + STATS_LENGTH + ".0,1.0),min(abs(r.y)/" + STATS_LENGTH + ".0,1.0)); }";
+            "precision highp float; uniform sampler2D source; uniform sampler2D filtered; uniform sampler2D plain; uniform sampler2D shift;\n" +
+            "uniform sampler2D choice; uniform int what; out vec4 color;\n" +
+            "void main(){ ivec2 p=ivec2(gl_FragCoord.xy);\n" +
+            " if(what==1){ color=vec4(min(abs(texelFetch(shift,ivec2(0),0).rg)/" + STATS_LENGTH + ".0,vec2(1.0)),0.0,1.0); return; }\n" +
+            " if(what==2){ color=vec4(texelFetch(choice,p,0).b,0.0,0.0,1.0); return; }\n" +
+            " vec2 f=texelFetch(filtered,p,0).rg; vec2 s=texelFetch(source,p,0).rg; vec2 d=texelFetch(plain,p,0).rg;\n" +
+            " color=vec4(min(length(f)/" + STATS_LENGTH + ".0,1.0),min(length(f-s)/" + STATS_CHANGE + ".0,1.0),\n" +
+            "  min(abs(d.x)/" + STATS_LENGTH + ".0,1.0),min(abs(d.y)/" + STATS_LENGTH + ".0,1.0)); }";
 
     /** [onRealFrame] results: a new picture of the game, an identical repeat, or the same picture with changed details. */
     static final int NEW_PICTURE = 0, REPEAT = 1, UPDATE = 2;
@@ -157,12 +170,14 @@ final class FrameGenerator implements AutoCloseable {
     // and both ways' evaluation errors on fast pairs since the last log line
     private long estimationNs, estimationCount, fastPairs;
     private float pairMean = -1f, fastDriver, fastWarp;
-    // The pre-shift (a steady camera turn beyond the driver's search window): the previous pair's mean vector in one texel, the
-    // picture whose field [motionFiltered] holds (negative: none to start from), whether this pair's estimation started from it,
-    // and for the log the pairs it applied to and its summed length (bytes of [STATS_LENGTH] luma px) on the measured ones
-    private int shiftTexture, shiftProgram, lumaShiftProgram;
+    // The second estimate (a steady camera turn beyond the driver's search window): the previous pair's mean vector in one texel
+    // (the pre-shift), the older luma moved by it, the estimate from there and the per-block choice between the two estimates;
+    // the picture whose field [motionFiltered] holds (negative: none to start from) and whether this pair has both estimates.
+    // For the log: the pairs with both, the shift's summed length (bytes of [STATS_LENGTH] luma px) on the measured ones, the
+    // blocks that kept the plain estimate, and the second estimation's time
+    private int shiftTexture, lumaShifted, motionShifted, motionChosen, shiftProgram, lumaShiftProgram, chooseProgram, blockX, blockY;
     private boolean shiftChecked, preShiftOff, shiftActive;
-    private long fieldPicture = -1, shiftedPairs, estimatedPairs, shiftMeasured;
+    private long fieldPicture = -1, shiftedPairs, estimatedPairs, shiftMeasured, keptBlocks, chosenBlocks, secondNs, secondCount;
     private float shiftLengthSum;
     private final ByteBuffer shiftPixel = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder());
 
@@ -352,19 +367,25 @@ final class FrameGenerator implements AutoCloseable {
                     .append(Math.round(statCap * 1000f / statBlocks) / 10f).append(" %, max x ")
                     .append(Math.round(statMaxX * luma * 10) / 10f).append(" y ").append(Math.round(statMaxY * luma * 10) / 10f).append(" luma px");
         } else out.append(", vectors not measured");
-        // Wall time of the driver's call with the GPU idle before and finished after it (glFinish), on every [STATS_EVERY]th pair
-        if (estimationCount > 0) out.append(", estimation ").append(Math.round(estimationNs / 10_000f / estimationCount) / 100f).append(" ms");
+        // Wall time of the driver's call with the GPU idle before and finished after it (glFinish), on every [STATS_EVERY]th pair;
+        // after the plus the second call (the pre-shifted estimate) on the pairs that have it
+        if (estimationCount > 0) {
+            out.append(", estimation ").append(Math.round(estimationNs / 10_000f / estimationCount) / 100f);
+            if (secondCount > 0) out.append(" + ").append(Math.round(secondNs / 10_000f / secondCount) / 100f);
+            out.append(" ms");
+        }
         if (preShiftOff) out.append(", pre-shift off");
         else if (estimatedPairs > 0) {
             out.append(", pre-shift on ").append(shiftedPairs).append(" of ").append(estimatedPairs).append(" pairs");
             if (shiftMeasured > 0) out.append(", shift mean ").append(Math.round(shiftLengthSum * (STATS_LENGTH / 255f)
                     * width / Math.max(1, lumaWidth) / shiftMeasured * 10) / 10f).append(" px");
+            if (chosenBlocks > 0) out.append(", unshifted kept ").append(Math.round(keptBlocks * 1000f / chosenBlocks) / 10f).append(" %");
         }
         out.append(", fast pairs ").append(fastPairs);
         if (fastPairs > 0) out.append(": driver ").append(Math.round(fastDriver / fastPairs * 100) / 100f).append(" warp ")
                 .append(Math.round(fastWarp / fastPairs * 100) / 100f);
         stepsDriver = stepsWarp = statPairs = statBlocks = statChanged = statLengthSum = statCap = estimationNs = estimationCount = fastPairs = 0;
-        shiftedPairs = estimatedPairs = shiftMeasured = 0;
+        shiftedPairs = estimatedPairs = shiftMeasured = keptBlocks = chosenBlocks = secondNs = secondCount = 0;
         statLengthMax = statMaxX = statMaxY = 0;
         fastDriver = fastWarp = shiftLengthSum = 0f;
         return out.toString();
@@ -390,17 +411,18 @@ final class FrameGenerator implements AutoCloseable {
 
     /**
      * The motion of the current pair, estimated once per pair (or after a refinement replaced its newest picture). When the pair
-     * before it has a field, the older luma is first moved by that field's mean vector ([prepareShift]): the driver then finds
-     * the rest inside its window, and the median adds the shift back, so a steady turn is followed to about twice the window.
+     * before it has a field, a second estimate starts from that field's mean vector ([prepareShift]): the older luma moved by it,
+     * so the driver finds the rest inside its window. Each block then takes the estimate that explains it better
+     * ([chooseVectors]): a steady turn is followed to about twice the window, and what stays still on screen (or turns the other
+     * way) keeps the plain estimate.
      */
     private void ensureMotion() {
         if (motionReady) return;
         drawLuma(newest);
+        drawLuma(1 - newest);
         shiftActive = prepareShift();
         if (shiftActive) drawShiftedLuma(1 - newest);
-        else drawLuma(1 - newest);
         estimatedPairs++;
-        if (shiftActive) shiftedPairs++;
         final boolean measured = motionPairs++ % STATS_EVERY == 0;
         long started = 0;
         if (measured) {
@@ -413,6 +435,24 @@ final class FrameGenerator implements AutoCloseable {
             GLES31.glFinish();
             estimationNs += System.nanoTime() - started;
             estimationCount++;
+            started = System.nanoTime();
+        }
+        if (shiftActive) {
+            error = nativeEstimateMotion(lumaShifted, luma[newest], motionShifted);
+            if (error != 0) {
+                // The plain estimate is there: the pair goes on with it alone, and so does every pair after it
+                shiftActive = false;
+                preShiftOff = true;
+                LimeLog.warning("Frame generation: pre-shift off: second estimation error 0x" + Integer.toHexString(error));
+            } else {
+                if (measured) {
+                    GLES31.glFinish();
+                    secondNs += System.nanoTime() - started;
+                    secondCount++;
+                }
+                chooseVectors();
+                shiftedPairs++;
+            }
         }
         pairMean = -1f;
         filterMotion();
@@ -443,24 +483,23 @@ final class FrameGenerator implements AutoCloseable {
         }
         GLES31.glUseProgram(medianProgram);
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, motion);
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, shiftActive ? motionChosen : motion);
         GLES31.glUniform1i(GLES31.glGetUniformLocation(medianProgram, "motion"), 0);
-        bindShift(medianProgram);
         GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
-        GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
     }
 
     /**
      * The pre-shift for the current pair into [shiftTexture]: the mean of the field in [motionFiltered] when that is the field of
-     * this pair or of the one right before it, held within the search window. False (no shift) before the vectors' orientation
-     * is known, without the median (which adds the shift back), without such a field, or on a device that cannot run it: one
-     * warning, then the estimation runs unshifted as before.
+     * this pair or of the one right before it, held within the search window. False (the plain estimate alone) before the
+     * vectors' orientation is known, without the median (the warp then reads the driver's field directly), without such a
+     * field, or on a device that cannot run a pass: one warning, then every pair is estimated once as before.
      */
     private boolean prepareShift() {
         if (preShiftOff || medianOff || !oriented || fieldPicture < 0 || pictures - fieldPicture > 1) return false;
         try {
             if (shiftProgram == 0) shiftProgram = SgsrRenderer.program(FULLSCREEN, SHIFT);
             if (lumaShiftProgram == 0) lumaShiftProgram = SgsrRenderer.program(FULLSCREEN, LUMA_SHIFT);
+            if (chooseProgram == 0) chooseProgram = SgsrRenderer.program(FULLSCREEN, CHOOSE);
             bindTarget(shiftTexture, 1, 1);
             if (!shiftChecked) {
                 shiftChecked = true;
@@ -481,17 +520,31 @@ final class FrameGenerator implements AutoCloseable {
         return true;
     }
 
-    /** The pre-shift texel on unit 2 for [program]'s "shift" and whether this pair uses it ("shifted"). */
-    private void bindShift(int program) {
-        GLES31.glActiveTexture(GLES31.GL_TEXTURE2);
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, shiftTexture);
-        GLES31.glUniform1i(GLES31.glGetUniformLocation(program, "shift"), 2);
-        GLES31.glUniform1f(GLES31.glGetUniformLocation(program, "shifted"), shiftActive ? 1f : 0f);
+    /** Per block the better of the plain and the pre-shifted estimate into [motionChosen], the median's input for this pair. */
+    private void chooseVectors() {
+        bindTarget(motionChosen, motionWidth, motionHeight);
+        GLES31.glUseProgram(chooseProgram);
+        sampler(chooseProgram, 0, "plain", motion);
+        sampler(chooseProgram, 1, "shifted", motionShifted);
+        sampler(chooseProgram, 2, "shift", shiftTexture);
+        sampler(chooseProgram, 3, "older", luma[1 - newest]);
+        sampler(chooseProgram, 4, "newer", luma[newest]);
+        GLES31.glUniform2f(GLES31.glGetUniformLocation(chooseProgram, "block"), blockX / (float) lumaWidth, blockY / (float) lumaHeight);
+        GLES31.glUniform2f(GLES31.glGetUniformLocation(chooseProgram, "scale"), signX / lumaWidth, signY / lumaHeight);
+        GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
+        GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
     }
 
-    /** The luma of ring slot [slot] moved by the pre-shift (in the direction the vectors' orientation says). */
+    /** [texture] on texture unit [unit] as [program]'s sampler [name]. */
+    private static void sampler(int program, int unit, String name, int texture) {
+        GLES31.glActiveTexture(GLES31.GL_TEXTURE0 + unit);
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, texture);
+        GLES31.glUniform1i(GLES31.glGetUniformLocation(program, name), unit);
+    }
+
+    /** The luma of ring slot [slot] moved by the pre-shift (in the direction the vectors' orientation says), into [lumaShifted]. */
     private void drawShiftedLuma(int slot) {
-        bindTarget(luma[slot], lumaWidth, lumaHeight);
+        bindTarget(lumaShifted, lumaWidth, lumaHeight);
         GLES31.glUseProgram(lumaShiftProgram);
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, ring[slot]);
@@ -506,8 +559,9 @@ final class FrameGenerator implements AutoCloseable {
     }
 
     /**
-     * The current pair's vectors into the log's counts and [pairMean]: a byte picture of lengths, changes and the driver's own
-     * components, read back (one texel per block). Not without the median: the counts describe the filtered field.
+     * The current pair's vectors into the log's counts and [pairMean]: a byte picture of lengths, changes and the plain
+     * estimate's components, read back (one texel per block), then the shift and the choice of a pair that has both estimates.
+     * Not without the median: the counts describe the filtered field.
      */
     private void measureMotion() {
         if (statsOff || medianOff) return;
@@ -524,13 +578,13 @@ final class FrameGenerator implements AutoCloseable {
         }
         bindTarget(statsTexture, motionWidth, motionHeight);
         GLES31.glUseProgram(statsProgram);
-        GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, motion);
-        GLES31.glUniform1i(GLES31.glGetUniformLocation(statsProgram, "raw"), 0);
-        GLES31.glActiveTexture(GLES31.GL_TEXTURE1);
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, motionFiltered);
-        GLES31.glUniform1i(GLES31.glGetUniformLocation(statsProgram, "filtered"), 1);
-        bindShift(statsProgram);
+        // The median's input, its result, the plain estimate, the shift and the choice (the plain estimate where there is none)
+        final int source = shiftActive ? motionChosen : motion;
+        sampler(statsProgram, 0, "source", source);
+        sampler(statsProgram, 1, "filtered", motionFiltered);
+        sampler(statsProgram, 2, "plain", motion);
+        sampler(statsProgram, 3, "shift", shiftTexture);
+        sampler(statsProgram, 4, "choice", source);
         GLES31.glUniform1i(GLES31.glGetUniformLocation(statsProgram, "what"), 0);
         GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
         statsPixels.clear();
@@ -552,6 +606,13 @@ final class FrameGenerator implements AutoCloseable {
         statPairs++;
         pairMean = lengths * (STATS_LENGTH / 255f) / blocks;
         if (shiftActive) {
+            // Which blocks kept the plain estimate
+            GLES31.glUniform1i(GLES31.glGetUniformLocation(statsProgram, "what"), 2);
+            GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
+            statsPixels.clear();
+            GLES31.glReadPixels(0, 0, motionWidth, motionHeight, GLES31.GL_RGBA, GLES31.GL_UNSIGNED_BYTE, statsPixels);
+            for (int i = 0; i < blocks; i++) if ((statsPixels.get(i * 4) & 0xFF) > 127) keptBlocks++;
+            chosenBlocks += blocks;
             // The applied shift, from one texel of the same picture
             GLES31.glViewport(0, 0, 1, 1);
             GLES31.glUniform1i(GLES31.glGetUniformLocation(statsProgram, "what"), 1);
@@ -689,16 +750,19 @@ final class FrameGenerator implements AutoCloseable {
     /** The luma pair at half the picture size, rounded down to whole search blocks, and the motion texture (one texel per block). */
     private void allocateWarp() {
         GLES31.glGetIntegerv(GL_MOTION_ESTIMATION_SEARCH_BLOCK_X_QCOM, query, 0);
-        int blockX = Math.max(1, query[0]);
+        blockX = Math.max(1, query[0]);
         GLES31.glGetIntegerv(GL_MOTION_ESTIMATION_SEARCH_BLOCK_Y_QCOM, query, 0);
-        int blockY = Math.max(1, query[0]);
+        blockY = Math.max(1, query[0]);
         lumaWidth = Math.max(blockX, width / 2 / blockX * blockX);
         lumaHeight = Math.max(blockY, height / 2 / blockY * blockY);
         luma[0] = texture(GLES30.GL_R8, lumaWidth, lumaHeight);
         luma[1] = texture(GLES30.GL_R8, lumaWidth, lumaHeight);
+        lumaShifted = texture(GLES30.GL_R8, lumaWidth, lumaHeight);
         motionWidth = lumaWidth / blockX;
         motionHeight = lumaHeight / blockY;
         motion = texture(GLES30.GL_RGBA16F, motionWidth, motionHeight);
+        motionShifted = texture(GLES30.GL_RGBA16F, motionWidth, motionHeight);
+        motionChosen = texture(GLES30.GL_RGBA16F, motionWidth, motionHeight);
         motionFiltered = texture(GLES30.GL_RGBA16F, motionWidth, motionHeight);
         shiftTexture = texture(GLES30.GL_RGBA16F, 1, 1);
         LimeLog.info("Frame generation warp: luma " + lumaWidth + "x" + lumaHeight + ", search block " + blockX + "x" + blockY);
@@ -707,8 +771,8 @@ final class FrameGenerator implements AutoCloseable {
     private void deleteFrames() {
         if (ring[0] != 0) GLES31.glDeleteTextures(3, new int[]{ring[0], ring[1], output}, 0);
         ring[0] = ring[1] = output = 0;
-        if (luma[0] != 0) GLES31.glDeleteTextures(5, new int[]{luma[0], luma[1], motion, motionFiltered, shiftTexture}, 0);
-        luma[0] = luma[1] = motion = motionFiltered = shiftTexture = 0;
+        if (luma[0] != 0) GLES31.glDeleteTextures(8, new int[]{luma[0], luma[1], lumaShifted, motion, motionShifted, motionChosen, motionFiltered, shiftTexture}, 0);
+        luma[0] = luma[1] = lumaShifted = motion = motionShifted = motionChosen = motionFiltered = shiftTexture = 0;
         fieldPicture = -1;
         // The statistics picture has the motion field's size
         if (statsTexture != 0) GLES31.glDeleteTextures(1, new int[]{statsTexture}, 0);
@@ -719,10 +783,10 @@ final class FrameGenerator implements AutoCloseable {
     @Override
     public void close() {
         deleteFrames();
-        for (int program : new int[]{diffProgram, lumaProgram, warpProgram, medianProgram, statsProgram, shiftProgram, lumaShiftProgram}) if (program != 0) GLES31.glDeleteProgram(program);
+        for (int program : new int[]{diffProgram, lumaProgram, warpProgram, medianProgram, statsProgram, shiftProgram, lumaShiftProgram, chooseProgram}) if (program != 0) GLES31.glDeleteProgram(program);
         if (diffTexture != 0) GLES31.glDeleteTextures(1, new int[]{diffTexture}, 0);
         if (framebuffer != 0) GLES31.glDeleteFramebuffers(1, new int[]{framebuffer}, 0);
-        diffProgram = lumaProgram = warpProgram = medianProgram = statsProgram = shiftProgram = lumaShiftProgram = diffTexture = framebuffer = 0;
+        diffProgram = lumaProgram = warpProgram = medianProgram = statsProgram = shiftProgram = lumaShiftProgram = chooseProgram = diffTexture = framebuffer = 0;
     }
 
     private static native int nativeInit();

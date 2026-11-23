@@ -380,31 +380,48 @@ since the previous line.
 **Observed (Odin, PS5 game at 30 fps, 2026-11-23):** `steps driver 0 warp 297, vectors mean 16.1 px max 83.8 px, median
 changed 8.4 % (40 pairs)`; the maximum was 83.8 px in every line. The owner judged the picture clearly better with the median.
 
-## Implemented: pre-shift of the motion estimation (`FrameGenerator`, 2026-11-23)
+## Implemented: two estimates per pair, chosen per block (`FrameGenerator`, 2026-11-23)
 
 **Why:** `GL_QCOM_motion_estimation` takes no search range and no starting vector. Its window (about ±64 × ±54 picture px per
 pair at half-size luma [INFERENCE]) is smaller than a fast camera turn at 30 fps.
 
-**What it does:** a camera turn is nearly one shift of the whole picture and changes little from pair to pair.
-1. The mean vector of the previous pair's filtered field is taken on the GPU (one texel) and held within ±30 × ±25 luma px.
-   With that limit "no motion" always stays inside the window, so a camera that stops is measured correctly on the next pair.
-2. The older picture's luma is drawn moved by that shift; the driver estimates what is left.
-3. The median pass adds the shift back. The warp, the evaluation and the statistics use the sum.
+**First version (pre-shift alone) and what it showed on the Odin:** one estimate, started from the previous pair's mean
+vector. Fast turns got smoother (vectors mean 40–50 px, max 128 px, at cap 6–12 %, shift mean about 40 px; warp 0.44 against
+driver 0.9 on fast pairs). But what stays still on screen while the background moves (a car's licence plate while steering)
+wiggled: such blocks needed a rest of minus the shift and were pulled to the background, and on a reversal the previous
+pair's shift pointed the wrong way.
 
-**Reach:** up to about twice the window for a steady turn, with the half-size precision and one estimation per pair.
+**What it does now:**
+1. **Plain estimate:** older luma → newer luma, as before the pre-shift.
+2. **Pre-shifted estimate** (only when the previous pair has a field):
+   - the mean vector of that field, taken on the GPU into one texel and held within ±30 × ±25 luma px;
+   - the older luma drawn moved by it, the driver estimates the rest, the shift is added back.
+3. **Choice per block** (one motion texel, never per pixel): each candidate is tested on that block of the newer luma against
+   the older luma where the vector says the block came from (16 samples of 2 × 2 texels). The pre-shifted vector is taken only
+   when its difference is smaller; otherwise the plain one stays.
+4. **Vector median** on the chosen field. The warp, the evaluation and the statistics use its result.
 
-**When there is no shift:**
+Both candidates are vectors the driver measured. Nothing is blended, "no motion" is not a candidate, and the newest picture is
+never mixed in.
+
+**Only the plain estimate runs:**
 - before the vectors' orientation is known, and without the vector median;
 - when the previous field is not that of this pair or of the one right before it (the driver's way ran, a restart, a new size);
-- after a cut or a sudden start: a pair whose difference is over three times the one before.
-- A device that cannot run a pass logs `pre-shift off` once and estimates unshifted as before.
+- after a cut or a sudden start: a pair whose difference is over three times the one before;
+- on a device that cannot run a pass or the second estimation: `pre-shift off` is logged once.
 
-**Limits:** the first pair of a sudden fast turn still exceeds the window; fast objects in front of a still camera gain nothing;
-a strip as wide as the shift at the picture's border has no true match.
+**Limits:** the first pair of a sudden fast turn still exceeds the window. A block test of 16 samples can prefer a wrong vector
+on flat or repeating texture; the median after it removes single blocks.
 
-**Log** (same line): `pre-shift on S of E pairs` (estimated pairs that started from a shift) and `shift mean G px` (its mean
-length on the measured shifted pairs, picture px). With the shift, `at cap` and `max x … y …` describe what the driver found
-**after** the shift: `at cap` should fall on steady fast turns while `vectors mean` and `max` rise above the old 83.8 px.
+**Log** (same line):
+
+| Field | Meaning |
+|---|---|
+| `estimation T + U ms` | Wall time of the plain and of the pre-shifted estimation (each with `glFinish` around it, every 8th pair) |
+| `pre-shift on S of E pairs` | Estimated pairs that had both estimates |
+| `shift mean G px` | Mean length of the pre-shift on the measured pairs that had it (picture px) |
+| `unshifted kept K %` | Share of blocks that kept the plain estimate, on those pairs |
+| `at cap`, `max x … y …` | Now always describe the plain estimate |
 
 **Not verified:** not built or run.
 
