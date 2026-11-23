@@ -121,10 +121,10 @@ class PsConnection(context: Context, private val consoleId: String, private val 
      * Finds and wakes the console, opens the ctrl session (retried [ctrlTries] times, 2 s apart, while a console in rest mode wakes),
      * then the stream; [beforeStream] runs once the session id is there. Throws when a step fails.
      */
-    private fun openSession(c: com.limelight.shell.ps.PsConsole, ctrlTries: Int, beforeStream: () -> Unit = {}) {
+    private fun openSession(c: com.limelight.shell.ps.PsConsole, ctrlTries: Int, stepDown: Boolean = false, beforeStream: () -> Unit = {}) {
         val address = locate(c)
         runCatching { PsDiscovery.wake(address, c.console.target.ps5, c.console.registKey) }
-        val request = request(c.console.target)
+        val request = request(c.console.target, stepDown)
         var opened: PsCtrl? = null
         var lastError: Exception? = null
         for (attempt in 0 until ctrlTries) {
@@ -178,7 +178,11 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         val until = SystemClock.uptimeMillis() + RECONNECT_MS
         while (running && SystemClock.uptimeMillis() < until) {
             try {
-                openSession(c, ctrlTries = 3)
+                // Automatic step-down (F8): a second reconnect in a row asks for 720p at most (SGSR upscales it); the
+                // decoder takes the new size from the session's parameter sets
+                val stepDown = consecutiveReconnects >= 2
+                if (stepDown) Log.i(TAG, "reconnecting at 720p at most after repeated drops")
+                openSession(c, ctrlTries = 3, stepDown = stepDown)
                 if (stream != null) {
                     lastPacketMs = SystemClock.uptimeMillis()
                     feeder?.lost()
@@ -220,9 +224,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
      * The stream the settings ask for, within what Remote Play offers (docs/research/ps-remote-play-protocol.md, 9). The bitrate is the
      * console's ceiling: a fixed one is held, the automatic one is the most this size takes and the console moves below it.
      */
-    private fun request(target: PsTarget): PsStreamRequest {
+    private fun request(target: PsTarget, stepDown: Boolean = false): PsStreamRequest {
         val size = RESOLUTIONS.lastOrNull { it.second <= prefs.height } ?: RESOLUTIONS.first()
-        val maxHeight = if (target.ps5) 1080 else 720
+        val maxHeight = if (stepDown) 720 else if (target.ps5) 1080 else 720
         val (w, h) = if (size.second > maxHeight) RESOLUTIONS.last { it.second <= maxHeight } else size
         val codec = when {
             prefs.videoFormat == PreferenceConfiguration.FormatOption.FORCE_H264 || !target.ps5 -> PsCodec.H264
