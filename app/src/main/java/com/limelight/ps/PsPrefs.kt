@@ -86,8 +86,13 @@ object PsPrefs {
                     .coerceIn(MIN_BITRATE_KBPS, MAX_BITRATE_KBPS))
                 .apply()
         }
+        // A handheld's built-in controls may announce themselves as an external pad without a vibrator (the Odin in Xbox mode):
+        // the device vibrates for them, so a console's rumble and haptics are felt (owner, 2026-11-23). Written once, a setting.
+        if (!prefs.contains(VIBRATE_FALLBACK)) prefs.edit().putBoolean(VIBRATE_FALLBACK, true).apply()
         return prefs
     }
+
+    private const val VIBRATE_FALLBACK = "checkbox_vibrate_fallback"
 
     /** Audio frames (10 ms each) buffered before playback starts, and the most kept before the oldest are dropped. */
     fun audioBuffer(prefs: SharedPreferences): Pair<Int, Int> = when (prefs.getString(AUDIO_BUFFER, "low")) {

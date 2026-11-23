@@ -59,8 +59,8 @@ private enum class PsSettingsTab(@StringRes val label: Int, val icon: String, va
     NETWORK(R.string.ps_settings_tab_network, Symbols.NETWORK_CHECK,
         listOf("checkbox_prevent_packet_loss", "checkbox_enable_pip")),
     CONTROLLER(R.string.settings_tab_controls, Symbols.SPORTS_ESPORTS,
-        listOf("checkbox_enable_rumble", "list_rumble_feel", "seekbar_deadzone", "checkbox_gamepad_motion_fallback", "checkbox_force_device_motion",
-            "seekbar_gyro_smoothing", "checkbox_flip_face_buttons")),
+        listOf("checkbox_enable_rumble", "list_rumble_feel", "checkbox_vibrate_fallback", "seekbar_deadzone", "checkbox_gamepad_motion_fallback",
+            "checkbox_force_device_motion", "seekbar_gyro_smoothing", "checkbox_flip_face_buttons")),
     AUDIO(R.string.settings_tab_audio, Symbols.GRAPHIC_EQ, emptyList()),
 }
 
