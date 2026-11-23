@@ -81,4 +81,9 @@
     </string-array>
     <string name="ps_settings_microphone_title">マイク</string>
     <string name="ps_settings_microphone_description">端末のマイクをボイスチャット用にコンソールへ送ります。初回はマイクへのアクセスを求めます。ミュートはストリームメニューで。</string>
+    <string name="ps_settings_visible_loss_title">見えない損失を無視</string>
+    <string name="ps_settings_visible_loss_description">自動ビットレートは、誤り訂正で修復できなかった損失のときだけ下がります。Wi-Fi で少しパケットが失われても画質は落ちません。</string>
+    <string name="stream_stats_console_bitrate">本体のビットレート</string>
+    <string name="stream_stats_console_frames">修復 / 損失フレーム</string>
+    <string name="stream_stats_console_keyframes">キーフレーム待ち</string>
 </resources>

@@ -112,7 +112,16 @@ class StreamStats @JvmOverloads constructor(
 ) {
     /** The delay summed up: network round trip, the PC's processing when it reports it, and decoding. */
     val totalMs: Float get() = networkMs + maxOf(hostMs, 0f) + decodeMs + processingMs
+
+    /** A PlayStation stream's own figures (F9), set by the stream activity; null for a PC stream. */
+    var console: ConsoleStats? = null
 }
+
+/**
+ * A console stream's figures since it started: the bitrate the console aims at (CONNECTIONQUALITY, -1 before the first),
+ * frames FEC repaired and frames lost, and how often the picture waited for a keyframe.
+ */
+class ConsoleStats(val targetKbps: Int, val repairedFrames: Long, val lostFrames: Long, val keyframeWaits: Int)
 
 /**
  * The Link block's receive row: the app's received rate against the bitrate asked for ("212 of 225 Mb/s"). The rate is
@@ -267,6 +276,11 @@ class StreamStatsPanel internal constructor(
                 add(stringResource(R.string.stream_stats_network) to "${s.networkMs} ms ± ${s.networkVarianceMs} ms") // l10n-ignore
                 if (s.hostMs >= 0f) add(stringResource(R.string.stream_stats_pc_processing) to "${format(s.hostMs)} ms (${format(s.hostMinMs)}–${format(s.hostMaxMs)})") // l10n-ignore
                 add(stringResource(R.string.stream_stats_decoding) to "${format(s.decodeMs, 2)} ms") // l10n-ignore
+                s.console?.let { c ->
+                    if (c.targetKbps > 0) add(stringResource(R.string.stream_stats_console_bitrate) to "${format(c.targetKbps / 1000f)} Mb/s") // l10n-ignore
+                    add(stringResource(R.string.stream_stats_console_frames) to "${c.repairedFrames} / ${c.lostFrames}") // l10n-ignore
+                    add(stringResource(R.string.stream_stats_console_keyframes) to c.keyframeWaits.toString())
+                }
                 if (s.processingMs > 0f) add(stringResource(R.string.stream_stats_upscaling) to "${format(s.processingMs, 2)} ms") // l10n-ignore
                 s.frameQueue?.let { add(stringResource(R.string.stream_stats_frame_queue) to frameQueueText(it)) }
                 // PyroWave shows the pass with its backlog, the others next to the other post-processing

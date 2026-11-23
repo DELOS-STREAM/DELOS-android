@@ -81,4 +81,9 @@
     </string-array>
     <string name="ps_settings_microphone_title">Мікрофон</string>
     <string name="ps_settings_microphone_description">Надсилає мікрофон пристрою на консоль для голосового чату. Уперше просить доступ до мікрофона; вимкнути звук можна в меню трансляції.</string>
+    <string name="ps_settings_visible_loss_title">Ігнорувати невидимі втрати</string>
+    <string name="ps_settings_visible_loss_description">Автоматичний бітрейт знижується лише через втрати, які корекція помилок не змогла виправити, тож кілька втрачених пакетів у Wi-Fi не погіршують якість.</string>
+    <string name="stream_stats_console_bitrate">Бітрейт консолі</string>
+    <string name="stream_stats_console_frames">Кадри відновлені / втрачені</string>
+    <string name="stream_stats_console_keyframes">Очікування ключового кадру</string>
 </resources>

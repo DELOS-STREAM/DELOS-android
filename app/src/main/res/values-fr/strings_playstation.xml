@@ -81,4 +81,9 @@
     </string-array>
     <string name="ps_settings_microphone_title">Micro</string>
     <string name="ps_settings_microphone_description">Envoie le micro de l’appareil à la console pour le chat vocal. Demande l’accès au micro la première fois ; coupez-le dans le menu du stream.</string>
+    <string name="ps_settings_visible_loss_title">Ignorer les pertes invisibles</string>
+    <string name="ps_settings_visible_loss_description">Le débit automatique ne baisse que pour les pertes que la correction d’erreurs n’a pas pu réparer : quelques paquets perdus en Wi-Fi ne coûtent pas de qualité.</string>
+    <string name="stream_stats_console_bitrate">Débit de la console</string>
+    <string name="stream_stats_console_frames">Images réparées / perdues</string>
+    <string name="stream_stats_console_keyframes">Attentes d’image clé</string>
 </resources>

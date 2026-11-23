@@ -59,6 +59,15 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     /** The console this stream plays, for the activity's title and the loader. */
     val console: com.limelight.shell.ps.PsConsole? = PsConsoleStore.get(appContext).consoles.value.firstOrNull { it.id == consoleId }
 
+    @Volatile private var consoleTargetKbps = -1
+    @Volatile private var keyframeWaits = 0
+
+    /** The figures the statistics panel shows for a console stream (F9); counted over this stream's sessions. */
+    fun consoleStats(): com.limelight.shell.ConsoleStats {
+        val s = stream
+        return com.limelight.shell.ConsoleStats(consoleTargetKbps, s?.repairedTotal?.get() ?: 0, s?.lostTotal?.get() ?: 0, keyframeWaits)
+    }
+
     override fun start(audioRenderer: AudioRenderer, videoDecoderRenderer: VideoDecoderRenderer, connectionListener: NvConnectionListener) {
         audio = audioRenderer
         video = videoDecoderRenderer
@@ -143,7 +152,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         val measured = request.copy(mtuIn = net.mtuIn, mtuOut = net.mtuOut, rttMs = net.rttMs, dontFragment = net.measured)
         if (!running) { abandonSession(); return }
         val s = PsStream(address, c.console.target, id, session.crypt, measured, streamListener(measured),
-            keyframeOnLoss = psPrefs.getBoolean(PsPrefs.KEYFRAME_ON_LOSS, false), holdBitrate = !PsPrefs.autoBitrate(psPrefs))
+            keyframeOnLoss = psPrefs.getBoolean(PsPrefs.KEYFRAME_ON_LOSS, false), holdBitrate = !PsPrefs.autoBitrate(psPrefs),
+            visibleLossOnly = psPrefs.getBoolean(PsPrefs.VISIBLE_LOSS, true))
         stream = s
         s.start()
         // stop() ran meanwhile: it closed what it saw, this session is closed here
@@ -292,6 +302,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         // the network latency shown is the round trip DELOS measures on the Takion acks
         override fun onConnectionQuality(rtt: Double, targetKbps: Int) {
             if (qualityLogs < 3) { qualityLogs++; Log.i(TAG, "connection quality: rtt=$rtt target=$targetKbps") }
+            // The field carries bits per second (48543000 seen at 1080p, 2026-11-22)
+            consoleTargetKbps = targetKbps / 1000
         }
 
         override fun onRtt(rttMs: Int, varianceMs: Int) {
@@ -561,7 +573,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
         private fun startWaiting(asked: Boolean) {
             val now = SystemClock.uptimeMillis()
-            if (!waitForKeyframe) { Log.i(TAG, "waiting for a keyframe"); waitSinceMs = now; requests = 0 }
+            if (!waitForKeyframe) { Log.i(TAG, "waiting for a keyframe"); waitSinceMs = now; requests = 0; keyframeWaits++ }
             waitForKeyframe = true
             askedAtMs = now
             requests++

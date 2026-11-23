@@ -81,4 +81,9 @@
     </string-array>
     <string name="ps_settings_microphone_title">Micrófono</string>
     <string name="ps_settings_microphone_description">Envía el micrófono del dispositivo a la consola para el chat de voz. Pide acceso la primera vez; se silencia en el menú del stream.</string>
+    <string name="ps_settings_visible_loss_title">Ignorar pérdidas que no se ven</string>
+    <string name="ps_settings_visible_loss_description">La tasa automática baja solo por pérdidas que la corrección de errores no pudo reparar, así unos pocos paquetes perdidos en Wi-Fi no restan calidad.</string>
+    <string name="stream_stats_console_bitrate">Tasa de la consola</string>
+    <string name="stream_stats_console_frames">Fotogramas reparados / perdidos</string>
+    <string name="stream_stats_console_keyframes">Esperas de fotograma clave</string>
 </resources>

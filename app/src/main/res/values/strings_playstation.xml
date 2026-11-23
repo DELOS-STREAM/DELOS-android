@@ -82,4 +82,9 @@
     </string-array>
     <string name="ps_settings_microphone_title">Microphone</string>
     <string name="ps_settings_microphone_description">Sends the device microphone to the console for voice chat. Asks for microphone access the first time; mute it in the stream menu.</string>
+    <string name="ps_settings_visible_loss_title">Ignore loss the picture never shows</string>
+    <string name="ps_settings_visible_loss_description">Automatic bitrate lowers the bitrate only for loss error correction could not repair, so a few lost packets on Wi-Fi do not cost picture quality.</string>
+    <string name="stream_stats_console_bitrate">Console bitrate</string>
+    <string name="stream_stats_console_frames">Frames repaired / lost</string>
+    <string name="stream_stats_console_keyframes">Keyframe waits</string>
 </resources>

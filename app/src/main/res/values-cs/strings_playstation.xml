@@ -81,4 +81,9 @@
     </string-array>
     <string name="ps_settings_microphone_title">Mikrofon</string>
     <string name="ps_settings_microphone_description">Posílá mikrofon zařízení do konzole pro hlasový chat. Poprvé požádá o přístup k mikrofonu; ztlumit jde ve stream menu.</string>
+    <string name="ps_settings_visible_loss_title">Ignorovat ztráty, které nejsou vidět</string>
+    <string name="ps_settings_visible_loss_description">Automatický bitrate se sníží jen kvůli ztrátám, které oprava chyb nedokázala opravit, takže pár ztracených paketů na Wi-Fi nesníží kvalitu obrazu.</string>
+    <string name="stream_stats_console_bitrate">Bitrate konzole</string>
+    <string name="stream_stats_console_frames">Snímky opravené / ztracené</string>
+    <string name="stream_stats_console_keyframes">Čekání na klíčový snímek</string>
 </resources>

@@ -30,6 +30,9 @@ object PsPrefs {
     /** Boolean, default true: the console sets the bitrate itself from the loss DELOS reports, up to [autoCeilingKbps]. */
     const val AUTO_BITRATE = "ps_auto_bitrate"
 
+    /** Boolean, default true: automatic bitrate reacts only to loss FEC could not repair (the loss the picture shows). */
+    const val VISIBLE_LOSS = "ps_visible_loss"
+
     /** Boolean, default false: a fixed bitrate may go past [MAX_BITRATE_KBPS], up to [UNLOCKED_MAX_BITRATE_KBPS]. */
     const val UNLOCK_BITRATE = "ps_unlock_bitrate"
 

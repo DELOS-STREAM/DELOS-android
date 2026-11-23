@@ -81,4 +81,9 @@
     </string-array>
     <string name="ps_settings_microphone_title">마이크</string>
     <string name="ps_settings_microphone_description">기기 마이크를 음성 채팅용으로 콘솔에 보냅니다. 처음에 마이크 권한을 요청하며, 음소거는 스트림 메뉴에서 합니다.</string>
+    <string name="ps_settings_visible_loss_title">보이지 않는 손실 무시</string>
+    <string name="ps_settings_visible_loss_description">자동 비트레이트는 오류 정정으로 복구하지 못한 손실에서만 낮아집니다. Wi-Fi에서 패킷이 조금 손실되어도 화질이 떨어지지 않습니다.</string>
+    <string name="stream_stats_console_bitrate">콘솔 비트레이트</string>
+    <string name="stream_stats_console_frames">복구 / 손실 프레임</string>
+    <string name="stream_stats_console_keyframes">키프레임 대기</string>
 </resources>

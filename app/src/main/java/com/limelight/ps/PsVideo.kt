@@ -77,6 +77,8 @@ class PsFrameAssembler {
 
     /** Statistics for the congestion report: units received and missing since the last call. */
     val unitsReceived = java.util.concurrent.atomic.AtomicInteger()
+    /** Units of frames FEC could not rebuild, and of whole frames that never came: the loss the picture shows. */
+    val visibleLoss = java.util.concurrent.atomic.AtomicInteger()
     val unitsLost = java.util.concurrent.atomic.AtomicInteger()
 
     sealed interface Result {
@@ -131,7 +133,11 @@ class PsFrameAssembler {
         units = arrayOfNulls(sources + parities)
         received = 0
         adaptive = p.adaptiveIndex
-        if (previous >= 0 && ((frameIndex - previous) and 0xFFFF) > 1) pendingLoss = ((previous + 1) and 0xFFFF) to ((frameIndex - 1) and 0xFFFF)
+        if (previous >= 0 && ((frameIndex - previous) and 0xFFFF) > 1) {
+            pendingLoss = ((previous + 1) and 0xFFFF) to ((frameIndex - 1) and 0xFFFF)
+            // Whole frames missing, each counted with this frame's size
+            visibleLoss.addAndGet((((frameIndex - previous) and 0xFFFF) - 1) * p.unitsInFrame)
+        }
     }
 
     private var pendingLoss: Pair<Int, Int>? = null
@@ -144,7 +150,7 @@ class PsFrameAssembler {
         val missingSources = (0 until sources).count { units[it] == null }
         var recovered = false
         if (missingSources > 0) {
-            if (!PsFec.decode(units, sources, units.size - sources)) return Result.Lost(idx, idx)
+            if (!PsFec.decode(units, sources, units.size - sources)) { visibleLoss.addAndGet(units.size - received); return Result.Lost(idx, idx) }
             recovered = true
         }
         // The frame is each source unit's content: measured first, then copied once into an array of its size

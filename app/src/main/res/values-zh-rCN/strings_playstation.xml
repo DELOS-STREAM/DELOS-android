@@ -81,4 +81,9 @@
     </string-array>
     <string name="ps_settings_microphone_title">麦克风</string>
     <string name="ps_settings_microphone_description">将设备麦克风发送到主机用于语音聊天。首次会请求麦克风权限；可在串流菜单中静音。</string>
+    <string name="ps_settings_visible_loss_title">忽略看不到的丢包</string>
+    <string name="ps_settings_visible_loss_description">自动码率只在纠错无法修复的丢包时降低，因此 Wi-Fi 上少量丢包不会降低画质。</string>
+    <string name="stream_stats_console_bitrate">主机码率</string>
+    <string name="stream_stats_console_frames">修复 / 丢失帧</string>
+    <string name="stream_stats_console_keyframes">等待关键帧</string>
 </resources>

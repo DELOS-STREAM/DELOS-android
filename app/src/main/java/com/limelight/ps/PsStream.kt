@@ -55,6 +55,11 @@ class PsStream(
      * Automatic bitrate (false): the real loss goes out and the console lowers and raises its bitrate with the network (5.8).
      */
     private val holdBitrate: Boolean = true,
+    /**
+     * Automatic bitrate that follows the picture, not the air (F2, owner 2026-11-23): only the loss FEC could not repair goes
+     * out, so loss that changes nothing on screen does not make the console lower its bitrate.
+     */
+    private val visibleLossOnly: Boolean = false,
 ) : AutoCloseable {
     private val v12 = target.takionVersion >= 12
     private val socket = DatagramSocket()
@@ -104,6 +109,9 @@ class PsStream(
     private var framesComplete = 0
     private var framesRecovered = 0
     private var framesLost = 0
+    /** Since the stream started, for the statistics panel: frames FEC repaired and frames lost. */
+    val repairedTotal = java.util.concurrent.atomic.AtomicLong()
+    val lostTotal = java.util.concurrent.atomic.AtomicLong()
 
     fun start() {
         socket.connect(InetSocketAddress(host, 9296))
@@ -382,15 +390,16 @@ class PsStream(
             for (r in assembler.add(packet)) when (r) {
                 is PsFrameAssembler.Result.Frame -> {
                     framesComplete++
-                    if (r.recovered) framesRecovered++
+                    if (r.recovered) { framesRecovered++; repairedTotal.incrementAndGet() }
                     if (r.adaptiveIndex != profile) switchProfile(r.adaptiveIndex)
                     listener.onVideoFrame(r.data, r.index, r.receivedUs)
                 }
-                is PsFrameAssembler.Result.Lost -> { framesLost++; requestIdr(r.from, r.to); listener.onVideoLost() }
+                is PsFrameAssembler.Result.Lost -> { framesLost++; lostTotal.incrementAndGet(); requestIdr(r.from, r.to); listener.onVideoLost() }
             }
             // Whole frames missing: CORRUPTFRAME tells the console not to reference them; with keyframe-on-loss it starts over
             assembler.takeLoss()?.let { (a, b) ->
                 framesLost += ((b - a) and 0xFFFF) + 1
+                lostTotal.addAndGet((((b - a) and 0xFFFF) + 1).toLong())
                 if (keyframeOnLoss) { requestIdr(a, b); listener.onVideoLost() } else corrupt(a, b)
             }
         } else if (packet.audioMarker == 2) {
@@ -442,7 +451,12 @@ class PsStream(
         // A fixed bitrate reports sporadic Wi-Fi loss as at most 3 %: FEC hides it, and a higher figure makes the console drop its
         // bitrate (5.8). Automatic bitrate reports the real loss
         val measured = assembler.unitsLost.getAndSet(0)
-        val lost = if (holdBitrate) measured.coerceAtMost(received * 3 / 100) else measured
+        val visible = assembler.visibleLoss.getAndSet(0)
+        val lost = when {
+            holdBitrate -> measured.coerceAtMost(received * 3 / 100)
+            visibleLossOnly -> visible
+            else -> measured
+        }
         val position = takePosition(15)
         val d = ByteBuffer.allocate(15).order(ByteOrder.BIG_ENDIAN).apply {
             put(5); putShort(0); putShort(received.coerceAtMost(0xFFFF).toShort()); putShort(lost.coerceAtMost(0xFFFF).toShort()); putInt(0); putInt(0)

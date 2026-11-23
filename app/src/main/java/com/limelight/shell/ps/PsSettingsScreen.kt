@@ -307,6 +307,8 @@ private fun psOnlyRows(tab: PsSettingsTab, values: Map<String, *>, prefs: Shared
         PsSettingsTab.NETWORK -> listOf(
             toggle(PsPrefs.KEYFRAME_ON_LOSS, Symbols.REFRESH, R.string.ps_settings_keyframe_title, R.string.ps_settings_keyframe_description,
                 false),
+            toggle(PsPrefs.VISIBLE_LOSS, Symbols.HIGH_QUALITY, R.string.ps_settings_visible_loss_title, R.string.ps_settings_visible_loss_description,
+                true),
             choice(PsPrefs.VIDEO_QUEUE, Symbols.HOURGLASS_TOP, R.string.ps_settings_video_queue_title, R.string.ps_settings_video_queue_description,
                 listOf("few", "normal", "many"), values[PsPrefs.VIDEO_QUEUE] as? String ?: "few",
                 listOf(R.string.ps_settings_video_queue_few, R.string.ps_settings_video_queue_normal, R.string.ps_settings_video_queue_many).map { res.getString(it) },

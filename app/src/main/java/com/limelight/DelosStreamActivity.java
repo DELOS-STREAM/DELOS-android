@@ -2009,6 +2009,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     @Override
     public void onPerfStats(com.limelight.shell.StreamStats stats) {
+        if (conn instanceof PsConnection) stats.setConsole(((PsConnection) conn).consoleStats());
         if (statsPanel != null) {
             statsPanel.update(stats);
         }

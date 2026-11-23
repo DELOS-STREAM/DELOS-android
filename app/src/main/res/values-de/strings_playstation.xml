@@ -81,4 +81,9 @@
     </string-array>
     <string name="ps_settings_microphone_title">Mikrofon</string>
     <string name="ps_settings_microphone_description">Sendet das Mikrofon des Geräts für den Sprachchat an die Konsole. Fragt beim ersten Mal nach Mikrofonzugriff; stummschalten im Stream-Menü.</string>
+    <string name="ps_settings_visible_loss_title">Unsichtbare Verluste ignorieren</string>
+    <string name="ps_settings_visible_loss_description">Die automatische Bitrate sinkt nur bei Verlusten, die die Fehlerkorrektur nicht beheben konnte; ein paar verlorene Pakete im WLAN kosten keine Bildqualität.</string>
+    <string name="stream_stats_console_bitrate">Bitrate der Konsole</string>
+    <string name="stream_stats_console_frames">Bilder repariert / verloren</string>
+    <string name="stream_stats_console_keyframes">Warten auf Keyframe</string>
 </resources>
