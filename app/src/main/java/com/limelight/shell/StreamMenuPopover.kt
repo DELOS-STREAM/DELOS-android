@@ -425,13 +425,16 @@ private fun PageHelp(text: String, modifier: Modifier) {
             compositingStrategy = CompositingStrategy.ModulateAlpha
         },
     ) {
-        BasicText(
-            text,
-            style = TextStyle(
-                color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Medium, fontSize = L.HELP_SIZE.tpx,
-                lineHeight = L.HELP_LINE_HEIGHT.em, lineHeightStyle = CssLineHeight, lineBreak = LineBreak.Paragraph,
-            ),
-        )
+        // A help longer than its box travels through it as the settings help does, and a finger can scroll it (owner, 2026-11-23)
+        com.limelight.shell.ui.AutoScrollingHelp(text, Modifier.matchParentSize(), edgeFade = 14f) {
+            BasicText(
+                text,
+                style = TextStyle(
+                    color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Medium, fontSize = L.HELP_SIZE.tpx,
+                    lineHeight = L.HELP_LINE_HEIGHT.em, lineHeightStyle = CssLineHeight, lineBreak = LineBreak.Paragraph,
+                ),
+            )
+        }
     }
 }
 

@@ -10,6 +10,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
@@ -22,8 +25,9 @@ import kotlin.math.roundToInt
 val LocalReducedMotion = staticCompositionLocalOf { false }
 
 /**
- * Passive help: pause at either end, travel at a constant reading speed, and restart on selection. With
- * reduced motion it stays still and is scrolled by touch instead.
+ * Passive help: pause at either end, travel at a constant reading speed, and restart on selection. A finger can scroll it at
+ * any time; when it lets go the text rests a moment and then travels on from where it was (owner, 2026-11-23). With reduced
+ * motion it stays still and is scrolled by touch only.
  *
  * [edgeFade] (stage px) is the compact dock's look: no padding above or below, and each edge fades only as far as the content
  * continues behind it (nothing at rest at the top, growing with the first pixels scrolled), so the area is clipped clean at both ends.
@@ -45,18 +49,26 @@ fun AutoScrollingHelp(
     val pixelsPerStagePixel = stage.dpPerPx * LocalDensity.current.density
     val maximum = scroll.maxValue
     val overflow = maximum in 1 until Int.MAX_VALUE
-    LaunchedEffect(identity, maximum, pixelsPerStagePixel, reducedMotion) {
-        scroll.scrollTo(0)
+    val dragged by scroll.interactionSource.collectIsDraggedAsState()
+    // A new text starts at the top and has not been touched yet
+    val touched = remember(identity) { booleanArrayOf(false) }
+    LaunchedEffect(identity) { scroll.scrollTo(0) }
+    LaunchedEffect(identity, maximum, pixelsPerStagePixel, reducedMotion, dragged) {
+        if (dragged) { touched[0] = true; return@LaunchedEffect }
         if (!overflow || reducedMotion) return@LaunchedEffect
-        val duration = (maximum * 1000f / (20f * pixelsPerStagePixel)).roundToInt().coerceIn(1000, 120000)
-        // The compact dock gives the text a long first pause (time to read it whole, nothing half-cut under the header); the panel keeps 3 s
-        var first = if (edgeFade != null) 8000L else 3000L
+        // Constant reading speed: 20 stage px a second over whatever distance is left
+        fun travel(to: Int) = (kotlin.math.abs(to - scroll.value) * 1000f / (20f * pixelsPerStagePixel)).roundToInt().coerceIn(300, 120000)
+        // The compact dock gives the text a long first pause (time to read it whole, nothing half-cut under the header); the panel
+        // keeps 3 s; after a finger let go, 2.5 s
+        var pause = if (touched[0]) 2500L else if (edgeFade != null) 8000L else 3000L
+        // Down first, unless the finger left it at the bottom
+        var down = scroll.value < maximum
         while (isActive) {
-            delay(first)
-            first = 3000L
-            scroll.animateScrollTo(maximum, tween(duration, easing = LinearEasing))
-            delay(2500)
-            scroll.animateScrollTo(0, tween(duration, easing = LinearEasing))
+            delay(pause)
+            pause = if (down) 2500L else 3000L
+            val target = if (down) maximum else 0
+            scroll.animateScrollTo(target, tween(travel(target), easing = LinearEasing))
+            down = !down
         }
     }
     Column(modifier.focusProperties { canFocus = false }
@@ -64,7 +76,7 @@ fun AutoScrollingHelp(
             if (edgeFade != null) Modifier.fadeEdges(stage, scroll, top = edgeFade, bottom = edgeFade)
             else Modifier.fadeEdges(stage, top = if (overflow) inset else 0f, bottom = if (overflow) inset else 0f)
         )
-        .verticalScroll(scroll, enabled = reducedMotion)
+        .verticalScroll(scroll)
         // The first and last lines can rest fully outside the fades at the two endpoints.
         .padding(vertical = (if (edgeFade != null) 0f else inset).px), verticalArrangement = Arrangement.spacedBy(spacing.px), content = content)
 }

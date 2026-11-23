@@ -18,6 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.layout
+import kotlin.math.roundToInt
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.CornerRadius
@@ -176,11 +180,14 @@ class RowGlide internal constructor(private val scope: CoroutineScope) {
         return true
     }
 
-    /** Draws the sole tint, glow and ring at the same moving bounds, [focusScale] times the focused row's size. */
+    /**
+     * Draws the plate at the same moving bounds, [focusScale] times the focused row's size: under the rows the glow and the
+     * [fill] (null when a frosted-glass plate carries it, see [RowGlideHost]), over that the [decoration] and the ring ([over]).
+     */
     internal fun draw(
         drawScope: DrawScope, ring: FocusRing?, corner: Float, focusScale: Float,
         colors: DelosColors, stage: StageMetrics, fill: Color?, glow: FocusGlow?,
-        decoration: (DrawScope.(Float) -> Unit)?,
+        decoration: (DrawScope.(Float) -> Unit)?, over: Boolean,
     ) {
         // Reading the tick is what redraws the ring when the row's bounds or the carry change
         if (tick == Int.MIN_VALUE) return
@@ -198,9 +205,11 @@ class RowGlide internal constructor(private val scope: CoroutineScope) {
                 size.width - RowGlideMotion.grownFar(l, r, focusScale), size.height - RowGlideMotion.grownFar(t, b, focusScale),
             ) {
                 val radius = min(stagePx(corner, stage), this.size.minDimension / 2f)
-                if (glow != null) drawGlow(glow, radius, a, colors, stage, focusScale)
-                // Draw-only tint: no row-local blur layer can linger after focus moves.
-                if (fill != null) drawRoundRect(fill.copy(alpha = fill.alpha * a), cornerRadius = CornerRadius(radius))
+                if (!over) {
+                    if (glow != null) drawGlow(glow, radius, a, colors, stage, focusScale)
+                    if (fill != null) drawRoundRect(fill.copy(alpha = fill.alpha * a), cornerRadius = CornerRadius(radius))
+                    return@inset
+                }
                 decoration?.invoke(this, a)
                 if (ring != null) {
                     val width = stagePx(ring.width, stage)
@@ -213,6 +222,24 @@ class RowGlide internal constructor(private val scope: CoroutineScope) {
                 }
             }
         }
+    }
+
+    /** The plate's current rectangle in the host and its visibility, for the frosted-glass plate; null while hidden. */
+    internal fun plate(focusScale: Float): Pair<androidx.compose.ui.geometry.Rect, Float>? {
+        if (tick == Int.MIN_VALUE) return null
+        val a = alpha.value
+        if (a <= 0f) return null
+        val eased = Motion.Glide.transform(progress)
+        val l = RowGlideMotion.edge(bounds[0], carry[0], eased)
+        val t = RowGlideMotion.edge(bounds[1], carry[1], eased)
+        val r = RowGlideMotion.edge(bounds[2], carry[2], eased)
+        val b = RowGlideMotion.edge(bounds[3], carry[3], eased)
+        if (r - l <= 0f || b - t <= 0f) return null
+        val rect = androidx.compose.ui.geometry.Rect(
+            RowGlideMotion.grownNear(l, r, focusScale), RowGlideMotion.grownNear(t, b, focusScale),
+            RowGlideMotion.grownFar(l, r, focusScale), RowGlideMotion.grownFar(t, b, focusScale),
+        )
+        return rect to a
     }
 
     /** The existing CSS-style shadow, clipped outside the plate so its translucent tint is not darkened. */
@@ -277,13 +304,38 @@ fun RowGlideHost(
     val scope = rememberCoroutineScope()
     val state = remember { RowGlide(scope) }
     SideEffect { state.reduced = reduced }
+    // Frosted glass under the focused row (owner, 2026-11-23): the plate's tint blurs the background behind it, like the top
+    // bar, wherever the shell's background is there to blur; inside an overlay (no backdrop source) the tint is drawn as before.
+    // The glass is a child placed at the plate's moving rectangle; the glow under it and the ring over it stay drawn.
+    val glassy = fill != null && LocalBackdropHaze.current != null
+    val radius = with(androidx.compose.ui.platform.LocalDensity.current) { corner.px.toPx() }
     CompositionLocalProvider(LocalRowGlide provides state) {
         Box(
             modifier
                 .onGloballyPositioned { state.attach(it) }
-                .drawBehind { state.draw(this, ring, corner, focusScale, colors, stage, fill, glow, decoration) },
-            content = { content() },
-        )
+                .drawBehind { state.draw(this, ring, corner, focusScale, colors, stage, if (glassy) null else fill, glow, decoration, over = false) },
+        ) {
+            if (glassy && fill != null) Box(
+                Modifier.matchParentSize().layout { measurable, constraints ->
+                    val plate = state.plate(focusScale)
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        if (plate != null) {
+                            val (rect, alpha) = plate
+                            val placeable = measurable.measure(androidx.compose.ui.unit.Constraints.fixed(
+                                rect.width.roundToInt().coerceAtLeast(1), rect.height.roundToInt().coerceAtLeast(1)))
+                            placeable.placeWithLayer(rect.left.roundToInt(), rect.top.roundToInt()) { this.alpha = alpha }
+                        }
+                    }
+                },
+            ) {
+                val shape = androidx.compose.foundation.shape.RoundedCornerShape(androidx.compose.foundation.shape.CornerSize(radius))
+                Box(Modifier.fillMaxSize().clip(shape).glass(fill))
+            }
+            Box(Modifier.matchParentSize().drawBehind {
+                state.draw(this, ring, corner, focusScale, colors, stage, null, null, decoration, over = true)
+            })
+            content()
+        }
     }
 }
 
