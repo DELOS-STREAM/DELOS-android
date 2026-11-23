@@ -396,7 +396,14 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     override fun sendPenEvent(eventType: Byte, toolType: Byte, penButtons: Byte, x: Float, y: Float, pressureOrDistance: Float, contactAreaMajor: Float, contactAreaMinor: Float, rotation: Short, tilt: Byte) = MoonBridge.LI_ERR_UNSUPPORTED
     override fun sendUtf8Text(text: String) {}
     override fun sendControllerArrivalEvent(controllerNumber: Byte, activeGamepadMask: Short, type: Byte, supportedButtonFlags: Int, capabilities: Short): Int {
-        if (controllerNumber.toInt() == 0) firstPadIsPlayStation = type == MoonBridge.LI_CTYPE_PS
+        if (controllerNumber.toInt() != 0) return 0
+        firstPadIsPlayStation = type == MoonBridge.LI_CTYPE_PS
+        // A pad that arrives after the stream started (the Odin's comes a few seconds later) has no motion listeners yet: ask
+        // for its gyro and accelerometer again, as a PC host does on an arrival (gyro aiming and the console's motion need them)
+        if (started) android.os.Handler(android.os.Looper.getMainLooper()).post {
+            listener.setMotionEventState(0, MoonBridge.LI_MOTION_TYPE_GYRO, MOTION_RATE_HZ)
+            listener.setMotionEventState(0, MoonBridge.LI_MOTION_TYPE_ACCEL, MOTION_RATE_HZ)
+        }
         return 0
     }
 
