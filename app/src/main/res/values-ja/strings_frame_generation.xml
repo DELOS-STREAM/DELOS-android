@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="title_frame_generation">フレーム生成</string>
-    <string name="summary_frame_generation">実験的な機能です。ゲームのフレームの間に GPU が予測したフレームを表示します。60 fps のゲームで最適です（60 → 120）。30 fps のゲームではアーティファクトが出ます。フレーム外挿対応の GPU ドライバー（Adreno）が必要です。</string>
+    <string name="title_frame_generation">DELOS Tide</string>
+    <string name="subtitle_frame_generation">フレーム生成</string>
+    <string name="summary_frame_generation">実験的な機能です。DELOS Tide は、ストリーム映像のための DELOS のフレーム生成です。GPU がストリームのフレーム間の動きを推定し、その間に予測したフレームを表示するので、動きがより滑らかに見えます。60 fps のゲームで最適です（60 → 120）。30 fps のゲームではアーティファクトが出ます。動き推定またはフレーム外挿に対応した Adreno GPU ドライバーが必要です。</string>
     <string name="frame_generation_off">オフ</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">60 fps のゲームで最適。30 fps ではアーティファクトが出ます。</string>
+    <string name="help_list_frame_generation">ストリーム映像のための DELOS のフレーム生成です。60 fps で最適。30 fps ではアーティファクトが出ます。</string>
     <string name="help_list_frame_generation_1">ストリームのフレームだけを表示します。</string>
     <string name="help_list_frame_generation_2">ゲームの 1 フレームごとに予測フレーム 1 枚：60 → 120 fps。</string>
     <string name="help_list_frame_generation_3">ゲームの 1 フレームごとに予測フレーム 2 枚：30 → 90 fps。</string>

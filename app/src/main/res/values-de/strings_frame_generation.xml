@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="title_frame_generation">Bildgenerierung</string>
-    <string name="summary_frame_generation">Experimentell. Zeigt zwischen den Bildern des Spiels Bilder, die die GPU vorhersagt. Am besten mit einem Spiel mit 60 fps (60 → 120); ein Spiel mit 30 fps zeigt Artefakte. Braucht einen GPU-Treiber mit Bildextrapolation (Adreno).</string>
+    <string name="title_frame_generation">DELOS Tide</string>
+    <string name="subtitle_frame_generation">Bildgenerierung</string>
+    <string name="summary_frame_generation">Experimentell. DELOS Tide ist die Bildgenerierung von DELOS für gestreamtes Video: Die GPU schätzt die Bewegung zwischen den Bildern des Streams, und DELOS zeigt dazwischen vorhergesagte Bilder, sodass Bewegung flüssiger wirkt. Am besten mit einem Spiel mit 60 fps (60 → 120); ein Spiel mit 30 fps zeigt Artefakte. Braucht einen Adreno-GPU-Treiber mit Bewegungsschätzung oder Bildextrapolation.</string>
     <string name="frame_generation_off">Aus</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">Am besten mit 60 fps im Spiel; bei 30 fps zeigt es Artefakte.</string>
+    <string name="help_list_frame_generation">Die Bildgenerierung von DELOS für gestreamtes Video. Am besten mit 60 fps; bei 30 fps zeigt sie Artefakte.</string>
     <string name="help_list_frame_generation_1">Nur die Bilder des Streams werden gezeigt.</string>
     <string name="help_list_frame_generation_2">Ein vorhergesagtes Bild pro Spielbild: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Zwei vorhergesagte Bilder pro Spielbild: 30 → 90 fps.</string>

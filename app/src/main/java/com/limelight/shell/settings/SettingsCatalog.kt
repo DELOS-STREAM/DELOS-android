@@ -67,6 +67,10 @@ data class SettingSpec(
 /** Settings whose rows carry the Experimental badge under their name. */
 fun isExperimentalSetting(key: String): Boolean = key == "list_frame_generation"
 
+/** The second line under a setting's name, for a setting titled by a product name: DELOS Tide is the frame generation. */
+fun settingSubtitle(res: Resources, key: String): String? =
+    if (key == "list_frame_generation") res.getString(R.string.subtitle_frame_generation) else null
+
 /**
  * The icon of a settings row. Every row of the XML catalogue has its own entry here (the rule is tested by
  * `SettingIconsTest`); a glyph is shared only by rows with the same meaning. See docs/ICON_AUDIT.md.

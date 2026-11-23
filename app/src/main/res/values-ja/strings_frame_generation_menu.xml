@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stream_menu_tile_frame_gen">フレーム生成</string>
+    <string name="stream_menu_tile_frame_gen">DT-FG</string>
     <string name="stream_menu_row_multiplier">倍率</string>
-    <string name="stream_help_frame_generation">実験的なフレーム生成。60 fps のゲームで最適です。30 fps のゲームではアーティファクトが出ます。変更はこのストリームにすぐ適用されます。</string>
-    <string name="stream_help_frame_generation_on">このストリームのフレーム生成をオン／オフします。アップスケーラーがオフのときにオンにするとデコーダーを一度再起動します。</string>
+    <string name="stream_help_frame_generation">DELOS Tide（実験的なフレーム生成）。60 fps のゲームで最適です。30 fps ではアーティファクトが出ます。このストリームにすぐ適用されます。</string>
+    <string name="stream_help_frame_generation_on">このストリームの DELOS Tide をオン／オフします。アップスケーラーがオフのときにオンにするとデコーダーを一度再起動します。</string>
     <string name="stream_help_multiplier">ゲームの 1 フレームあたりに表示するフレーム数：2× で 30 fps が 60、4× で 120 になります。</string>
     <string name="stream_help_create">本体のクリエイトボタンを押します：スクリーンショットとクリップ。</string>
     <string name="stream_menu_row_microphone">マイク</string>

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stream_menu_tile_frame_gen">Ger. de quadros</string>
+    <string name="stream_menu_tile_frame_gen">DT-FG</string>
     <string name="stream_menu_row_multiplier">Multiplicador</string>
-    <string name="stream_help_frame_generation">Geração de quadros experimental. Melhor com um jogo a 60 fps; um jogo a 30 fps mostra artefatos. As mudanças valem na hora, para esta transmissão.</string>
-    <string name="stream_help_frame_generation_on">Liga ou desliga a geração de quadros nesta transmissão; ligá-la com o upscaler desligado reinicia o decodificador uma vez.</string>
+    <string name="stream_help_frame_generation">DELOS Tide, geração de quadros experimental. Melhor com um jogo a 60 fps; a 30 fps mostra artefatos. Vale na hora, para esta transmissão.</string>
+    <string name="stream_help_frame_generation_on">Liga ou desliga o DELOS Tide nesta transmissão; ligá-lo com o upscaler desligado reinicia o decodificador uma vez.</string>
     <string name="stream_help_multiplier">Quantos quadros aparecem por quadro do jogo: 2× transforma 30 fps em 60, 4× em 120.</string>
     <string name="stream_help_create">Aperta o botão Criar do console: capturas e clipes.</string>
     <string name="stream_menu_row_microphone">Microfone</string>

@@ -321,6 +321,7 @@ fun GameSettingsScreen(screen: Screen.GameSettings, profiles: ProfileStore, appe
                                     override = if (isCustom) RowOverride(dotJoin(res, profileLine, hint), touch) { resetRow(spec.key) } else null,
                                     enabled = enabled, contextMenu = menu,
                                     impact = impact(spec.key, values), experimental = isExperimentalSetting(spec.key),
+                                    subtitle = settingSubtitle(res, spec.key),
                                     onFocused = { focusedKey = spec.key },
                                     popupReset = if (isCustom) ({ resetRow(spec.key) }) else null)
                             }

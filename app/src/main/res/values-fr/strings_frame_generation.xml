@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="title_frame_generation">Génération d’images</string>
-    <string name="summary_frame_generation">Expérimental. Affiche entre les images du jeu des images prédites par le GPU. Idéal avec un jeu à 60 fps (60 → 120) ; un jeu à 30 fps montre des artefacts. Nécessite un pilote GPU avec extrapolation (Adreno).</string>
+    <string name="title_frame_generation">DELOS Tide</string>
+    <string name="subtitle_frame_generation">Génération d’images</string>
+    <string name="summary_frame_generation">Expérimental. DELOS Tide est la génération d’images de DELOS pour la vidéo diffusée : le GPU estime le mouvement entre les images du stream et DELOS affiche entre elles des images prédites, ce qui rend le mouvement plus fluide. Idéal avec un jeu à 60 fps (60 → 120) ; un jeu à 30 fps montre des artefacts. Nécessite un pilote GPU Adreno avec estimation de mouvement ou extrapolation d’images.</string>
     <string name="frame_generation_off">Désactivée</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">Idéal avec un jeu à 60 fps ; à 30 fps, il montre des artefacts.</string>
+    <string name="help_list_frame_generation">La génération d’images de DELOS pour la vidéo diffusée. Idéale à 60 fps ; à 30 fps, elle montre des artefacts.</string>
     <string name="help_list_frame_generation_1">Seules les images du stream sont affichées.</string>
     <string name="help_list_frame_generation_2">Une image prédite par image du jeu : 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Deux images prédites par image du jeu : 30 → 90 fps.</string>

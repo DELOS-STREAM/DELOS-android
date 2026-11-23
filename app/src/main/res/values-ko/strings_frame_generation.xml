@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="title_frame_generation">프레임 생성</string>
-    <string name="summary_frame_generation">실험적 기능입니다. 게임 프레임 사이에 GPU가 예측한 프레임을 보여 줍니다. 60 fps 게임에서 가장 좋습니다(60 → 120). 30 fps 게임은 아티팩트가 보입니다. 프레임 외삽을 지원하는 GPU 드라이버(Adreno)가 필요합니다.</string>
+    <string name="title_frame_generation">DELOS Tide</string>
+    <string name="subtitle_frame_generation">프레임 생성</string>
+    <string name="summary_frame_generation">실험적 기능입니다. DELOS Tide는 스트리밍 영상을 위한 DELOS의 프레임 생성입니다. GPU가 스트림 프레임 사이의 움직임을 추정하고 그 사이에 예측한 프레임을 보여 주어 움직임이 더 부드럽게 보입니다. 60 fps 게임에서 가장 좋습니다(60 → 120). 30 fps 게임은 아티팩트가 보입니다. 움직임 추정 또는 프레임 외삽을 지원하는 Adreno GPU 드라이버가 필요합니다.</string>
     <string name="frame_generation_off">끄기</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
     <string name="frame_generation_4x">4×</string>
-    <string name="help_list_frame_generation">60 fps 게임에서 가장 좋습니다. 30 fps에서는 아티팩트가 보입니다.</string>
+    <string name="help_list_frame_generation">스트리밍 영상을 위한 DELOS의 프레임 생성입니다. 60 fps에서 가장 좋고, 30 fps에서는 아티팩트가 보입니다.</string>
     <string name="help_list_frame_generation_1">스트림의 프레임만 보여 줍니다.</string>
     <string name="help_list_frame_generation_2">게임 프레임마다 예측 프레임 1개: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">게임 프레임마다 예측 프레임 2개: 30 → 90 fps.</string>

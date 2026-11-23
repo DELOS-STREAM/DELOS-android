@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stream_menu_tile_frame_gen">Gen. fotogramas</string>
+    <string name="stream_menu_tile_frame_gen">DT-FG</string>
     <string name="stream_menu_row_multiplier">Multiplicador</string>
-    <string name="stream_help_frame_generation">Generación de fotogramas experimental. Mejor con un juego a 60 fps; un juego a 30 fps muestra artefactos. Los cambios se aplican al instante, para esta transmisión.</string>
-    <string name="stream_help_frame_generation_on">Activa o desactiva la generación de fotogramas en esta transmisión; activarla con el escalador apagado reinicia el decodificador una vez.</string>
+    <string name="stream_help_frame_generation">DELOS Tide, generación de fotogramas experimental. Mejor con un juego a 60 fps; a 30 fps muestra artefactos. Se aplica al instante, para esta transmisión.</string>
+    <string name="stream_help_frame_generation_on">Activa o desactiva DELOS Tide en esta transmisión; activarlo con el escalador apagado reinicia el decodificador una vez.</string>
     <string name="stream_help_multiplier">Cuántos fotogramas se muestran por fotograma del juego: 2× convierte 30 fps en 60, 4× en 120.</string>
     <string name="stream_help_create">Pulsa el botón Crear de la consola: capturas y clips.</string>
     <string name="stream_menu_row_microphone">Micrófono</string>

@@ -18,6 +18,8 @@ internal object SearchAliases {
         "checkbox_force_device_motion" to "always use device's motion sensors motion sensors",
         "seekbar_gyro_smoothing" to "gyroscope stabilisation stabilization motion sensors",
         "list_vrr" to "vrr arr adaptive refresh rate freesync g-sync variable",
+        // Titled by its product name (DELOS Tide): what it is stays searchable
+        "list_frame_generation" to "frame generation fg interpolation extrapolation",
         // Rows renamed from "game" to "app": the old word stays searchable.
         "ui_match_game_colors" to "game",
         "ui_hero_background" to "game",
@@ -40,6 +42,7 @@ internal object SearchAliases {
         "covers_sgdb_choose" to R.string.settings_search_alias_game,
         LINK_TEST_ROW to R.string.settings_search_alias_link_test,
         LINK_USE_ROW to R.string.settings_search_alias_link_use,
+        "list_frame_generation" to R.string.subtitle_frame_generation,
     )
 
     /** The English and the localized alias words of the row [key], empty when it has none. */

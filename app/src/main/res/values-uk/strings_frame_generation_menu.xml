@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stream_menu_tile_frame_gen">Генерація</string>
+    <string name="stream_menu_tile_frame_gen">DT-FG</string>
     <string name="stream_menu_row_multiplier">Множник</string>
-    <string name="stream_help_frame_generation">Експериментальна генерація кадрів. Найкраще з грою на 60 fps; гра на 30 fps має артефакти. Зміни діють одразу, для цієї трансляції.</string>
-    <string name="stream_help_frame_generation_on">Вмикає або вимикає генерацію кадрів для цієї трансляції; увімкнення з вимкненим апскейлером один раз перезапускає декодер.</string>
+    <string name="stream_help_frame_generation">DELOS Tide, експериментальна генерація кадрів. Найкраще з грою на 60 fps; на 30 fps є артефакти. Діє одразу, для цієї трансляції.</string>
+    <string name="stream_help_frame_generation_on">Вмикає або вимикає DELOS Tide для цієї трансляції; увімкнення з вимкненим апскейлером один раз перезапускає декодер.</string>
     <string name="stream_help_multiplier">Скільки кадрів показується на кадр гри: 2× робить із 30 fps 60, 4× — 120.</string>
     <string name="stream_help_create">Натискає кнопку «Створити» на консолі: знімки екрана й кліпи.</string>
     <string name="stream_menu_row_microphone">Мікрофон</string>

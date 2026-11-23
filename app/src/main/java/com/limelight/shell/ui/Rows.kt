@@ -174,6 +174,8 @@ fun SettingRow(
     impact: SettingImpact? = null,
     /** An experimental setting: a small badge under the name. */
     experimental: Boolean = false,
+    /** A second line under the name, in the description's style: what a product name stands for ("DELOS Tide" → "Frame Generation"). */
+    subtitle: String? = null,
     /**
      * A custom game setting's reset: its choice popup ends with "Reset to profile value"; a custom slider's Options opens [contextMenu] instead of
      * its popup (the menu has both).
@@ -314,6 +316,11 @@ fun SettingRow(
                 // Cost-bearing rows: the chips on their own line above the title, on the same left edge; the title keeps the full width
                 if (impact != null) ImpactChips(impact, focused, Modifier.padding(bottom = 2.px))
                 MarqueeText(label, active = focused, style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 26.tpx))
+                if (subtitle != null) BasicText(
+                    subtitle, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(color = colors.text3, fontFamily = Figtree, fontSize = 19.tpx, lineHeight = 1.35.em),
+                    modifier = Modifier.padding(top = 2.px),
+                )
                 if (experimental) ExperimentalBadge(Modifier.padding(top = 6.px))
                 if (override != null) {
                     Row(Modifier.padding(top = 4.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.px)) {
