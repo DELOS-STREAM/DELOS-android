@@ -97,4 +97,5 @@
     <string name="ps_settings_gyro_aim_low">Low</string>
     <string name="ps_settings_gyro_aim_normal">Normal</string>
     <string name="ps_settings_gyro_aim_high">High</string>
+    <string name="ps_notice">Unofficial community app. Not affiliated with or endorsed by Sony Interactive Entertainment. “PlayStation” is a registered trademark or trademark of Sony Interactive Entertainment Inc.</string>
 </resources>

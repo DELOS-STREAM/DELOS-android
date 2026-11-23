@@ -96,4 +96,5 @@
     <string name="ps_settings_gyro_aim_low">Baixa</string>
     <string name="ps_settings_gyro_aim_normal">Normal</string>
     <string name="ps_settings_gyro_aim_high">Alta</string>
+    <string name="ps_notice">Aplicativo não oficial da comunidade. Não é afiliado à Sony Interactive Entertainment nem endossado por ela. “PlayStation” é uma marca registrada ou marca comercial da Sony Interactive Entertainment Inc.</string>
 </resources>

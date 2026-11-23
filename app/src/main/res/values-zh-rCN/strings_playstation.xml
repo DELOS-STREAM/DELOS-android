@@ -96,4 +96,5 @@
     <string name="ps_settings_gyro_aim_low">低</string>
     <string name="ps_settings_gyro_aim_normal">标准</string>
     <string name="ps_settings_gyro_aim_high">高</string>
+    <string name="ps_notice">非官方社区应用。与 Sony Interactive Entertainment 无关联，也未获其认可。“PlayStation”是 Sony Interactive Entertainment Inc. 的注册商标或商标。</string>
 </resources>

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -160,6 +161,10 @@ fun PsStartContent(profileName: String?) {
         }
         // Under the circles, centred: Down from a console reaches it
         PillButton(stringResource(R.string.ps_settings_title), Symbols.SETTINGS, { shell.navigate(Screen.PsSettings) })
+        // The trademark and non-affiliation notice (docs/THIRD_PARTY.md, section 7): quiet text under the button, never focused
+        BasicText(stringResource(R.string.ps_notice),
+            style = TextStyle(color = LocalDelosColors.current.text3, fontFamily = Figtree, fontSize = 18.tpx, lineHeight = 1.4.em, textAlign = TextAlign.Center),
+            modifier = Modifier.widthIn(max = 1200.px))
     }
 }
 

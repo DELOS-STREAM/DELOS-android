@@ -96,4 +96,5 @@
     <string name="ps_settings_gyro_aim_low">낮음</string>
     <string name="ps_settings_gyro_aim_normal">보통</string>
     <string name="ps_settings_gyro_aim_high">높음</string>
+    <string name="ps_notice">비공식 커뮤니티 앱입니다. Sony Interactive Entertainment와 제휴하지 않았으며 승인을 받지 않았습니다. “PlayStation”은 Sony Interactive Entertainment Inc.의 등록 상표 또는 상표입니다.</string>
 </resources>

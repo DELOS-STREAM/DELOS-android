@@ -73,3 +73,11 @@ The goal is to maintain Delos for the long term, build a community around it and
 ## 📜 License and credits
 
 Delos is licensed under the [GNU General Public License v3.0](LICENSE), like Moonlight and Artemis. It stands on the work of many people, above all the Moonlight authors and ClassicOldSong; the full list is in [docs/CREDITS.md](docs/CREDITS.md).
+
+## ™️ PlayStation notice
+
+The PlayStation Remote Play support in Delos is an unofficial, community-made feature. Delos is not affiliated with, endorsed, sponsored or approved by Sony Interactive Entertainment Inc. or any of its affiliates.
+
+"PlayStation", "PS5", "PS4", "DualSense", "DUALSHOCK" and "Remote Play" are registered trademarks or trademarks of Sony Interactive Entertainment Inc. Delos uses these names only to say what it works with.
+
+The feature is an independent implementation written from a protocol description. It contains no Sony source code and no Sony SDK. Details are in [docs/THIRD_PARTY.md](docs/THIRD_PARTY.md).
