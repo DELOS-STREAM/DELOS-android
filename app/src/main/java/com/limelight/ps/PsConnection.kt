@@ -769,7 +769,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             var rewritten = false
             if (refs != null && refs.usable && rewriteFailures < 3) {
                 val before = refs.rewritten
-                if (!refs.process(picture)) {
+                if (!refs.process(picture, number)) {
                     // No listed picture is held: drop it; after 3 in a row or 200 ms of bridging wait for the keyframe
                     droppedInRow++
                     val since = bridgingSinceMs

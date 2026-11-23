@@ -20,7 +20,9 @@ internal class PsHevcRefs {
     private var spsLogged = false
     private var pFramesLogged = 0
 
-    // The pictures given to the decoder since the last keyframe: their picture order count LSBs, newest last
+    // The pictures given to the decoder since the last keyframe, by the feeder's frame number (newest last). Numbers, not the
+    // picture order count: its LSBs are only 4 bits on the PS5 (logged 2026-11-23), so a POC repeats every 16 frames and a lost
+    // picture would match an older delivered one with the same LSBs
     private val delivered = ArrayDeque<Int>()
 
     // Per 10 s for the log: frames whose used entry was not the newest (the console recovered by itself), frames rewritten,
@@ -50,27 +52,29 @@ internal class PsHevcRefs {
         params = if (s != null && p != null && s[2] == 1) Params(s[0], s[1], p.dependentSlices, p.outputFlag, p.extraBits) else null
     }
 
-    /** A picture before the decoder ([slices] its NALs with start codes): P slices possibly rewritten in place; false drops it. */
-    fun process(slices: MutableList<ByteArray>): Boolean {
+    /**
+     * A picture before the decoder ([slices] its NALs with start codes, [number] the feeder's frame number, which rises by one per
+     * frame index as the POC does): P slices possibly rewritten in place; false drops it.
+     */
+    fun process(slices: MutableList<ByteArray>, number: Int): Boolean {
         val p = params ?: return true
         val first = slices.firstOrNull { nalType(it) in 0..21 } ?: return true
         val header = runCatching { parseSlice(first, p) }.getOrNull() ?: return true
-        if (header.intra) { delivered.clear(); deliver(header.poc); return true }
+        if (header.intra) { delivered.clear(); deliver(number); return true }
         if (!header.p) return true
-        val mask = (1 shl p.pocBits) - 1
-        // The picture of each listed entry, newest first
-        var poc = header.poc
-        val pocs = IntArray(header.deltas.size) { i -> poc = (poc - header.deltas[i]) and mask; poc }
+        // The frame number of each listed entry, newest first (entry i is Σ deltas frames back)
+        var back = 0
+        val numbers = IntArray(header.deltas.size) { i -> back += header.deltas[i]; number - back }
         if (pFramesLogged < 3) {
             pFramesLogged++
             Log.i(TAG, "P frame: poc ${header.poc}, ${slices.size} slice NALs, entries ${header.deltas.toList()} used ${header.used.toList()}")
         }
         val r = header.used.indexOfFirst { it }
-        if (r < 0) { deliver(header.poc); return true }
+        if (r < 0) { deliver(number); return true }
         if (r > 0) consoleRecovered++
-        if (pocs[r] in delivered) { deliver(header.poc); return true }
+        if (numbers[r] in delivered) { deliver(number); return true }
         // The used picture never reached the decoder: the next older listed picture it holds
-        val j = (r + 1 until pocs.size).firstOrNull { pocs[it] in delivered }
+        val j = (r + 1 until numbers.size).firstOrNull { numbers[it] in delivered }
         if (j == null) { dropped++; return false }
         for (k in slices.indices) {
             val nal = slices[k]
@@ -80,12 +84,12 @@ internal class PsHevcRefs {
             slices[k] = flip(nal, h.flagBits, j)
         }
         rewritten++
-        deliver(header.poc)
+        deliver(number)
         return true
     }
 
-    private fun deliver(poc: Int) {
-        delivered.addLast(poc)
+    private fun deliver(number: Int) {
+        delivered.addLast(number)
         while (delivered.size > 16) delivered.removeFirst()
     }
 
