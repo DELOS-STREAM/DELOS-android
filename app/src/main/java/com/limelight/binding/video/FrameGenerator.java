@@ -42,6 +42,8 @@ final class FrameGenerator implements AutoCloseable {
     private static final int MOVING_PAIR_CELLS = 60;
     /** The other way must predict this much better (in percent of the current one's error) before it takes over. */
     private static final int SWITCH_PERCENT = 90;
+    /** The vector statistics' byte scales (luma px at 255), the change that counts as "the median changed it" (luma px), and how often a pair is measured. */
+    private static final int STATS_LENGTH = 64, STATS_CHANGE = 16, STATS_CHANGED_PX = 2, STATS_EVERY = 8;
 
     private static final String FULLSCREEN = "#version 310 es\n" +
             "void main(){ vec2 p=vec2(float(gl_VertexID&1),float(gl_VertexID>>1)); gl_Position=vec4(p*2.0-1.0,0,1); }";
@@ -60,6 +62,23 @@ final class FrameGenerator implements AutoCloseable {
             "precision highp float; uniform sampler2D src; uniform sampler2D motion; uniform vec2 outSize; uniform vec2 scale;\n" +
             "uniform float t; out vec4 color;\n" +
             "void main(){ vec2 uv=gl_FragCoord.xy/outSize; vec2 v=texture(motion,uv).rg*scale; color=texture(src,uv-v*t); }";
+    // The block vectors without their outliers: each block takes the vector median of its 3 × 3 neighbourhood, the neighbour's
+    // vector (its own first) with the smallest summed distance to the other eight. The result is always a vector the driver
+    // measured nearby, never a blend and never "no motion"
+    private static final String MEDIAN = "#version 310 es\n" +
+            "precision highp float; uniform sampler2D motion; out vec4 color;\n" +
+            "void main(){ ivec2 p=ivec2(gl_FragCoord.xy); ivec2 last=textureSize(motion,0)-ivec2(1); vec2 n[9];\n" +
+            " for(int j=0;j<3;j++) for(int i=0;i<3;i++) n[j*3+i]=texelFetch(motion,clamp(p+ivec2(i-1,j-1),ivec2(0),last),0).rg;\n" +
+            " vec2 best=n[4]; float least=1e30;\n" +
+            " for(int a=0;a<9;a++){ float s=0.0; for(int b=0;b<9;b++){ vec2 d=abs(n[a]-n[b]); s+=d.x+d.y; }\n" +
+            "  if(s<least || (a==4 && s<=least)){ least=s; best=n[a]; } }\n" +
+            " color=vec4(best,0.0,1.0); }";
+    // For the log, per block: R the filtered vector's length (of [STATS_LENGTH] luma px), G how far the median moved it (of
+    // [STATS_CHANGE] luma px), as bytes, so the read-back needs no float format
+    private static final String STATS = "#version 310 es\n" +
+            "precision highp float; uniform sampler2D raw; uniform sampler2D filtered; out vec4 color;\n" +
+            "void main(){ ivec2 p=ivec2(gl_FragCoord.xy); vec2 f=texelFetch(filtered,p,0).rg; vec2 r=texelFetch(raw,p,0).rg;\n" +
+            " color=vec4(min(length(f)/" + STATS_LENGTH + ".0,1.0),min(length(f-r)/" + STATS_CHANGE + ".0,1.0),0.0,1.0); }";
 
     /** [onRealFrame] results: a new picture of the game, an identical repeat, or the same picture with changed details. */
     static final int NEW_PICTURE = 0, REPEAT = 1, UPDATE = 2;
@@ -103,6 +122,13 @@ final class FrameGenerator implements AutoCloseable {
     private boolean motionReady;
     private float signX = 1f, signY = 1f;
     private boolean oriented;
+    // The vector median (the field the warp samples) and, for the log, the vectors' lengths and what the median changed,
+    // measured on every [STATS_EVERY]th pair since the last log line; and the steps each way generated since then
+    private int motionFiltered, motionWidth, motionHeight, medianProgram, statsProgram, statsTexture;
+    private boolean medianChecked, medianOff, statsOff;
+    private ByteBuffer statsPixels;
+    private long motionPairs, statPairs, statBlocks, statChanged, statLengthSum, stepsDriver, stepsWarp;
+    private int statLengthMax;
 
     private FrameGenerator(int multiplier, int offered) {
         this.multiplier = multiplier;
@@ -246,22 +272,40 @@ final class FrameGenerator implements AutoCloseable {
         if (useWarp) {
             ensureMotion();
             drawWarp(ring[newest], t);
+            stepsWarp++;
         } else {
             int error = nativeExtrapolate(ring[1 - newest], ring[newest], output, t);
             if (error != 0) throw new IllegalStateException("glExtrapolateTex2DQCOM error 0x" + Integer.toHexString(error));
+            stepsDriver++;
         }
         generated++;
         return output;
     }
 
-    /** For the log: the way in use, both ways' errors relative to holding the picture, and the game's frame intervals in refreshes. */
+    /**
+     * For the log: the way in use, both ways' errors relative to holding the picture, the game's frame intervals in refreshes, the
+     * steps each way generated and the motion vectors (their mean and largest length in picture px, the share the median moved by
+     * more than [STATS_CHANGED_PX] luma px) since the last call, which starts these counts over.
+     */
     String generatedChanged() {
         StringBuilder out = new StringBuilder().append(useWarp ? "warp" : "driver").append(" (errors vs hold: driver ")
                 .append(Math.round(driverScore * 100) / 100f).append(", warp ").append(Math.round(warpScore * 100) / 100f)
                 .append("; switches ").append(switches).append("), refinements ").append(refinements).append(", damped pairs ")
                 .append(dampedPairs).append(", intervals");
         for (int i = 1; i < intervalRefreshes.length; i++) out.append(' ').append(i).append(':').append(intervalRefreshes[i]);
-        return out.append(", format 0x").append(Integer.toHexString(internalFormat)).toString();
+        out.append(", format 0x").append(Integer.toHexString(internalFormat));
+        out.append(", steps driver ").append(stepsDriver).append(" warp ").append(stepsWarp);
+        if (medianOff) out.append(", vector median off");
+        else if (statBlocks > 0) {
+            // Byte values back to luma px, then to picture px (the luma is about half the picture's size)
+            final float px = width / (float) Math.max(1, lumaWidth) * STATS_LENGTH / 255f;
+            out.append(", vectors mean ").append(Math.round(statLengthSum * px / statBlocks * 10) / 10f).append(" px max ")
+                    .append(Math.round(statLengthMax * px * 10) / 10f).append(" px, median changed ")
+                    .append(Math.round(statChanged * 1000f / statBlocks) / 10f).append(" % (").append(statPairs).append(" pairs)");
+        } else out.append(", vectors not measured");
+        stepsDriver = stepsWarp = statPairs = statBlocks = statChanged = statLengthSum = 0;
+        statLengthMax = 0;
+        return out.toString();
     }
 
     /** The changed cells of the latest repeat tests, oldest first (for the log). */
@@ -288,8 +332,74 @@ final class FrameGenerator implements AutoCloseable {
         drawLuma(newest);
         int error = nativeEstimateMotion(luma[1 - newest], luma[newest], motion);
         if (error != 0) throw new IllegalStateException("glTexEstimateMotionQCOM error 0x" + Integer.toHexString(error));
+        filterMotion();
         motionReady = true;
         if (!oriented) orient();
+    }
+
+    /**
+     * The driver's vectors through the 3 × 3 vector median into the field the warp samples. A device that cannot run it (the
+     * shader, or a half-float target) keeps the driver's own vectors: the warp goes on, the log says "vector median off".
+     */
+    private void filterMotion() {
+        if (medianOff) return;
+        try {
+            if (medianProgram == 0) medianProgram = SgsrRenderer.program(FULLSCREEN, MEDIAN);
+            bindTarget(motionFiltered, motionWidth, motionHeight);
+            if (!medianChecked) {
+                medianChecked = true;
+                final int status = GLES31.glCheckFramebufferStatus(GLES31.GL_FRAMEBUFFER);
+                if (status != GLES31.GL_FRAMEBUFFER_COMPLETE) throw new IllegalStateException("target 0x" + Integer.toHexString(status));
+            }
+        } catch (RuntimeException e) {
+            medianOff = true;
+            LimeLog.warning("Frame generation: vector median off: " + e);
+            return;
+        }
+        GLES31.glUseProgram(medianProgram);
+        GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, motion);
+        GLES31.glUniform1i(GLES31.glGetUniformLocation(medianProgram, "motion"), 0);
+        GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
+        if (motionPairs++ % STATS_EVERY == 0) measureMotion();
+    }
+
+    /** One pair's vectors into the log's counts: a byte picture of lengths and changes, read back (one texel per block). */
+    private void measureMotion() {
+        if (statsOff) return;
+        try {
+            if (statsProgram == 0) statsProgram = SgsrRenderer.program(FULLSCREEN, STATS);
+        } catch (RuntimeException e) {
+            statsOff = true;
+            LimeLog.warning("Frame generation: vector statistics off: " + e);
+            return;
+        }
+        if (statsTexture == 0) {
+            statsTexture = texture(GLES31.GL_RGBA8, motionWidth, motionHeight);
+            statsPixels = ByteBuffer.allocateDirect(motionWidth * motionHeight * 4).order(ByteOrder.nativeOrder());
+        }
+        bindTarget(statsTexture, motionWidth, motionHeight);
+        GLES31.glUseProgram(statsProgram);
+        GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, motion);
+        GLES31.glUniform1i(GLES31.glGetUniformLocation(statsProgram, "raw"), 0);
+        GLES31.glActiveTexture(GLES31.GL_TEXTURE1);
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, motionFiltered);
+        GLES31.glUniform1i(GLES31.glGetUniformLocation(statsProgram, "filtered"), 1);
+        GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
+        GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
+        statsPixels.clear();
+        GLES31.glReadPixels(0, 0, motionWidth, motionHeight, GLES31.GL_RGBA, GLES31.GL_UNSIGNED_BYTE, statsPixels);
+        final int blocks = motionWidth * motionHeight;
+        final int changedLevel = STATS_CHANGED_PX * 255 / STATS_CHANGE;
+        for (int i = 0; i < blocks; i++) {
+            final int length = statsPixels.get(i * 4) & 0xFF;
+            statLengthSum += length;
+            if (length > statLengthMax) statLengthMax = length;
+            if ((statsPixels.get(i * 4 + 1) & 0xFF) > changedLevel) statChanged++;
+        }
+        statBlocks += blocks;
+        statPairs++;
     }
 
     /** The luma of ring slot [slot] into its luma texture, at the motion estimation's size. */
@@ -339,7 +449,8 @@ final class FrameGenerator implements AutoCloseable {
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, source);
         GLES31.glUniform1i(GLES31.glGetUniformLocation(warpProgram, "src"), 0);
         GLES31.glActiveTexture(GLES31.GL_TEXTURE1);
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, motion);
+        // The median's field; the driver's own where the median cannot run
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, medianOff ? motion : motionFiltered);
         GLES31.glUniform1i(GLES31.glGetUniformLocation(warpProgram, "motion"), 1);
         GLES31.glUniform2f(GLES31.glGetUniformLocation(warpProgram, "outSize"), width, height);
         GLES31.glUniform2f(GLES31.glGetUniformLocation(warpProgram, "scale"), signX / lumaWidth, signY / lumaHeight);
@@ -423,24 +534,31 @@ final class FrameGenerator implements AutoCloseable {
         lumaHeight = Math.max(blockY, height / 2 / blockY * blockY);
         luma[0] = texture(GLES30.GL_R8, lumaWidth, lumaHeight);
         luma[1] = texture(GLES30.GL_R8, lumaWidth, lumaHeight);
-        motion = texture(GLES30.GL_RGBA16F, lumaWidth / blockX, lumaHeight / blockY);
+        motionWidth = lumaWidth / blockX;
+        motionHeight = lumaHeight / blockY;
+        motion = texture(GLES30.GL_RGBA16F, motionWidth, motionHeight);
+        motionFiltered = texture(GLES30.GL_RGBA16F, motionWidth, motionHeight);
         LimeLog.info("Frame generation warp: luma " + lumaWidth + "x" + lumaHeight + ", search block " + blockX + "x" + blockY);
     }
 
     private void deleteFrames() {
         if (ring[0] != 0) GLES31.glDeleteTextures(3, new int[]{ring[0], ring[1], output}, 0);
         ring[0] = ring[1] = output = 0;
-        if (luma[0] != 0) GLES31.glDeleteTextures(3, new int[]{luma[0], luma[1], motion}, 0);
-        luma[0] = luma[1] = motion = 0;
+        if (luma[0] != 0) GLES31.glDeleteTextures(4, new int[]{luma[0], luma[1], motion, motionFiltered}, 0);
+        luma[0] = luma[1] = motion = motionFiltered = 0;
+        // The statistics picture has the motion field's size
+        if (statsTexture != 0) GLES31.glDeleteTextures(1, new int[]{statsTexture}, 0);
+        statsTexture = 0;
+        statsPixels = null;
     }
 
     @Override
     public void close() {
         deleteFrames();
-        for (int program : new int[]{diffProgram, lumaProgram, warpProgram}) if (program != 0) GLES31.glDeleteProgram(program);
+        for (int program : new int[]{diffProgram, lumaProgram, warpProgram, medianProgram, statsProgram}) if (program != 0) GLES31.glDeleteProgram(program);
         if (diffTexture != 0) GLES31.glDeleteTextures(1, new int[]{diffTexture}, 0);
         if (framebuffer != 0) GLES31.glDeleteFramebuffers(1, new int[]{framebuffer}, 0);
-        diffProgram = lumaProgram = warpProgram = diffTexture = framebuffer = 0;
+        diffProgram = lumaProgram = warpProgram = medianProgram = statsProgram = diffTexture = framebuffer = 0;
     }
 
     private static native int nativeInit();

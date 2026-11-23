@@ -350,6 +350,32 @@ All three masks come from data already computed for the flow; no extra pass is n
 | Quality, eye (owner) | No HUD wobble, no text smear, no visible tearing at object edges, cut without a ghost frame, "rubber band" at stops acceptable | Side by side: off / extrapolate / interpolate |
 | Thermal | 20 min at 30 → 120 without throttling below 120 output | Clock and temperature log |
 
+## Implemented: vector median of the warp (`FrameGenerator`, 2026-11-23)
+
+**What it does:** the block vectors of `glTexEstimateMotionQCOM` pass through a 3 × 3 **vector median** before the warp
+samples them. Each block takes, of its own and its eight neighbours' vectors, the one with the smallest summed distance to
+the others (its own on a tie).
+- The result is always a vector the driver measured nearby: an outlier is replaced by a neighbour's vector, never by a blend
+  of components, by "no motion" or by the newest picture.
+- A component-wise median was not used because it can produce a vector no block had (x from one neighbour, y from another).
+- The orientation test, the driver-versus-warp evaluation and the generated steps all use the filtered field.
+- A device that cannot run the pass keeps the driver's vectors; the log then says `vector median off`.
+
+**Log:** the periodic `Frame generation:` line (every 600 decoded frames) ends with these fields; the counts cover the time
+since the previous line.
+
+| Field | Meaning |
+|---|---|
+| `driver` / `warp` (first word) | The way that generates now |
+| `errors vs hold: driver x, warp y` | Each way's smoothed error against the game's real next picture, relative to holding the picture; lower is better. The warp's figure is the measure for this change |
+| `steps driver N warp M` | Generated steps by each way since the previous line: attributes what the owner saw to a way |
+| `vectors mean A px max B px` | Length of the filtered vectors in picture pixels, over the measured pairs. The scale ends at 64 luma px (about 128 picture px): a `max` at that value means the vectors reached it or more |
+| `median changed C % (P pairs)` | Share of blocks the median moved by more than 2 luma px (about 4 picture px), and how many pairs were measured (every 8th estimated pair) |
+| `vectors not measured` | No motion was estimated since the previous line (the driver's way ran without an evaluation) |
+
+**Not verified:** not built or run. Whether the driver's field has outliers at all is what `median changed` will show; a
+figure near 0 % means this step changes nothing.
+
 ## Verification plan
 
 | Check | Method | Owner judges by eye |
