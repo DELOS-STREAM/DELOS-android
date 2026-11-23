@@ -734,8 +734,11 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_DISPLAY)
             while (active) {
                 val next = try { queue.poll(100, TimeUnit.MILLISECONDS) } catch (_: InterruptedException) { return }
-                // Still waiting a second after the last request: the request or its answer was lost, ask again
-                if (waitForKeyframe && SystemClock.uptimeMillis() - askedAtMs >= 1000) {
+                // No keyframe yet: ask again, at first every 250 ms, then every second. A decoder reset (the upscaler or frame
+                // generation switched) waited about 1065 ms every time on the Odin (2026-11-23): the console answered only the
+                // repeated request, so a quick repeat shortens the blink
+                val retryMs = if (requests <= 3) 250L else 1000L
+                if (waitForKeyframe && SystemClock.uptimeMillis() - askedAtMs >= retryMs) {
                     askedAtMs = SystemClock.uptimeMillis()
                     requests++
                     stream?.requestKeyframe()
