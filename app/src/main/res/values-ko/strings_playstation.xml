@@ -91,10 +91,11 @@
     <string name="ps_settings_gyro_aim_off">끄기</string>
     <string name="ps_settings_gyro_aim_l2">L2 누를 때</string>
     <string name="ps_settings_gyro_aim_always">항상</string>
-    <string name="ps_settings_gyro_aim_sensitivity_title">자이로 조준 감도</string>
-    <string name="ps_settings_gyro_aim_sensitivity_description">기기를 돌릴 때 오른쪽 스틱이 움직이는 정도.</string>
-    <string name="ps_settings_gyro_aim_low">낮음</string>
-    <string name="ps_settings_gyro_aim_normal">보통</string>
-    <string name="ps_settings_gyro_aim_high">높음</string>
+    <string name="ps_settings_gyro_aim_h_title">자이로 조준: 좌우</string>
+    <string name="ps_settings_gyro_aim_h_description">기기를 좌우로 돌릴 때 오른쪽 스틱이 움직이는 정도입니다. 스트림 메뉴에서 바꾼 값은 해당 게임에만 저장됩니다.</string>
+    <string name="ps_settings_gyro_aim_v_title">자이로 조준: 상하</string>
+    <string name="ps_settings_gyro_aim_v_description">기기를 위아래로 기울일 때 오른쪽 스틱이 움직이는 정도입니다. 스트림 메뉴에서 바꾼 값은 해당 게임에만 저장됩니다.</string>
+    <string name="stream_help_gyro_aiming_left_and_right">자이로 조준의 좌우 감도입니다. 바로 적용되며 이 게임에 저장됩니다.</string>
+    <string name="stream_help_gyro_aiming_up_and_down">자이로 조준의 상하 감도입니다. 바로 적용되며 이 게임에 저장됩니다.</string>
     <string name="ps_notice">비공식 커뮤니티 앱입니다. Sony Interactive Entertainment와 제휴하지 않았으며 승인을 받지 않았습니다. “PlayStation”은 Sony Interactive Entertainment Inc.의 등록 상표 또는 상표입니다.</string>
 </resources>

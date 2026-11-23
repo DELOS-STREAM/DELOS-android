@@ -78,8 +78,12 @@ announces one controller and its feedback packets carry no controller index); Du
     held; a tap opens the stream menu) is Create. Fingers on the screen are the touchpad's touches (gestures, no click).
     The Odin's Home button never reaches apps. Rumble on a pad without a vibrator goes to the device (the PS settings default
     `checkbox_vibrate_fallback` on).
-20. Gyro aiming (PS settings, Controls): the device's turn added to the right stick, always or while L2 is held, at three
-    sensitivities.
+20. Gyro aiming (PS settings, Controls): the device's turn added to the right stick, always or while L2 is held. Each axis
+    has its own sensitivity, 25–300 % in steps of 5 (`ps_gyro_aim_h` default 100, `ps_gyro_aim_v` default 180). The stream
+    menu's More page changes both live; a value changed there is stored for the game in front (`ps_gyro_aim_h_<title id>`,
+    `ps_gyro_aim_v_<title id>`) and used when that game runs again, and for every game while no title is known. The title
+    comes from the console's discovery answer (`running-app-titleid`), asked at its address when the stream starts and
+    every 30 s; the search never wakes a console. Turn rates under 1.5 deg/s, before the sensitivity, move nothing.
 21. Bitrate policy: with automatic bitrate and `ps_visible_loss` on (default) the congestion report carries only the loss FEC
     could not repair, so harmless loss does not lower the bitrate.
 22. Statistics panel: the console's target bitrate, frames FEC repaired / lost, keyframe waits; frames carry their first

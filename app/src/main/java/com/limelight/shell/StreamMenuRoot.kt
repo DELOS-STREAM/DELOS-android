@@ -41,6 +41,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import com.limelight.binding.video.UpscalerStatus
 import com.limelight.preferences.UpscalerMode
+import com.limelight.ps.PsPrefs
 import com.limelight.shell.settings.OscOpacity
 import com.limelight.shell.settings.StreamMenuHelp
 import com.limelight.shell.ui.label
@@ -515,6 +516,7 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
             add(MoreRow.RUMBLE)
             add(if (host.playStation) MoreRow.CREATE else MenuKey.SCREEN_BRIGHTNESS)
             if (host.microphoneAvailable) add(MoreRow.MICROPHONE)
+            if (host.gyroAimAvailable) { add(MoreRow.GYRO_AIM_H); add(MoreRow.GYRO_AIM_V) }
             if (host.gyroSmoothingAvailable) add(MoreRow.GYRO)
         }
         MenuPage.BRIGHTNESS -> listOf(MenuKey.SCREEN_BRIGHTNESS)
@@ -592,6 +594,19 @@ private fun PageRows(
                 RowValue.Slider(host.brightnessPercent, 5, 100, 5, " %") { toggle { host.setBrightness(it) } })
             if (host.microphoneAvailable) KeyedRow(Symbols.MICROPHONE, R.string.stream_menu_row_microphone, MoreRow.MICROPHONE,
                 RowValue.Toggle(!host.microphoneMuted) { toggle { host.setMicrophoneMuted(!it) } })
+            if (host.gyroAimAvailable) {
+                // Apply at once and are kept for the game in front on the console; changesTick recomposes the value
+                KeyedRow(Symbols.GYRO_AIM_SENSITIVITY, R.string.ps_settings_gyro_aim_h_title, MoreRow.GYRO_AIM_H,
+                    RowValue.Slider(host.gyroAimSensitivity(true), PsPrefs.GYRO_AIM_MIN, PsPrefs.GYRO_AIM_MAX, PsPrefs.GYRO_AIM_STEP, " %") {
+                        host.setGyroAimSensitivity(true, it)
+                        changesTick()
+                    })
+                KeyedRow(Symbols.GYRO_AIM_SENSITIVITY, R.string.ps_settings_gyro_aim_v_title, MoreRow.GYRO_AIM_V,
+                    RowValue.Slider(host.gyroAimSensitivity(false), PsPrefs.GYRO_AIM_MIN, PsPrefs.GYRO_AIM_MAX, PsPrefs.GYRO_AIM_STEP, " %") {
+                        host.setGyroAimSensitivity(false, it)
+                        changesTick()
+                    })
+            }
             if (host.gyroSmoothingAvailable) {
                 // Applies at once and is kept for this game (never the profile, which is the Settings slider's); changesTick recomposes the value
                 KeyedRow(Symbols.SMOOTHING, R.string.stream_menu_row_gyro_smoothing, MoreRow.GYRO, RowValue.Slider(host.gyroSmoothing, 0, 100, 5, " %", minText = stringResource(R.string.stream_menu_gyro_off, 0)) {

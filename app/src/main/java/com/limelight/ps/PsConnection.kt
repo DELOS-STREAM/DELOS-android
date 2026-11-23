@@ -123,6 +123,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
      */
     private fun openSession(c: com.limelight.shell.ps.PsConsole, ctrlTries: Int, stepDown: Boolean = false, beforeStream: () -> Unit = {}) {
         val address = locate(c)
+        consoleAddress = address
         runCatching { PsDiscovery.wake(address, c.console.target.ps5, c.console.registKey) }
         val request = request(c.console.target, stepDown)
         var opened: PsCtrl? = null
@@ -262,6 +263,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             started = true
             lastPacketMs = SystemClock.uptimeMillis()
             thread(name = "ps-watchdog", isDaemon = true) { watchdog() }
+            if (gyroAim != "off") thread(name = "ps-title", isDaemon = true) { watchTitle() }
             listener.stageComplete(STAGE_STREAM)
             listener.connectionStarted()
             startMicrophone()
@@ -443,9 +445,59 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     @Volatile private var aimX = 0f
     @Volatile private var aimY = 0f
     private val gyroAim = psPrefs.getString(PsPrefs.GYRO_AIM, "off") ?: "off"
-    // Stick units per deg/s past the game's dead zone: full deflection at 40 deg/s at the normal sensitivity (owner, 2026-11-23:
-    // 120 deg/s was too slow)
-    private val aimScale = 32767f / 40f * when (psPrefs.getString(PsPrefs.GYRO_AIM_SENSITIVITY, "normal")) { "low" -> .5f; "high" -> 2f; else -> 1f }
+    // Stick units per deg/s past the game's dead zone at 100 %: full deflection at 40 deg/s (owner, 2026-11-23: 120 deg/s was
+    // too slow). Each axis has its own factor, for the game in front or the defaults, and the stream menu changes them live
+    @Volatile private var aimH = 1f
+    @Volatile private var aimV = 1f
+    /** The title id of the game in front on the console, as its discovery answer says; null until known or when none runs. */
+    @Volatile private var runningTitle: String? = null
+    @Volatile private var consoleAddress: InetAddress? = null
+
+    init { loadGyroAim() }
+
+    private fun loadGyroAim() {
+        val (h, v) = PsPrefs.gyroAim(psPrefs, runningTitle)
+        aimH = h / 100f
+        aimV = v / 100f
+    }
+
+    /** Whether gyro aiming is on for this stream (the stream menu then offers its two sensitivities). */
+    val gyroAimAvailable: Boolean get() = gyroAim != "off"
+
+    /** The sensitivity in use (percent), sideways ([horizontal]) or up and down. */
+    fun gyroAimSensitivity(horizontal: Boolean): Int = Math.round((if (horizontal) aimH else aimV) * 100f)
+
+    /** Changes one axis' sensitivity at once and keeps it for the game in front (for every game while none is known). */
+    fun setGyroAimSensitivity(horizontal: Boolean, percent: Int) {
+        val value = percent.coerceIn(PsPrefs.GYRO_AIM_MIN, PsPrefs.GYRO_AIM_MAX)
+        if (horizontal) aimH = value / 100f else aimV = value / 100f
+        PsPrefs.setGyroAim(psPrefs, runningTitle, horizontal, value)
+    }
+
+    /**
+     * Learns which game is in front, for its own gyro aiming sensitivity: a search sent to the console's address only (a status
+     * question, it never wakes a console), right after the stream starts and every [TITLE_POLL_MS].
+     */
+    private fun watchTitle() {
+        val c = console ?: return
+        var first = true
+        while (running) {
+            val address = consoleAddress ?: runCatching { InetAddress.getByName(c.address) }.getOrNull()
+            val host = address?.let { a ->
+                runCatching { PsDiscovery.search(a, 800) { it.hostId.equals(c.id, ignoreCase = true) } }.getOrDefault(emptyList())
+                    .firstOrNull { it.hostId.equals(c.id, ignoreCase = true) }
+            }
+            // No answer keeps the title: a lost datagram must not move the sensitivity back to the defaults
+            if (host != null && (first || host.runningTitleId != runningTitle)) {
+                first = false
+                runningTitle = host.runningTitleId
+                loadGyroAim()
+                Log.i(TAG, "running title ${host.runningTitleId ?: "none"} (${host.runningApp ?: "no name"})")
+            }
+            val until = SystemClock.uptimeMillis() + TITLE_POLL_MS
+            while (running && SystemClock.uptimeMillis() < until) Thread.sleep(500)
+        }
+    }
 
     private fun aiming() = gyroAim == "always" || (gyroAim == "aim" && aimHeld)
     private fun aimedX(): Short = (baseRx + (if (aiming()) aimX else 0f)).coerceIn(-32768f, 32767f).toInt().toShort()
@@ -469,13 +521,15 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                     // about the device's own vertical axis), y is positive rolling left; turning and rolling both aim sideways.
                     // The stick's x is right, its y (console) down. Below 1.5 deg/s (sensor noise) nothing moves; past it the
                     // stick starts at the games' usual dead zone, so a slow turn already aims.
-                    val vx = z - y
-                    // Tilting up and down is a smaller wrist movement than turning, and sideways also takes the roll: the
-                    // vertical axis is scaled up (owner, 2026-11-23: it felt much less sensitive)
-                    val vy = -x * AIM_VERTICAL
-                    val speed = kotlin.math.hypot(vx, vy)
-                    if (speed < AIM_NOISE) { aimX = 0f; aimY = 0f } else {
-                        val stick = (AIM_DEAD_ZONE + (speed - AIM_NOISE) * aimScale).coerceAtMost(32767f)
+                    val turn = z - y
+                    val tilt = -x
+                    if (kotlin.math.hypot(turn, tilt) < AIM_NOISE) { aimX = 0f; aimY = 0f } else {
+                        // Each axis by its own sensitivity (the vertical default is higher: tilting up and down is a smaller
+                        // wrist movement than turning, and sideways also takes the roll; owner, 2026-11-23)
+                        val vx = turn * aimH
+                        val vy = tilt * aimV
+                        val speed = kotlin.math.hypot(vx, vy).coerceAtLeast(1e-3f)
+                        val stick = (AIM_DEAD_ZONE + (speed - AIM_NOISE).coerceAtLeast(0f) * AIM_SCALE).coerceAtMost(32767f)
                         aimX = vx / speed * stick
                         aimY = vy / speed * stick
                     }
@@ -924,7 +978,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         /** Gyro aiming: turn rates below this (deg/s) are sensor noise; past it the stick starts at this dead zone (of 32767). */
         private const val AIM_NOISE = 1.5f
         private const val AIM_DEAD_ZONE = 6000f
-        private const val AIM_VERTICAL = 1.8f
+        private const val AIM_SCALE = 32767f / 40f
+        /** How often the console is asked which game is in front (for the game's own gyro aiming sensitivity). */
+        private const val TITLE_POLL_MS = 30_000L
         private const val G = 9.80665f
         private const val TOUCH_WIDTH = 1920
         private const val TOUCH_HEIGHT_DUALSENSE = 1079

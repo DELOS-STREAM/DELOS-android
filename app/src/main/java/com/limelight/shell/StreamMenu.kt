@@ -392,6 +392,9 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override val microphoneAvailable get() = (game.conn as? com.limelight.ps.PsConnection)?.microphoneAvailable == true
         override val microphoneMuted get() = (game.conn as? com.limelight.ps.PsConnection)?.microphoneMuted != false
         override fun setMicrophoneMuted(muted: Boolean) { (game.conn as? com.limelight.ps.PsConnection)?.setMicrophoneMuted(muted) }
+        override val gyroAimAvailable get() = (game.conn as? com.limelight.ps.PsConnection)?.gyroAimAvailable == true
+        override fun gyroAimSensitivity(horizontal: Boolean) = (game.conn as? com.limelight.ps.PsConnection)?.gyroAimSensitivity(horizontal) ?: 100
+        override fun setGyroAimSensitivity(horizontal: Boolean, percent: Int) { (game.conn as? com.limelight.ps.PsConnection)?.setGyroAimSensitivity(horizontal, percent) }
         override fun dismiss() { menu?.dismiss() }
 
         // The whole stream behind the menu is blurred (the way leaving a stream does it): a window can only blur what lies

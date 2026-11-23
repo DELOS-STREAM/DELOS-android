@@ -303,6 +303,13 @@ private fun psOnlyRows(tab: PsSettingsTab, values: Map<String, *>, prefs: Shared
         return PsRow(key, icon, res.getString(label), text, "${names[index]}\n\n$text",
             RowValue.Choice(names[index], { dir -> pick(Math.floorMod(index + dir, options.size)) }, options = names, selected = index, onPick = ::pick))
     }
+    // One axis of the gyro aiming sensitivity, in percent: the default for games without their own value (PsPrefs.gyroAim)
+    fun slider(key: String, @StringRes label: Int, @StringRes description: Int, default: Int): PsRow {
+        val text = res.getString(description)
+        val value = ((values[key] as? Int) ?: default).coerceIn(PsPrefs.GYRO_AIM_MIN, PsPrefs.GYRO_AIM_MAX)
+        return PsRow(key, Symbols.GYRO_AIM_SENSITIVITY, res.getString(label), text, text,
+            RowValue.Slider(value, PsPrefs.GYRO_AIM_MIN, PsPrefs.GYRO_AIM_MAX, PsPrefs.GYRO_AIM_STEP, " %") { prefs.edit().putInt(key, it).apply() })
+    }
     return when (tab) {
         PsSettingsTab.NETWORK -> listOf(
             toggle(PsPrefs.KEYFRAME_ON_LOSS, Symbols.REFRESH, R.string.ps_settings_keyframe_title, R.string.ps_settings_keyframe_description,
@@ -336,11 +343,8 @@ private fun psOnlyRows(tab: PsSettingsTab, values: Map<String, *>, prefs: Shared
                 listOf("off", "aim", "always"), values[PsPrefs.GYRO_AIM] as? String ?: "off",
                 listOf(R.string.ps_settings_gyro_aim_off, R.string.ps_settings_gyro_aim_l2, R.string.ps_settings_gyro_aim_always).map { res.getString(it) },
             ) { editor, v -> editor.putString(PsPrefs.GYRO_AIM, v) },
-            choice(PsPrefs.GYRO_AIM_SENSITIVITY, Symbols.GYRO_AIM_SENSITIVITY, R.string.ps_settings_gyro_aim_sensitivity_title,
-                R.string.ps_settings_gyro_aim_sensitivity_description, listOf("low", "normal", "high"),
-                values[PsPrefs.GYRO_AIM_SENSITIVITY] as? String ?: "normal",
-                listOf(R.string.ps_settings_gyro_aim_low, R.string.ps_settings_gyro_aim_normal, R.string.ps_settings_gyro_aim_high).map { res.getString(it) },
-            ) { editor, v -> editor.putString(PsPrefs.GYRO_AIM_SENSITIVITY, v) },
+            slider(PsPrefs.GYRO_AIM_H, R.string.ps_settings_gyro_aim_h_title, R.string.ps_settings_gyro_aim_h_description, PsPrefs.GYRO_AIM_H_DEFAULT),
+            slider(PsPrefs.GYRO_AIM_V, R.string.ps_settings_gyro_aim_v_title, R.string.ps_settings_gyro_aim_v_description, PsPrefs.GYRO_AIM_V_DEFAULT),
         )
         else -> emptyList()
     }

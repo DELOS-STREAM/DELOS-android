@@ -55,6 +55,14 @@ internal interface StreamMenuHost {
     val microphoneMuted: Boolean get() = true
     fun setMicrophoneMuted(muted: Boolean) {}
 
+    /**
+     * A PlayStation stream with gyro aiming on (PsPrefs.GYRO_AIM): the sensitivity sideways ([horizontal]) and up and down, in
+     * percent; a change applies at once and is kept for the game in front on the console.
+     */
+    val gyroAimAvailable: Boolean get() = false
+    fun gyroAimSensitivity(horizontal: Boolean): Int = 100
+    fun setGyroAimSensitivity(horizontal: Boolean, percent: Int) {}
+
     // Overlay and keyboard
     val overlayOn: Boolean
     val overlayCompact: Boolean

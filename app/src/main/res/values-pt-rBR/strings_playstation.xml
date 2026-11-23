@@ -91,10 +91,11 @@
     <string name="ps_settings_gyro_aim_off">Desligada</string>
     <string name="ps_settings_gyro_aim_l2">Com L2</string>
     <string name="ps_settings_gyro_aim_always">Sempre</string>
-    <string name="ps_settings_gyro_aim_sensitivity_title">Sensibilidade da mira</string>
-    <string name="ps_settings_gyro_aim_sensitivity_description">Quanto o analógico direito se move quando o dispositivo gira.</string>
-    <string name="ps_settings_gyro_aim_low">Baixa</string>
-    <string name="ps_settings_gyro_aim_normal">Normal</string>
-    <string name="ps_settings_gyro_aim_high">Alta</string>
+    <string name="ps_settings_gyro_aim_h_title">Mira por giroscópio: esquerda e direita</string>
+    <string name="ps_settings_gyro_aim_h_description">Quanto o analógico direito se move quando você gira o aparelho para a esquerda ou para a direita. Um valor alterado no menu da transmissão vale só para aquele jogo.</string>
+    <string name="ps_settings_gyro_aim_v_title">Mira por giroscópio: cima e baixo</string>
+    <string name="ps_settings_gyro_aim_v_description">Quanto o analógico direito se move quando você inclina o aparelho para cima ou para baixo. Um valor alterado no menu da transmissão vale só para aquele jogo.</string>
+    <string name="stream_help_gyro_aiming_left_and_right">Sensibilidade lateral da mira por giroscópio. Vale na hora e fica salva para este jogo.</string>
+    <string name="stream_help_gyro_aiming_up_and_down">Sensibilidade vertical da mira por giroscópio. Vale na hora e fica salva para este jogo.</string>
     <string name="ps_notice">Aplicativo não oficial da comunidade. Não é afiliado à Sony Interactive Entertainment nem endossado por ela. “PlayStation” é uma marca registrada ou marca comercial da Sony Interactive Entertainment Inc.</string>
 </resources>
