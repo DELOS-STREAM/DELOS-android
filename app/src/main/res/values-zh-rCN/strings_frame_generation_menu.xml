@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stream_menu_tile_frame_gen">DT-FG</string>
+    <string name="stream_menu_tile_frame_gen">帧生成</string>
     <string name="stream_menu_row_multiplier">倍数</string>
     <string name="stream_help_frame_generation">DELOS Tide，实验性帧生成。最适合 60 fps 的游戏；30 fps 时会有伪影。立即对本次串流生效。</string>
     <string name="stream_help_frame_generation_on">为本次串流开启或关闭 DELOS Tide；在放大器关闭时开启会重启一次解码器。</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stream_menu_tile_frame_gen">DT-FG</string>
+    <string name="stream_menu_tile_frame_gen">Bildgen.</string>
     <string name="stream_menu_row_multiplier">Faktor</string>
     <string name="stream_help_frame_generation">DELOS Tide, experimentelle Bildgenerierung. Am besten mit einem Spiel mit 60 fps; bei 30 fps zeigt sie Artefakte. Gilt sofort, für diesen Stream.</string>
     <string name="stream_help_frame_generation_on">Schaltet DELOS Tide für diesen Stream ein oder aus; bei ausgeschaltetem Upscaler startet das Einschalten den Decoder einmal neu.</string>

@@ -382,7 +382,7 @@ private fun CustomBadge() {
 
 /** The badge of an experimental setting: an outlined pill in the secondary colour, the size of the CUSTOM badge. */
 @Composable
-private fun ExperimentalBadge(modifier: Modifier = Modifier) {
+internal fun ExperimentalBadge(modifier: Modifier = Modifier) {
     val colors = LocalDelosColors.current
     val shape = CircleShape
     Box(

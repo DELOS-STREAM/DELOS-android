@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stream_menu_tile_frame_gen">DT-FG</string>
+    <string name="stream_menu_tile_frame_gen">Gén. d’images</string>
     <string name="stream_menu_row_multiplier">Multiplicateur</string>
     <string name="stream_help_frame_generation">DELOS Tide, génération d’images expérimentale. Idéal avec un jeu à 60 fps ; à 30 fps, des artefacts apparaissent. S’applique aussitôt, pour ce stream.</string>
     <string name="stream_help_frame_generation_on">Active ou désactive DELOS Tide pour ce stream ; l’activer avec l’upscaler éteint redémarre le décodeur une fois.</string>

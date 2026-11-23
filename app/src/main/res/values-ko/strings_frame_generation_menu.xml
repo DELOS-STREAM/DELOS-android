@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stream_menu_tile_frame_gen">DT-FG</string>
+    <string name="stream_menu_tile_frame_gen">프레임 생성</string>
     <string name="stream_menu_row_multiplier">배수</string>
     <string name="stream_help_frame_generation">DELOS Tide, 실험적 프레임 생성. 60 fps 게임에서 가장 좋습니다. 30 fps에서는 아티팩트가 보입니다. 이 스트림에 즉시 적용됩니다.</string>
     <string name="stream_help_frame_generation_on">이 스트림의 DELOS Tide를 켜거나 끕니다. 업스케일러가 꺼진 상태에서 켜면 디코더가 한 번 다시 시작됩니다.</string>

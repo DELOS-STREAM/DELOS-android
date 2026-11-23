@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stream_menu_tile_frame_gen">DT-FG</string>
+    <string name="stream_menu_tile_frame_gen">Генерація</string>
     <string name="stream_menu_row_multiplier">Множник</string>
     <string name="stream_help_frame_generation">DELOS Tide, експериментальна генерація кадрів. Найкраще з грою на 60 fps; на 30 fps є артефакти. Діє одразу, для цієї трансляції.</string>
     <string name="stream_help_frame_generation_on">Вмикає або вимикає DELOS Tide для цієї трансляції; увімкнення з вимкненим апскейлером один раз перезапускає декодер.</string>

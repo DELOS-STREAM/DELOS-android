@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stream_menu_tile_frame_gen">DT-FG</string>
+    <string name="stream_menu_tile_frame_gen">Frame-gen</string>
     <string name="stream_menu_row_multiplier">Multiplier</string>
     <string name="stream_help_frame_generation">DELOS Tide, experimental frame generation. Best with a game at 60 fps; 30 fps shows artefacts. Applies at once, for this stream.</string>
     <string name="stream_help_frame_generation_on">Turns DELOS Tide on or off for this stream; turning it on with the upscaler off restarts the decoder once.</string>

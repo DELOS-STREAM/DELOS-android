@@ -235,6 +235,8 @@ internal object StreamMenuLayout {
     const val POPOVER_PADDING_Y = 30f
     const val POPOVER_PADDING_BOTTOM = 24f
     const val POPOVER_HEAD_HEIGHT = 64f
+    /** A page header with a second line under its title (DELOS Tide: Frame generation and the Experimental badge). */
+    const val POPOVER_SUBTITLE_EXTRA = 34f
     // The card's height limit (popoverMaxHeight) is derived below from the margin.
     const val POPOVER_HEAD_GAP = 20f
     const val POPOVER_GAP_AFTER_HEAD = 12f

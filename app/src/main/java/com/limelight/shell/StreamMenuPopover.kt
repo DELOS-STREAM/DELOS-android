@@ -311,6 +311,9 @@ internal fun ColumnScope.PopoverPage(
     leaving: Boolean,
     titleIn: Boolean,
     navigation: FocusedListNavigation<String>? = null,
+    // A second line under the title and the Experimental badge, as the settings row of the same feature shows them (DELOS Tide)
+    subtitle: String? = null,
+    experimental: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LocalDelosColors.current
@@ -324,7 +327,7 @@ internal fun ColumnScope.PopoverPage(
     val leave by animateFloatAsState(if (leaving) 1f else 0f, tween(M.MORPH_ROWS_OUT, easing = Motion.EaseIn), label = "rowsLeave")
 
     Row(
-        Modifier.fillMaxWidth().height(L.POPOVER_HEAD_HEIGHT.px),
+        Modifier.fillMaxWidth().height((L.POPOVER_HEAD_HEIGHT + if (subtitle != null) L.POPOVER_SUBTITLE_EXTRA else 0f).px),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(L.POPOVER_HEAD_GAP.px),
     ) {
@@ -334,15 +337,26 @@ internal fun ColumnScope.PopoverPage(
         )
         val titleShow = remember { Animatable(if (titleIn) 0f else 1f) }
         LaunchedEffect(Unit) { if (titleIn) titleShow.animateTo(1f, tween(M.MORPH_TITLE, easing = EaseOut)) }
-        MarqueeText(
-            title,
-            style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = L.POPOVER_TITLE_SIZE.fsp, letterSpacing = (-.005f).em),
-            modifier = Modifier.graphicsLayer {
+        Column(
+            Modifier.graphicsLayer {
                 alpha = if (leaving) 0f else titleShow.value
                 translationY = if (rm) 0f else 8f * (1f - titleShow.value) * k
                 compositingStrategy = CompositingStrategy.ModulateAlpha
             },
-        )
+        ) {
+            MarqueeText(
+                title,
+                style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = L.POPOVER_TITLE_SIZE.fsp, letterSpacing = (-.005f).em),
+            )
+            if (subtitle != null) Row(
+                Modifier.padding(top = 4.px),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.px),
+            ) {
+                BasicText(subtitle, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 20.fsp))
+                if (experimental) com.limelight.shell.ui.ExperimentalBadge()
+            }
+        }
     }
     Spacer(Modifier.height(L.POPOVER_GAP_AFTER_HEAD.px))
     // A list at its top or bottom has nothing beyond that edge: no fade there, so the first or last row is never cut
