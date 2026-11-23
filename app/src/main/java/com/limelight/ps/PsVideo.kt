@@ -46,10 +46,12 @@ object PsAvParser {
         val start = payloadOffset(d, v12)
         if (start > length) return null
         if (crypt != null) {
-            val mac = d.copyOfRange(0x0A, 0x0E)
-            val copy = d.copyOf(length)
-            for (i in 0x0A until 0x0E) copy[i] = 0
-            if (!crypt.gmac(copy, keyPosition64).contentEquals(mac)) return null
+            // The MAC field is zeroed in place for the check and put back: no copy of the datagram ([d] is this packet's own array)
+            val mac = b.getInt(0x0A)
+            b.putInt(0x0A, 0)
+            val expected = crypt.gmac(if (length == d.size) d else d.copyOf(length), keyPosition64)
+            b.putInt(0x0A, mac)
+            if (ByteBuffer.wrap(expected).int != mac) return null
             crypt.apply(d, start, length - start, keyPosition64 + 16)
         }
         val marker = if (!video && v12) u(d[start - 1]) else 0
@@ -106,7 +108,7 @@ class PsFrameAssembler {
             begin(p)
         }
         if (p.unitIndex >= units.size || p.payload.size > unitSize || units[p.unitIndex] != null) return out
-        units[p.unitIndex] = p.payload.copyOf(unitSize)
+        units[p.unitIndex] = if (p.payload.size == unitSize) p.payload else p.payload.copyOf(unitSize)
         received++
         statReceived++
         // S units of any kind are enough: missing sources come back from the parities
@@ -145,16 +147,24 @@ class PsFrameAssembler {
             if (!PsFec.decode(units, sources, units.size - sources)) return Result.Lost(idx, idx)
             recovered = true
         }
-        val frame = java.io.ByteArrayOutputStream()
+        // The frame is each source unit's content: measured first, then copied once into an array of its size
+        var total = 0
         for (i in 0 until sources) {
             val unit = units[i]!!
-            val padding = (u(unit[0]) shl 8) or u(unit[1])
-            val length = unitSize - padding
+            val length = unitSize - ((u(unit[0]) shl 8) or u(unit[1]))
             if (length < 2 || length > unit.size) return Result.Lost(idx, idx)
-            frame.write(unit, 2, length - 2)
+            total += length - 2
+        }
+        val frame = ByteArray(total)
+        var at = 0
+        for (i in 0 until sources) {
+            val unit = units[i]!!
+            val n = unitSize - ((u(unit[0]) shl 8) or u(unit[1])) - 2
+            unit.copyInto(frame, at, 2, 2 + n)
+            at += n
         }
         lastComplete = idx
-        return Result.Frame(idx, frame.toByteArray(), adaptive, recovered, beganUs)
+        return Result.Frame(idx, frame, adaptive, recovered, beganUs)
     }
 
     private var beganUs = 0L

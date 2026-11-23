@@ -7,6 +7,8 @@ package com.limelight.ps
 object PsFec {
     private val exp = IntArray(512)
     private val log = IntArray(256)
+    /** a · b for every byte pair, [a shl 8 or b]: the inner loops of encode and decode are one lookup per byte (64 KB). */
+    private val product = ByteArray(65536)
 
     init {
         var x = 1
@@ -17,9 +19,16 @@ object PsFec {
             if (x and 0x100 != 0) x = x xor 0x11D
         }
         for (i in 255 until 512) exp[i] = exp[i - 255]
+        for (a in 1 until 256) for (b in 1 until 256) product[(a shl 8) or b] = exp[log[a] + log[b]].toByte()
     }
 
     fun mul(a: Int, b: Int): Int = if (a == 0 || b == 0) 0 else exp[log[a] + log[b]]
+
+    /** out ^= coef · unit over the first [size] bytes. */
+    private fun mulAdd(out: ByteArray, unit: ByteArray, coef: Int, size: Int) {
+        val row = coef shl 8
+        for (b in 0 until size) out[b] = (out[b].toInt() xor product[row or (unit[b].toInt() and 0xFF)].toInt()).toByte()
+    }
     fun inv(a: Int): Int { require(a != 0); return exp[255 - log[a]] }
 
     fun matrix(sources: Int, parities: Int): Array<IntArray> = Array(parities) { i -> IntArray(sources) { j -> inv(i xor (parities + j)) } }
@@ -32,7 +41,7 @@ object PsFec {
                 for (j in sources.indices) {
                     val c = m[i][j]
                     val src = sources[j]
-                    for (b in src.indices) out[b] = (out[b].toInt() xor mul(c, u(src[b]))).toByte()
+                    mulAdd(out, src, c, src.size)
                 }
             }
         }
@@ -59,7 +68,7 @@ object PsFec {
                 val coef = invA[m][k]
                 if (coef == 0) continue
                 val unit = units[rows[k]]!!
-                for (b in 0 until size) out[b] = (out[b].toInt() xor mul(coef, u(unit[b]))).toByte()
+                mulAdd(out, unit, coef, size)
             }
             units[m] = out
         }
