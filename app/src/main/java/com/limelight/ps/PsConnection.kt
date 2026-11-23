@@ -470,7 +470,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                     // The stick's x is right, its y (console) down. Below 1.5 deg/s (sensor noise) nothing moves; past it the
                     // stick starts at the games' usual dead zone, so a slow turn already aims.
                     val vx = z - y
-                    val vy = -x
+                    // Tilting up and down is a smaller wrist movement than turning, and sideways also takes the roll: the
+                    // vertical axis is scaled up (owner, 2026-11-23: it felt much less sensitive)
+                    val vy = -x * AIM_VERTICAL
                     val speed = kotlin.math.hypot(vx, vy)
                     if (speed < AIM_NOISE) { aimX = 0f; aimY = 0f } else {
                         val stick = (AIM_DEAD_ZONE + (speed - AIM_NOISE) * aimScale).coerceAtMost(32767f)
@@ -922,6 +924,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         /** Gyro aiming: turn rates below this (deg/s) are sensor noise; past it the stick starts at this dead zone (of 32767). */
         private const val AIM_NOISE = 1.5f
         private const val AIM_DEAD_ZONE = 6000f
+        private const val AIM_VERTICAL = 1.8f
         private const val G = 9.80665f
         private const val TOUCH_WIDTH = 1920
         private const val TOUCH_HEIGHT_DUALSENSE = 1079
