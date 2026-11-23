@@ -174,6 +174,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         abandonSession()
         // The path may have changed (another access point): Senkusha measures it again, and don't-fragment follows the new result
         synchronized(NETWORK) { NETWORK.remove(c.id) }
+        synchronized(FOUND) { FOUND.remove(c.id) }
         val until = SystemClock.uptimeMillis() + RECONNECT_MS
         while (running && SystemClock.uptimeMillis() < until) {
             try {
@@ -205,23 +206,14 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     /**
      * Where the console is now: a broadcast search that stops at its answer (its host id is the paired MAC), so a console that
      * moved to another address (Wi-Fi to Ethernet, a new lease; owner, 2026-11-22) is still found and remembered there. A
-     * console in rest mode answers too. Without an answer within 1.5 s the stored address is used.
+     * console in rest mode answers too. Without an answer within 1.5 s the stored address is used. An answer the start screen
+     * found in the last minute ([prefetch], F6) is used without searching again.
      */
     private fun locate(c: com.limelight.shell.ps.PsConsole): InetAddress {
-        val answers = runCatching {
-            PsDiscovery.search(InetAddress.getByName("255.255.255.255"), 1500) { it.hostId.equals(c.id, ignoreCase = true) }
-        }.getOrDefault(emptyList())
-        val found = answers.firstOrNull { it.hostId.equals(c.id, ignoreCase = true) }
-        if (found == null) {
-            Log.i(TAG, "console not found by search (${answers.size} answers, host ids ${answers.map { it.hostId }}, paired ${c.id})")
-            return InetAddress.getByName(c.address)
+        synchronized(FOUND) { FOUND[c.id] }?.let { (address, at) ->
+            if (SystemClock.uptimeMillis() - at < FOUND_MS) return address
         }
-        val now = found.address.hostAddress.orEmpty()
-        if (now != c.address) {
-            Log.i(TAG, "console found at a new address")
-            PsConsoleStore.get(appContext).moved(c.id, now)
-        }
-        return found.address
+        return search(appContext, c) ?: InetAddress.getByName(c.address)
     }
 
     /**
@@ -831,6 +823,39 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         /** Senkusha's result per console id, for this process. */
         private val NETWORK = HashMap<String, PsNetwork>()
         private const val MOTION_RATE_HZ: Short = 200
+
+        /** Consoles the start screen found ([prefetch]): the address and when (uptime ms). */
+        private val FOUND = HashMap<String, Pair<InetAddress, Long>>()
+        private const val FOUND_MS = 60_000L
+
+        /**
+         * The start screen shows [consoleId] (F6, faster start): it is searched for now, so tapping it opens the session without
+         * the 1.5 s search. Off the main thread; the console is not woken.
+         */
+        @JvmStatic
+        fun prefetch(context: Context, consoleId: String) {
+            val c = PsConsoleStore.get(context).consoles.value.firstOrNull { it.id == consoleId } ?: return
+            val address = search(context.applicationContext, c) ?: return
+            synchronized(FOUND) { FOUND[c.id] = address to SystemClock.uptimeMillis() }
+        }
+
+        /** The broadcast search for [c] (see [locate]); stores a new address. Null without an answer. */
+        private fun search(context: Context, c: com.limelight.shell.ps.PsConsole): InetAddress? {
+            val answers = runCatching {
+                PsDiscovery.search(InetAddress.getByName("255.255.255.255"), 1500) { it.hostId.equals(c.id, ignoreCase = true) }
+            }.getOrDefault(emptyList())
+            val found = answers.firstOrNull { it.hostId.equals(c.id, ignoreCase = true) }
+            if (found == null) {
+                Log.i(TAG, "console not found by search (${answers.size} answers, host ids ${answers.map { it.hostId }}, paired ${c.id})")
+                return null
+            }
+            val now = found.address.hostAddress.orEmpty()
+            if (now != c.address) {
+                Log.i(TAG, "console found at a new address")
+                PsConsoleStore.get(context).moved(c.id, now)
+            }
+            return found.address
+        }
         /** L2 past this (of 255) is aiming, for gyro aiming while L2 is held. */
         private const val AIM_TRIGGER = 64
         private const val G = 9.80665f

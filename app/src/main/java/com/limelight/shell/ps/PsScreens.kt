@@ -125,6 +125,10 @@ fun PsStartContent(profileName: String?) {
         }), tracker)
     }
     val consoles by store.consoles.collectAsStateWithLifecycle()
+    // Faster start (F6): the paired consoles are searched for while this screen shows, so a tap skips the search
+    LaunchedEffect(consoles.map { it.id }) {
+        withContext(Dispatchers.IO) { for (c in consoles) com.limelight.ps.PsConnection.prefetch(context, c.id) }
+    }
     val first = remember { FocusRequester() }
     InitialFocus(first, consoles.size)
     CenterColumn(gap = 48f) {
