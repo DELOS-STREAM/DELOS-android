@@ -113,8 +113,9 @@ class PsFrameAssembler {
         units[p.unitIndex] = if (p.payload.size == unitSize) p.payload else p.payload.copyOf(unitSize)
         received++
         statReceived++
-        // S units of any kind are enough: missing sources come back from the parities
-        if (received >= sources) flush()?.let { out += it }
+        // S units of any kind are enough: missing sources come back from the parities. The parities after it are not late
+        // (the flag was left from the last short frame, so every parity counted as a reordered unit)
+        if (received >= sources) { flushedShort = false; flush()?.let { out += it } }
         return out
     }
 

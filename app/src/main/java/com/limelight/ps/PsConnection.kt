@@ -832,6 +832,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         // For the log, per 10 s: concealed frames and restarts of the buffer
         private var concealed = 0
         private var restarts = 0
+        // Missing units jumped over to reach the first one the buffer holds
+        private var skipped = 0
         private var statsAtMs = 0L
         @Volatile private var active = true
         private val worker = Thread(::run, "ps-audio")
@@ -886,6 +888,14 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                         if (SystemClock.uptimeMillis() - lastUnitMs > AUDIO_GAP_MS) { next = -1; restarts++ }
                         continue
                     }
+                    // More than one unit missing in front of the buffer: play on from the first unit there is. Concealing the
+                    // gap frame by frame never caught up: the console sends as fast as this plays, and the full buffer dropped its
+                    // oldest units before [next] reached them, so a stall (a busy audio device, a burst of loss) left the stream
+                    // silent for many seconds after a burst of Opus noise (owner, 2026-11-23: 1000 frames concealed in 10 s)
+                    if (!queue.containsKey(next)) {
+                        val first = queue.keys.minByOrNull(::distance)!!
+                        if (distance(first) > 1) { skipped += distance(first); next = first }
+                    }
                     packet = queue.remove(next)
                     if (packet == null) concealed++
                     next = (next + 1) and 0xFFFF
@@ -908,8 +918,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             val now = SystemClock.uptimeMillis()
             if (statsAtMs == 0L) statsAtMs = now
             if (now - statsAtMs < 10_000) return
-            if (concealed > 0 || restarts > 0) Log.i(TAG, "audio 10 s: $concealed frames concealed, $restarts restarts, depth ${synchronized(queue) { queue.size }}")
-            concealed = 0; restarts = 0; statsAtMs = now
+            if (concealed > 0 || restarts > 0 || skipped > 0) Log.i(TAG, "audio 10 s: $concealed frames concealed, $skipped skipped, $restarts restarts, depth ${synchronized(queue) { queue.size }}")
+            concealed = 0; restarts = 0; skipped = 0; statsAtMs = now
         }
 
         override fun close() {
