@@ -44,6 +44,11 @@ final class FrameGenerator implements AutoCloseable {
     private static final int SWITCH_PERCENT = 90;
     /** The vector statistics' byte scales (luma px at 255), the change that counts as "the median changed it" (luma px), and how often a pair is measured. */
     private static final int STATS_LENGTH = 64, STATS_CHANGE = 16, STATS_CHANGED_PX = 2, STATS_EVERY = 8;
+    /**
+     * The driver's search window as its vectors show it (about ±32 × ±27 luma px; the largest length ever returned is their
+     * diagonal): a vector at least this long on an axis is "at the cap". And a fast pair: its mean vector length (luma px).
+     */
+    private static final int CAP_X = 30, CAP_Y = 25, FAST_MEAN = 20;
 
     private static final String FULLSCREEN = "#version 310 es\n" +
             "void main(){ vec2 p=vec2(float(gl_VertexID&1),float(gl_VertexID>>1)); gl_Position=vec4(p*2.0-1.0,0,1); }";
@@ -73,12 +78,14 @@ final class FrameGenerator implements AutoCloseable {
             " for(int a=0;a<9;a++){ float s=0.0; for(int b=0;b<9;b++){ vec2 d=abs(n[a]-n[b]); s+=d.x+d.y; }\n" +
             "  if(s<least || (a==4 && s<=least)){ least=s; best=n[a]; } }\n" +
             " color=vec4(best,0.0,1.0); }";
-    // For the log, per block: R the filtered vector's length (of [STATS_LENGTH] luma px), G how far the median moved it (of
-    // [STATS_CHANGE] luma px), as bytes, so the read-back needs no float format
+    // For the log, per block, as bytes so the read-back needs no float format: R the filtered vector's length (of
+    // [STATS_LENGTH] luma px), G how far the median moved it (of [STATS_CHANGE] luma px), B and A the driver's own vector on
+    // each axis (of [STATS_LENGTH] luma px)
     private static final String STATS = "#version 310 es\n" +
             "precision highp float; uniform sampler2D raw; uniform sampler2D filtered; out vec4 color;\n" +
             "void main(){ ivec2 p=ivec2(gl_FragCoord.xy); vec2 f=texelFetch(filtered,p,0).rg; vec2 r=texelFetch(raw,p,0).rg;\n" +
-            " color=vec4(min(length(f)/" + STATS_LENGTH + ".0,1.0),min(length(f-r)/" + STATS_CHANGE + ".0,1.0),0.0,1.0); }";
+            " color=vec4(min(length(f)/" + STATS_LENGTH + ".0,1.0),min(length(f-r)/" + STATS_CHANGE + ".0,1.0),\n" +
+            "  min(abs(r.x)/" + STATS_LENGTH + ".0,1.0),min(abs(r.y)/" + STATS_LENGTH + ".0,1.0)); }";
 
     /** [onRealFrame] results: a new picture of the game, an identical repeat, or the same picture with changed details. */
     static final int NEW_PICTURE = 0, REPEAT = 1, UPDATE = 2;
@@ -127,8 +134,12 @@ final class FrameGenerator implements AutoCloseable {
     private int motionFiltered, motionWidth, motionHeight, medianProgram, statsProgram, statsTexture;
     private boolean medianChecked, medianOff, statsOff;
     private ByteBuffer statsPixels;
-    private long motionPairs, statPairs, statBlocks, statChanged, statLengthSum, stepsDriver, stepsWarp;
-    private int statLengthMax;
+    private long motionPairs, statPairs, statBlocks, statChanged, statLengthSum, statCap, stepsDriver, stepsWarp;
+    private int statLengthMax, statMaxX, statMaxY;
+    // The estimation's time on the measured pairs, the current pair's mean vector length (luma px, negative while not measured),
+    // and both ways' evaluation errors on fast pairs since the last log line
+    private long estimationNs, estimationCount, fastPairs;
+    private float pairMean = -1f, fastDriver, fastWarp;
 
     private FrameGenerator(int multiplier, int offered) {
         this.multiplier = multiplier;
@@ -240,6 +251,7 @@ final class FrameGenerator implements AutoCloseable {
         diff(output, next);
         final float driver = diffError / (float) holdError;
         ensureMotion();
+        if (pairMean < 0f) measureMotion();
         drawWarp(ring[newest], 1f);
         diff(output, next);
         final float warp = diffError / (float) holdError;
@@ -248,6 +260,11 @@ final class FrameGenerator implements AutoCloseable {
         boolean warpBetter = useWarp ? !(driverScore * 100 < warpScore * SWITCH_PERCENT) : warpScore * 100 < driverScore * SWITCH_PERCENT;
         if (warpBetter != useWarp) switches++;
         useWarp = warpBetter;
+        if (pairMean >= FAST_MEAN) {
+            fastPairs++;
+            fastDriver += driver;
+            fastWarp += warp;
+        }
     }
 
     /** Whether a generated frame belongs before the next picture. */
@@ -283,9 +300,10 @@ final class FrameGenerator implements AutoCloseable {
     }
 
     /**
-     * For the log: the way in use, both ways' errors relative to holding the picture, the game's frame intervals in refreshes, the
-     * steps each way generated and the motion vectors (their mean and largest length in picture px, the share the median moved by
-     * more than [STATS_CHANGED_PX] luma px) since the last call, which starts these counts over.
+     * For the log: the way in use, both ways' errors relative to holding the picture, the game's frame intervals in refreshes, and,
+     * since the last call (which starts these counts over): the steps each way generated; the motion vectors of the measured pairs
+     * (mean and largest length in picture px, the share the median moved by more than [STATS_CHANGED_PX] luma px, the share at
+     * the driver's search cap and its largest vector per axis in luma px); the estimation's time; both ways' errors on fast pairs.
      */
     String generatedChanged() {
         StringBuilder out = new StringBuilder().append(useWarp ? "warp" : "driver").append(" (errors vs hold: driver ")
@@ -298,13 +316,21 @@ final class FrameGenerator implements AutoCloseable {
         if (medianOff) out.append(", vector median off");
         else if (statBlocks > 0) {
             // Byte values back to luma px, then to picture px (the luma is about half the picture's size)
-            final float px = width / (float) Math.max(1, lumaWidth) * STATS_LENGTH / 255f;
+            final float luma = STATS_LENGTH / 255f, px = width / (float) Math.max(1, lumaWidth) * luma;
             out.append(", vectors mean ").append(Math.round(statLengthSum * px / statBlocks * 10) / 10f).append(" px max ")
                     .append(Math.round(statLengthMax * px * 10) / 10f).append(" px, median changed ")
-                    .append(Math.round(statChanged * 1000f / statBlocks) / 10f).append(" % (").append(statPairs).append(" pairs)");
+                    .append(Math.round(statChanged * 1000f / statBlocks) / 10f).append(" % (").append(statPairs).append(" pairs), at cap ")
+                    .append(Math.round(statCap * 1000f / statBlocks) / 10f).append(" %, max x ")
+                    .append(Math.round(statMaxX * luma * 10) / 10f).append(" y ").append(Math.round(statMaxY * luma * 10) / 10f).append(" luma px");
         } else out.append(", vectors not measured");
-        stepsDriver = stepsWarp = statPairs = statBlocks = statChanged = statLengthSum = 0;
-        statLengthMax = 0;
+        // Wall time of the driver's call with the GPU idle before and finished after it (glFinish), on every [STATS_EVERY]th pair
+        if (estimationCount > 0) out.append(", estimation ").append(Math.round(estimationNs / 10_000f / estimationCount) / 100f).append(" ms");
+        out.append(", fast pairs ").append(fastPairs);
+        if (fastPairs > 0) out.append(": driver ").append(Math.round(fastDriver / fastPairs * 100) / 100f).append(" warp ")
+                .append(Math.round(fastWarp / fastPairs * 100) / 100f);
+        stepsDriver = stepsWarp = statPairs = statBlocks = statChanged = statLengthSum = statCap = estimationNs = estimationCount = fastPairs = 0;
+        statLengthMax = statMaxX = statMaxY = 0;
+        fastDriver = fastWarp = 0f;
         return out.toString();
     }
 
@@ -330,9 +356,22 @@ final class FrameGenerator implements AutoCloseable {
         if (motionReady) return;
         drawLuma(1 - newest);
         drawLuma(newest);
+        final boolean measured = motionPairs++ % STATS_EVERY == 0;
+        long started = 0;
+        if (measured) {
+            GLES31.glFinish();
+            started = System.nanoTime();
+        }
         int error = nativeEstimateMotion(luma[1 - newest], luma[newest], motion);
         if (error != 0) throw new IllegalStateException("glTexEstimateMotionQCOM error 0x" + Integer.toHexString(error));
+        if (measured) {
+            GLES31.glFinish();
+            estimationNs += System.nanoTime() - started;
+            estimationCount++;
+        }
+        pairMean = -1f;
         filterMotion();
+        if (measured) measureMotion();
         motionReady = true;
         if (!oriented) orient();
     }
@@ -361,12 +400,14 @@ final class FrameGenerator implements AutoCloseable {
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, motion);
         GLES31.glUniform1i(GLES31.glGetUniformLocation(medianProgram, "motion"), 0);
         GLES31.glDrawArrays(GLES31.GL_TRIANGLE_STRIP, 0, 4);
-        if (motionPairs++ % STATS_EVERY == 0) measureMotion();
     }
 
-    /** One pair's vectors into the log's counts: a byte picture of lengths and changes, read back (one texel per block). */
+    /**
+     * The current pair's vectors into the log's counts and [pairMean]: a byte picture of lengths, changes and the driver's own
+     * components, read back (one texel per block). Not without the median: the counts describe the filtered field.
+     */
     private void measureMotion() {
-        if (statsOff) return;
+        if (statsOff || medianOff) return;
         try {
             if (statsProgram == 0) statsProgram = SgsrRenderer.program(FULLSCREEN, STATS);
         } catch (RuntimeException e) {
@@ -391,15 +432,21 @@ final class FrameGenerator implements AutoCloseable {
         statsPixels.clear();
         GLES31.glReadPixels(0, 0, motionWidth, motionHeight, GLES31.GL_RGBA, GLES31.GL_UNSIGNED_BYTE, statsPixels);
         final int blocks = motionWidth * motionHeight;
-        final int changedLevel = STATS_CHANGED_PX * 255 / STATS_CHANGE;
+        final int changedLevel = STATS_CHANGED_PX * 255 / STATS_CHANGE, capX = CAP_X * 255 / STATS_LENGTH, capY = CAP_Y * 255 / STATS_LENGTH;
+        long lengths = 0;
         for (int i = 0; i < blocks; i++) {
-            final int length = statsPixels.get(i * 4) & 0xFF;
-            statLengthSum += length;
+            final int length = statsPixels.get(i * 4) & 0xFF, x = statsPixels.get(i * 4 + 2) & 0xFF, y = statsPixels.get(i * 4 + 3) & 0xFF;
+            lengths += length;
             if (length > statLengthMax) statLengthMax = length;
             if ((statsPixels.get(i * 4 + 1) & 0xFF) > changedLevel) statChanged++;
+            if (x >= capX || y >= capY) statCap++;
+            if (x > statMaxX) statMaxX = x;
+            if (y > statMaxY) statMaxY = y;
         }
+        statLengthSum += lengths;
         statBlocks += blocks;
         statPairs++;
+        pairMean = lengths * (STATS_LENGTH / 255f) / blocks;
     }
 
     /** The luma of ring slot [slot] into its luma texture, at the motion estimation's size. */

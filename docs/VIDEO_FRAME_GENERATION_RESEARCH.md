@@ -370,11 +370,15 @@ since the previous line.
 | `errors vs hold: driver x, warp y` | Each way's smoothed error against the game's real next picture, relative to holding the picture; lower is better. The warp's figure is the measure for this change |
 | `steps driver N warp M` | Generated steps by each way since the previous line: attributes what the owner saw to a way |
 | `vectors mean A px max B px` | Length of the filtered vectors in picture pixels, over the measured pairs. The scale ends at 64 luma px (about 128 picture px): a `max` at that value means the vectors reached it or more |
-| `median changed C % (P pairs)` | Share of blocks the median moved by more than 2 luma px (about 4 picture px), and how many pairs were measured (every 8th estimated pair) |
+| `median changed C % (P pairs)` | Share of blocks the median moved by more than 2 luma px (about 4 picture px), and how many pairs were measured (every 8th estimated pair, and every evaluated pair) |
+| `at cap C %` | Share of blocks whose driver vector is at the edge of the search window: at least 30 luma px sideways or 25 up and down. The window is not documented; the constant largest length of 41.9 luma px fits ±32 × ±27 [INFERENCE] |
+| `max x A y B luma px` | The driver's largest vector on each axis: confirms the window |
+| `estimation T ms` | Wall time of one `glTexEstimateMotionQCOM` call, with `glFinish` before and after, on every 8th pair. An upper bound of its GPU time |
+| `fast pairs N: driver x warp y` | Evaluated pairs whose mean vector is at least 20 luma px (about 40 picture px per game frame), and each way's mean error against the real next picture on them (relative to holding; lower is better) |
 | `vectors not measured` | No motion was estimated since the previous line (the driver's way ran without an evaluation) |
 
-**Not verified:** not built or run. Whether the driver's field has outliers at all is what `median changed` will show; a
-figure near 0 % means this step changes nothing.
+**Observed (Odin, PS5 game at 30 fps, 2026-11-23):** `steps driver 0 warp 297, vectors mean 16.1 px max 83.8 px, median
+changed 8.4 % (40 pairs)`; the maximum was 83.8 px in every line. The owner judged the picture clearly better with the median.
 
 ## Verification plan
 
