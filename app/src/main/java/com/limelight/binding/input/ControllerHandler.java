@@ -2733,7 +2733,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 if (context.backMenuPending){
                     context.backMenuPending = false;
                     gestures.showGameMenu();
-                } else if (prefConfig.mouseEmulation) {
+                } else if (prefConfig.mouseEmulation && !(conn instanceof com.limelight.ps.PsConnection)) {
+                    // A console has no mouse: holding Start never turns mouse emulation on on a PS stream
                     context.toggleMouseEmulation();
                 }
             }

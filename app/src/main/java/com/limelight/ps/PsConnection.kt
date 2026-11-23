@@ -429,14 +429,48 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                                      leftStickX: Short, leftStickY: Short, rightStickX: Short, rightStickY: Short) {
         if (controllerNumber.toInt() != 0) return
         // A pad without Create and a touchpad (a handheld's built-in controls, owner 2026-11-23): Select (the upper left menu
-        // button) clicks the touchpad, and Guide is Create: on the Odin that is holding the lower right Back button (a tap opens
-        // the stream menu, as on a PC stream); its Home button never reaches apps. A PlayStation pad keeps its own buttons.
-        val table = if (firstPadIsPlayStation) BUTTONS else HANDHELD_BUTTONS
+        // button) clicks the touchpad on a tap and is Create while held; Guide is the PS button: on the Odin that is holding the
+        // lower right Back button (a tap opens the stream menu, as on a PC stream); its Home button never reaches apps. A
+        // PlayStation pad keeps its own buttons.
+        val handheld = !firstPadIsPlayStation
+        val table = if (handheld) HANDHELD_BUTTONS else BUTTONS
         var buttons = 0
         for ((flag, button) in table) if (buttonFlags and flag != 0) buttons = buttons or button.mask
+        if (handheld) buttons = handheldSelect(buttonFlags and ControllerPacket.BACK_FLAG != 0, buttons)
         baseRx = rightStickX; baseRy = flip(rightStickY); aimHeld = (leftTrigger.toInt() and 0xFF) > AIM_TRIGGER
-        update { it.copy(buttons = buttons, l2 = leftTrigger.toInt() and 0xFF, r2 = rightTrigger.toInt() and 0xFF,
+        update { it.copy(buttons = buttons or selectExtra, l2 = leftTrigger.toInt() and 0xFF, r2 = rightTrigger.toInt() and 0xFF,
             lx = leftStickX, ly = flip(leftStickY), rx = aimedX(), ry = aimedY()) }
+    }
+
+    // The handheld's Select (owner, 2026-11-23): a tap is a touchpad click, held for [SELECT_HOLD_MS] it is Create until let go.
+    // The pad's other buttons as last sent, when Select went down, and the button Select adds now (touchpad pulse or Create)
+    @Volatile private var padButtons = 0
+    @Volatile private var selectDownMs = 0L
+    @Volatile private var selectExtra = 0
+    private val selectHandler by lazy { android.os.Handler(android.os.Looper.getMainLooper()) }
+
+    private fun handheldSelect(down: Boolean, mapped: Int): Int {
+        val buttons = mapped
+        padButtons = buttons
+        if (down && selectDownMs == 0L) {
+            val at = SystemClock.uptimeMillis()
+            selectDownMs = at
+            selectHandler.postDelayed({
+                if (selectDownMs == at) { selectExtra = PsButton.SHARE.mask; update { it.copy(buttons = padButtons or selectExtra) } }
+            }, SELECT_HOLD_MS)
+        } else if (!down && selectDownMs != 0L) {
+            val wasHeld = selectExtra == PsButton.SHARE.mask
+            selectDownMs = 0L
+            selectExtra = 0
+            if (!wasHeld) {
+                // A tap: the touchpad click, pressed now and let go a moment later
+                selectExtra = PsButton.TOUCHPAD.mask
+                selectHandler.postDelayed({
+                    if (selectExtra == PsButton.TOUCHPAD.mask) { selectExtra = 0; update { it.copy(buttons = padButtons) } }
+                }, TAP_PULSE_MS)
+            }
+        }
+        return buttons
     }
 
     // Gyro aiming (F5, owner 2026-11-23): the device's turn added to the right stick, always or while L2 is held, for any game.
@@ -1002,14 +1036,11 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             ControllerPacket.SPECIAL_BUTTON_FLAG to PsButton.PS, ControllerPacket.TOUCHPAD_FLAG to PsButton.TOUCHPAD,
         )
 
-        /** [BUTTONS] for a pad without Create and a touchpad: Select is the touchpad click, Guide (Back held on the Odin) is Create. */
-        private val HANDHELD_BUTTONS = BUTTONS.map { (flag, button) ->
-            flag to when (flag) {
-                ControllerPacket.BACK_FLAG -> PsButton.TOUCHPAD
-                ControllerPacket.SPECIAL_BUTTON_FLAG -> PsButton.SHARE
-                else -> button
-            }
-        }
+        /** [BUTTONS] for a pad without Create and a touchpad: Select is handled apart (tap = touchpad, held = Create), Guide is PS. */
+        private val HANDHELD_BUTTONS = BUTTONS.filter { it.first != ControllerPacket.BACK_FLAG }
+        /** The handheld's Select: held this long it is Create; a tap's touchpad click lasts [TAP_PULSE_MS]. */
+        private const val SELECT_HOLD_MS = 500L
+        private const val TAP_PULSE_MS = 80L
 
         /** Moonlight's stick Y is positive up; the console's is positive down. */
         private fun flip(y: Short): Short = (-y.toInt()).coerceIn(-32768, 32767).toShort()
