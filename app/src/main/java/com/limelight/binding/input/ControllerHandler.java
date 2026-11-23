@@ -3632,7 +3632,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             byte reportedType;
             if (type != MoonBridge.LI_CTYPE_PS && sensorManager != null) {
                 // Override the detected controller type if we're emulating motion sensors on an Xbox controller
-                DelosToast.show(activityContext, activityContext.getResources().getText(R.string.toast_controller_type_changed), DelosToast.LONG);
+                // A console stream has no gamepad type to change (owner, 2026-11-23): the note is for PC hosts only
+                if (!(conn instanceof com.limelight.ps.PsConnection)) DelosToast.show(activityContext, activityContext.getResources().getText(R.string.toast_controller_type_changed), DelosToast.LONG);
                 reportedType = MoonBridge.LI_CTYPE_UNKNOWN;
 
                 // Remember that we should enable the clickpad emulation combo (Select+LB) for this device
@@ -3781,7 +3782,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 type = MoonBridge.LI_CTYPE_UNKNOWN;
             }
 
-            if (type != MoonBridge.LI_CTYPE_PS && (capabilities & (MoonBridge.LI_CCAP_GYRO | MoonBridge.LI_CCAP_ACCEL)) != 0) {
+            if (type != MoonBridge.LI_CTYPE_PS && (capabilities & (MoonBridge.LI_CCAP_GYRO | MoonBridge.LI_CCAP_ACCEL)) != 0
+                    && !(conn instanceof com.limelight.ps.PsConnection)) {
                 activityContext.runOnUiThread(() -> {
                     DelosToast.show(activityContext, activityContext.getResources().getText(R.string.toast_controller_type_changed), DelosToast.LONG);
                 });
