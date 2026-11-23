@@ -86,4 +86,14 @@
     <string name="stream_stats_console_bitrate">本体のビットレート</string>
     <string name="stream_stats_console_frames">修復 / 損失フレーム</string>
     <string name="stream_stats_console_keyframes">キーフレーム待ち</string>
+    <string name="ps_settings_gyro_aim_title">ジャイロエイム</string>
+    <string name="ps_settings_gyro_aim_description">端末を回すと右スティックが動き、どのゲームでもエイムできます。L2 時：L2 を押している間だけ。</string>
+    <string name="ps_settings_gyro_aim_off">オフ</string>
+    <string name="ps_settings_gyro_aim_l2">L2 時</string>
+    <string name="ps_settings_gyro_aim_always">常に</string>
+    <string name="ps_settings_gyro_aim_sensitivity_title">ジャイロエイム感度</string>
+    <string name="ps_settings_gyro_aim_sensitivity_description">端末を回したときに右スティックが動く量。</string>
+    <string name="ps_settings_gyro_aim_low">低</string>
+    <string name="ps_settings_gyro_aim_normal">標準</string>
+    <string name="ps_settings_gyro_aim_high">高</string>
 </resources>

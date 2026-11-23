@@ -86,4 +86,14 @@
     <string name="stream_stats_console_bitrate">콘솔 비트레이트</string>
     <string name="stream_stats_console_frames">복구 / 손실 프레임</string>
     <string name="stream_stats_console_keyframes">키프레임 대기</string>
+    <string name="ps_settings_gyro_aim_title">자이로 조준</string>
+    <string name="ps_settings_gyro_aim_description">기기를 돌리면 오른쪽 스틱이 움직여 어떤 게임에서도 조준할 수 있습니다. L2: L2를 누르는 동안만.</string>
+    <string name="ps_settings_gyro_aim_off">끄기</string>
+    <string name="ps_settings_gyro_aim_l2">L2 누를 때</string>
+    <string name="ps_settings_gyro_aim_always">항상</string>
+    <string name="ps_settings_gyro_aim_sensitivity_title">자이로 조준 감도</string>
+    <string name="ps_settings_gyro_aim_sensitivity_description">기기를 돌릴 때 오른쪽 스틱이 움직이는 정도.</string>
+    <string name="ps_settings_gyro_aim_low">낮음</string>
+    <string name="ps_settings_gyro_aim_normal">보통</string>
+    <string name="ps_settings_gyro_aim_high">높음</string>
 </resources>

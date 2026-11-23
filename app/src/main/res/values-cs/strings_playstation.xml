@@ -86,4 +86,14 @@
     <string name="stream_stats_console_bitrate">Bitrate konzole</string>
     <string name="stream_stats_console_frames">Snímky opravené / ztracené</string>
     <string name="stream_stats_console_keyframes">Čekání na klíčový snímek</string>
+    <string name="ps_settings_gyro_aim_title">Míření gyroskopem</string>
+    <string name="ps_settings_gyro_aim_description">Natáčení zařízení pohybuje pravou páčkou, pro míření v každé hře. Při L2: jen když držíš L2.</string>
+    <string name="ps_settings_gyro_aim_off">Vypnuto</string>
+    <string name="ps_settings_gyro_aim_l2">Při L2</string>
+    <string name="ps_settings_gyro_aim_always">Vždy</string>
+    <string name="ps_settings_gyro_aim_sensitivity_title">Citlivost míření gyroskopem</string>
+    <string name="ps_settings_gyro_aim_sensitivity_description">Jak moc se pravá páčka pohne, když zařízení natočíš.</string>
+    <string name="ps_settings_gyro_aim_low">Nízká</string>
+    <string name="ps_settings_gyro_aim_normal">Normální</string>
+    <string name="ps_settings_gyro_aim_high">Vysoká</string>
 </resources>

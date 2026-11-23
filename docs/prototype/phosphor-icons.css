@@ -150,6 +150,8 @@
 .ms[data-icon="upscaler_mode"] { --phosphor-glyph: "\e466"; }
 .ms[data-icon="frame_generation"] { --phosphor-glyph: "\edf6"; }
 .ms[data-icon="microphone"] { --phosphor-glyph: "\e326"; }
+.ms[data-icon="gyro_aim"] { --phosphor-glyph: "\edd8"; }
+.ms[data-icon="gyro_aim_sensitivity"] { --phosphor-glyph: "\edd6"; }
 .ms[data-icon="sharpness"] { --phosphor-glyph: "\e00a"; }
 .ms[data-icon="metered_network"] { --phosphor-glyph: "\e142"; }
 .ms[data-icon="custom_resolution"] { --phosphor-glyph: "\e6b8"; }

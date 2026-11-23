@@ -86,4 +86,14 @@
     <string name="stream_stats_console_bitrate">Tasa de la consola</string>
     <string name="stream_stats_console_frames">Fotogramas reparados / perdidos</string>
     <string name="stream_stats_console_keyframes">Esperas de fotograma clave</string>
+    <string name="ps_settings_gyro_aim_title">Apuntado con giroscopio</string>
+    <string name="ps_settings_gyro_aim_description">Girar el dispositivo mueve el stick derecho, para apuntar en cualquier juego. Con L2: solo mientras mantienes L2.</string>
+    <string name="ps_settings_gyro_aim_off">Desactivado</string>
+    <string name="ps_settings_gyro_aim_l2">Con L2</string>
+    <string name="ps_settings_gyro_aim_always">Siempre</string>
+    <string name="ps_settings_gyro_aim_sensitivity_title">Sensibilidad del apuntado</string>
+    <string name="ps_settings_gyro_aim_sensitivity_description">Cuánto se mueve el stick derecho al girar el dispositivo.</string>
+    <string name="ps_settings_gyro_aim_low">Baja</string>
+    <string name="ps_settings_gyro_aim_normal">Normal</string>
+    <string name="ps_settings_gyro_aim_high">Alta</string>
 </resources>

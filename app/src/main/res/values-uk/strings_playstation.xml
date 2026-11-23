@@ -86,4 +86,14 @@
     <string name="stream_stats_console_bitrate">Бітрейт консолі</string>
     <string name="stream_stats_console_frames">Кадри відновлені / втрачені</string>
     <string name="stream_stats_console_keyframes">Очікування ключового кадру</string>
+    <string name="ps_settings_gyro_aim_title">Прицілювання гіроскопом</string>
+    <string name="ps_settings_gyro_aim_description">Поворот пристрою рухає правий стік для прицілювання в будь-якій грі. З L2: лише поки тримаєте L2.</string>
+    <string name="ps_settings_gyro_aim_off">Вимкнено</string>
+    <string name="ps_settings_gyro_aim_l2">З L2</string>
+    <string name="ps_settings_gyro_aim_always">Завжди</string>
+    <string name="ps_settings_gyro_aim_sensitivity_title">Чутливість прицілювання</string>
+    <string name="ps_settings_gyro_aim_sensitivity_description">Наскільки рухається правий стік, коли пристрій повертається.</string>
+    <string name="ps_settings_gyro_aim_low">Низька</string>
+    <string name="ps_settings_gyro_aim_normal">Звичайна</string>
+    <string name="ps_settings_gyro_aim_high">Висока</string>
 </resources>

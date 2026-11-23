@@ -24,6 +24,12 @@ object PsPrefs {
     /** Boolean, default false: the device microphone goes to the console's voice chat (needs the record-audio permission). */
     const val MICROPHONE = "ps_microphone"
 
+    /** "off" | "aim" | "always", default "off": the device's turn moves the right stick (while L2 is held, or always). */
+    const val GYRO_AIM = "ps_gyro_aim"
+
+    /** "low" | "normal" | "high", default "normal": how far the right stick moves per degree per second of turn. */
+    const val GYRO_AIM_SENSITIVITY = "ps_gyro_aim_sensitivity"
+
     /** "few" | "normal" | "many", default "few": video frames that may wait for the decoder before the oldest are dropped. */
     const val VIDEO_QUEUE = "ps_video_queue"
 

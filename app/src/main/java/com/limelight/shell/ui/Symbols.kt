@@ -143,6 +143,8 @@ object Symbols {
     const val UPSCALER_MODE = "\uE466"
     const val FRAME_GENERATION = "\uEDF6"
     const val MICROPHONE = "\uE326"
+    const val GYRO_AIM = "\uEDD8"
+    const val GYRO_AIM_SENSITIVITY = "\uEDD6"
     const val SHARPNESS = "\uE00A"
     const val METERED_NETWORK = "\uE142"
     const val CUSTOM_RESOLUTION = "\uE6B8"

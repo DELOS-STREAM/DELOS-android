@@ -87,4 +87,14 @@
     <string name="stream_stats_console_bitrate">Console bitrate</string>
     <string name="stream_stats_console_frames">Frames repaired / lost</string>
     <string name="stream_stats_console_keyframes">Keyframe waits</string>
+    <string name="ps_settings_gyro_aim_title">Gyro aiming</string>
+    <string name="ps_settings_gyro_aim_description">Turning the device moves the right stick, for aiming in any game. While L2: only while L2 is held.</string>
+    <string name="ps_settings_gyro_aim_off">Off</string>
+    <string name="ps_settings_gyro_aim_l2">While L2</string>
+    <string name="ps_settings_gyro_aim_always">Always</string>
+    <string name="ps_settings_gyro_aim_sensitivity_title">Gyro aiming sensitivity</string>
+    <string name="ps_settings_gyro_aim_sensitivity_description">How far the right stick moves when the device turns.</string>
+    <string name="ps_settings_gyro_aim_low">Low</string>
+    <string name="ps_settings_gyro_aim_normal">Normal</string>
+    <string name="ps_settings_gyro_aim_high">High</string>
 </resources>

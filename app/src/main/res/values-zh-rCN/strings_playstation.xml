@@ -86,4 +86,14 @@
     <string name="stream_stats_console_bitrate">主机码率</string>
     <string name="stream_stats_console_frames">修复 / 丢失帧</string>
     <string name="stream_stats_console_keyframes">等待关键帧</string>
+    <string name="ps_settings_gyro_aim_title">陀螺仪瞄准</string>
+    <string name="ps_settings_gyro_aim_description">转动设备会移动右摇杆，可在任何游戏中瞄准。按住 L2：仅在按住 L2 时。</string>
+    <string name="ps_settings_gyro_aim_off">关闭</string>
+    <string name="ps_settings_gyro_aim_l2">按住 L2</string>
+    <string name="ps_settings_gyro_aim_always">始终</string>
+    <string name="ps_settings_gyro_aim_sensitivity_title">陀螺仪瞄准灵敏度</string>
+    <string name="ps_settings_gyro_aim_sensitivity_description">转动设备时右摇杆移动的幅度。</string>
+    <string name="ps_settings_gyro_aim_low">低</string>
+    <string name="ps_settings_gyro_aim_normal">标准</string>
+    <string name="ps_settings_gyro_aim_high">高</string>
 </resources>

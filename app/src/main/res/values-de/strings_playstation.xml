@@ -86,4 +86,14 @@
     <string name="stream_stats_console_bitrate">Bitrate der Konsole</string>
     <string name="stream_stats_console_frames">Bilder repariert / verloren</string>
     <string name="stream_stats_console_keyframes">Warten auf Keyframe</string>
+    <string name="ps_settings_gyro_aim_title">Gyro-Zielen</string>
+    <string name="ps_settings_gyro_aim_description">Das Drehen des Geräts bewegt den rechten Stick, zum Zielen in jedem Spiel. Bei L2: nur solange L2 gedrückt ist.</string>
+    <string name="ps_settings_gyro_aim_off">Aus</string>
+    <string name="ps_settings_gyro_aim_l2">Bei L2</string>
+    <string name="ps_settings_gyro_aim_always">Immer</string>
+    <string name="ps_settings_gyro_aim_sensitivity_title">Empfindlichkeit Gyro-Zielen</string>
+    <string name="ps_settings_gyro_aim_sensitivity_description">Wie weit sich der rechte Stick bewegt, wenn sich das Gerät dreht.</string>
+    <string name="ps_settings_gyro_aim_low">Niedrig</string>
+    <string name="ps_settings_gyro_aim_normal">Normal</string>
+    <string name="ps_settings_gyro_aim_high">Hoch</string>
 </resources>

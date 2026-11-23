@@ -86,4 +86,14 @@
     <string name="stream_stats_console_bitrate">Taxa do console</string>
     <string name="stream_stats_console_frames">Quadros reparados / perdidos</string>
     <string name="stream_stats_console_keyframes">Esperas de quadro-chave</string>
+    <string name="ps_settings_gyro_aim_title">Mira por giroscópio</string>
+    <string name="ps_settings_gyro_aim_description">Girar o dispositivo move o analógico direito, para mirar em qualquer jogo. Com L2: só enquanto segura L2.</string>
+    <string name="ps_settings_gyro_aim_off">Desligada</string>
+    <string name="ps_settings_gyro_aim_l2">Com L2</string>
+    <string name="ps_settings_gyro_aim_always">Sempre</string>
+    <string name="ps_settings_gyro_aim_sensitivity_title">Sensibilidade da mira</string>
+    <string name="ps_settings_gyro_aim_sensitivity_description">Quanto o analógico direito se move quando o dispositivo gira.</string>
+    <string name="ps_settings_gyro_aim_low">Baixa</string>
+    <string name="ps_settings_gyro_aim_normal">Normal</string>
+    <string name="ps_settings_gyro_aim_high">Alta</string>
 </resources>

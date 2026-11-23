@@ -389,7 +389,14 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     override fun sendMouseHScroll(scrollClicks: Byte) {}
     override fun sendMouseHighResScroll(scrollAmount: Short) {}
     override fun sendMouseHighResHScroll(scrollAmount: Short) {}
-    override fun sendTouchEvent(eventType: Byte, pointerId: Int, x: Float, y: Float, pressureOrDistance: Float, contactAreaMajor: Float, contactAreaMinor: Float, rotation: Short) = MoonBridge.LI_ERR_UNSUPPORTED
+    /**
+     * The screen as the DualSense touchpad (F4, owner 2026-11-23: gestures, not a click): fingers on the stream move as touches on
+     * the console's touchpad, so swipes reach the game; pressing the pad is the touchpad button (Select on the Odin).
+     */
+    override fun sendTouchEvent(eventType: Byte, pointerId: Int, x: Float, y: Float, pressureOrDistance: Float, contactAreaMajor: Float, contactAreaMinor: Float, rotation: Short): Int {
+        if (eventType == MoonBridge.LI_TOUCH_EVENT_HOVER || eventType == MoonBridge.LI_TOUCH_EVENT_HOVER_LEAVE) return 0
+        return sendControllerTouchEvent(0, eventType, pointerId, x.coerceIn(0f, 1f), y.coerceIn(0f, 1f), pressureOrDistance)
+    }
     override fun sendPenEvent(eventType: Byte, toolType: Byte, penButtons: Byte, x: Float, y: Float, pressureOrDistance: Float, contactAreaMajor: Float, contactAreaMinor: Float, rotation: Short, tilt: Byte) = MoonBridge.LI_ERR_UNSUPPORTED
     override fun sendUtf8Text(text: String) {}
     override fun sendControllerArrivalEvent(controllerNumber: Byte, activeGamepadMask: Short, type: Byte, supportedButtonFlags: Int, capabilities: Short): Int {
@@ -420,9 +427,25 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         val table = if (firstPadIsPlayStation) BUTTONS else HANDHELD_BUTTONS
         var buttons = 0
         for ((flag, button) in table) if (buttonFlags and flag != 0) buttons = buttons or button.mask
+        baseRx = rightStickX; baseRy = flip(rightStickY); aimHeld = (leftTrigger.toInt() and 0xFF) > AIM_TRIGGER
         update { it.copy(buttons = buttons, l2 = leftTrigger.toInt() and 0xFF, r2 = rightTrigger.toInt() and 0xFF,
-            lx = leftStickX, ly = flip(leftStickY), rx = rightStickX, ry = flip(rightStickY)) }
+            lx = leftStickX, ly = flip(leftStickY), rx = aimedX(), ry = aimedY()) }
     }
+
+    // Gyro aiming (F5, owner 2026-11-23): the device's turn added to the right stick, always or while L2 is held, for any game.
+    // The right stick as the pad has it, whether L2 aims, and the current offset from the gyro (console stick units)
+    @Volatile private var baseRx: Short = 0
+    @Volatile private var baseRy: Short = 0
+    @Volatile private var aimHeld = false
+    @Volatile private var aimX = 0f
+    @Volatile private var aimY = 0f
+    private val gyroAim = psPrefs.getString(PsPrefs.GYRO_AIM, "off") ?: "off"
+    // Stick units per deg/s: full deflection at 120 deg/s at the normal sensitivity
+    private val aimScale = 32767f / 120f * when (psPrefs.getString(PsPrefs.GYRO_AIM_SENSITIVITY, "normal")) { "low" -> .6f; "high" -> 1.6f; else -> 1f }
+
+    private fun aiming() = gyroAim == "always" || (gyroAim == "aim" && aimHeld)
+    private fun aimedX(): Short = (baseRx + (if (aiming()) aimX else 0f)).coerceIn(-32768f, 32767f).toInt().toShort()
+    private fun aimedY(): Short = (baseRy + (if (aiming()) aimY else 0f)).coerceIn(-32768f, 32767f).toInt().toShort()
 
     /** Gyro in deg/s and accel in m/s² from the controller handler, as rad/s and g with an orientation integrated from the gyro. */
     override fun sendControllerMotionEvent(controllerNumber: Byte, motionType: Byte, x: Float, y: Float, z: Float): Int {
@@ -436,6 +459,12 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                     lastGyroNs = now
                     integrate(gx, gy, gz, dt)
                     it.copy(gyroX = gx, gyroY = gy, gyroZ = gz, orientX = orientation[0], orientY = orientation[1], orientZ = orientation[2], orientW = orientation[3])
+                }
+                if (gyroAim != "off") {
+                    // DualShock axes (the controller handler's): y turns left, x tilts up; the stick's x is right, its y (console) down
+                    aimX = -y * aimScale
+                    aimY = -x * aimScale
+                    if (aiming()) update { it.copy(rx = aimedX(), ry = aimedY()) }
                 }
             }
             MoonBridge.LI_MOTION_TYPE_ACCEL -> update { it.copy(accelX = x / G, accelY = y / G, accelZ = z / G) }
@@ -802,6 +831,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         /** Senkusha's result per console id, for this process. */
         private val NETWORK = HashMap<String, PsNetwork>()
         private const val MOTION_RATE_HZ: Short = 200
+        /** L2 past this (of 255) is aiming, for gyro aiming while L2 is held. */
+        private const val AIM_TRIGGER = 64
         private const val G = 9.80665f
         private const val TOUCH_WIDTH = 1920
         private const val TOUCH_HEIGHT_DUALSENSE = 1079
