@@ -22,7 +22,7 @@ interface PsStreamListener {
     /** The console switched to another adaptive profile (7.2): its size and parameter sets apply from the next keyframe. */
     fun onVideoProfile(width: Int, height: Int, videoHeader: ByteArray) {}
     /** A complete Annex-B access unit. */
-    fun onVideoFrame(frame: ByteArray, index: Int) {}
+    fun onVideoFrame(frame: ByteArray, index: Int, receivedUs: Long) {}
     fun onAudio(opus: ByteArray, frameIndex: Int) {}
     fun onRumble(left: Int, right: Int) {}
     /** DualSense trigger effects (data type 11, 8.4): each trigger's mode and 10 parameter bytes in the DualSense format. */
@@ -127,7 +127,8 @@ class PsStream(
         streamInfo?.let(::onStreamInfo)
         timers.scheduleWithFixedDelay({ sendMessage(1, 0, PsMsg.simple(PsMsg.HEARTBEAT)) }, 1, 1, TimeUnit.SECONDS)
         timers.scheduleWithFixedDelay(::sendCongestion, 200, 200, TimeUnit.MILLISECONDS)
-        timers.scheduleWithFixedDelay({ sendFeedbackState() }, 200, 200, TimeUnit.MILLISECONDS)
+        // The state every 200 ms, and the button history with it, so a lost release cannot leave a button held (8.3)
+        timers.scheduleWithFixedDelay({ sendFeedbackState(); if (synchronized(history) { history.isNotEmpty() }) sendHistory() }, 200, 200, TimeUnit.MILLISECONDS)
         timers.scheduleWithFixedDelay(::stopIdleHaptics, 50, 50, TimeUnit.MILLISECONDS)
         timers.scheduleWithFixedDelay(::logVideo, 10, 10, TimeUnit.SECONDS)
     }
@@ -245,6 +246,8 @@ class PsStream(
     }
 
     private fun receiveLoop() {
+        // MAC, decryption, assembly and FEC of every packet run here: as urgent as the decoder's feeder (Fable's review)
+        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY)
         val buf = ByteArray(0x19000)
         while (running) {
             val p = DatagramPacket(buf, buf.size)
@@ -381,7 +384,7 @@ class PsStream(
                     framesComplete++
                     if (r.recovered) framesRecovered++
                     if (r.adaptiveIndex != profile) switchProfile(r.adaptiveIndex)
-                    listener.onVideoFrame(r.data, r.index)
+                    listener.onVideoFrame(r.data, r.index, r.receivedUs)
                 }
                 is PsFrameAssembler.Result.Lost -> { framesLost++; requestIdr(r.from, r.to); listener.onVideoLost() }
             }
@@ -393,6 +396,7 @@ class PsStream(
         } else if (packet.audioMarker == 2) {
             onHaptics(packet.payload)
         } else {
+            audioUnits.incrementAndGet()
             val desc = packet.fecOrAudioDesc
             val size = desc ushr 8
             val sources = desc and 0xF
@@ -416,8 +420,9 @@ class PsStream(
 
     private fun logVideo() {
         val complete = framesComplete; val recovered = framesRecovered; val lost = framesLost
+        val late = assembler.lateUnits.getAndSet(0)
         framesComplete = 0; framesRecovered = 0; framesLost = 0
-        if (recovered > 0 || lost > 0) Log.i(TAG, "video 10 s: $complete frames, $recovered restored by FEC, $lost lost")
+        if (recovered > 0 || lost > 0 || late > 0) Log.i(TAG, "video 10 s: $complete frames, $recovered restored by FEC, $lost lost, $late units late after their frame")
     }
 
     private fun corrupt(from: Int, to: Int) =
@@ -433,10 +438,10 @@ class PsStream(
 
     private fun sendCongestion() {
         val gk = gkSend ?: return
-        val received = assembler.unitsReceived.also { assembler.unitsReceived = 0 }
+        val received = assembler.unitsReceived.getAndSet(0) + audioUnits.getAndSet(0)
         // A fixed bitrate reports sporadic Wi-Fi loss as at most 3 %: FEC hides it, and a higher figure makes the console drop its
         // bitrate (5.8). Automatic bitrate reports the real loss
-        val measured = assembler.unitsLost.also { assembler.unitsLost = 0 }
+        val measured = assembler.unitsLost.getAndSet(0)
         val lost = if (holdBitrate) measured.coerceAtMost(received * 3 / 100) else measured
         val position = takePosition(15)
         val d = ByteBuffer.allocate(15).order(ByteOrder.BIG_ENDIAN).apply {
@@ -452,14 +457,21 @@ class PsStream(
     /** Sends the new controller state: buttons, triggers and touch as history events, sticks and motion as the state packet. */
     fun updateController(new: PsControllerState) {
         val events = PsFeedback.events(state, new)
-        val sticksChanged = new.copy(buttons = 0, l2 = 0, r2 = 0, touches = emptyList()) != state.copy(buttons = 0, l2 = 0, r2 = 0, touches = emptyList())
+        val sticksChanged = new.lx != state.lx || new.ly != state.ly || new.rx != state.rx || new.ry != state.ry
+        val motionChanged = !sticksChanged && new.copy(buttons = 0, l2 = 0, r2 = 0, touches = emptyList()) != state.copy(buttons = 0, l2 = 0, r2 = 0, touches = emptyList())
         state = new
         if (events.isNotEmpty()) {
             synchronized(history) { for (e in events) { history.addFirst(e); historySeq++ } ; while (history.size > 8) history.removeLast() }
             sendHistory()
         }
-        if (sticksChanged) sendFeedbackState()
+        // Sticks go out at once; motion alone at most every 4 ms (gyro and accelerometer each sample at 200 Hz), the newest values
+        val now = System.nanoTime()
+        if (sticksChanged || (motionChanged && now - stateSentNs >= MOTION_SEND_NS)) { stateSentNs = now; sendFeedbackState() }
     }
+
+    private var stateSentNs = 0L
+    // Audio units received, counted into the congestion report with the video units (5.8)
+    private val audioUnits = java.util.concurrent.atomic.AtomicInteger()
 
     private fun sendFeedbackState() {
         val gk = gkSend ?: return
@@ -525,5 +537,7 @@ class PsStream(
         private const val TAG = "PsStream"
         /** Haptics PCM is quieter than a motor's full range: its mean level times this is the motor strength. */
         private const val HAPTIC_GAIN = 4L
+        /** Motion-only controller state goes out at most this often. */
+        private const val MOTION_SEND_NS = 4_000_000L
     }
 }

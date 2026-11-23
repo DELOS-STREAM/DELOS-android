@@ -74,11 +74,12 @@ class PsFrameAssembler {
         private set
 
     /** Statistics for the congestion report: units received and missing since the last call. */
-    var unitsReceived = 0
-    var unitsLost = 0
+    val unitsReceived = java.util.concurrent.atomic.AtomicInteger()
+    val unitsLost = java.util.concurrent.atomic.AtomicInteger()
 
     sealed interface Result {
-        class Frame(val index: Int, val data: ByteArray, val adaptiveIndex: Int, val recovered: Boolean) : Result
+        /** [receivedUs]: when the frame's first unit arrived (System.nanoTime / 1000), so the statistics include reassembly. */
+        class Frame(val index: Int, val data: ByteArray, val adaptiveIndex: Int, val recovered: Boolean, val receivedUs: Long) : Result
         class Lost(val from: Int, val to: Int) : Result
     }
 
@@ -94,9 +95,14 @@ class PsFrameAssembler {
     fun add(p: PsAvPacket): List<Result> {
         val out = ArrayList<Result>()
         // Late units (parities) of a frame that is already out still count as received
-        if (p.frameIndex == flushedIndex) { statReceived++; return out }
+        if (p.frameIndex == flushedIndex) {
+            statReceived++
+            // A unit of a frame that went out short of units: it was late (reordered across the frame border), not lost
+            if (flushedShort) lateUnits.incrementAndGet()
+            return out
+        }
         if (p.frameIndex != frameIndex) {
-            if (frameIndex >= 0 && received > 0) flush()?.let { out += it }
+            if (frameIndex >= 0 && received > 0) { flushedShort = received < sources; flush()?.let { out += it } }
             begin(p)
         }
         if (p.unitIndex >= units.size || p.payload.size > unitSize || units[p.unitIndex] != null) return out
@@ -109,12 +115,13 @@ class PsFrameAssembler {
     }
 
     private fun begin(p: PsAvPacket) {
-        unitsReceived += statReceived
-        unitsLost += maxOf(0, statTotal - statReceived)
+        unitsReceived.addAndGet(statReceived)
+        unitsLost.addAndGet(maxOf(0, statTotal - statReceived))
         statTotal = p.unitsInFrame
         statReceived = 0
         val previous = lastComplete
         frameIndex = p.frameIndex
+        beganUs = System.nanoTime() / 1000
         fec = p.fecOrAudioDesc
         sources = p.unitsInFrame - fec
         val parities = maxOf(1, fec)
@@ -147,8 +154,14 @@ class PsFrameAssembler {
             frame.write(unit, 2, length - 2)
         }
         lastComplete = idx
-        return Result.Frame(idx, frame.toByteArray(), adaptive, recovered)
+        return Result.Frame(idx, frame.toByteArray(), adaptive, recovered, beganUs)
     }
+
+    private var beganUs = 0L
+    private var flushedShort = false
+
+    /** Units that arrived after their frame was flushed without them (for the log: whether a reorder window would help). */
+    val lateUnits = java.util.concurrent.atomic.AtomicInteger()
 
     /** A loss range noticed at the start of a frame (the frame index jumped), consumed once. */
     fun takeLoss(): Pair<Int, Int>? = pendingLoss.also { pendingLoss = null }

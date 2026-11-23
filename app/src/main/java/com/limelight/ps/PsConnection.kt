@@ -261,10 +261,10 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             startMicrophone()
         }
 
-        override fun onVideoFrame(frame: ByteArray, index: Int) {
+        override fun onVideoFrame(frame: ByteArray, index: Int, receivedUs: Long) {
             lastPacketMs = SystemClock.uptimeMillis()
             packetSinceReconnect = true
-            feeder?.offer(frame, index)
+            feeder?.offer(frame, index, receivedUs)
         }
 
         override fun onVideoLost() { feeder?.lost() }
@@ -516,7 +516,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
      * keyframe (an IDR, or a picture whose first slice is an I slice) comes, and the console is asked again every second (7.3).
      */
     private inner class VideoFeeder(private val renderer: VideoDecoderRenderer, private val hevc: Boolean, header: ByteArray, depth: Int) {
-        private val queue = ArrayBlockingQueue<Pair<ByteArray, Int>>(depth)
+        private val queue = ArrayBlockingQueue<Queued>(depth)
         private val parameterSets = LinkedHashMap<Int, ByteArray>()
         // HEVC: the PPS's num_extra_slice_header_bits, read to reach a slice's type
         @Volatile private var extraSliceBits = 0
@@ -534,8 +534,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
         fun start() = worker.start()
 
-        fun offer(frame: ByteArray, index: Int) {
-            if (queue.offer(frame to index)) return
+        fun offer(frame: ByteArray, index: Int, receivedUs: Long) {
+            if (queue.offer(Queued(frame, index, receivedUs, System.nanoTime() / 1000))) return
             queue.clear()
             keyframeNeeded()
         }
@@ -578,14 +578,15 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                     requests++
                     stream?.requestKeyframe()
                 }
-                val (frame, index) = next ?: continue
-                frameNumber += if (lastIndex < 0) 1 else ((index - lastIndex) and 0xFFFF).coerceAtLeast(1)
-                lastIndex = index
-                submit(frame, frameNumber)
+                val q = next ?: continue
+                frameNumber += if (lastIndex < 0) 1 else ((q.index - lastIndex) and 0xFFFF).coerceAtLeast(1)
+                lastIndex = q.index
+                submit(q.frame, frameNumber, q.receivedUs, q.completeUs)
             }
         }
 
-        private fun submit(frame: ByteArray, number: Int) {
+        /** [receivedUs] the first unit's arrival, [completeUs] the frame complete (System.nanoTime / 1000, the decoder's clock). */
+        private fun submit(frame: ByteArray, number: Int, receivedUs: Long, completeUs: Long) {
             val nals = Nal.split(frame)
             val picture = ArrayList<ByteArray>(nals.size)
             var keyframe = false
@@ -606,14 +607,13 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                 if (waitSinceMs > 0) Log.i(TAG, "keyframe after ${SystemClock.uptimeMillis() - waitSinceMs} ms, $requests requests")
                 waitSinceMs = 0
             }
-            val now = SystemClock.uptimeMillis() * 1000
             val type = if (keyframe) MoonBridge.FRAME_TYPE_IDR else MoonBridge.FRAME_TYPE_PFRAME
             if (keyframe) for ((nalType, nal) in synchronized(parameterSets) { parameterSets.entries.map { it.key to it.value } }) {
-                val result = renderer.submitDecodeUnit(nal, nal.size, bufferType(nalType), number, type, 0.toChar(), now, now)
+                val result = renderer.submitDecodeUnit(nal, nal.size, bufferType(nalType), number, type, 0.toChar(), receivedUs, completeUs)
                 if (result == MoonBridge.DR_NEED_IDR) { keyframeNeeded(); return }
             }
             val data = if (picture.size == 1) picture[0] else ByteArray(picture.sumOf { it.size }).also { out -> var at = 0; for (p in picture) { p.copyInto(out, at); at += p.size } }
-            if (renderer.submitDecodeUnit(data, data.size, MoonBridge.BUFFER_TYPE_PICDATA, number, type, 0.toChar(), now, now) == MoonBridge.DR_NEED_IDR) keyframeNeeded()
+            if (renderer.submitDecodeUnit(data, data.size, MoonBridge.BUFFER_TYPE_PICDATA, number, type, 0.toChar(), receivedUs, completeUs) == MoonBridge.DR_NEED_IDR) keyframeNeeded()
         }
 
         private fun nalType(nal: ByteArray): Int {
@@ -822,6 +822,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         private fun flip(y: Short): Short = (-y.toInt()).coerceIn(-32768, 32767).toShort()
     }
 }
+
+/** A complete frame waiting for the decoder: its index, its first unit's arrival and when it was complete (µs, monotonic). */
+private class Queued(val frame: ByteArray, val index: Int, val receivedUs: Long, val completeUs: Long)
 
 /** Annex-B NAL units: split on start codes, each unit keeping its own start code (as the decoder renderer expects). */
 internal object Nal {

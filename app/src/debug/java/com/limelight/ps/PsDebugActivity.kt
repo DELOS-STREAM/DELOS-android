@@ -182,7 +182,7 @@ class PsDebugActivity : Activity() {
                 if (surface.holder.surface.isValid) startDecoder(surface.holder, width, height, videoHeader)
             }
         }
-        override fun onVideoFrame(frame: ByteArray, index: Int) = feed(frame)
+        override fun onVideoFrame(frame: ByteArray, index: Int, receivedUs: Long) = feed(frame)
     }
 
     /** Frames waiting for a decoder input buffer; the codec runs asynchronously, so the network thread never waits for it. */
