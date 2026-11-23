@@ -339,6 +339,8 @@ private fun psOnlyRows(tab: PsSettingsTab, values: Map<String, *>, prefs: Shared
             },
         )
         PsSettingsTab.CONTROLLER -> listOf(
+            toggle(PsPrefs.TOUCHSCREEN_TOUCHPAD, Symbols.PAD_DUALSENSE_TOUCHPAD, R.string.ps_settings_touchscreen_touchpad_title,
+                R.string.ps_settings_touchscreen_touchpad_description, true),
             choice(PsPrefs.GYRO_AIM, Symbols.GYRO_AIM, R.string.ps_settings_gyro_aim_title, R.string.ps_settings_gyro_aim_description,
                 listOf("off", "aim", "always"), values[PsPrefs.GYRO_AIM] as? String ?: "off",
                 listOf(R.string.ps_settings_gyro_aim_off, R.string.ps_settings_gyro_aim_l2, R.string.ps_settings_gyro_aim_always).map { res.getString(it) },

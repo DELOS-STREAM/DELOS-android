@@ -98,4 +98,6 @@
     <string name="stream_help_gyro_aiming_left_and_right">Sensibilidad lateral del apuntado con giroscopio. Se aplica al instante y se guarda para este juego.</string>
     <string name="stream_help_gyro_aiming_up_and_down">Sensibilidad vertical del apuntado con giroscopio. Se aplica al instante y se guarda para este juego.</string>
     <string name="ps_notice">Aplicación no oficial de la comunidad. No está afiliada a Sony Interactive Entertainment ni cuenta con su respaldo. «PlayStation» es una marca comercial registrada o una marca comercial de Sony Interactive Entertainment Inc.</string>
+    <string name="ps_settings_touchscreen_touchpad_title">Pantalla táctil como panel táctil</string>
+    <string name="ps_settings_touchscreen_touchpad_description">Los dedos en la pantalla actúan como el panel táctil del DualSense, para deslizar y tocar. Desactivado: la pantalla ignora los toques.</string>
 </resources>

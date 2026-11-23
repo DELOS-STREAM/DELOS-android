@@ -915,9 +915,10 @@ public final class StreamPointerHandler {
             }
         }
 
-        // A console stream: fingers on the screen are the DualSense touchpad's touches, whatever the PC touch settings say (F4)
-        if (host.conn() instanceof com.limelight.ps.PsConnection && trySendTouchEvent(view, event)) {
-            return true;
+        // A console stream: fingers on the screen are the DualSense touchpad's touches, whatever the PC touch settings say (F4),
+        // unless the PS settings turn that off
+        if (host.conn() instanceof com.limelight.ps.PsConnection) {
+            return ((com.limelight.ps.PsConnection) host.conn()).getTouchscreenIsTouchpad() && trySendTouchEvent(view, event);
         }
         if (prefConfig.enableMultiTouchScreen && !prefConfig.touchscreenTrackpad && trySendTouchEvent(view, event)) {
             // If this host supports touch events and absolute touch is enabled,

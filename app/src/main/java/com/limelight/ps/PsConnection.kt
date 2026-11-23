@@ -32,6 +32,8 @@ import kotlin.math.sqrt
 class PsConnection(context: Context, private val consoleId: String, private val prefs: PreferenceConfiguration) : StreamConnection {
     private val appContext = context.applicationContext
     private val psPrefs = PsPrefs.prefs(appContext)
+    /** Whether fingers on the screen are the DualSense touchpad's touches (PS settings, Controls; read at the stream's start). */
+    val touchscreenIsTouchpad = psPrefs.getBoolean(PsPrefs.TOUCHSCREEN_TOUCHPAD, true)
 
     @Volatile private var running = false
     @Volatile private var stream: PsStream? = null

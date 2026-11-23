@@ -98,4 +98,6 @@
     <string name="stream_help_gyro_aiming_left_and_right">Чутливість прицілювання гіроскопом убік. Діє одразу й зберігається для цієї гри.</string>
     <string name="stream_help_gyro_aiming_up_and_down">Чутливість прицілювання гіроскопом вгору і вниз. Діє одразу й зберігається для цієї гри.</string>
     <string name="ps_notice">Неофіційний застосунок спільноти. Не пов’язаний із Sony Interactive Entertainment і не схвалений нею. «PlayStation» є зареєстрованою торговельною маркою або торговельною маркою Sony Interactive Entertainment Inc.</string>
+    <string name="ps_settings_touchscreen_touchpad_title">Сенсорний екран як тачпад</string>
+    <string name="ps_settings_touchscreen_touchpad_description">Пальці на екрані працюють як тачпад DualSense для свайпів і дотиків. Вимкнено: екран ігнорує дотики.</string>
 </resources>

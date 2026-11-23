@@ -98,4 +98,6 @@
     <string name="stream_help_gyro_aiming_left_and_right">Citlivost míření gyroskopem do stran. Projeví se hned a zůstane uložená pro tuto hru.</string>
     <string name="stream_help_gyro_aiming_up_and_down">Citlivost míření gyroskopem nahoru a dolů. Projeví se hned a zůstane uložená pro tuto hru.</string>
     <string name="ps_notice">Neoficiální komunitní aplikace. Není spojena se společností Sony Interactive Entertainment ani jí není schválena. „PlayStation“ je registrovaná ochranná známka nebo ochranná známka společnosti Sony Interactive Entertainment Inc.</string>
+    <string name="ps_settings_touchscreen_touchpad_title">Dotyková obrazovka jako touchpad</string>
+    <string name="ps_settings_touchscreen_touchpad_description">Prsty na obrazovce fungují jako touchpad ovladače DualSense, pro přejetí a dotyky. Vypnuto: obrazovka dotyky ignoruje.</string>
 </resources>

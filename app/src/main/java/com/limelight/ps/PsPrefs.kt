@@ -71,6 +71,9 @@ object PsPrefs {
     /** Boolean, default true: automatic bitrate reacts only to loss FEC could not repair (the loss the picture shows). */
     const val VISIBLE_LOSS = "ps_visible_loss"
 
+    /** Boolean, default true: fingers on the device's screen are the DualSense touchpad's touches (gestures, no click). */
+    const val TOUCHSCREEN_TOUCHPAD = "ps_touchscreen_touchpad"
+
     /** Boolean, default false: a fixed bitrate may go past [MAX_BITRATE_KBPS], up to [UNLOCKED_MAX_BITRATE_KBPS]. */
     const val UNLOCK_BITRATE = "ps_unlock_bitrate"
 
