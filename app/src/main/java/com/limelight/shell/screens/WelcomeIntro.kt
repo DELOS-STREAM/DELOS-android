@@ -168,34 +168,44 @@ private fun AnimatedLogo(time: () -> Float, scale: Float) {
             val glow = radius * 1.9f
             drawCircle(Brush.radialGradient(0f to colors.glow.copy(alpha = colors.glow.alpha * .7f * bloom), .6f to colors.glow.copy(alpha = colors.glow.alpha * .25f * bloom), 1f to Color.Transparent, center = center, radius = glow), radius = glow)
         }
-        // The ring gathers from dust (as the PlayStation background's motes): each mote flies in from outside to its place on the ring
-        // when the stroke reaches it, in the direction the ring is drawn; the stroke follows a little behind and makes it solid
+        // The ring gathers from dust (owner): motes rise from the bottom of the screen, start circling round the logo's centre and
+        // spiral in onto the ring, landing in the order and direction the ring is drawn; the solid stroke follows them
         val motes = RING_MOTES
         for (i in 0 until motes) {
             val along = i / motes.toFloat()
-            // Arrives when the ring's head gets there: starts 380 ms before, lands in 520 ms
-            val arrive = IntroTimeline.RING + 120f + along * 1200f
-            val p = ((t - (arrive - 380f)) / 520f).coerceIn(0f, 1f)
-            if (p <= 0f) continue
-            val e = EaseOut.transform(p)
-            val angle = Math.toRadians((start + 360f * along).toDouble())
-            val target = center + Offset((kotlin.math.cos(angle) * radius).toFloat(), (kotlin.math.sin(angle) * radius).toFloat())
-            // A fixed scatter per mote: farther out and a little ahead along the ring, swirling in
             val seed = (i * 7919) % 97 / 97f
-            val spread = radius * (.7f + .9f * seed)
-            val swirl = Math.toRadians((start + 360f * along + 40f + 50f * seed).toDouble())
-            val from = center + Offset((kotlin.math.cos(swirl) * (radius + spread)).toFloat(), (kotlin.math.sin(swirl) * (radius + spread)).toFloat())
-            val pos = from + (target - from) * e
-            val fade = if (p < 1f) e else (1f - ((t - arrive - 140f) / 500f).coerceIn(0f, 1f))
-            if (fade > 0f) drawCircle(colors.accent.copy(alpha = fade), radius = stroke * (.55f + .25f * (1f - e)), center = pos)
+            val arrive = IntroTimeline.RING + 200f + along * 1100f
+            val p = ((t - (arrive - MOTE_FLIGHT)) / MOTE_FLIGHT).coerceIn(0f, 1f)
+            if (p <= 0f) continue
+            val targetDeg = start + 360f * along
+            val pos: Offset
+            if (p < .5f) {
+                // Rising from below the screen to where it joins the circling, 1.6 rings out and a bit more than half a turn back
+                val q = EaseOut.transform(p / .5f)
+                val joinDeg = Math.toRadians((targetDeg - 210f).toDouble())
+                val join = center + Offset((kotlin.math.cos(joinDeg) * radius * 1.6f).toFloat(), (kotlin.math.sin(joinDeg) * radius * 1.6f).toFloat())
+                val from = center + Offset((seed - .5f) * radius * 6f, radius * (6.5f + 2f * seed))
+                pos = from + (join - from) * q
+            } else {
+                // Circling in: the angle runs on to the mote's place while the orbit tightens to the ring
+                val q = Motion.EaseInOut.transform((p - .5f) / .5f)
+                val deg = Math.toRadians((targetDeg - 210f + 210f * q).toDouble())
+                val r = radius * (1.6f - .6f * q)
+                pos = center + Offset((kotlin.math.cos(deg) * r).toFloat(), (kotlin.math.sin(deg) * r).toFloat())
+            }
+            val fade = if (p < 1f) (p / .15f).coerceAtMost(1f) else (1f - ((t - arrive - 120f) / 500f).coerceIn(0f, 1f))
+            if (fade > 0f) drawCircle(colors.accent.copy(alpha = fade), radius = stroke * (.5f + .3f * seed), center = pos)
         }
-        val solid = IntroTimeline.drawn(t, IntroTimeline.RING + 260f, 1200f)
+        val solid = IntroTimeline.drawn(t, IntroTimeline.RING + 320f, 1100f)
         if (solid > 0f) drawArc(colors.accent, start, 360f * solid, false, topLeft = center - Offset(radius, radius),
             size = androidx.compose.ui.geometry.Size(radius * 2f, radius * 2f), style = Stroke(stroke, cap = StrokeCap.Round))
         if (halo > 0f) drawCircle(colors.accent2.copy(alpha = .35f * halo.coerceAtMost(1f)), radius = 9f * u * halo, center = moon)
         if (dot > 0f) drawCircle(colors.accent2, radius = 5.5f * u * dot, center = moon)
     }
 }
+
+/** How long one mote flies, rising and circling in. */
+private const val MOTE_FLIGHT = 1500f
 
 /** How many motes gather into the ring. */
 private const val RING_MOTES = 72
