@@ -62,7 +62,7 @@ import kotlin.math.cos
  * The intro of the first launch and of a replayed tutorial (owner, 2026-11-24): one continuous opening over the whole window. Black
  * slowly turns into the DELOS colour, the shell's own animated background rises out of it, then the logo is put together piece by
  * piece (the ring drawn round, the moon dropping in at its end, the sharp halo opening round the moon), "Welcome to", the wordmark
- * letter by letter, the tagline and the prompt. A or a tap during it jumps to its end; after it they begin. Reduced motion: the end
+ * letter by letter, the tagline and the prompt. It cannot be skipped: A or a tap begin once the prompt is there. Reduced motion: the end
  * state.
  */
 @Composable
