@@ -248,6 +248,7 @@ class ShellActivity : ComponentActivity() {
     override fun onStop() {
         placement?.stop()
         companion?.stop()
+        if (::feedback.isInitialized) feedback.stopIntro()
         super.onStop()
     }
 

@@ -3,6 +3,8 @@ package com.limelight.shell.ui
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.SoundPool
+import android.media.AudioManager
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
@@ -16,10 +18,11 @@ import com.limelight.R
 enum class Cue { MOVE, SELECT, BACK, OPEN, ERROR }
 
 /**
- * UI sounds (tools/sounds/make_ui_sounds.py, the prototype's blips) and haptics. Created by the
- * activity, released in onDestroy.
+ * UI sounds (tools/sounds/make_ui_sounds.py, the prototype's blips), the intro's sound track and
+ * haptics. Created by the activity, released in onDestroy.
  */
 class Feedback(context: Context) {
+    private val appContext = context.applicationContext
     var soundsEnabled = true
     var hapticsEnabled = true
 
@@ -28,15 +31,35 @@ class Feedback(context: Context) {
 
     // USAGE_GAME plays on the media stream, so the volume keys and a muted media volume apply. The earlier
     // USAGE_ASSISTANCE_SONIFICATION used the system stream, which ignores the media volume.
+    private val attributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_GAME)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .build()
     private val pool = SoundPool.Builder()
         .setMaxStreams(4)
-        .setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_GAME)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-        )
+        .setAudioAttributes(attributes)
         .build()
+
+    private var intro: MediaPlayer? = null
+
+    /**
+     * The intro's sound track (owner's res/raw/intro_fx.wav, 13.2 s), timed to the intro's own clock from its first frame.
+     * Not with the UI sounds off. It plays to its end, also into the screen after the intro; leaving the app stops it.
+     */
+    fun playIntro() {
+        stopIntro()
+        if (!soundsEnabled) return
+        val session = appContext.getSystemService(AudioManager::class.java)?.generateAudioSessionId() ?: return
+        intro = MediaPlayer.create(appContext, R.raw.intro_fx, attributes, session)?.apply {
+            setOnCompletionListener { if (intro === it) intro = null; it.release() }
+            start()
+        }
+    }
+
+    fun stopIntro() {
+        intro?.release()
+        intro = null
+    }
 
     private val sounds = mapOf(
         Cue.MOVE to pool.load(context, R.raw.ui_move, 1),
@@ -79,7 +102,10 @@ class Feedback(context: Context) {
         }
     }
 
-    fun release() = pool.release()
+    fun release() {
+        stopIntro()
+        pool.release()
+    }
 
     private fun hapticFor(cue: Cue): Int = when (cue) {
         Cue.MOVE, Cue.BACK -> HapticFeedbackConstants.CLOCK_TICK

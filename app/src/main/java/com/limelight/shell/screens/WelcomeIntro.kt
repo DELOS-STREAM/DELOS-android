@@ -75,6 +75,7 @@ internal fun WelcomeIntro(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
     val reduced = LocalReducedMotion.current
+    val feedback = com.limelight.shell.ui.LocalFeedback.current
     // Milliseconds of the film; starts past the end with reduced motion
     var time by remember { mutableFloatStateOf(if (reduced) IntroTimeline.END else 0f) }
     LaunchedEffect(Unit) {
@@ -82,6 +83,8 @@ internal fun WelcomeIntro(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
         while (true) {
             androidx.compose.runtime.withFrameNanos { now ->
                 if (last >= 0) time += (now - last) / 1_000_000f
+                // The owner's sound track is timed to the film: it starts with its first frame
+                else if (!reduced) feedback.playIntro()
                 // The warp of the background follows the pulse (Shockwave): 0 to 1 over its run, off before and after
                 val wave = (time - IntroTimeline.SHOCK) / Shockwave.DURATION_MS
                 Shockwave.progress = if (!reduced && wave in 0f..1f) wave else -1f
