@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -246,13 +247,30 @@ internal fun TutorialStartButton(label: String, icon: String, onClick: () -> Uni
     val colors = LocalDelosColors.current
     val reduced = LocalReducedMotion.current
     var focused by remember { mutableStateOf(false) }
-    Box(Modifier.focusRequester(requester).focusEffects(onClick, corner = 999f, focusScale = 1.06f, glow = null, onLookChange = { focused = it })) {
+    val stage = LocalStage.current
+    // As Play: no shared focus plate or glow (they draw a rectangle round a capsule); the capsule's own ring, the halo and the sweep
+    // The focus node is larger than the capsule: the halo and the sweep reach ~40 px out and must not be cut at its bounds
+    Box(Modifier.focusRequester(requester).focusEffects(onClick, corner = 48f, focusScale = 1.06f, ring = null, glow = null, onLookChange = { focused = it })
+        .padding(44.px)) {
+      Box {
         PlayEffect(focused, focused, reduced)
-        Row(Modifier.height(96.px).clip(CircleShape).background(colors.accent).padding(horizontal = 64.px),
+        Row(Modifier.height(96.px)
+            .drawBehind {
+                if (focused) {
+                    val gap = stagePx(4f, stage)
+                    val w = stagePx(4f, stage)
+                    val r = size.height / 2f + gap + w / 2f
+                    drawRoundRect(colors.text, Offset(-gap - w / 2f, -gap - w / 2f),
+                        androidx.compose.ui.geometry.Size(size.width + 2f * gap + w, size.height + 2f * gap + w),
+                        androidx.compose.ui.geometry.CornerRadius(r, r), style = Stroke(w))
+                }
+            }
+            .clip(CircleShape).background(colors.accent).padding(horizontal = 64.px),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.px)) {
             Symbol(icon, 36.tpx, colors.onAccent, filled = true)
             BasicText(label, maxLines = 1, style = TextStyle(color = colors.onAccent, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 30.tpx))
         }
+      }
     }
 }
 
