@@ -262,4 +262,7 @@
     <string name="settings_native_main_screen_swapped">Swapped</string>
     <string name="settings_native_help_main_screen_automatic">The larger panel is main.</string>
     <string name="settings_native_help_main_screen_swapped">The smaller panel is main.</string>
+    <string name="settings_back_game_bar_title">Back for Game Bar and Task View</string>
+    <string name="settings_back_game_bar_description">Tap Back for Guide; hold for Task View on Windows. Guide still opens the stream menu.</string>
+    <string name="settings_menu_buttons_guide_only_description">Tap Guide for the stream menu. You can also record a button combination. Back uses the Windows mapping.</string>
 </resources>

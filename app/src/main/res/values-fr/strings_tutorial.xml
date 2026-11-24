@@ -118,4 +118,12 @@
     <string name="tutorial_end_replay_kicker">Terminé</string>
     <string name="tutorial_end_replay">C’est tout</string>
     <string name="tutorial_end_replay_note">Tu peux revoir ce tutoriel à tout moment dans Réglages › À propos.</string>
+    <string name="tutorial_windows_back_title">Ton bouton Retour sous Windows</string>
+    <string name="tutorial_windows_back_body">Choisis le rôle de Retour. Désactivé : un appui ouvre le menu du stream, un maintien envoie Guide. Activé : un appui envoie Guide, un maintien ouvre Vue des tâches. Ce choix est enregistré dans ton profil.</string>
+    <string name="tutorial_windows_back_try">Change le réglage ou choisis Continuer</string>
+    <string name="tutorial_windows_back_continue">Continuer</string>
+    <string name="tutorial_stream_guide_only_body">Touche Guide pour ouvrir le menu du stream. Retour est réservé à Game Bar et Vue des tâches sous Windows.</string>
+    <string name="tutorial_stream_guide_only_try">Touche Guide</string>
+    <string name="tutorial_hold_guide_only_body">Maintiens Guide une demi-seconde pour envoyer Guide au PC. Retour utilise les raccourcis Windows.</string>
+    <string name="tutorial_hold_guide_only_try">Maintiens Guide</string>
 </resources>

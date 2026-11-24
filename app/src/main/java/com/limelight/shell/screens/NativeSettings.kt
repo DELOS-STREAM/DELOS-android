@@ -44,6 +44,8 @@ import com.limelight.shell.settings.SettingsHelp
 import com.limelight.shell.settings.Startup
 import com.limelight.shell.settings.OscOpacity
 import com.limelight.shell.settings.StreamMenuSettings
+import com.limelight.shell.settings.rememberBackGameBarValue
+import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.shell.ui.RowValue
 import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.hsl
@@ -112,7 +114,8 @@ internal fun nativeSettings(
     /** [choiceHelp] explains the selected choice of a choice row (see [NativeSettingsHelp.choice]). */
     fun row(key: String, icon: String, title: String, value: RowValue, description: String, enabled: Boolean = true,
             tab: SettingsTab = SettingsTab.APPEARANCE, section: String = interfaceSection, choiceHelp: String = "") {
-        val help = SettingsHelp.description(res, key, description)
+        val help = if (key == "ui_stream_menu_buttons" && settings.getBoolean(PreferenceConfiguration.BACK_GAME_BAR_PREF_STRING, false))
+            description else SettingsHelp.description(res, key, description)
         list += SettingsItem(key, tab, section, icon, title, help, value, enabled,
             NativeSettingsHelp.details(help, value, choiceHelp))
     }
@@ -152,6 +155,10 @@ internal fun nativeSettings(
         res.getString(R.string.settings_native_haptics_description), tab = SettingsTab.CONTROLS)
     row("ui_sounds", Symbols.MUSIC_NOTE, res.getString(R.string.settings_native_sounds_title), RowValue.Toggle(a.sounds) { on -> update { it.copy(sounds = on) } },
         res.getString(R.string.settings_native_sounds_description), tab = SettingsTab.AUDIO)
+    val backGameBar = rememberBackGameBarValue(settings)
+    row(PreferenceConfiguration.BACK_GAME_BAR_PREF_STRING, Symbols.DESKTOP_WINDOWS,
+        res.getString(R.string.settings_back_game_bar_title), backGameBar,
+        res.getString(R.string.settings_back_game_bar_description), tab = SettingsTab.CONTROLS, section = streamMenuSection)
     // None by default (a tap of Guide or Back opens the stream menu, issue #102); the list clears them or records new ones
     val menuButtons = StreamMenuSettings.buttons(settings)
     val recordMenuButtons = { shell.buttonCapture = { buttons -> StreamMenuSettings.setButtons(settings, buttons) } }
@@ -160,7 +167,7 @@ internal fun nativeSettings(
             options = listOf(res.getString(R.string.row_not_set), res.getString(R.string.settings_native_menu_buttons_record)),
             selected = if (menuButtons.isEmpty()) 0 else -1,
             onPick = { i -> if (i == 0) StreamMenuSettings.clearButtons(settings) else recordMenuButtons() }),
-        res.getString(R.string.settings_native_menu_buttons_description),
+        res.getString(if (backGameBar.on) R.string.settings_menu_buttons_guide_only_description else R.string.settings_native_menu_buttons_description),
         tab = SettingsTab.CONTROLS, section = streamMenuSection)
     row("ui_stream_menu_swipe", Symbols.SWIPE_UP, res.getString(R.string.settings_native_menu_swipe_title), RowValue.Toggle(StreamMenuSettings.swipe(settings)) { on ->
         settings.edit().putBoolean(StreamMenuSettings.KEY_SWIPE, on).apply()

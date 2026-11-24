@@ -225,4 +225,7 @@
     <string name="settings_native_main_screen_swapped">Поміняно</string>
     <string name="settings_native_help_main_screen_automatic">Головна — більша панель.</string>
     <string name="settings_native_help_main_screen_swapped">Головна — менша панель.</string>
+    <string name="settings_back_game_bar_title">Назад для Game Bar і подання завдань</string>
+    <string name="settings_back_game_bar_description">Натисни Назад для Guide, утримуй для подання завдань Windows. Guide і далі відкриває меню стриму.</string>
+    <string name="settings_menu_buttons_guide_only_description">Натисни Guide для меню стриму. Також можна записати комбінацію кнопок. Назад використовує сполучення Windows.</string>
 </resources>

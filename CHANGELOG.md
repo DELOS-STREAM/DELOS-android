@@ -12,6 +12,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ### Added
 - **Intro and controls tutorial**: the first launch opens with a short intro: the background slowly rises out of black, the DELOS logo is drawn piece by piece and "Your island. Your gateway to the world of gaming." Then you pick controller or touch and learn the controls in three short chapters (getting around, playing, PlayStation), each lesson on the real menus and waiting for the real button or gesture. It ends with "Let's start" to pair your first device; Settings › About › Replay the welcome plays it all again.
+- **Windows Back shortcuts**: an optional Controls setting makes a Back tap send Guide for Game Bar and a half-second hold open Task View with Win+Tab. Guide still opens the stream menu on a tap and stays pressed on the PC while held; PlayStation streams keep their existing controls. The controller tutorial includes the same saved switch and adapts its Guide lessons when it is enabled.
 
 ### Fixed
 - **Virtual display on Vibepollo and Vibeshine**: with "Use Virtual Display" off, DELOS told the host to use the physical display, which overrode a host set to always stream on a virtual display. DELOS now only asks for a virtual display when the switch is on and otherwise leaves the choice to the host.

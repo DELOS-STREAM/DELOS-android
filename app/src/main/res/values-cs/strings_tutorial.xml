@@ -119,4 +119,12 @@
     <string name="tutorial_end_replay_kicker">Hotovo</string>
     <string name="tutorial_end_replay">To je všechno</string>
     <string name="tutorial_end_replay_note">Průvodce si můžeš kdykoli zopakovat v Nastavení › O aplikaci.</string>
+    <string name="tutorial_windows_back_title">Tvoje tlačítko Zpět ve Windows</string>
+    <string name="tutorial_windows_back_body">Vyber chování Zpět ve Windows. Vypnuto: klepnutí otevře nabídku streamu, podržení pošle Guide. Zapnuto: klepnutí pošle Guide, podržení otevře Task View. Volba se uloží do profilu.</string>
+    <string name="tutorial_windows_back_try">Změň přepínač nebo zvol Pokračovat</string>
+    <string name="tutorial_windows_back_continue">Pokračovat</string>
+    <string name="tutorial_stream_guide_only_body">Klepnutím na Guide otevři nabídku streamu. Zpět je ve Windows vyhrazené pro Game Bar a Task View.</string>
+    <string name="tutorial_stream_guide_only_try">Klepni na Guide</string>
+    <string name="tutorial_hold_guide_only_body">Podrž Guide půl sekundy a pošli jej do PC. Zpět používá zkratky Windows.</string>
+    <string name="tutorial_hold_guide_only_try">Podrž Guide</string>
 </resources>

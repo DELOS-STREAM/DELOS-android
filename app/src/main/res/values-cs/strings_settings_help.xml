@@ -218,4 +218,5 @@
     <string name="stream_help_rumble_feel">Vybere, jak se cítí vibrace z PC, hned a s uložením. Zůstane otevřené: vyber znovu a porovnej. %1$s vrací zpět.</string>
     <string name="stream_help_format_keys">Jednou pošle do PC %1$s a vrátí se do streamu.</string>
     <string name="stream_help_format_command">Hned spustí v PC příkaz %1$s definovaný v PC. Nastavuje se ve Vibepollo nebo Apollo.</string>
+    <string name="help_checkbox_back_game_bar">Jen Windows. Klepnutí na Zpět pošle Guide (Game Bar), podržení 500 ms otevře Task View (Win+Tab). Guide dál otevírá nabídku streamu. PlayStation beze změny.</string>
 </resources>

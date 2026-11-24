@@ -247,4 +247,7 @@
     <string name="settings_native_main_screen_swapped">Getauscht</string>
     <string name="settings_native_help_main_screen_automatic">Hauptbildschirm ist das größere Panel.</string>
     <string name="settings_native_help_main_screen_swapped">Hauptbildschirm ist das kleinere Panel.</string>
+    <string name="settings_back_game_bar_title">Zurück für Game Bar und Task View</string>
+    <string name="settings_back_game_bar_description">Tippe Zurück für Guide; halte es für Task View unter Windows. Guide öffnet weiter das Stream-Menü.</string>
+    <string name="settings_menu_buttons_guide_only_description">Tippe Guide für das Stream-Menü. Du kannst auch eine Tastenkombination festlegen. Zurück nutzt Windows-Kürzel.</string>
 </resources>

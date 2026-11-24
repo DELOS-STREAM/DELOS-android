@@ -57,6 +57,10 @@ import java.util.Map;
 public class ControllerHandler implements InputManager.InputDeviceListener, UsbDriverListener {
 
     private static final int MAXIMUM_BUMPER_UP_DELAY_MS = 100;
+    private static final int GUIDE_TAP_PULSE_MS = 80;
+    private static final short[] TASK_VIEW_KEYS = {
+            (short) KeyboardTranslator.VK_LWIN, (short) KeyboardTranslator.VK_TAB
+    };
 
     private static final int START_DOWN_TIME_MOUSE_MODE_MS = 750;
 
@@ -2686,10 +2690,17 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         TapHoldButton tapHold = context.tapHold(keyCode);
         if (tapHold != null) {
             tapHold.cancelTimer();
+            if (event.isCanceled()) {
+                tapHold.gesture.reset();
+                refreshGuideState(context);
+                return true;
+            }
             switch (tapHold.gesture.onUp()) {
             case GUIDE_UP:
-                context.inputMap &= ~ControllerPacket.SPECIAL_BUTTON_FLAG;
-                sendControllerInputPacket(context);
+                refreshGuideState(context);
+                break;
+            case GUIDE_TAP:
+                tapHold.pulseGuide(context);
                 break;
             case TAP_MENU:
                 gestures.showGameMenu();
@@ -2950,13 +2961,16 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             if (keyCode == KeyEvent.KEYCODE_BUTTON_MODE) {
                 context.hasMode = true;
             }
-            if (tapHold.gesture.onDown(event.getEventTime())) {
+            if (tapHold.gesture.onDown(event.getEventTime(), keyCode == KeyEvent.KEYCODE_BACK
+                    && prefConfig.backGameBar && !(conn instanceof com.limelight.ps.PsConnection))) {
                 final InputDeviceContext ctx = context;
                 tapHold.timer = () -> {
                     tapHold.timer = null;
-                    if (tapHold.gesture.onHoldTimeout(SystemClock.uptimeMillis()) == GuideTapHold.Action.GUIDE_DOWN) {
-                        ctx.inputMap |= ControllerPacket.SPECIAL_BUTTON_FLAG;
-                        sendControllerInputPacket(ctx);
+                    GuideTapHold.Action action = tapHold.gesture.onHoldTimeout(SystemClock.uptimeMillis());
+                    if (action == GuideTapHold.Action.GUIDE_DOWN) {
+                        refreshGuideState(ctx);
+                    } else if (action == GuideTapHold.Action.TASK_VIEW) {
+                        StreamKeyHandler.sendKeys(conn, TASK_VIEW_KEYS);
                     }
                 };
                 mainThreadHandler.postAtTime(tapHold.timer, event.getEventTime() + GuideTapHold.HOLD_MS);
@@ -3352,10 +3366,31 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     }
 
+    /** Preserve Guide while either physical button or the short Back pulse still owns it. */
+    private void refreshGuideState(InputDeviceContext context) {
+        boolean guide = context.guideTapHold.gesture.isGuideDown()
+                || context.backTapHold.gesture.isGuideDown()
+                || context.backTapHold.pulseRelease != null;
+        if (guide) context.inputMap |= ControllerPacket.SPECIAL_BUTTON_FLAG;
+        else context.inputMap &= ~ControllerPacket.SPECIAL_BUTTON_FLAG;
+        sendControllerInputPacket(context);
+    }
+
     /** One Guide/Home or Back button: its tap/hold decision and the hold timer of the current press. */
     final class TapHoldButton {
         final GuideTapHold gesture = new GuideTapHold();
         Runnable timer;
+        Runnable pulseRelease;
+
+        void pulseGuide(InputDeviceContext context) {
+            if (pulseRelease != null) mainThreadHandler.removeCallbacks(pulseRelease);
+            pulseRelease = () -> {
+                pulseRelease = null;
+                refreshGuideState(context);
+            };
+            refreshGuideState(context);
+            mainThreadHandler.postDelayed(pulseRelease, GUIDE_TAP_PULSE_MS);
+        }
 
         void cancelTimer() {
             if (timer != null) {
@@ -3366,6 +3401,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         void forget() {
             cancelTimer();
+            if (pulseRelease != null) {
+                mainThreadHandler.removeCallbacks(pulseRelease);
+                pulseRelease = null;
+            }
             gesture.reset();
         }
     }

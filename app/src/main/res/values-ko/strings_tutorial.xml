@@ -116,4 +116,12 @@
     <string name="tutorial_end_replay_kicker">완료</string>
     <string name="tutorial_end_replay">이제 다 배웠어요</string>
     <string name="tutorial_end_replay_note">설정 › 정보에서 언제든 다시 볼 수 있어요.</string>
+    <string name="tutorial_windows_back_title">Windows의 뒤로 버튼</string>
+    <string name="tutorial_windows_back_body">뒤로 동작을 골라요. 끄면 짧게 눌러 스트림 메뉴, 길게 눌러 Guide를 보내요. 켜면 짧게 눌러 Guide, 길게 눌러 작업 보기를 열어요. 프로필에 저장돼요.</string>
+    <string name="tutorial_windows_back_try">설정을 바꾸거나 계속을 선택하세요</string>
+    <string name="tutorial_windows_back_continue">계속</string>
+    <string name="tutorial_stream_guide_only_body">Guide를 짧게 눌러 스트림 메뉴를 열어요. Windows에서 뒤로는 Game Bar와 작업 보기 전용이에요.</string>
+    <string name="tutorial_stream_guide_only_try">Guide 짧게 누르기</string>
+    <string name="tutorial_hold_guide_only_body">Guide를 0.5초 길게 눌러 PC에 Guide를 보내요. 뒤로는 Windows 단축키로 사용돼요.</string>
+    <string name="tutorial_hold_guide_only_try">Guide 길게 누르기</string>
 </resources>

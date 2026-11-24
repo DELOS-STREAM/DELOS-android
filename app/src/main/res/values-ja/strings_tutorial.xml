@@ -116,4 +116,12 @@
     <string name="tutorial_end_replay_kicker">完了</string>
     <string name="tutorial_end_replay">これで全部です</string>
     <string name="tutorial_end_replay_note">このチュートリアルは設定 › バージョン情報からいつでも見直せます。</string>
+    <string name="tutorial_windows_back_title">Windowsの戻るボタン</string>
+    <string name="tutorial_windows_back_body">戻るの動作を選びます。オフ：短押しでストリームメニュー、長押しでGuide。オン：短押しでGuide、長押しでタスクビューです。この設定はプロフィールに保存されます。</string>
+    <string name="tutorial_windows_back_try">設定を変更するか「続ける」を選択</string>
+    <string name="tutorial_windows_back_continue">続ける</string>
+    <string name="tutorial_stream_guide_only_body">Guideを短く押すとストリームメニューを開きます。Windowsでは戻るはGame Barとタスクビュー用になります。</string>
+    <string name="tutorial_stream_guide_only_try">Guideを短く押す</string>
+    <string name="tutorial_hold_guide_only_body">Guideを0.5秒長押しするとPCにGuideを送信します。戻るはWindowsのショートカット用です。</string>
+    <string name="tutorial_hold_guide_only_try">Guideを長押し</string>
 </resources>

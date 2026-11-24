@@ -222,4 +222,7 @@
     <string name="settings_native_main_screen_swapped">Trocado</string>
     <string name="settings_native_help_main_screen_automatic">A principal é o painel maior.</string>
     <string name="settings_native_help_main_screen_swapped">A principal é o painel menor.</string>
+    <string name="settings_back_game_bar_title">Voltar para Game Bar e Visão de Tarefas</string>
+    <string name="settings_back_game_bar_description">Toque em Voltar para Guide; segure para a Visão de Tarefas no Windows. Guide ainda abre o menu do stream.</string>
+    <string name="settings_menu_buttons_guide_only_description">Toque em Guide para o menu do stream. Você também pode gravar uma combinação de botões. Voltar usa os atalhos do Windows.</string>
 </resources>

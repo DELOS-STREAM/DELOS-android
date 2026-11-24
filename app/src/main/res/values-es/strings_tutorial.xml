@@ -118,4 +118,12 @@
     <string name="tutorial_end_replay_kicker">Todo listo</string>
     <string name="tutorial_end_replay">Eso es todo</string>
     <string name="tutorial_end_replay_note">Puedes repetir este tutorial cuando quieras en Ajustes › Acerca de.</string>
+    <string name="tutorial_windows_back_title">Tu botón Atrás en Windows</string>
+    <string name="tutorial_windows_back_body">Elige qué hace Atrás. Desactivado: tocar abre el menú del stream y mantener envía Guide. Activado: tocar envía Guide y mantener abre Vista de tareas. Se guarda en tu perfil.</string>
+    <string name="tutorial_windows_back_try">Cambia el interruptor o elige Continuar</string>
+    <string name="tutorial_windows_back_continue">Continuar</string>
+    <string name="tutorial_stream_guide_only_body">Toca Guide para abrir el menú del stream. Atrás se reserva para Game Bar y Vista de tareas en Windows.</string>
+    <string name="tutorial_stream_guide_only_try">Toca Guide</string>
+    <string name="tutorial_hold_guide_only_body">Mantén Guide medio segundo para enviarlo al PC. Atrás usa los atajos de Windows.</string>
+    <string name="tutorial_hold_guide_only_try">Mantén Guide</string>
 </resources>

@@ -238,4 +238,7 @@
     <string name="settings_native_main_screen_swapped">Prohozeno</string>
     <string name="settings_native_help_main_screen_automatic">Hlavní je větší panel.</string>
     <string name="settings_native_help_main_screen_swapped">Hlavní je menší panel.</string>
+    <string name="settings_back_game_bar_title">Zpět pro Game Bar a Task View</string>
+    <string name="settings_back_game_bar_description">Klepnutím na Zpět pošli Guide, podržením otevři Task View ve Windows. Guide dál otevírá nabídku streamu.</string>
+    <string name="settings_menu_buttons_guide_only_description">Nabídku streamu otevři tlačítkem Guide. Můžeš přidat vlastní kombinaci tlačítek. Zpět používá zkratky Windows.</string>
 </resources>

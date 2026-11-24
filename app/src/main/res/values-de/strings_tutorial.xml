@@ -117,4 +117,12 @@
     <string name="tutorial_end_replay_kicker">Geschafft</string>
     <string name="tutorial_end_replay">Das war alles</string>
     <string name="tutorial_end_replay_note">Du kannst das Tutorial jederzeit unter Einstellungen › Über erneut ansehen.</string>
+    <string name="tutorial_windows_back_title">Deine Zurück-Taste in Windows</string>
+    <string name="tutorial_windows_back_body">Wähle die Funktion von Zurück. Aus: Tippen öffnet das Stream-Menü, Halten sendet Guide. Ein: Tippen sendet Guide, Halten öffnet Task View. Die Wahl wird im Profil gespeichert.</string>
+    <string name="tutorial_windows_back_try">Ändere den Schalter oder wähle Weiter</string>
+    <string name="tutorial_windows_back_continue">Weiter</string>
+    <string name="tutorial_stream_guide_only_body">Tippe Guide für das Stream-Menü. Zurück ist unter Windows für Game Bar und Task View reserviert.</string>
+    <string name="tutorial_stream_guide_only_try">Tippe Guide</string>
+    <string name="tutorial_hold_guide_only_body">Halte Guide eine halbe Sekunde, um Guide an den PC zu senden. Zurück nutzt die Windows-Kürzel.</string>
+    <string name="tutorial_hold_guide_only_try">Halte Guide gedrückt</string>
 </resources>

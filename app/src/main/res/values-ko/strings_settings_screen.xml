@@ -217,4 +217,7 @@
     <string name="settings_native_main_screen_swapped">교체</string>
     <string name="settings_native_help_main_screen_automatic">큰 패널이 메인 화면이에요.</string>
     <string name="settings_native_help_main_screen_swapped">작은 패널이 메인 화면이에요.</string>
+    <string name="settings_back_game_bar_title">뒤로 버튼으로 Game Bar와 작업 보기</string>
+    <string name="settings_back_game_bar_description">뒤로를 짧게 누르면 Guide, 길게 누르면 Windows 작업 보기를 열어요. Guide는 계속 스트림 메뉴를 열어요.</string>
+    <string name="settings_menu_buttons_guide_only_description">Guide로 스트림 메뉴를 열어요. 버튼 조합도 등록할 수 있어요. 뒤로는 Windows 단축키로 사용돼요.</string>
 </resources>

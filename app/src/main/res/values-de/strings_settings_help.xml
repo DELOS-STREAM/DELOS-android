@@ -232,4 +232,5 @@
     <string name="stream_help_format_keys">Sendet %1$s einmalig an den PC und kehrt dann zum Stream zurück.</string>
     <!-- %1$s: the command name, cut to 35 characters -->
     <string name="stream_help_format_command">Führt den vom Host definierten Befehl %1$s sofort auf dem PC aus. Eingerichtet in Vibepollo oder Apollo.</string>
+    <string name="help_checkbox_back_game_bar">Nur Windows. Zurück tippen: Guide (Game Bar). 500 ms halten: Task View (Win+Tab). Guide öffnet weiter das Stream-Menü. PlayStation bleibt unverändert.</string>
 </resources>

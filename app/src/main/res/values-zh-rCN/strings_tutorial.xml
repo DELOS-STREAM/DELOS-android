@@ -116,4 +116,12 @@
     <string name="tutorial_end_replay_kicker">完成</string>
     <string name="tutorial_end_replay">这就是全部内容</string>
     <string name="tutorial_end_replay_note">你可以随时在设置 › 关于中重新观看教程。</string>
+    <string name="tutorial_windows_back_title">Windows 返回键设置</string>
+    <string name="tutorial_windows_back_body">选择返回键的功能。关闭时，短按打开串流菜单，长按发送 Guide。开启时，短按发送 Guide，长按打开任务视图。此设置保存在配置中。</string>
+    <string name="tutorial_windows_back_try">更改开关或选择继续</string>
+    <string name="tutorial_windows_back_continue">继续</string>
+    <string name="tutorial_stream_guide_only_body">短按 Guide 打开串流菜单。在 Windows 中，返回键用于 Game Bar 和任务视图。</string>
+    <string name="tutorial_stream_guide_only_try">短按 Guide</string>
+    <string name="tutorial_hold_guide_only_body">长按 Guide 半秒，向 PC 发送 Guide。返回键使用 Windows 快捷键。</string>
+    <string name="tutorial_hold_guide_only_try">长按 Guide</string>
 </resources>

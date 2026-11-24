@@ -509,10 +509,15 @@ public final class StreamKeyHandler {
 
     /** Presses the host virtual keys in order and releases them in reverse after a short delay (menu special keys). */
     public void sendKeys(short[] keys) {
+        sendKeys(host.conn(), keys);
+    }
+
+    /** Shared special-key path for menu actions and the optional Windows Back hold. */
+    public static void sendKeys(StreamConnection connection, short[] keys) {
         final byte[] modifier = {(byte) 0};
 
         for (short key : keys) {
-            host.conn().sendKeyboardInput(key, KeyboardPacket.KEY_DOWN, modifier[0], (byte) 0);
+            connection.sendKeyboardInput(key, KeyboardPacket.KEY_DOWN, modifier[0], (byte) 0);
 
             // Apply the modifier of the pressed key, e.g. CTRL first issues a CTRL event (without
             // modifier) and then sends the following keys with the CTRL modifier applied
@@ -526,7 +531,7 @@ public final class StreamKeyHandler {
                 // Remove the keys modifier before releasing the key
                 modifier[0] &= (byte) ~getModifier(key);
 
-                host.conn().sendKeyboardInput(key, KeyboardPacket.KEY_UP, modifier[0], (byte) 0);
+                connection.sendKeyboardInput(key, KeyboardPacket.KEY_UP, modifier[0], (byte) 0);
             }
         }), KEY_UP_DELAY);
     }

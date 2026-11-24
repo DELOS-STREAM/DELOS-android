@@ -117,4 +117,12 @@
     <string name="tutorial_end_replay_kicker">All done</string>
     <string name="tutorial_end_replay">That’s everything</string>
     <string name="tutorial_end_replay_note">You can watch this again any time in Settings › About.</string>
+    <string name="tutorial_windows_back_title">Your Windows Back button</string>
+    <string name="tutorial_windows_back_body">Choose what Back does on Windows. Off: tap opens the stream menu, hold sends Guide. On: tap sends Guide, hold opens Task View. This choice is saved to your profile.</string>
+    <string name="tutorial_windows_back_try">Change the switch or choose Continue</string>
+    <string name="tutorial_windows_back_continue">Continue</string>
+    <string name="tutorial_stream_guide_only_body">Tap Guide to open the stream menu. Back is reserved for Game Bar and Task View on Windows.</string>
+    <string name="tutorial_stream_guide_only_try">Tap Guide</string>
+    <string name="tutorial_hold_guide_only_body">Hold Guide for half a second to send Guide to the PC. Back uses the Windows shortcuts.</string>
+    <string name="tutorial_hold_guide_only_try">Hold Guide</string>
 </resources>

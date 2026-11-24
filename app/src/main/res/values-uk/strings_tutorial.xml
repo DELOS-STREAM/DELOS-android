@@ -119,4 +119,12 @@
     <string name="tutorial_end_replay_kicker">Готово</string>
     <string name="tutorial_end_replay">Це все</string>
     <string name="tutorial_end_replay_note">Навчання можна будь-коли повторити в Налаштування › Про застосунок.</string>
+    <string name="tutorial_windows_back_title">Твоя кнопка Назад у Windows</string>
+    <string name="tutorial_windows_back_body">Вибери дію Назад. Вимкнено: натискання відкриває меню стриму, утримання надсилає Guide. Увімкнено: натискання надсилає Guide, утримання відкриває подання завдань. Вибір зберігається у профілі.</string>
+    <string name="tutorial_windows_back_try">Зміни перемикач або вибери Далі</string>
+    <string name="tutorial_windows_back_continue">Далі</string>
+    <string name="tutorial_stream_guide_only_body">Натисни Guide, щоб відкрити меню стриму. У Windows кнопка Назад призначена для Game Bar і подання завдань.</string>
+    <string name="tutorial_stream_guide_only_try">Натисни Guide</string>
+    <string name="tutorial_hold_guide_only_body">Утримуй Guide пів секунди, щоб надіслати Guide на ПК. Назад використовує сполучення Windows.</string>
+    <string name="tutorial_hold_guide_only_try">Утримуй Guide</string>
 </resources>

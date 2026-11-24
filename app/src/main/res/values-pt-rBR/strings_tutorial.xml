@@ -118,4 +118,12 @@
     <string name="tutorial_end_replay_kicker">Concluído</string>
     <string name="tutorial_end_replay">Isso é tudo</string>
     <string name="tutorial_end_replay_note">Você pode rever este tutorial a qualquer momento em Configurações › Sobre.</string>
+    <string name="tutorial_windows_back_title">Seu botão Voltar no Windows</string>
+    <string name="tutorial_windows_back_body">Escolha a função de Voltar. Desligado: tocar abre o menu do stream, segurar envia Guide. Ligado: tocar envia Guide, segurar abre a Visão de Tarefas. A escolha é salva no perfil.</string>
+    <string name="tutorial_windows_back_try">Mude a opção ou escolha Continuar</string>
+    <string name="tutorial_windows_back_continue">Continuar</string>
+    <string name="tutorial_stream_guide_only_body">Toque em Guide para abrir o menu do stream. No Windows, Voltar fica reservado para Game Bar e Visão de Tarefas.</string>
+    <string name="tutorial_stream_guide_only_try">Toque em Guide</string>
+    <string name="tutorial_hold_guide_only_body">Segure Guide por meio segundo para enviar Guide ao PC. Voltar usa os atalhos do Windows.</string>
+    <string name="tutorial_hold_guide_only_try">Segure Guide</string>
 </resources>

@@ -100,4 +100,53 @@ public class GuideTapHoldTest {
     public void theHoldTimeIsHalfASecond() {
         assertEquals(500, GuideTapHold.HOLD_MS);
     }
+
+    @Test
+    public void windowsBackTapRequestsOneGuidePulseAndNeverTheMenu() {
+        assertTrue(g.onDown(now, true));
+        advance(80);
+        assertEquals(GuideTapHold.Action.GUIDE_TAP, g.onUp());
+        assertFalse(g.isGuideDown());
+        assertEquals(GuideTapHold.Action.NONE, g.onUp());
+        advance(500);
+        assertEquals(GuideTapHold.Action.NONE, g.onHoldTimeout(now));
+    }
+
+    @Test
+    public void windowsBackHoldRequestsTaskViewWhileDownAndNothingOnRelease() {
+        g.onDown(now, true);
+        advance(499);
+        assertEquals(GuideTapHold.Action.NONE, g.onHoldTimeout(now));
+        advance(1);
+        assertEquals(GuideTapHold.Action.TASK_VIEW, g.onHoldTimeout(now));
+        assertFalse(g.isGuideDown());
+        advance(100);
+        assertEquals(GuideTapHold.Action.NONE, g.onHoldTimeout(now));
+        assertEquals(GuideTapHold.Action.NONE, g.onUp());
+    }
+
+    @Test
+    public void repeatCannotChangeTheModeOfAnExistingPress() {
+        g.onDown(now, true);
+        advance(300);
+        assertFalse(g.onDown(now, false));
+        advance(200);
+        assertEquals(GuideTapHold.Action.TASK_VIEW, g.onHoldTimeout(now));
+        assertEquals(GuideTapHold.Action.NONE, g.onUp());
+        g.onDown(now, false);
+        advance(500);
+        assertEquals(GuideTapHold.Action.GUIDE_DOWN, g.onHoldTimeout(now));
+        assertEquals(GuideTapHold.Action.GUIDE_UP, g.onUp());
+    }
+
+    @Test
+    public void resetCancelsWindowsBackWithoutSendingAnything() {
+        g.onDown(now, true);
+        assertFalse(g.reset());
+        advance(500);
+        assertEquals(GuideTapHold.Action.NONE, g.onHoldTimeout(now));
+        assertEquals(GuideTapHold.Action.NONE, g.onUp());
+        g.onDown(now);
+        assertEquals(GuideTapHold.Action.TAP_MENU, g.onUp());
+    }
 }

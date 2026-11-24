@@ -226,4 +226,5 @@
     <string name="stream_help_format_keys">向 PC 发送一次 %1$s，然后返回串流。</string>
     <!-- %1$s: the command name, cut to 35 characters -->
     <string name="stream_help_format_command">立即在 PC 上运行电脑端定义的命令 %1$s。在 Vibepollo 或 Apollo 中设置。</string>
+    <string name="help_checkbox_back_game_bar">仅限 Windows。短按返回发送 Guide（Game Bar），长按 500 毫秒打开任务视图（Win+Tab）。Guide 打开串流菜单。PlayStation 保持不变。</string>
 </resources>

@@ -55,6 +55,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +64,8 @@ import com.limelight.R
 import com.limelight.shell.*
 import com.limelight.shell.ps.PsModeSwitch
 import com.limelight.shell.ui.*
+import com.limelight.shell.data.ProfileStore
+import com.limelight.shell.settings.rememberBackGameBarValue
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.delay
@@ -77,7 +80,7 @@ private enum class Chapter(val title: Int, val note: Int) {
 }
 
 /** What a lesson puts on its stage. */
-private enum class Scene { ROW, COVER, SIDE, SWITCH, NAV, STREAM, HOLD, LEAVE, TRACKPAD, OSC, PS_BUTTONS, PS_TOUCH }
+private enum class Scene { ROW, COVER, SIDE, SWITCH, NAV, STREAM, HOLD, WINDOWS_BACK, LEAVE, TRACKPAD, OSC, PS_BUTTONS, PS_TOUCH }
 
 /**
  * One thing to learn: its chapter, texts, the button(s) or gesture it asks for, and the scene. Controller lessons name pad glyphs,
@@ -96,6 +99,7 @@ private enum class Lesson(
     SWITCH(Chapter.NAVIGATE, R.string.tutorial_switch_title, R.string.tutorial_switch_body, R.string.tutorial_switch_try, Scene.SWITCH, listOf(Glyph.R1)),
     STREAM(Chapter.PLAY, R.string.tutorial_stream_title, R.string.tutorial_stream_body, R.string.tutorial_stream_try, Scene.STREAM, listOf(BACK_BUTTON, GUIDE)),
     HOLD_GUIDE(Chapter.PLAY, R.string.tutorial_hold_title, R.string.tutorial_hold_body, R.string.tutorial_hold_try, Scene.HOLD, listOf(BACK_BUTTON, GUIDE)),
+    WINDOWS_BACK(Chapter.PLAY, R.string.tutorial_windows_back_title, R.string.tutorial_windows_back_body, R.string.tutorial_windows_back_try, Scene.WINDOWS_BACK, listOf(Glyph.A)),
     LEAVE(Chapter.PLAY, R.string.tutorial_leave_title, R.string.tutorial_leave_body, R.string.tutorial_leave_try, Scene.LEAVE, listOf(Glyph.A)),
     PS_BUTTONS(Chapter.PLAYSTATION, R.string.tutorial_ps_buttons_title, R.string.tutorial_ps_buttons_body, R.string.tutorial_ps_buttons_try, Scene.PS_BUTTONS, listOf(Glyph.MENU_LEFT)),
 
@@ -117,7 +121,7 @@ private val BACK_BUTTON = Glyph.Icon(Symbols.ARROW_BACK)
 private val GUIDE = Glyph.Pad(GlyphRole.GUIDE)
 
 private val PAD_LESSONS = listOf(Lesson.MOVE, Lesson.CHOOSE, Lesson.BACK, Lesson.INFO, Lesson.OPTIONS, Lesson.SIDE, Lesson.SWITCH,
-    Lesson.STREAM, Lesson.HOLD_GUIDE, Lesson.LEAVE, Lesson.PS_BUTTONS)
+    Lesson.STREAM, Lesson.HOLD_GUIDE, Lesson.WINDOWS_BACK, Lesson.LEAVE, Lesson.PS_BUTTONS)
 private val TOUCH_LESSONS = listOf(Lesson.SWIPE, Lesson.TAP, Lesson.PULL, Lesson.HOLD, Lesson.EDGE, Lesson.NAV,
     Lesson.STREAM_TOUCH, Lesson.TRACKPAD, Lesson.OSC, Lesson.LEAVE_TOUCH, Lesson.PS_TOUCH)
 
@@ -146,7 +150,7 @@ private const val HOLD_MS = 500L
 /**
  * The tutorial (issue #129, owner 2026-11-24): after the intro and the profile, "How do you play?", then one lesson per page with the
  * app's real elements, each waiting for the real input, chapter cards between, and "Pair your first device" at the end. Everything it
- * changes is local to it: no profile, setting or console mode is touched. [onDone]: Let's start (first launch) or Done (replay).
+ * changes is local except the explicitly labeled Windows Back preference. [onDone]: Let's start (first launch) or Done (replay).
  */
 @Composable
 fun TutorialScreen(screen: Screen.Tutorial, keys: GlobalKeys, onDone: () -> Unit) {
@@ -154,6 +158,9 @@ fun TutorialScreen(screen: Screen.Tutorial, keys: GlobalKeys, onDone: () -> Unit
     val feedback = LocalFeedback.current
     val res = textResources()
     val reduced = LocalReducedMotion.current
+    val context = LocalContext.current
+    val profileSettings = remember(context) { ProfileStore.currentSettings(context) }
+    val windowsBack = rememberBackGameBarValue(profileSettings).on
     var touch by rememberSaveable { mutableStateOf(ControllerGlyphs.kind == InputKind.TOUCH || ControllerGlyphs.kind == InputKind.POINTER) }
     var index by rememberSaveable { mutableIntStateOf(0) }
     var forward by remember { mutableStateOf(true) }
@@ -173,7 +180,7 @@ fun TutorialScreen(screen: Screen.Tutorial, keys: GlobalKeys, onDone: () -> Unit
     val skip: () -> Unit = { feedback.play(Cue.BACK); if (page is Page.Input) go(list.lastIndex) else next() }
 
     // The pad's global buttons are the tutorial's while it runs: Home's side menu, options and filters must not open behind it
-    val handle by rememberUpdatedState<(AndroidKey) -> Boolean>({ event -> handleKey(event, page, lesson, scene, success, complete, skip, next) })
+    val handle by rememberUpdatedState<(AndroidKey) -> Boolean>({ event -> handleKey(event, page, lesson, scene, success, complete, skip, next, windowsBack) })
     DisposableEffect(keys, shell) {
         val listener = keys.listener
         val capture = keys.capture
@@ -229,13 +236,20 @@ fun TutorialScreen(screen: Screen.Tutorial, keys: GlobalKeys, onDone: () -> Unit
                     is Page.Learn -> {
                         val siblings = list.filterIsInstance<Page.Learn>().filter { it.lesson.chapter == shown.lesson.chapter }
                         val position = siblings.indexOfFirst { it.lesson == shown.lesson }
+                        val guideOnly = windowsBack && shown.lesson in listOf(Lesson.STREAM, Lesson.HOLD_GUIDE)
+                        val body = if (guideOnly) {
+                            if (shown.lesson == Lesson.STREAM) R.string.tutorial_stream_guide_only_body else R.string.tutorial_hold_guide_only_body
+                        } else shown.lesson.body
+                        val action = if (guideOnly) {
+                            if (shown.lesson == Lesson.STREAM) R.string.tutorial_stream_guide_only_try else R.string.tutorial_hold_guide_only_try
+                        } else shown.lesson.action
                         TutorialLessonPage(
                             at, stringResource(R.string.tutorial_step, stringResource(shown.lesson.chapter.title), position + 1, siblings.size),
-                            stringResource(shown.lesson.title), stringResource(shown.lesson.body), stringResource(shown.lesson.action),
-                            shown.lesson.glyphs, at == index && success, stringResource(R.string.tutorial_success),
+                            stringResource(shown.lesson.title), stringResource(body), stringResource(action),
+                            if (guideOnly) listOf(GUIDE) else shown.lesson.glyphs, at == index && success, stringResource(R.string.tutorial_success),
                             progress = { TutorialProgress(position, siblings.size) },
                         ) {
-                            LessonScene(shown.lesson, scene, at == index && success, complete)
+                            LessonScene(shown.lesson, scene, at == index && success, complete, profileSettings, windowsBack)
                             val ghost = shown.lesson.ghost
                             if (ghost != null && !(at == index && success)) GhostFinger(ghost, Modifier.matchParentSize())
                         }
@@ -283,7 +297,7 @@ private class SceneState(menuOpen: Boolean) {
 }
 
 /** The tutorial's own key handling (keys.capture): true consumes the event. */
-private fun handleKey(event: AndroidKey, page: Page, lesson: Lesson?, scene: SceneState, success: Boolean, complete: () -> Unit, skip: () -> Unit, next: () -> Unit): Boolean {
+private fun handleKey(event: AndroidKey, page: Page, lesson: Lesson?, scene: SceneState, success: Boolean, complete: () -> Unit, skip: () -> Unit, next: () -> Unit, windowsBack: Boolean): Boolean {
     val up = event.action == AndroidKey.ACTION_UP && event.repeatCount == 0 && !event.isCanceled
     val down = event.action == AndroidKey.ACTION_DOWN && event.repeatCount == 0
     when (event.keyCode) {
@@ -307,6 +321,7 @@ private fun handleKey(event: AndroidKey, page: Page, lesson: Lesson?, scene: Sce
         AndroidKey.KEYCODE_BACK, AndroidKey.KEYCODE_BUTTON_MODE -> {
             // The stream lessons take Back and Guide as the stream does: a tap opens the menu, a hold is Guide
             if (lesson != Lesson.STREAM && lesson != Lesson.HOLD_GUIDE) return false
+            if (windowsBack && event.keyCode == AndroidKey.KEYCODE_BACK) return true
             if (down) scene.holdSince = event.downTime
             if (up) {
                 val held = event.eventTime - event.downTime
@@ -362,13 +377,24 @@ private fun InputPage(touch: Boolean, onPick: (Boolean) -> Unit) {
 
 /** The lesson's element on its stage, wired to the real input. */
 @Composable
-private fun BoxScope.LessonScene(lesson: Lesson, scene: SceneState, success: Boolean, complete: () -> Unit) {
+private fun BoxScope.LessonScene(lesson: Lesson, scene: SceneState, success: Boolean, complete: () -> Unit, prefs: android.content.SharedPreferences, windowsBack: Boolean) {
     val stage = LocalStage.current
     val density = LocalDensity.current
     val k = stage.dpPerPx * density.density
     val scope = rememberCoroutineScope()
     val res = textResources()
     when (lesson.scene) {
+        Scene.WINDOWS_BACK -> {
+            val focus = remember { FocusRequester() }
+            InitialFocus(focus)
+            val toggle = rememberBackGameBarValue(prefs, complete)
+            Column(Modifier.align(Alignment.Center).fillMaxWidth(.90f).widthIn(max = 1100.px),
+                verticalArrangement = Arrangement.spacedBy(24.px)) {
+                SettingRow(Symbols.DESKTOP_WINDOWS, stringResource(R.string.settings_back_game_bar_title),
+                    toggle, Modifier.focusRequester(focus), description = stringResource(R.string.settings_back_game_bar_description))
+                SettingRow(Symbols.CHECK_CIRCLE, stringResource(R.string.tutorial_windows_back_continue), RowValue.Action(complete))
+            }
+        }
         Scene.ROW, Scene.COVER -> CoverRow(lesson, scene, success, complete)
         Scene.SIDE -> {
             // A strip of covers, as on Home; the side menu itself is the shell's (above the page)
@@ -403,7 +429,7 @@ private fun BoxScope.LessonScene(lesson: Lesson, scene: SceneState, success: Boo
                     withFrameNanos { }
                 }
             }
-            HoldRing({ scene.hold }, Modifier.align(Alignment.Center))
+            HoldRing({ scene.hold }, Modifier.align(Alignment.Center), windowsBack)
             androidx.compose.animation.AnimatedVisibility(scene.guideSent || success, Modifier.align(Alignment.TopCenter).padding(top = 40.px),
                 enter = fadeIn() + slideInVertically { -it }) {
                 Chip(Symbols.CHECK_CIRCLE, stringResource(R.string.tutorial_guide_sent), TutorialGreen)
@@ -591,7 +617,7 @@ private fun Panel(content: @Composable ColumnScope.() -> Unit) {
 
 /** The ring that fills while Back or Guide is held, around the button. */
 @Composable
-private fun HoldRing(hold: () -> Float, modifier: Modifier) {
+private fun HoldRing(hold: () -> Float, modifier: Modifier, guideOnly: Boolean) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
     Box(modifier.size(170.px), contentAlignment = Alignment.Center) {
@@ -602,7 +628,10 @@ private fun HoldRing(hold: () -> Float, modifier: Modifier) {
             val p = hold()
             if (p > 0f) drawArc(colors.accent, -90f, 360f * p, false, topLeft = Offset(w, w), size = androidx.compose.ui.geometry.Size(size.width - 2 * w, size.height - 2 * w), style = Stroke(w))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.px), verticalAlignment = Alignment.CenterVertically) { GlyphButton(BACK_BUTTON, 44); GlyphButton(GUIDE, 44) }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.px), verticalAlignment = Alignment.CenterVertically) {
+            if (!guideOnly) GlyphButton(BACK_BUTTON, 44)
+            GlyphButton(GUIDE, 44)
+        }
     }
 }
 
