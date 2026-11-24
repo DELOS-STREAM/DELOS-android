@@ -219,24 +219,47 @@ private fun AnimatedLogo(time: () -> Float, scale: Float) {
             // Landed dust winds back and springs out with the logo
             val rr = r * (if (p >= 1f) bump else 1f)
             var pos = center + Offset((kotlin.math.cos(deg) * rr).toFloat(), (kotlin.math.sin(deg) * rr).toFloat())
+            // Depth, as in the PlayStation background's layers (owner: scattered, in parallax): 0 is far, 1 near. On the way the
+            // dust is spread as a loose cloud round its path, the near motes swinging wider and faster than the far ones; both
+            // close onto the mote's place on the ring as it lands
+            val z = hash(i, 9)
+            val loose = (1f - p).pow(1.3f)
+            val home2 = center + Offset((kotlin.math.cos(Math.toRadians(targetDeg.toDouble())) * home).toFloat(), (kotlin.math.sin(Math.toRadians(targetDeg.toDouble())) * home).toFloat())
+            if (p < 1f) {
+                pos = home2 + (pos - home2) * (1f + (z - .45f) * 1.1f * loose)
+                pos += Offset((hash(i, 10) - .5f) * radius * 3.4f, (hash(i, 11) - .5f) * radius * 2.6f) * (loose * (.5f + z))
+            }
             var fade = (p / .12f).coerceAtMost(1f) * (.75f + .25f * kotlin.math.sin(t * (.004f + .006f * r2) + r3 * 6.28f))
             if (front > 0f) {
-                // Carried out by the shockwave, each at its own share of the front's speed, fading on the way
+                // Carried out by the shockwave, the near motes faster than the far ones, fading on the way
                 val dir = Math.toRadians(targetDeg.toDouble())
-                val out = (Shockwave.radius(wave, window.width.toFloat(), window.height.toFloat()) - radius) * (.55f + .5f * r4)
+                val out = (Shockwave.radius(wave, window.width.toFloat(), window.height.toFloat()) - radius) * (.4f + .35f * r4 + .6f * z)
                 pos += Offset((kotlin.math.cos(dir) * out).toFloat(), (kotlin.math.sin(dir) * out).toFloat())
                 fade *= 1f - ((t - IntroTimeline.SHOCK) / DUST_GONE_MS).coerceIn(0f, 1f)
             }
             if (fade <= 0f) continue
-            // Mostly fine specks, a few larger and brighter with an orange glow (owner); the glow is a plain faint disc, not a
-            // gradient, so there is no shader per mote per frame
+            // Mostly fine sharp near-white specks; the near ones larger and brighter with an orange glow (owner), the far ones
+            // small and dim; a few faint soft blue ones and rare four-point glints, as in the PlayStation background. Glows are
+            // plain faint discs, not gradients, so there is no shader per mote per frame
             val grain = hash(i, 6)
-            val warm = r4 < .3f
-            val core = if (warm) colors.accent else androidx.compose.ui.graphics.lerp(colors.accent, Color.White, .6f + .35f * hash(i, 7))
-            val dotR = stroke * (.035f + .17f * grain.pow(3f))
-            val bright = fade * (.45f + .55f * hash(i, 8)) * (.6f + .4f * grain)
-            if (grain > .45f) drawCircle(colors.accent.copy(alpha = .16f * bright), radius = dotR * 4.5f, center = pos, blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
+            val blue = hash(i, 12) < .07f
+            val warm = !blue && r4 < .3f
+            val core = when {
+                blue -> androidx.compose.ui.graphics.lerp(colors.accent2, Color.White, .3f)
+                warm -> colors.accent
+                else -> androidx.compose.ui.graphics.lerp(colors.accent, Color.White, .6f + .35f * hash(i, 7))
+            }
+            val dotR = stroke * (.03f + .15f * grain.pow(3f)) * (.55f + 1.1f * z) * (if (blue) 1.6f else 1f)
+            val bright = fade * (.45f + .55f * hash(i, 8)) * (.6f + .4f * grain) * (.4f + .6f * z) * (if (blue) .5f else 1f)
+            if (blue || z > .6f && grain > .35f) drawCircle((if (blue) core else colors.accent).copy(alpha = .15f * bright), radius = dotR * 4.5f, center = pos,
+                blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
             drawCircle(core.copy(alpha = bright.coerceAtMost(1f)), radius = dotR, center = pos, blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
+            if (!blue && hash(i, 13) > .975f) {
+                val arm = dotR * 7f
+                val glint = core.copy(alpha = .55f * bright)
+                drawLine(glint, pos - Offset(arm, 0f), pos + Offset(arm, 0f), strokeWidth = dotR * .5f, blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
+                drawLine(glint, pos - Offset(0f, arm), pos + Offset(0f, arm), strokeWidth = dotR * .5f, blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
+            }
         }
         // The solid ring, drawn round behind the landing dust, clockwise from the lower left; it stays after the pulse
         val solid = ((t - IntroTimeline.RING - 450f) / RING_FILL_MS).coerceIn(0f, 1f)
@@ -279,10 +302,10 @@ private fun AnimatedLogo(time: () -> Float, scale: Float) {
 }
 
 /** How many motes gather into the ring. */
-private const val RING_MOTES = 460
+private const val RING_MOTES = 800
 
 /** How many sparks fly off at the burst, how long the longest lives, and the air's braking (per millisecond). */
-private const val SPARKS = 240
+private const val SPARKS = 400
 private const val SPARK_MAX_MS = 2600f
 private const val SPARK_DRAG = .0028f
 
