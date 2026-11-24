@@ -91,6 +91,8 @@ import com.limelight.shell.screens.appArt
 import com.limelight.shell.screens.step
 import com.limelight.shell.settings.Appearance
 import com.limelight.shell.settings.StartupStore
+import com.limelight.shell.settings.TutorialStore
+import com.limelight.shell.settings.TutorialStart
 import com.limelight.shell.system.rememberBatteryStatus
 import com.limelight.shell.system.rememberClock
 import com.limelight.shell.system.rememberWifiStatus
@@ -245,9 +247,20 @@ fun Shell(
     val profiles = previewProfiles ?: storedProfiles
     val startup by startupStore.startup.collectAsStateWithLifecycle()
     val pcs by repo.pcs.collectAsStateWithLifecycle()
+    val tutorialStore = remember(appContext) { TutorialStore(appContext) }
+    // Capture stream entry before the link/result effects consume it. Deferral lasts this shell session.
+    val tutorialDeferred = remember {
+        links.value is ShellLink.Launch || results.value != null ||
+            shell.launch != null || shell.portal != null || shell.result != null
+    }
 
-    // "Skip the start screen": straight into the default device
+    // Offer the new tutorial before normal startup; keep automatic connection until its return.
     LaunchedEffect(Unit) {
+        if (previewProfiles == null && TutorialStart.shouldShow(
+                tutorialStore.seen, profiles.all.isNotEmpty(), tutorialDeferred)) {
+            shell.navigate(Screen.Tutorial(back = shell.screen, replay = true))
+            snapshotFlow { shell.screen }.first { it !is Screen.Tutorial }
+        }
         val start = startupStore.startup.value
         val default = start.defaultPc
         if (shell.screen == Screen.Start && start.skipStart && default != null) {
@@ -836,6 +849,7 @@ fun Shell(
                             onSkip = pcs.filter { it.paired }.let { paired ->
                                 if (paired.isEmpty()) null else {
                                     {
+                                        tutorialStore.markSeen()
                                         profileStore.create(res.getString(R.string.shell_default_profile_name), AVATARS.indexOfFirst { it.name == "Player" }.coerceAtLeast(0)) // l10n-ignore
                                         devices.connect(paired.firstOrNull { it.online } ?: paired.first())
                                     }
@@ -860,6 +874,7 @@ fun Shell(
                             }
                         }
                         is Screen.Tutorial -> com.limelight.shell.screens.TutorialScreen(screen, keys) {
+                            tutorialStore.markSeen()
                             shell.navigate(if (screen.replay) screen.back ?: Screen.Settings else if (pcs.any { it.paired }) Screen.Start else Screen.PairPc(back = Screen.Start))
                         }
                         is Screen.PairPc -> PairPcScreen(screen, pcs, startup.defaultPc)

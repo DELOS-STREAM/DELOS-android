@@ -66,6 +66,7 @@ import com.limelight.shell.ps.PsModeSwitch
 import com.limelight.shell.ui.*
 import com.limelight.shell.data.ProfileStore
 import com.limelight.shell.settings.rememberBackGameBarValue
+import com.limelight.shell.settings.TutorialStore
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.delay
@@ -159,6 +160,7 @@ fun TutorialScreen(screen: Screen.Tutorial, keys: GlobalKeys, onDone: () -> Unit
     val res = textResources()
     val reduced = LocalReducedMotion.current
     val context = LocalContext.current
+    val tutorialStore = remember(context) { TutorialStore(context) }
     val profileSettings = remember(context) { ProfileStore.currentSettings(context) }
     val windowsBack = rememberBackGameBarValue(profileSettings).on
     var touch by rememberSaveable { mutableStateOf(ControllerGlyphs.kind == InputKind.TOUCH || ControllerGlyphs.kind == InputKind.POINTER) }
@@ -166,6 +168,7 @@ fun TutorialScreen(screen: Screen.Tutorial, keys: GlobalKeys, onDone: () -> Unit
     var forward by remember { mutableStateOf(true) }
     val list = remember(touch, screen.replay) { pages(touch, screen.replay) }
     val page = list[index.coerceIn(list.indices)]
+    LaunchedEffect(page) { if (page is Page.End) tutorialStore.markSeen() }
     val go: (Int) -> Unit = { to -> forward = to > index; index = to.coerceIn(list.indices) }
     val next = { go(index + 1) }
     // Per page: whether the lesson is done, and the bits of state its scene shows
@@ -177,7 +180,13 @@ fun TutorialScreen(screen: Screen.Tutorial, keys: GlobalKeys, onDone: () -> Unit
     LaunchedEffect(index, touch) { if (page is Page.Opening) { delay(2600); if (list[index] == page) next() } }
 
     val scene = remember(index, touch) { SceneState(lesson?.scene == Scene.COVER && lesson == Lesson.BACK) }
-    val skip: () -> Unit = { feedback.play(Cue.BACK); if (page is Page.Input) go(list.lastIndex) else next() }
+    val skip: () -> Unit = {
+        feedback.play(Cue.BACK)
+        if (page is Page.Input) {
+            tutorialStore.markSeen()
+            go(list.lastIndex)
+        } else next()
+    }
 
     // The pad's global buttons are the tutorial's while it runs: Home's side menu, options and filters must not open behind it
     val handle by rememberUpdatedState<(AndroidKey) -> Boolean>({ event -> handleKey(event, page, lesson, scene, success, complete, skip, next, windowsBack) })
@@ -197,9 +206,9 @@ fun TutorialScreen(screen: Screen.Tutorial, keys: GlobalKeys, onDone: () -> Unit
             lesson == Lesson.STREAM_TOUCH && !success -> { scene.stream = true; complete() }
             scene.menu -> scene.menu = false
             scene.side -> scene.side = false
-            page is Page.Intro -> shell.navigate(screen.back ?: Screen.Settings)
+            page is Page.Intro -> { tutorialStore.markSeen(); shell.navigate(screen.back ?: Screen.Settings) }
             index > (if (screen.replay) 1 else 0) -> { feedback.play(Cue.BACK); go(index - 1) }
-            screen.replay -> shell.navigate(screen.back ?: Screen.Settings)
+            screen.replay -> { tutorialStore.markSeen(); shell.navigate(screen.back ?: Screen.Settings) }
         }
     }
 
