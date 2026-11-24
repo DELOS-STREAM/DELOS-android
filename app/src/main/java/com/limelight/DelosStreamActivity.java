@@ -1822,6 +1822,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
                 connected = true;
                 connecting = false;
                 windowController.updatePipAutoEnter();
+                // Delos: the PC learns the connected controllers now, not on their first press (owner, 2026-11-24): Windows
+                // announces a new controller, and that first press (Back held for Task View) used to be lost to it
+                if (controllerHandler != null) controllerHandler.announceConnectedControllers();
 
                 // Hide the mouse cursor now after a short delay.
                 // Doing it before dismissing the spinner seems to be undone
@@ -2050,6 +2053,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     @Override
     @SuppressLint("MissingSuperCall") // Delos: consume Back; the superclass would finish the stream.
     public void onBackPressed() {
+        LimeLog.info("System Back: opens the stream menu");
         // Delos: Back cancels the loader while it shows, else it opens the stream menu
         if (isLoaderCancellable()) {
             cancelLoader();

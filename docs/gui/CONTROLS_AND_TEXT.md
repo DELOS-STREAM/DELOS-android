@@ -36,7 +36,7 @@ During a stream ([STREAM_MENU.md](STREAM_MENU.md#22-ownership-and-entry-points))
 |---|---|
 | **Tap of Guide/Home or Back** (default) | Opens the **stream menu**; nothing is sent to the PC. |
 | **Hold of Guide/Home or Back** (500 ms, default) | Sends **Guide** to the PC while held (Steam overlay, Game Bar). |
-| **Back for Game Bar and Task View** (Settings → Controls, off by default) | On PC streams, Back tap sends an 80 ms Guide pulse; Back hold sends Win+Tab after 500 ms, while still held. Guide/Home keeps its default mapping. PlayStation streams ignore this switch. |
+| **Back for Game Bar and Task View** (Settings → Controls, off by default) | On PC streams, Back tap sends an 80 ms Guide pulse; Back hold sends Win+Tab after 300 ms, while still held. Guide/Home keeps its default mapping. PlayStation streams ignore this switch. |
 | **Own stream menu buttons** (Settings → Controls → Stream menu, none by default) | Pressed together, open or close the stream menu. L3 + R3 is no longer the default. |
 
 ### Context menu button

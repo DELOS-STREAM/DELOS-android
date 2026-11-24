@@ -89,9 +89,16 @@ fun StartScreen(profiles: Profiles, store: ProfileStore, pcs: List<Pc>, startup:
     // The PC the focus is on, for the companion screen's card of it (null on the "Pair a new PC" circle: the welcome or fallback card shows)
     var focusedUuid by remember { mutableStateOf<String?>(null) }
     PublishCompanionPc(paired.firstOrNull { it.uuid == focusedUuid }, PcContext.START, startup.defaultPc)
-    // L1 / R1 switch between the PCs and the PlayStation consoles (prototype F), through the shell's shoulder hook
+    // PC | PlayStation: L1 / R1 (through the shell's shoulder hook, prototype F) or a tap on a tab; a change sounds like a Settings tab
+    val feedback = LocalFeedback.current
+    val switchMode: (Boolean) -> Unit = { on ->
+        if (on != com.limelight.shell.ps.PsMode.active.value) {
+            feedback.play(Cue.MOVE)
+            com.limelight.shell.ps.PsMode.set(on)
+        }
+    }
     androidx.compose.runtime.DisposableEffect(shell) {
-        val handler: (Int) -> Unit = { dir -> com.limelight.shell.ps.PsMode.set(dir > 0) }
+        val handler: (Int) -> Unit = { dir -> switchMode(dir > 0) }
         shell.onShoulder = handler
         onDispose { if (shell.onShoulder === handler) shell.onShoulder = null }
     }
@@ -105,7 +112,7 @@ fun StartScreen(profiles: Profiles, store: ProfileStore, pcs: List<Pc>, startup:
         }
         // PC | PlayStation as a tab row with its L1 / R1 badges at the sides, the same component and motion as the Settings tabs; on a full
         // stage it is centred on the status bar's line (the bar is 104 px, the row 66), on a compact one under the bar
-        com.limelight.shell.ps.PsModeSwitch(playStation, { com.limelight.shell.ps.PsMode.set(it) },
+        com.limelight.shell.ps.PsModeSwitch(playStation, switchMode,
             y = stage.safe.top + if (compact) Compact.STATUS_BAR + 12f else (104f - SettingsLayout.TABS_HEIGHT) / 2f)
         if (playStation) {
             com.limelight.shell.ps.PsStartContent(profiles.current?.name)

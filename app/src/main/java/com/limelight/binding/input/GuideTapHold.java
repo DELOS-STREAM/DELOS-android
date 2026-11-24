@@ -12,6 +12,14 @@ public final class GuideTapHold {
     /** How long the button must be held to become Guide. */
     public static final int HOLD_MS = 500;
 
+    /** How long Back must be held in the Windows Back mode to be Task View: shorter (owner, 2026-11-24), a tap stays well under it. */
+    public static final int WINDOWS_HOLD_MS = 300;
+
+    /** The hold time of the press in progress. */
+    public int holdMs() {
+        return windowsBack ? WINDOWS_HOLD_MS : HOLD_MS;
+    }
+
     /** What the controller handler does for an edge or the timer. */
     public enum Action {
         /** Nothing now (the press is still undecided, or the edge belongs to no press). */
@@ -52,7 +60,7 @@ public final class GuideTapHold {
 
     /** The hold timer fired at {@code nowMs}; a timer that runs early, late after a release or twice does nothing. */
     public Action onHoldTimeout(long nowMs) {
-        if (!down || decided || nowMs - downAt < HOLD_MS) return Action.NONE;
+        if (!down || decided || nowMs - downAt < holdMs()) return Action.NONE;
         decided = true;
         if (windowsBack) return Action.TASK_VIEW;
         guide = true;

@@ -83,7 +83,6 @@ Each records what was researched or measured on one day. It is not edited afterw
 | `tools/icon/` | The launcher icon generator ([gui/START_AND_HOME.md](gui/START_AND_HOME.md#1-android-launcher-identity)) |
 | `tools/avatars/` | The profile avatar importer ([gui/START_AND_HOME.md](gui/START_AND_HOME.md#3-profile-avatars)) |
 | `tools/artwork/` | The generator of the bundled app artwork |
-| `tools/sounds/` | `make_ui_sounds.py`: the generator of the interface sounds |
 | `tools/layout/` | Scripts that drive the debug previews through screen shapes on an emulator ([gui/SCREEN_SHAPES.md](gui/SCREEN_SHAPES.md)) |
 | `tools/pyrowave/` | The vendor script and patches of the PyroWave source ([THIRD_PARTY.md](THIRD_PARTY.md)) |
 | `tools/versioning/` | `create-tags.sh`: the tags of the reconstructed 0.x versions ([VERSIONING.md](VERSIONING.md)) |

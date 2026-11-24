@@ -18,7 +18,7 @@ import com.limelight.R
 enum class Cue { MOVE, SELECT, BACK, OPEN, ERROR }
 
 /**
- * UI sounds (tools/sounds/make_ui_sounds.py, the prototype's blips), the intro's sound track and
+ * UI sounds (res/raw: Open Sounds by Romain Raynal, see docs/CREDITS.md), the intro's sound track and
  * haptics. Created by the activity, released in onDestroy.
  */
 class Feedback(context: Context) {

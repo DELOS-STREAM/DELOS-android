@@ -115,7 +115,7 @@ public class GuideTapHoldTest {
     @Test
     public void windowsBackHoldRequestsTaskViewWhileDownAndNothingOnRelease() {
         g.onDown(now, true);
-        advance(499);
+        advance(GuideTapHold.WINDOWS_HOLD_MS - 1);
         assertEquals(GuideTapHold.Action.NONE, g.onHoldTimeout(now));
         advance(1);
         assertEquals(GuideTapHold.Action.TASK_VIEW, g.onHoldTimeout(now));
