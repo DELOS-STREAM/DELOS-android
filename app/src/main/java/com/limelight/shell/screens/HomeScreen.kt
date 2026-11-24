@@ -346,7 +346,15 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
     val home = remember(stage.stageWidth, stage.stageHeight, stage.shape, stage.safe, uiScale) {
         if (stage.compact) HomeCompact.layout(stage.stageWidth, stage.stageHeight, uiScale, stage.safe.top, stage.safe.bottom) else null
     }
-    val covers = remember(home) { if (home != null) CoverGeometry(home.coverScale, HomeCompact.rowStart(home.coverScale)) else StandardCovers }
+    // A wide stage lower than 1080 (2205 x 1015 for a 2608 x 1200 phone) has less room under the standard row than a 450 px cover: the
+    // row squeezed the covers' height and left their width, so they turned square (Reddit, 2026-11-24). They shrink whole instead
+    val covers = remember(home, stage.stageHeight, uiScale) {
+        if (home != null) CoverGeometry(home.coverScale, HomeCompact.rowStart(home.coverScale))
+        else {
+            val fit = (stage.stageHeight - HomeStandard.rowTop(uiScale) - HomeStandard.ROW_PAD - STANDARD_ROW_BOTTOM) / HomeCompact.COVER_HEIGHT
+            if (fit >= 1f) StandardCovers else CoverGeometry(fit.coerceAtLeast(HomeCompact.HARD_FLOOR), 150f)
+        }
+    }
     // The focused game's streaming time (docs/GUI.md): the stat block is always there, an app never streamed shows 0 hours and Never
     val resumes = rememberResumes()
     val playtime = rememberPlaytime(profileStore, pc.uuid, focused.id, resumes)
@@ -601,7 +609,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                 // from the left one
                 contentPadding = PaddingValues(
                     start = covers.start.px, end = covers.endPadding.px, top = (if (compact) COMPACT_ROW_PAD else HomeStandard.ROW_PAD).px,
-                    bottom = (if (home != null) stage.stageHeight - home.coverBottom else 110f).px,
+                    bottom = (if (home != null) stage.stageHeight - home.coverBottom else STANDARD_ROW_BOTTOM).px,
                 ),
                 horizontalArrangement = Arrangement.spacedBy(covers.gap.px),
             ) {
@@ -777,6 +785,9 @@ private class CoverGeometry(val scale: Float, val start: Float) {
 
 /** The prototype's covers: a compact stage has its own ([HomeCompact]). */
 private val StandardCovers = CoverGeometry(1f, 150f)
+
+/** The room under the standard row's covers: the focused cover's glow (about 110 px under a 450 px cover) is never cut. */
+private const val STANDARD_ROW_BOTTOM = 110f
 
 /** A wrap round the row glides over the last this many covers (the rest is a quick jump). */
 private const val WRAP_GLIDE_ITEMS = 12
