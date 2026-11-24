@@ -82,7 +82,8 @@ internal fun WelcomeIntro(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
         }
     }
     // Read when pressed: the tap handler outlives this composition
-    val press by androidx.compose.runtime.rememberUpdatedState<() -> Unit>({ if (time >= IntroTimeline.PROMPT) onBegin() else time = IntroTimeline.PROMPT })
+    // The intro always plays to the end (owner): A or a tap only begin once the prompt is there
+    val press by androidx.compose.runtime.rememberUpdatedState<() -> Unit>({ if (time >= IntroTimeline.PROMPT) onBegin() })
     val focus = remember { FocusRequester() }
     InitialFocus(focus)
     Box(
