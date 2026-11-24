@@ -198,6 +198,11 @@ fun appArt(pc: Pc, app: App, image: androidx.compose.ui.graphics.ImageBitmap? = 
         BundledArtwork.Kind.REMOTE_INPUT -> Symbols.REMOTE_INPUT
         BundledArtwork.Kind.REMOTE_MONITOR -> Symbols.REMOTE_MONITOR
         BundledArtwork.Kind.STEAM_BIG_PICTURE -> Symbols.STEAM
+        BundledArtwork.Kind.VIRTUAL_DISPLAY -> Symbols.VIRTUAL_DISPLAY_APP
+        BundledArtwork.Kind.TERMINATE -> Symbols.TERMINATE_APP
+        BundledArtwork.Kind.RESUME -> Symbols.RESUME_APP
+        BundledArtwork.Kind.DISCONNECT -> Symbols.DISCONNECT_APP
+        BundledArtwork.Kind.PLAYNITE, BundledArtwork.Kind.XBOX -> Symbols.LAUNCHER_APP
         null -> Symbols.SPORTS_ESPORTS
     }
     return GameArt("${pc.uuid}/${app.id}", hue, (hue + 35f) % 360f, icon, image, animated)
