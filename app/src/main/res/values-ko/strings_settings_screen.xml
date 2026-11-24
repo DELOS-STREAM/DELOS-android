@@ -141,7 +141,7 @@
     <string name="settings_native_based_title">기반</string>
     <string name="settings_native_based_description">GPLv3 라이선스의 오픈 소스 게임 스트리밍이에요.</string>
     <string name="settings_native_welcome_title">환영 화면 다시 보기</string>
-    <string name="settings_native_welcome_description">환영 화면을 다시 열어요. 프로필과 페어링된 PC는 그대로 유지돼요.</string>
+    <string name="settings_native_welcome_description">인트로와 조작 튜토리얼을 다시 재생해요. 프로필과 페어링된 PC는 그대로 유지돼요.</string>
     <string name="settings_native_diag_logs_title">진단 로그 보관</string>
     <string name="settings_native_diag_logs_description">문제 신고에 쓸 수 있도록 Delos의 동작을 짧게 기록해 둬요. 직접 공유하지 않는 한 이 기기에만 남아요.</string>
     <string name="settings_native_igdb_title">게임 메타데이터 · IGDB</string>

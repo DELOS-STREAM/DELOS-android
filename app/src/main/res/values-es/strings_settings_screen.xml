@@ -144,7 +144,7 @@
     <string name="settings_native_based_title">Basado en</string>
     <string name="settings_native_based_description">Streaming de juegos de código abierto, con licencia GPLv3.</string>
     <string name="settings_native_welcome_title">Repetir la bienvenida</string>
-    <string name="settings_native_welcome_description">Vuelve a abrir la pantalla de bienvenida. Los perfiles y los PC emparejados se conservan.</string>
+    <string name="settings_native_welcome_description">Reproduce de nuevo la introducción y el tutorial de controles. Los perfiles y los PC emparejados se conservan.</string>
     <string name="settings_native_diag_logs_title">Conservar registros de diagnóstico</string>
     <string name="settings_native_diag_logs_description">Guarda un pequeño registro de lo que ha hecho Delos, para informar de un problema. Se queda en este dispositivo salvo que lo compartas.</string>
     <string name="settings_native_igdb_title">Metadatos de juegos · IGDB</string>

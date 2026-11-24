@@ -66,6 +66,9 @@ sealed interface Screen {
     /** First launch: the logo and "Get started" (also replayed from the settings, then B returns there). */
     data class Boot(override val back: Screen? = null) : Screen
 
+    /** Guided practice after profile creation; replay returns to About without pairing. */
+    data class Tutorial(override val back: Screen?, val replay: Boolean) : Screen
+
     /** Creating a profile, or choosing another avatar for the current one ([editing]). */
     data class CreateProfile(val editing: Boolean, override val back: Screen?) : Screen
 

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The intro and the first-run tutorial (issue #129). "DELOS" is never translated or inflected. -->
+    <string name="tutorial_welcome">Вітаємо в</string>
+    <string name="tutorial_press_a">Натисни A або</string>
+    <string name="tutorial_tap_screen">торкнися екрана, щоб почати</string>
+
+    <string name="tutorial_input_kicker">Почнімо</string>
+    <string name="tutorial_input">Як ти граєш?</string>
+    <string name="tutorial_input_note">Покажемо керування для твого способу гри. Навчання можна будь-коли повторити в Налаштування › Про застосунок.</string>
+    <string name="tutorial_controller">Геймпад</string>
+    <string name="tutorial_controller_note">Геймпад або вбудоване керування портативної консолі</string>
+    <string name="tutorial_controller_connected">Підключено</string>
+    <string name="tutorial_touch">Дотик</string>
+    <string name="tutorial_touch_note">Лише пальці на екрані</string>
+    <string name="tutorial_skip_all">Пропустити навчання</string>
+    <string name="tutorial_skip">Пропустити</string>
+    <string name="tutorial_continue">Продовжити</string>
+    <string name="tutorial_success">Чудово!</string>
+
+    <string name="tutorial_chapter_label">Розділ %1$d</string>
+    <plurals name="tutorial_chapter_lessons">
+        <item quantity="one">%d короткий урок</item>
+        <item quantity="few">%d короткі уроки</item>
+        <item quantity="many">%d коротких уроків</item>
+        <item quantity="other">%d короткого уроку</item>
+    </plurals>
+    <string name="tutorial_step">%1$s · %2$d з %3$d</string>
+    <string name="tutorial_chapter_navigate">Навігація</string>
+    <string name="tutorial_chapter_navigate_note">Твоя бібліотека, меню та налаштування.</string>
+    <string name="tutorial_chapter_play">Гра</string>
+    <string name="tutorial_chapter_play_note">Що знадобиться під час стріму гри.</string>
+    <string name="tutorial_chapter_ps">PlayStation</string>
+    <string name="tutorial_chapter_ps_note">Під час стріму з PlayStation дещо працює інакше.</string>
+
+    <string name="tutorial_move_title">Переміщення</string>
+    <string name="tutorial_move_body">Хрестовина або лівий стік переміщує між іграми та всіма меню. Виділена гра — це твій поточний вибір.</string>
+    <string name="tutorial_move_try">Натисни праворуч</string>
+    <string name="tutorial_choose_title">Вибір гри</string>
+    <string name="tutorial_choose_body">A запускає виділену гру або відкриває вибраний елемент: кнопку, налаштування чи пункт меню.</string>
+    <string name="tutorial_choose_try">Натисни A</string>
+    <string name="tutorial_back_title">Крок назад</string>
+    <string name="tutorial_back_body">B завжди повертає на крок назад. Закриває меню й сторінки та скасовує запуск гри, яка ще запускається.</string>
+    <string name="tutorial_back_try">Натисни B, щоб закрити меню</string>
+    <string name="tutorial_info_title">Інформація про гру</string>
+    <string name="tutorial_info_body">Натисни вниз на грі, щоб відкрити її огляд: час гри, подробиці, знімки екрана та відео.</string>
+    <string name="tutorial_info_try">Натисни вниз</string>
+    <string name="tutorial_options_title">Параметри</string>
+    <string name="tutorial_options_body">Права кнопка меню відкриває параметри виділеної гри: закрити запущену гру, змінити зображення, задати окремі налаштування або приховати.</string>
+    <string name="tutorial_options_try">Натисни праву кнопку меню</string>
+    <string name="tutorial_side_title">Бічне меню</string>
+    <string name="tutorial_side_body">Ліва кнопка меню відкриває бічне меню: вигляд застосунку DELOS, звуки та всі налаштування.</string>
+    <string name="tutorial_side_try">Натисни ліву кнопку меню</string>
+    <string name="tutorial_switch_title">ПК і PlayStation</string>
+    <string name="tutorial_switch_body">На початковому екрані L1 та R1 перемикають між твоїми ПК і PlayStation.</string>
+    <string name="tutorial_switch_try">Натисни R1</string>
+    <string name="tutorial_stream_title">Меню стріму</string>
+    <string name="tutorial_stream_body">Під час гри коротко натисни Назад або Guide, щоб відкрити меню стріму: клавіатуру, оверлей продуктивності, бітрейт, апскейлер тощо. Гра не отримає це натискання.</string>
+    <string name="tutorial_stream_try">Коротко натисни Назад або Guide</string>
+    <string name="tutorial_hold_title">Утримуй для Guide</string>
+    <string name="tutorial_hold_body">Утримуй Назад або Guide пів секунди, щоб надіслати на ПК кнопку Guide: для оверлею Steam або Game Bar.</string>
+    <string name="tutorial_hold_try">Утримуй Назад або Guide</string>
+    <string name="tutorial_guide_sent">Guide надіслано на ПК</string>
+    <string name="tutorial_leave_title">Відключитись чи закрити</string>
+    <string name="tutorial_leave_body">Відключитись залишає гру запущеною на ПК, тож ти зможеш повернутися пізніше. Закрити застосунок закриває гру на ПК без запитання.</string>
+    <string name="tutorial_leave_try">Вибери Відключитись</string>
+    <string name="tutorial_leave_touch_try">Торкнися Відключитись</string>
+    <string name="tutorial_leave_disconnect">Гра далі працює на ПК</string>
+    <string name="tutorial_leave_quit">Закрити застосунок закриває гру на ПК</string>
+    <string name="tutorial_ps_buttons_title">Кнопки PlayStation</string>
+    <string name="tutorial_ps_buttons_body">Портативна консоль не має сенсорної панелі чи кнопки Створити. У стрімі з PlayStation їх замінюють Select і Назад.</string>
+    <string name="tutorial_ps_buttons_try">Коротко натисни Select</string>
+    <string name="tutorial_ps_select_tap">Коротко натисни Select</string>
+    <string name="tutorial_ps_select_hold">Утримуй Select</string>
+    <string name="tutorial_ps_back_hold">Утримуй Назад</string>
+
+    <string name="tutorial_swipe_title">Перегляд</string>
+    <string name="tutorial_swipe_body">Проведи по ряду, щоб переглянути свої ігри.</string>
+    <string name="tutorial_swipe_try">Проведи по ряду</string>
+    <string name="tutorial_tap_body">Перший дотик вибирає гру, другий — запускає її. Випадковий дотик нічого не запустить.</string>
+    <string name="tutorial_tap_try">Торкнися вибраної гри</string>
+    <string name="tutorial_pull_body">Потягни гру вгору, щоб відкрити її огляд: час гри, подробиці, знімки екрана та відео.</string>
+    <string name="tutorial_pull_try">Потягни гру вгору</string>
+    <string name="tutorial_hold_touch_body">Торкнися гри й утримуй, щоб відкрити її параметри: закрити запущену гру, змінити зображення, задати окремі налаштування або приховати.</string>
+    <string name="tutorial_hold_touch_try">Торкнися гри й утримуй</string>
+    <string name="tutorial_edge_body">Проведи від лівого краю екрана всередину, щоб відкрити бічне меню: вигляд застосунку DELOS, звуки та всі налаштування.</string>
+    <string name="tutorial_edge_try">Проведи від лівого краю</string>
+    <string name="tutorial_nav_title">Верхня панель</string>
+    <string name="tutorial_nav_body">Кнопки вгорі відкривають налаштування, профіль і твої ПК.</string>
+    <string name="tutorial_nav_try">Торкнися кнопки</string>
+    <string name="tutorial_stream_touch_body">Під час гри проведи вгору від нижнього краю або скористайся жестом Назад на телефоні, щоб відкрити меню стріму.</string>
+    <string name="tutorial_stream_touch_try">Проведи знизу вгору</string>
+    <string name="tutorial_trackpad_title">Використання як миші</string>
+    <string name="tutorial_trackpad_body">Для настільних застосунків установи Режим сенсорного екрана на Трекпад у меню стріму: палець рухає курсор, як на ноутбуці, а дотик виконує клацання.</string>
+    <string name="tutorial_trackpad_try">Вибери Трекпад</string>
+    <string name="tutorial_osc_title">Екранні елементи керування</string>
+    <string name="tutorial_osc_body">Немає геймпада? Увімкни Екранні елементи керування в меню стріму, щоб показати геймпад поверх гри. Кожну кнопку можна переміщувати та змінювати її розмір.</string>
+    <string name="tutorial_osc_try">Увімкнути</string>
+    <string name="tutorial_ps_touch_title">Сенсорна панель</string>
+    <string name="tutorial_ps_touch_body">У стрімі з PlayStation твій екран стає сенсорною панеллю DualSense: проводь і торкайся, як на геймпаді.</string>
+    <string name="tutorial_ps_touch_try">Проведи по сенсорній панелі або торкнися її</string>
+
+    <string name="tutorial_game">Твоя гра</string>
+    <string name="tutorial_starting">Запуск…</string>
+    <string name="tutorial_info_played">Зіграно 12 годин · востаннє вчора</string>
+    <string name="tutorial_info_tag_adventure">Пригоди</string>
+    <string name="tutorial_info_tag_media">12 знімків екрана</string>
+    <string name="tutorial_menu_status">Готово до гри</string>
+    <string name="tutorial_menu_artwork">Зображення</string>
+    <string name="tutorial_menu_settings">Налаштування гри</string>
+    <string name="tutorial_menu_hide">Приховати</string>
+    <string name="tutorial_side_theme">Тема</string>
+    <string name="tutorial_side_sounds">Звуки</string>
+
+    <string name="tutorial_end_kicker">Усе готово</string>
+    <string name="tutorial_end">Сполучи перший пристрій</string>
+    <string name="tutorial_end_note">Підключи ПК із Vibepollo, Apollo чи Sunshine або свою PlayStation.</string>
+    <string name="tutorial_start">Почати</string>
+    <string name="tutorial_end_replay_kicker">Готово</string>
+    <string name="tutorial_end_replay">Це все</string>
+    <string name="tutorial_end_replay_note">Навчання можна будь-коли повторити в Налаштування › Про застосунок.</string>
+</resources>

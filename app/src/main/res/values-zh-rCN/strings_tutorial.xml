@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The intro and the first-run tutorial (issue #129). "DELOS" is never translated or inflected. -->
+    <string name="tutorial_welcome">欢迎来到</string>
+    <string name="tutorial_press_a">按 A 或</string>
+    <string name="tutorial_tap_screen">轻触屏幕开始</string>
+
+    <string name="tutorial_input_kicker">开始上手</string>
+    <string name="tutorial_input">你习惯怎样玩？</string>
+    <string name="tutorial_input_note">我们会介绍适合你的操作方式。你可以随时在设置 › 关于中重新观看教程。</string>
+    <string name="tutorial_controller">手柄</string>
+    <string name="tutorial_controller_note">游戏手柄或掌机内置按键</string>
+    <string name="tutorial_controller_connected">已连接</string>
+    <string name="tutorial_touch">触控</string>
+    <string name="tutorial_touch_note">只需用手指操作屏幕</string>
+    <string name="tutorial_skip_all">跳过教程</string>
+    <string name="tutorial_skip">跳过</string>
+    <string name="tutorial_continue">继续</string>
+    <string name="tutorial_success">太棒了！</string>
+
+    <string name="tutorial_chapter_label">第 %1$d 章</string>
+    <plurals name="tutorial_chapter_lessons">
+        <item quantity="other">%d 节简短教程</item>
+    </plurals>
+    <string name="tutorial_step">%1$s · %2$d / %3$d</string>
+    <string name="tutorial_chapter_navigate">基本导航</string>
+    <string name="tutorial_chapter_navigate_note">了解游戏库、菜单和设置。</string>
+    <string name="tutorial_chapter_play">游玩中</string>
+    <string name="tutorial_chapter_play_note">游戏串流时需要的操作。</string>
+    <string name="tutorial_chapter_ps">PlayStation</string>
+    <string name="tutorial_chapter_ps_note">从 PlayStation 串流时，部分操作会有所不同。</string>
+
+    <string name="tutorial_move_title">移动选择</string>
+    <string name="tutorial_move_body">用方向键或左摇杆在游戏和各个菜单中移动。高亮的游戏就是当前选中的游戏。</string>
+    <string name="tutorial_move_try">按右方向键</string>
+    <string name="tutorial_choose_title">选择游戏</string>
+    <string name="tutorial_choose_body">A 可以启动高亮的游戏，或打开当前选中的按钮、设置和菜单项。</string>
+    <string name="tutorial_choose_try">按 A</string>
+    <string name="tutorial_back_title">返回</string>
+    <string name="tutorial_back_body">B 始终返回上一步。它可以关闭菜单和页面，也能取消正在启动的游戏。</string>
+    <string name="tutorial_back_try">按 B 关闭菜单</string>
+    <string name="tutorial_info_title">游戏信息</string>
+    <string name="tutorial_info_body">选中游戏后按下方向键，可以查看概览：游玩时长、详情、截图和视频。</string>
+    <string name="tutorial_info_try">按下方向键</string>
+    <string name="tutorial_options_title">选项</string>
+    <string name="tutorial_options_body">右侧菜单键可以打开高亮游戏的选项：退出正在运行的游戏、更换图片素材、单独设置或隐藏游戏。</string>
+    <string name="tutorial_options_try">按右侧菜单键</string>
+    <string name="tutorial_side_title">侧边菜单</string>
+    <string name="tutorial_side_body">左侧菜单键可以打开侧边菜单：DELOS 外观、音效和全部设置。</string>
+    <string name="tutorial_side_try">按左侧菜单键</string>
+    <string name="tutorial_switch_title">PC 和 PlayStation</string>
+    <string name="tutorial_switch_body">在启动页，用 L1 和 R1 在你的 PC 和 PlayStation 之间切换。</string>
+    <string name="tutorial_switch_try">按 R1</string>
+    <string name="tutorial_stream_title">串流菜单</string>
+    <string name="tutorial_stream_body">游玩时短按返回键或 Guide，打开串流菜单：键盘、性能浮层、码率、超分等功能都在这里。游戏不会收到这次按键。</string>
+    <string name="tutorial_stream_try">短按返回键或 Guide</string>
+    <string name="tutorial_hold_title">长按发送 Guide</string>
+    <string name="tutorial_hold_body">长按返回键或 Guide 半秒，即可向 PC 发送 Guide 按键，打开 Steam 浮层或 Game Bar。</string>
+    <string name="tutorial_hold_try">长按返回键或 Guide</string>
+    <string name="tutorial_guide_sent">已向 PC 发送 Guide</string>
+    <string name="tutorial_leave_title">断开或退出</string>
+    <string name="tutorial_leave_body">断开会让游戏继续在 PC 上运行，方便你稍后回来。退出应用会直接关闭 PC 上的游戏，不再询问。</string>
+    <string name="tutorial_leave_try">选择断开</string>
+    <string name="tutorial_leave_touch_try">轻触断开</string>
+    <string name="tutorial_leave_disconnect">游戏会继续在 PC 上运行</string>
+    <string name="tutorial_leave_quit">退出应用会关闭 PC 上的游戏</string>
+    <string name="tutorial_ps_buttons_title">PlayStation 按键</string>
+    <string name="tutorial_ps_buttons_body">掌机没有触摸板或 创建 按键。在 PlayStation 串流中，选择键和返回键会代替它们。</string>
+    <string name="tutorial_ps_buttons_try">短按选择键</string>
+    <string name="tutorial_ps_select_tap">短按选择键</string>
+    <string name="tutorial_ps_select_hold">长按选择键</string>
+    <string name="tutorial_ps_back_hold">长按返回键</string>
+
+    <string name="tutorial_swipe_title">浏览</string>
+    <string name="tutorial_swipe_body">滑动游戏行即可浏览你的游戏。</string>
+    <string name="tutorial_swipe_try">滑动游戏行</string>
+    <string name="tutorial_tap_body">第一次轻触选中游戏，再次轻触才会启动。误触一次不会启动任何游戏。</string>
+    <string name="tutorial_tap_try">轻触选中的游戏</string>
+    <string name="tutorial_pull_body">将游戏向上拖动，即可查看概览：游玩时长、详情、截图和视频。</string>
+    <string name="tutorial_pull_try">将游戏向上拖动</string>
+    <string name="tutorial_hold_touch_body">长按游戏可以打开选项：退出正在运行的游戏、更换图片素材、单独设置或隐藏游戏。</string>
+    <string name="tutorial_hold_touch_try">长按游戏</string>
+    <string name="tutorial_edge_body">从屏幕左边缘向内滑动，打开侧边菜单：DELOS 外观、音效和全部设置。</string>
+    <string name="tutorial_edge_try">从左边缘向内滑动</string>
+    <string name="tutorial_nav_title">顶部栏</string>
+    <string name="tutorial_nav_body">顶部按钮可以打开设置、个人资料和你的 PC。</string>
+    <string name="tutorial_nav_try">轻触按钮</string>
+    <string name="tutorial_stream_touch_body">游玩时从底部边缘向上滑动，或使用手机的返回手势，即可打开串流菜单。</string>
+    <string name="tutorial_stream_touch_try">从底部向上滑动</string>
+    <string name="tutorial_trackpad_title">当作鼠标使用</string>
+    <string name="tutorial_trackpad_body">使用桌面应用时，在串流菜单中将触摸屏模式设为触控板：像笔记本电脑一样用手指移动光标，轻触即可点击。</string>
+    <string name="tutorial_trackpad_try">选择触控板</string>
+    <string name="tutorial_osc_title">屏幕按键</string>
+    <string name="tutorial_osc_body">手边没有手柄？在串流菜单中开启屏幕按键，即可在游戏上方显示虚拟手柄。每个按钮都能移动和调整大小。</string>
+    <string name="tutorial_osc_try">开启屏幕按键</string>
+    <string name="tutorial_ps_touch_title">触摸板</string>
+    <string name="tutorial_ps_touch_body">在 PlayStation 串流中，屏幕就是 DualSense 触摸板：像使用手柄一样滑动和轻触。</string>
+    <string name="tutorial_ps_touch_try">滑动或轻触触摸板</string>
+
+    <string name="tutorial_game">你的游戏</string>
+    <string name="tutorial_starting">启动中…</string>
+    <string name="tutorial_info_played">已玩 12 小时 · 上次游玩：昨天</string>
+    <string name="tutorial_info_tag_adventure">冒险</string>
+    <string name="tutorial_info_tag_media">12 张截图</string>
+    <string name="tutorial_menu_status">准备就绪</string>
+    <string name="tutorial_menu_artwork">图片素材</string>
+    <string name="tutorial_menu_settings">游戏设置</string>
+    <string name="tutorial_menu_hide">隐藏</string>
+    <string name="tutorial_side_theme">主题</string>
+    <string name="tutorial_side_sounds">音效</string>
+
+    <string name="tutorial_end_kicker">准备好了</string>
+    <string name="tutorial_end">配对你的第一台设备</string>
+    <string name="tutorial_end_note">连接运行 Vibepollo、Apollo 或 Sunshine 的 PC，或你的 PlayStation。</string>
+    <string name="tutorial_start">开始吧</string>
+    <string name="tutorial_end_replay_kicker">完成</string>
+    <string name="tutorial_end_replay">这就是全部内容</string>
+    <string name="tutorial_end_replay_note">你可以随时在设置 › 关于中重新观看教程。</string>
+</resources>

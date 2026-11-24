@@ -141,7 +141,7 @@
     <string name="settings_native_based_title">ベース</string>
     <string name="settings_native_based_description">GPLv3でライセンスされた、オープンソースのゲームストリーミングです。</string>
     <string name="settings_native_welcome_title">ウェルカム画面を再表示</string>
-    <string name="settings_native_welcome_description">ウェルカム画面をもう一度開きます。プロフィールとペアリング済みのPCは保持されます。</string>
+    <string name="settings_native_welcome_description">イントロと操作チュートリアルをもう一度再生します。プロフィールとペアリング済みのPCは保持されます。</string>
     <string name="settings_native_diag_logs_title">診断ログを保存</string>
     <string name="settings_native_diag_logs_description">問題報告用に、Delosの動作の小さなログを保存します。共有しない限り、この端末から出ることはありません。</string>
     <string name="settings_native_igdb_title">ゲームのメタデータ · IGDB</string>

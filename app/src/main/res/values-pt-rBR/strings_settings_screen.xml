@@ -144,7 +144,7 @@
     <string name="settings_native_based_title">Baseado em</string>
     <string name="settings_native_based_description">Transmissão de jogos de código aberto, licenciada sob a GPLv3.</string>
     <string name="settings_native_welcome_title">Rever as boas-vindas</string>
-    <string name="settings_native_welcome_description">Abre a tela de boas-vindas novamente. Perfis e PCs pareados são mantidos.</string>
+    <string name="settings_native_welcome_description">Reproduz a introdução e o tutorial de controles novamente. Perfis e PCs pareados são mantidos.</string>
     <string name="settings_native_diag_logs_title">Manter logs de diagnóstico</string>
     <string name="settings_native_diag_logs_description">Guarda um pequeno log do que o app Delos fez, para um relatório de problema. Fica neste dispositivo, a menos que você o compartilhe.</string>
     <string name="settings_native_igdb_title">Metadados dos jogos · IGDB</string>

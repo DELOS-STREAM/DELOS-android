@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The intro and the first-run tutorial (issue #129). "DELOS" is never translated or inflected. -->
+    <string name="tutorial_welcome">Boas-vindas ao</string>
+    <string name="tutorial_press_a">Pressione A ou</string>
+    <string name="tutorial_tap_screen">toque na tela para começar</string>
+
+    <string name="tutorial_input_kicker">Vamos começar</string>
+    <string name="tutorial_input">Como você joga?</string>
+    <string name="tutorial_input_note">Vamos mostrar os comandos para o seu jeito de jogar. Você pode rever este tutorial a qualquer momento em Configurações › Sobre.</string>
+    <string name="tutorial_controller">Controle</string>
+    <string name="tutorial_controller_note">Um controle ou os comandos integrados de um portátil</string>
+    <string name="tutorial_controller_connected">Conectado</string>
+    <string name="tutorial_touch">Toque</string>
+    <string name="tutorial_touch_note">Só os dedos na tela</string>
+    <string name="tutorial_skip_all">Pular o tutorial</string>
+    <string name="tutorial_skip">Pular</string>
+    <string name="tutorial_continue">Continuar</string>
+    <string name="tutorial_success">Boa!</string>
+
+    <string name="tutorial_chapter_label">Capítulo %1$d</string>
+    <plurals name="tutorial_chapter_lessons">
+        <item quantity="one">%d lição curta</item>
+        <item quantity="many">%d lições curtas</item>
+        <item quantity="other">%d lições curtas</item>
+    </plurals>
+    <string name="tutorial_step">%1$s · %2$d de %3$d</string>
+    <string name="tutorial_chapter_navigate">Navegação</string>
+    <string name="tutorial_chapter_navigate_note">Sua biblioteca, os menus e as configurações.</string>
+    <string name="tutorial_chapter_play">Jogando</string>
+    <string name="tutorial_chapter_play_note">O que você precisa durante a transmissão de um jogo.</string>
+    <string name="tutorial_chapter_ps">PlayStation</string>
+    <string name="tutorial_chapter_ps_note">Algumas coisas funcionam de outro jeito ao transmitir do seu PlayStation.</string>
+
+    <string name="tutorial_move_title">Navegar</string>
+    <string name="tutorial_move_body">O direcional ou o analógico esquerdo navega entre seus jogos e por todos os menus. O jogo em destaque é o que está selecionado.</string>
+    <string name="tutorial_move_try">Pressione para a direita</string>
+    <string name="tutorial_choose_title">Escolher um jogo</string>
+    <string name="tutorial_choose_body">A inicia o jogo em destaque ou abre o que estiver selecionado: um botão, uma configuração ou um item do menu.</string>
+    <string name="tutorial_choose_try">Pressione A</string>
+    <string name="tutorial_back_title">Voltar</string>
+    <string name="tutorial_back_body">B sempre volta uma etapa. Ele fecha menus e páginas e cancela um jogo que ainda está iniciando.</string>
+    <string name="tutorial_back_try">Pressione B para fechar o menu</string>
+    <string name="tutorial_info_title">Informações do jogo</string>
+    <string name="tutorial_info_body">Pressione para baixo em um jogo para abrir o resumo: tempo jogado, detalhes, capturas de tela e vídeos.</string>
+    <string name="tutorial_info_try">Pressione para baixo</string>
+    <string name="tutorial_options_title">Opções</string>
+    <string name="tutorial_options_body">O botão de menu direito abre as opções do jogo em destaque: encerrar o jogo em execução, mudar a arte, definir configurações próprias ou ocultá-lo.</string>
+    <string name="tutorial_options_try">Pressione o botão de menu direito</string>
+    <string name="tutorial_side_title">Menu lateral</string>
+    <string name="tutorial_side_body">O botão de menu esquerdo abre o menu lateral: a aparência do app DELOS, os sons e todas as configurações.</string>
+    <string name="tutorial_side_try">Pressione o botão de menu esquerdo</string>
+    <string name="tutorial_switch_title">PC e PlayStation</string>
+    <string name="tutorial_switch_body">Na tela inicial, L1 e R1 alternam entre seus PCs e seu PlayStation.</string>
+    <string name="tutorial_switch_try">Pressione R1</string>
+    <string name="tutorial_stream_title">O menu do stream</string>
+    <string name="tutorial_stream_body">Enquanto joga, pressione brevemente Voltar ou Guide para abrir o menu do stream: teclado, overlay de desempenho, bitrate, upscaler e mais. O jogo não recebe esse comando.</string>
+    <string name="tutorial_stream_try">Pressione brevemente Voltar ou Guide</string>
+    <string name="tutorial_hold_title">Segure para enviar Guide</string>
+    <string name="tutorial_hold_body">Segure Voltar ou Guide por meio segundo para enviar o botão Guide ao PC: o overlay do Steam ou a Game Bar.</string>
+    <string name="tutorial_hold_try">Segure Voltar ou Guide</string>
+    <string name="tutorial_guide_sent">Guide enviado ao PC</string>
+    <string name="tutorial_leave_title">Desconectar ou sair</string>
+    <string name="tutorial_leave_body">Desconectar deixa o jogo rodando no PC para você voltar depois. Sair do app fecha o jogo no PC sem perguntar.</string>
+    <string name="tutorial_leave_try">Escolha Desconectar</string>
+    <string name="tutorial_leave_touch_try">Toque em Desconectar</string>
+    <string name="tutorial_leave_disconnect">O jogo continua rodando no PC</string>
+    <string name="tutorial_leave_quit">Sair do app fecha o jogo no PC</string>
+    <string name="tutorial_ps_buttons_title">Botões do PlayStation</string>
+    <string name="tutorial_ps_buttons_body">Um portátil não tem touchpad nem botão Criar. Em um stream do PlayStation, Select e Voltar fazem esse papel.</string>
+    <string name="tutorial_ps_buttons_try">Pressione brevemente Select</string>
+    <string name="tutorial_ps_select_tap">Pressione brevemente Select</string>
+    <string name="tutorial_ps_select_hold">Segure Select</string>
+    <string name="tutorial_ps_back_hold">Segure Voltar</string>
+
+    <string name="tutorial_swipe_title">Explorar</string>
+    <string name="tutorial_swipe_body">Deslize a fileira para percorrer seus jogos.</string>
+    <string name="tutorial_swipe_try">Deslize a fileira</string>
+    <string name="tutorial_tap_body">O primeiro toque seleciona um jogo; o segundo inicia. Um toque sem querer nunca inicia nada.</string>
+    <string name="tutorial_tap_try">Toque no jogo selecionado</string>
+    <string name="tutorial_pull_body">Arraste um jogo para cima para abrir o resumo: tempo jogado, detalhes, capturas de tela e vídeos.</string>
+    <string name="tutorial_pull_try">Arraste o jogo para cima</string>
+    <string name="tutorial_hold_touch_body">Toque e segure um jogo para abrir suas opções: encerrar o jogo em execução, mudar a arte, definir configurações próprias ou ocultá-lo.</string>
+    <string name="tutorial_hold_touch_try">Toque e segure o jogo</string>
+    <string name="tutorial_edge_body">Deslize da borda esquerda para dentro para abrir o menu lateral: a aparência do app DELOS, os sons e todas as configurações.</string>
+    <string name="tutorial_edge_try">Deslize a partir da borda esquerda</string>
+    <string name="tutorial_nav_title">Barra superior</string>
+    <string name="tutorial_nav_body">Os botões no topo abrem suas configurações, seu perfil e seus PCs.</string>
+    <string name="tutorial_nav_try">Toque em um botão</string>
+    <string name="tutorial_stream_touch_body">Enquanto joga, deslize da borda inferior para cima ou use o gesto Voltar do celular para abrir o menu do stream.</string>
+    <string name="tutorial_stream_touch_try">Deslize de baixo para cima</string>
+    <string name="tutorial_trackpad_title">Usar como mouse</string>
+    <string name="tutorial_trackpad_body">Para apps de desktop, defina Modo da tela touch como Trackpad no menu do stream: o dedo move o cursor como em um notebook, e um toque clica.</string>
+    <string name="tutorial_trackpad_try">Escolha Trackpad</string>
+    <string name="tutorial_osc_title">Controles na tela</string>
+    <string name="tutorial_osc_body">Está sem controle? Ative Controles na tela no menu do stream para exibir um controle sobre o jogo. Você pode mover e redimensionar cada botão.</string>
+    <string name="tutorial_osc_try">Ativar</string>
+    <string name="tutorial_ps_touch_title">O touchpad</string>
+    <string name="tutorial_ps_touch_body">Em um stream do PlayStation, a tela é o touchpad do DualSense: deslize e toque como faria no controle.</string>
+    <string name="tutorial_ps_touch_try">Deslize ou toque no touchpad</string>
+
+    <string name="tutorial_game">Seu jogo</string>
+    <string name="tutorial_starting">Iniciando…</string>
+    <string name="tutorial_info_played">12 horas jogadas · última vez ontem</string>
+    <string name="tutorial_info_tag_adventure">Aventura</string>
+    <string name="tutorial_info_tag_media">12 capturas de tela</string>
+    <string name="tutorial_menu_status">Pronto para jogar</string>
+    <string name="tutorial_menu_artwork">Arte</string>
+    <string name="tutorial_menu_settings">Configurações do jogo</string>
+    <string name="tutorial_menu_hide">Ocultar</string>
+    <string name="tutorial_side_theme">Tema</string>
+    <string name="tutorial_side_sounds">Sons</string>
+
+    <string name="tutorial_end_kicker">Tudo pronto</string>
+    <string name="tutorial_end">Pareie seu primeiro dispositivo</string>
+    <string name="tutorial_end_note">Conecte um PC com Vibepollo, Apollo ou Sunshine, ou seu PlayStation.</string>
+    <string name="tutorial_start">Começar</string>
+    <string name="tutorial_end_replay_kicker">Concluído</string>
+    <string name="tutorial_end_replay">Isso é tudo</string>
+    <string name="tutorial_end_replay_note">Você pode rever este tutorial a qualquer momento em Configurações › Sobre.</string>
+</resources>

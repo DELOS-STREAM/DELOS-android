@@ -160,7 +160,7 @@
     <string name="settings_native_based_title">Basiert auf</string>
     <string name="settings_native_based_description">Open-Source-Spielestreaming unter der GPLv3.</string>
     <string name="settings_native_welcome_title">Willkommen erneut ansehen</string>
-    <string name="settings_native_welcome_description">Öffnet den Willkommensbildschirm erneut. Profile und gekoppelte PCs bleiben erhalten.</string>
+    <string name="settings_native_welcome_description">Spielt das Intro und das Steuerungs-Tutorial erneut ab. Profile und gekoppelte PCs bleiben erhalten.</string>
     <string name="settings_native_diag_logs_title">Diagnoseprotokolle behalten</string>
     <string name="settings_native_diag_logs_description">Führt ein kleines Protokoll darüber, was Delos getan hat, für einen Problembericht. Bleibt auf diesem Gerät, außer du teilst es.</string>
     <string name="settings_native_igdb_title">Spiel-Metadaten · IGDB</string>

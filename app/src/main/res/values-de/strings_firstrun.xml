@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- First launch: the boot screen and the new / edit profile page -->
-    <string name="firstrun_boot_tagline">Deine PC-Spiele, per Vibepollo direkt in deine Hände gestreamt</string>
-    <string name="firstrun_boot_begin">Los geht’s</string>
+    <string name="firstrun_boot_tagline">Deine Insel. Dein Tor zur Welt des Gamings.</string>
     <string name="firstrun_boot_skip">Weiter zur Startseite</string>
     <string name="firstrun_create_new_title">Wer spielt?</string>
     <string name="firstrun_create_new_note">Wähle einen Avatar und einen Namen für dein Profil.</string>

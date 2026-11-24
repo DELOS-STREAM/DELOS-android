@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="firstrun_boot_tagline">Твої ігри з ПК, які стрімить Vibepollo, просто в руках</string>
-    <string name="firstrun_boot_begin">Почати</string>
+    <string name="firstrun_boot_tagline">Твій острів. Твої ворота у світ ігор.</string>
     <string name="firstrun_boot_skip">Перейти на головну</string>
     <string name="firstrun_create_new_title">Хто грає?</string>
     <string name="firstrun_create_new_note">Обери аватар та ім’я для свого профілю.</string>

@@ -96,6 +96,7 @@ internal object ScreenPreviews {
             "stream_exit" -> shellPreview(ShellRoute(after = { it.shell.portal = PORTAL }) { Screen.Home })
             "boot" -> shellPreview(ShellRoute { Screen.Boot() })
             "create_profile" -> shellPreview(ShellRoute { Screen.CreateProfile(editing = false, back = Screen.Boot()) })
+            "tutorial" -> shellPreview(ShellRoute { Screen.Tutorial(back = Screen.Settings, replay = true) })
             "pair_pc" -> shellPreview(ShellRoute { Screen.PairPc(back = Screen.Start) })
             "loader" -> loaderPreview
             "loader_ps" -> { { PlayStationLoaderPreview() } }

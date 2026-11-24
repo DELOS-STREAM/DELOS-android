@@ -136,7 +136,7 @@
     <string name="settings_native_based_title">Basé sur</string>
     <string name="settings_native_based_description">Streaming de jeux open source, sous licence GPLv3.</string>
     <string name="settings_native_welcome_title">Revoir l’accueil</string>
-    <string name="settings_native_welcome_description">Rouvre l’écran de bienvenue. Les profils et les PC associés sont conservés.</string>
+    <string name="settings_native_welcome_description">Relance l’intro et le tutoriel des commandes. Les profils et les PC associés sont conservés.</string>
     <string name="settings_native_diag_logs_title">Conserver les journaux de diagnostic</string>
     <string name="settings_native_diag_logs_description">Garde un petit journal de ce qu’a fait Delos, pour un rapport de problème. Reste sur cet appareil sauf si tu le partages.</string>
     <string name="settings_native_igdb_title">Métadonnées de jeu · IGDB</string>

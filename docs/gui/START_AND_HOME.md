@@ -40,10 +40,14 @@ time that the home screen shows for each app.
 
 ## 2. First launch
 
-1. The user is asked to **create a profile**: a splash screen with **circular icons** (similar in spirit to the PS5 UI).
-2. In the same style, the next step automatically shows the **PCs to pair, in circles**.
-3. Logging in to a PC plays the main **"portal" animation** (not the same as the PlayStation Portal one).
-4. The same kind of animation is used when connecting to a remote device elsewhere in the UI.
+1. **Intro** (`WelcomeIntro`, about 6 s, over the whole window, no status or hint bar): black fades into the DELOS colours, dust streams past while the launch tunnel speeds up, the tunnel opens in a flash, then the logo is drawn last (the ring, the island, the moon), followed by "Welcome to", the DELOS wordmark letter by letter, the tagline **"Your island. Your gateway to the world of gaming."** and "Press A or tap the screen to begin". A or a tap during the film jumps to its end; after it they begin. Reduced motion shows the end state. Users with paired PCs keep **Skip to home**.
+2. The user creates a profile with circular avatar choices.
+3. **How do you play?**: two large cards, **Controller** and **Touch**, preselected from the last input (a connected pad is marked). "Skip the tutorial" (Y, or a tap on the hint) goes to the end page.
+4. The **tutorial** (`TutorialScreen`) has chapters, each opened by a title card: **Getting around**, **Playing** and **PlayStation**. One lesson per page: kicker, title, two sentences, a "try" pill with the button glyphs (or a ghost finger showing the gesture), and the app's real element on a lit stage (covers with the focus ring, the context menu, the side menu, the PC / PlayStation tabs, the top bar, the stream menu's dock, its rows). The real input completes a lesson: the element reacts, the pill turns into a green "Nice!" with sparks, and the next page slides in. Y (or a tap on Skip) skips a lesson; B goes back a page. Nothing the lessons change is stored.
+   - Controller: move, A, B, Down = game info, right menu button = options, left menu button = side menu, R1 / L1 = PC and PlayStation, tap Back or Guide = stream menu, hold Back or Guide = Guide on the PC, Disconnect or Quit app, the handheld's Select and Back on a PlayStation stream.
+   - Touch: swipe the row, tap a selected game, pull a game up = game info, touch and hold = options, swipe in from the left edge = side menu, the top bar, swipe up from the bottom or the Back gesture = stream menu, Touchscreen mode Trackpad, On-screen controls, Disconnect or Quit app, the screen as the DualSense touchpad.
+5. The end page draws a check in a ring and offers one button: **Let's start** opens pairing ("Pair your first device"), or Start when a PC is paired already. **Settings › About › Replay the welcome** plays the intro and the tutorial again and ends with **Done**, back to Settings.
+6. Logging in to a PC plays the main **portal** animation. The same kind of animation is used when connecting to a remote device elsewhere in the UI.
 
 ## 3. Profile avatars
 

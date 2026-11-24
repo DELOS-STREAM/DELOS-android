@@ -10,6 +10,12 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Added
+- **Intro and controls tutorial**: the first launch opens with a short intro: the launch tunnel, the DELOS logo drawn piece by piece and "Your island. Your gateway to the world of gaming." Then you pick controller or touch and learn the controls in three short chapters (getting around, playing, PlayStation), each lesson on the real menus and waiting for the real button or gesture. It ends with "Let's start" to pair your first device; Settings › About › Replay the welcome plays it all again.
+
+### Fixed
+- **Virtual display on Vibepollo and Vibeshine**: with "Use Virtual Display" off, DELOS told the host to use the physical display, which overrode a host set to always stream on a virtual display. DELOS now only asks for a virtual display when the switch is on and otherwise leaves the choice to the host.
+
 ## [1.3.2] - 2026-11-21
 _A clearer update card that opens straight from Check now. 1.3.1 was skipped: its tag points at a commit that was never released._
 

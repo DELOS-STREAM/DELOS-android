@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="firstrun_boot_tagline">你的 PC 游戏，从 Vibepollo 串流到你手中</string>
-    <string name="firstrun_boot_begin">开始使用</string>
+    <string name="firstrun_boot_tagline">你的岛屿。通往游戏世界的大门。</string>
     <string name="firstrun_boot_skip">跳到主页</string>
     <string name="firstrun_create_new_title">谁在玩？</string>
     <string name="firstrun_create_new_note">为你的个人资料选择头像和名称。</string>

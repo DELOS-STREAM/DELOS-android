@@ -291,7 +291,8 @@ internal fun nativeSettings(
     row("about_version", Symbols.VERSION, res.getString(R.string.settings_native_version_title), RowValue.Info(BuildConfig.VERSION_NAME), res.getString(R.string.settings_native_version_description), tab = SettingsTab.ABOUT, section = delosSection)
     row("about_based", Symbols.ACCOUNT_TREE, res.getString(R.string.settings_native_based_title), RowValue.Info("Artemis · Moonlight"), // l10n-ignore: product names
         res.getString(R.string.settings_native_based_description), tab = SettingsTab.ABOUT, section = delosSection)
-    row("about_welcome", Symbols.REPLAY, res.getString(R.string.settings_native_welcome_title), RowValue.Action { shell.navigate(Screen.Boot(back = Screen.Settings)) },
+    // The intro and the controls tutorial again (owner, 2026-11-24); B on the intro or the tutorial's end comes back here
+    row("about_welcome", Symbols.REPLAY, res.getString(R.string.settings_native_welcome_title), RowValue.Action { shell.navigate(Screen.Tutorial(back = Screen.Settings, replay = true)) },
         res.getString(R.string.settings_native_welcome_description), tab = SettingsTab.ABOUT, section = delosSection)
     // In-app updates (docs/UPDATES.md): the switch is device-wide and on by default; off means no request at all
     val updateSection = res.getString(R.string.settings_native_section_updates)

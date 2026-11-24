@@ -141,7 +141,7 @@
     <string name="settings_native_based_title">基于</string>
     <string name="settings_native_based_description">开源游戏串流，采用 GPLv3 许可。</string>
     <string name="settings_native_welcome_title">重新查看欢迎页</string>
-    <string name="settings_native_welcome_description">再次打开欢迎页。个人资料和已配对的 PC 会保留。</string>
+    <string name="settings_native_welcome_description">重新播放开场介绍和操作教程。个人资料和已配对的 PC 会保留。</string>
     <string name="settings_native_diag_logs_title">保留诊断日志</string>
     <string name="settings_native_diag_logs_description">保留一份记录 Delos 操作的小型日志，用于问题反馈。除非你分享，否则只保存在此设备上。</string>
     <string name="settings_native_igdb_title">游戏元数据 · IGDB</string>

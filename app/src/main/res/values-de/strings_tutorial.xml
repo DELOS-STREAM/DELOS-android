@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The intro and the first-run tutorial (issue #129). "DELOS" is never translated or inflected. -->
+    <string name="tutorial_welcome">Willkommen bei</string>
+    <string name="tutorial_press_a">Drücke A oder</string>
+    <string name="tutorial_tap_screen">tippe zum Starten auf den Bildschirm</string>
+
+    <string name="tutorial_input_kicker">Los geht’s</string>
+    <string name="tutorial_input">Wie spielst du?</string>
+    <string name="tutorial_input_note">Wir zeigen dir die passende Steuerung. Du kannst das Tutorial jederzeit unter Einstellungen › Über erneut ansehen.</string>
+    <string name="tutorial_controller">Controller</string>
+    <string name="tutorial_controller_note">Ein Gamepad oder die eingebauten Tasten eines Handhelds</string>
+    <string name="tutorial_controller_connected">Verbunden</string>
+    <string name="tutorial_touch">Touch</string>
+    <string name="tutorial_touch_note">Nur mit den Fingern auf dem Bildschirm</string>
+    <string name="tutorial_skip_all">Tutorial überspringen</string>
+    <string name="tutorial_skip">Überspringen</string>
+    <string name="tutorial_continue">Weiter</string>
+    <string name="tutorial_success">Super!</string>
+
+    <string name="tutorial_chapter_label">Kapitel %1$d</string>
+    <plurals name="tutorial_chapter_lessons">
+        <item quantity="one">%d kurze Lektion</item>
+        <item quantity="other">%d kurze Lektionen</item>
+    </plurals>
+    <string name="tutorial_step">%1$s · %2$d von %3$d</string>
+    <string name="tutorial_chapter_navigate">Orientierung</string>
+    <string name="tutorial_chapter_navigate_note">Deine Bibliothek, Menüs und Einstellungen.</string>
+    <string name="tutorial_chapter_play">Spielen</string>
+    <string name="tutorial_chapter_play_note">Was du beim Streamen eines Spiels brauchst.</string>
+    <string name="tutorial_chapter_ps">PlayStation</string>
+    <string name="tutorial_chapter_ps_note">Beim Streamen von deiner PlayStation funktionieren ein paar Dinge anders.</string>
+
+    <string name="tutorial_move_title">Navigation</string>
+    <string name="tutorial_move_body">Mit dem Steuerkreuz oder dem linken Stick bewegst du dich durch deine Spiele und alle Menüs. Das hervorgehobene Spiel ist ausgewählt.</string>
+    <string name="tutorial_move_try">Drücke nach rechts</string>
+    <string name="tutorial_choose_title">Spiel auswählen</string>
+    <string name="tutorial_choose_body">A startet das hervorgehobene Spiel oder öffnet die Auswahl: eine Schaltfläche, Einstellung oder einen Menüpunkt.</string>
+    <string name="tutorial_choose_try">Drücke A</string>
+    <string name="tutorial_back_title">Zurück</string>
+    <string name="tutorial_back_body">B bringt dich immer einen Schritt zurück. Es schließt Menüs und Seiten und bricht den Start eines Spiels ab.</string>
+    <string name="tutorial_back_try">Drücke B, um das Menü zu schließen</string>
+    <string name="tutorial_info_title">Spielinfos</string>
+    <string name="tutorial_info_body">Drücke bei einem Spiel nach unten, um die Übersicht zu öffnen: Spielzeit, Details, Screenshots und Videos.</string>
+    <string name="tutorial_info_try">Drücke nach unten</string>
+    <string name="tutorial_options_title">Optionen</string>
+    <string name="tutorial_options_body">Die rechte Menütaste öffnet die Optionen des ausgewählten Spiels: laufendes Spiel beenden, Artwork ändern, eigene Einstellungen festlegen oder ausblenden.</string>
+    <string name="tutorial_options_try">Drücke die rechte Menütaste</string>
+    <string name="tutorial_side_title">Seitenmenü</string>
+    <string name="tutorial_side_body">Die linke Menütaste öffnet das Seitenmenü: das Aussehen von DELOS, Sounds und alle Einstellungen.</string>
+    <string name="tutorial_side_try">Drücke die linke Menütaste</string>
+    <string name="tutorial_switch_title">PC und PlayStation</string>
+    <string name="tutorial_switch_body">Auf dem Startbildschirm wechselst du mit L1 und R1 zwischen deinen PCs und deiner PlayStation.</string>
+    <string name="tutorial_switch_try">Drücke R1</string>
+    <string name="tutorial_stream_title">Das Stream-Menü</string>
+    <string name="tutorial_stream_body">Drücke beim Spielen kurz Zurück oder Guide, um das Stream-Menü zu öffnen: Tastatur, Leistungs-Overlay, Bitrate, Upscaler und mehr. Das Spiel erhält diesen Tastendruck nicht.</string>
+    <string name="tutorial_stream_try">Drücke kurz Zurück oder Guide</string>
+    <string name="tutorial_hold_title">Für Guide gedrückt halten</string>
+    <string name="tutorial_hold_body">Halte Zurück oder Guide eine halbe Sekunde lang gedrückt, um Guide an deinen PC zu senden: für das Steam-Overlay oder die Game Bar.</string>
+    <string name="tutorial_hold_try">Halte Zurück oder Guide gedrückt</string>
+    <string name="tutorial_guide_sent">Guide an deinen PC gesendet</string>
+    <string name="tutorial_leave_title">Trennen oder beenden</string>
+    <string name="tutorial_leave_body">Trennen lässt das Spiel auf deinem PC weiterlaufen, damit du später weiterspielen kannst. App beenden schließt das Spiel auf deinem PC ohne Nachfrage.</string>
+    <string name="tutorial_leave_try">Wähle Trennen</string>
+    <string name="tutorial_leave_touch_try">Tippe auf Trennen</string>
+    <string name="tutorial_leave_disconnect">Das Spiel läuft auf deinem PC weiter</string>
+    <string name="tutorial_leave_quit">App beenden schließt das Spiel auf deinem PC</string>
+    <string name="tutorial_ps_buttons_title">PlayStation-Tasten</string>
+    <string name="tutorial_ps_buttons_body">Ein Handheld hat weder Touchpad noch Erstellen-Taste. Bei einem PlayStation-Stream übernehmen Select und Zurück diese Funktionen.</string>
+    <string name="tutorial_ps_buttons_try">Drücke kurz Select</string>
+    <string name="tutorial_ps_select_tap">Drücke kurz Select</string>
+    <string name="tutorial_ps_select_hold">Halte Select gedrückt</string>
+    <string name="tutorial_ps_back_hold">Halte Zurück gedrückt</string>
+
+    <string name="tutorial_swipe_title">Durchstöbern</string>
+    <string name="tutorial_swipe_body">Wische über die Reihe, um durch deine Spiele zu scrollen.</string>
+    <string name="tutorial_swipe_try">Wische über die Reihe</string>
+    <string name="tutorial_tap_body">Das erste Tippen wählt ein Spiel aus, das zweite startet es. Ein versehentliches Tippen startet nie etwas.</string>
+    <string name="tutorial_tap_try">Tippe auf das ausgewählte Spiel</string>
+    <string name="tutorial_pull_body">Ziehe ein Spiel nach oben, um die Übersicht zu öffnen: Spielzeit, Details, Screenshots und Videos.</string>
+    <string name="tutorial_pull_try">Ziehe das Spiel nach oben</string>
+    <string name="tutorial_hold_touch_body">Halte ein Spiel gedrückt, um seine Optionen zu öffnen: laufendes Spiel beenden, Artwork ändern, eigene Einstellungen festlegen oder ausblenden.</string>
+    <string name="tutorial_hold_touch_try">Halte das Spiel gedrückt</string>
+    <string name="tutorial_edge_body">Wische vom linken Bildschirmrand nach innen, um das Seitenmenü zu öffnen: das Aussehen von DELOS, Sounds und alle Einstellungen.</string>
+    <string name="tutorial_edge_try">Wische vom linken Rand nach innen</string>
+    <string name="tutorial_nav_title">Obere Leiste</string>
+    <string name="tutorial_nav_body">Die Schaltflächen oben öffnen deine Einstellungen, dein Profil und deine PCs.</string>
+    <string name="tutorial_nav_try">Tippe auf eine Schaltfläche</string>
+    <string name="tutorial_stream_touch_body">Wische beim Spielen vom unteren Rand nach oben oder nutze die Zurück-Geste deines Smartphones, um das Stream-Menü zu öffnen.</string>
+    <string name="tutorial_stream_touch_try">Wische von unten nach oben</string>
+    <string name="tutorial_trackpad_title">Als Maus verwenden</string>
+    <string name="tutorial_trackpad_body">Stelle für Desktop-Apps im Stream-Menü den Touchscreen-Modus auf Trackpad: Dein Finger bewegt den Zeiger wie auf einem Laptop, Tippen entspricht einem Klick.</string>
+    <string name="tutorial_trackpad_try">Wähle Trackpad</string>
+    <string name="tutorial_osc_title">Bildschirmsteuerung</string>
+    <string name="tutorial_osc_body">Kein Controller dabei? Aktiviere im Stream-Menü die Bildschirmsteuerung, um ein Gamepad über dem Spiel einzublenden. Du kannst jede Taste verschieben und ihre Größe ändern.</string>
+    <string name="tutorial_osc_try">Aktiviere sie</string>
+    <string name="tutorial_ps_touch_title">Das Touchpad</string>
+    <string name="tutorial_ps_touch_body">Bei einem PlayStation-Stream wird dein Bildschirm zum DualSense-Touchpad: Wische und tippe wie auf dem Controller.</string>
+    <string name="tutorial_ps_touch_try">Wische oder tippe auf dem Touchpad</string>
+
+    <string name="tutorial_game">Dein Spiel</string>
+    <string name="tutorial_starting">Wird gestartet…</string>
+    <string name="tutorial_info_played">12 Stunden gespielt · zuletzt gestern</string>
+    <string name="tutorial_info_tag_adventure">Abenteuer</string>
+    <string name="tutorial_info_tag_media">12 Screenshots</string>
+    <string name="tutorial_menu_status">Spielbereit</string>
+    <string name="tutorial_menu_artwork">Artwork</string>
+    <string name="tutorial_menu_settings">Spieleinstellungen</string>
+    <string name="tutorial_menu_hide">Ausblenden</string>
+    <string name="tutorial_side_theme">Design</string>
+    <string name="tutorial_side_sounds">Sounds</string>
+
+    <string name="tutorial_end_kicker">Du bist bereit</string>
+    <string name="tutorial_end">Kopple dein erstes Gerät</string>
+    <string name="tutorial_end_note">Verbinde einen PC mit Vibepollo, Apollo oder Sunshine oder deine PlayStation.</string>
+    <string name="tutorial_start">Los geht’s</string>
+    <string name="tutorial_end_replay_kicker">Geschafft</string>
+    <string name="tutorial_end_replay">Das war alles</string>
+    <string name="tutorial_end_replay_note">Du kannst das Tutorial jederzeit unter Einstellungen › Über erneut ansehen.</string>
+</resources>

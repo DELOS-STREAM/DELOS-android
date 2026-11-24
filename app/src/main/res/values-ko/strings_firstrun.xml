@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="firstrun_boot_tagline">Vibepollo에서 내 손안으로 스트리밍되는 PC 게임</string>
-    <string name="firstrun_boot_begin">시작하기</string>
+    <string name="firstrun_boot_tagline">나만의 섬. 게임의 세계로 향하는 관문.</string>
     <string name="firstrun_boot_skip">홈으로 건너뛰기</string>
     <string name="firstrun_create_new_title">누가 플레이하나요?</string>
     <string name="firstrun_create_new_note">프로필 아바타와 이름을 골라 주세요.</string>

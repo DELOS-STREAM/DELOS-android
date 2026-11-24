@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- First launch: the boot screen and the new / edit profile page -->
-    <string name="firstrun_boot_tagline">Tvoje PC hry, streamované z Vibepollo přímo do tvých rukou</string>
-    <string name="firstrun_boot_begin">Začít</string>
+    <string name="firstrun_boot_tagline">Tvůj ostrov. Tvoje brána do světa her.</string>
     <string name="firstrun_boot_skip">Přeskočit na úvod</string>
     <string name="firstrun_create_new_title">Kdo hraje?</string>
     <string name="firstrun_create_new_note">Vyber si avatar a jméno pro svůj profil.</string>

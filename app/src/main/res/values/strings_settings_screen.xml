@@ -173,7 +173,7 @@
     <string name="settings_native_based_title">Based on</string>
     <string name="settings_native_based_description">Open source game streaming, licensed under the GPLv3.</string>
     <string name="settings_native_welcome_title">Replay the welcome</string>
-    <string name="settings_native_welcome_description">Opens the welcome screen again. Profiles and paired PCs are kept.</string>
+    <string name="settings_native_welcome_description">Plays the intro and the controls tutorial again. Profiles and paired PCs are kept.</string>
     <string name="settings_native_diag_logs_title">Keep diagnostic logs</string>
     <string name="settings_native_diag_logs_description">Keeps a small log of what Delos did, for a problem report. Stays on this device unless you share it.</string>
     <string name="settings_native_igdb_title">Game metadata · IGDB</string>

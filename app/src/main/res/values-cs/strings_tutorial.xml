@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The intro and the first-run tutorial (issue #129). "DELOS" is never translated or inflected. -->
+    <string name="tutorial_welcome">Vítej v aplikaci</string>
+    <string name="tutorial_press_a">Stiskni A nebo</string>
+    <string name="tutorial_tap_screen">začni klepnutím na obrazovku</string>
+
+    <string name="tutorial_input_kicker">Pojďme na to</string>
+    <string name="tutorial_input">Jak hraješ?</string>
+    <string name="tutorial_input_note">Ukážeme ti ovládání podle toho, jak hraješ. Průvodce si můžeš kdykoli zopakovat v Nastavení › O aplikaci.</string>
+    <string name="tutorial_controller">Gamepad</string>
+    <string name="tutorial_controller_note">Gamepad nebo vestavěné ovládání handheldu</string>
+    <string name="tutorial_controller_connected">Připojeno</string>
+    <string name="tutorial_touch">Dotyk</string>
+    <string name="tutorial_touch_note">Jen prsty na obrazovce</string>
+    <string name="tutorial_skip_all">Přeskočit průvodce</string>
+    <string name="tutorial_skip">Přeskočit</string>
+    <string name="tutorial_continue">Pokračovat</string>
+    <string name="tutorial_success">Paráda!</string>
+
+    <string name="tutorial_chapter_label">Kapitola %1$d</string>
+    <plurals name="tutorial_chapter_lessons">
+        <item quantity="one">%d krátká lekce</item>
+        <item quantity="few">%d krátké lekce</item>
+        <item quantity="many">%d krátké lekce</item>
+        <item quantity="other">%d krátkých lekcí</item>
+    </plurals>
+    <string name="tutorial_step">%1$s · %2$d z %3$d</string>
+    <string name="tutorial_chapter_navigate">Orientace v aplikaci</string>
+    <string name="tutorial_chapter_navigate_note">Tvoje knihovna, menu a nastavení.</string>
+    <string name="tutorial_chapter_play">Hraní</string>
+    <string name="tutorial_chapter_play_note">Co se hodí při streamování hry.</string>
+    <string name="tutorial_chapter_ps">PlayStation</string>
+    <string name="tutorial_chapter_ps_note">Při streamování z PlayStation funguje pár věcí jinak.</string>
+
+    <string name="tutorial_move_title">Pohyb v menu</string>
+    <string name="tutorial_move_body">Směrovým křížem nebo levou páčkou se pohybuješ mezi hrami i v každém menu. Zvýrazněná hra je ta, kterou máš vybranou.</string>
+    <string name="tutorial_move_try">Stiskni doprava</string>
+    <string name="tutorial_choose_title">Vyber hru</string>
+    <string name="tutorial_choose_body">A spustí zvýrazněnou hru nebo otevře vybranou položku: tlačítko, nastavení či položku menu.</string>
+    <string name="tutorial_choose_try">Stiskni A</string>
+    <string name="tutorial_back_title">Krok zpět</string>
+    <string name="tutorial_back_body">B tě vždy vrátí o krok zpět. Zavře menu i stránky a zruší spouštění hry.</string>
+    <string name="tutorial_back_try">Stisknutím B zavři menu</string>
+    <string name="tutorial_info_title">Informace o hře</string>
+    <string name="tutorial_info_body">Stisknutím dolů na hře otevřeš její přehled: odehraný čas, podrobnosti, snímky obrazovky a videa.</string>
+    <string name="tutorial_info_try">Stiskni dolů</string>
+    <string name="tutorial_options_title">Možnosti</string>
+    <string name="tutorial_options_body">Pravé tlačítko menu otevře možnosti vybrané hry: ukončení běžící hry, změnu obrázků, vlastní nastavení nebo skrytí.</string>
+    <string name="tutorial_options_try">Stiskni pravé tlačítko menu</string>
+    <string name="tutorial_side_title">Postranní menu</string>
+    <string name="tutorial_side_body">Levé tlačítko menu otevře postranní menu: vzhled aplikace DELOS, zvuky a všechna nastavení.</string>
+    <string name="tutorial_side_try">Stiskni levé tlačítko menu</string>
+    <string name="tutorial_switch_title">PC a PlayStation</string>
+    <string name="tutorial_switch_body">Na úvodní obrazovce přepínáš pomocí L1 a R1 mezi svými PC a PlayStation.</string>
+    <string name="tutorial_switch_try">Stiskni R1</string>
+    <string name="tutorial_stream_title">Menu streamu</string>
+    <string name="tutorial_stream_body">Při hraní krátce stiskni Zpět nebo Guide a otevřeš menu streamu: klávesnici, Overlay s výkonem, bitrate, upscaler a další. Hra tento stisk nedostane.</string>
+    <string name="tutorial_stream_try">Krátce stiskni Zpět nebo Guide</string>
+    <string name="tutorial_hold_title">Podržením pošli Guide</string>
+    <string name="tutorial_hold_body">Podrž Zpět nebo Guide půl sekundy a do PC se pošle tlačítko Guide: otevře Overlay služby Steam nebo Game Bar.</string>
+    <string name="tutorial_hold_try">Podrž Zpět nebo Guide</string>
+    <string name="tutorial_guide_sent">Guide odesláno do PC</string>
+    <string name="tutorial_leave_title">Odpojit, nebo ukončit</string>
+    <string name="tutorial_leave_body">Volba Odpojit nechá hru běžet na PC, takže se můžeš později vrátit. Volba Ukončit aplikaci hru na PC bez ptaní zavře.</string>
+    <string name="tutorial_leave_try">Vyber Odpojit</string>
+    <string name="tutorial_leave_touch_try">Klepni na Odpojit</string>
+    <string name="tutorial_leave_disconnect">Hra dál běží na PC</string>
+    <string name="tutorial_leave_quit">Volba Ukončit aplikaci zavře hru na PC</string>
+    <string name="tutorial_ps_buttons_title">Tlačítka PlayStation</string>
+    <string name="tutorial_ps_buttons_body">Handheld nemá touchpad ani tlačítko Vytvořit. Ve streamu z PlayStation je zastoupí Select a Zpět.</string>
+    <string name="tutorial_ps_buttons_try">Krátce stiskni Select</string>
+    <string name="tutorial_ps_select_tap">Krátce stiskni Select</string>
+    <string name="tutorial_ps_select_hold">Podrž Select</string>
+    <string name="tutorial_ps_back_hold">Podrž Zpět</string>
+
+    <string name="tutorial_swipe_title">Procházení her</string>
+    <string name="tutorial_swipe_body">Přejetím po řádku procházíš své hry.</string>
+    <string name="tutorial_swipe_try">Přejeď po řádku</string>
+    <string name="tutorial_tap_body">První klepnutí hru vybere, druhé klepnutí na ni ji spustí. Náhodné klepnutí nikdy nic nespustí.</string>
+    <string name="tutorial_tap_try">Klepni na vybranou hru</string>
+    <string name="tutorial_pull_body">Vytažením hry nahoru otevřeš její přehled: odehraný čas, podrobnosti, snímky obrazovky a videa.</string>
+    <string name="tutorial_pull_try">Vytáhni hru nahoru</string>
+    <string name="tutorial_hold_touch_body">Podržením prstu na hře otevřeš její možnosti: ukončení běžící hry, změnu obrázků, vlastní nastavení nebo skrytí.</string>
+    <string name="tutorial_hold_touch_try">Podrž prst na hře</string>
+    <string name="tutorial_edge_body">Přejetím od levého okraje obrazovky otevřeš postranní menu: vzhled aplikace DELOS, zvuky a všechna nastavení.</string>
+    <string name="tutorial_edge_try">Přejeď od levého okraje</string>
+    <string name="tutorial_nav_title">Horní lišta</string>
+    <string name="tutorial_nav_body">Tlačítka nahoře otevřou nastavení, profil a tvoje PC.</string>
+    <string name="tutorial_nav_try">Klepni na tlačítko</string>
+    <string name="tutorial_stream_touch_body">Při hraní otevřeš menu streamu přejetím od spodního okraje nahoru nebo gestem Zpět na telefonu.</string>
+    <string name="tutorial_stream_touch_try">Přejeď zespodu nahoru</string>
+    <string name="tutorial_trackpad_title">Ovládání myši</string>
+    <string name="tutorial_trackpad_body">Pro desktopové aplikace nastav v menu streamu „Režim dotykové obrazovky“ na Trackpad: prst pohybuje kurzorem jako na notebooku a klepnutí klikne.</string>
+    <string name="tutorial_trackpad_try">Vyber Trackpad</string>
+    <string name="tutorial_osc_title">Ovládání na obrazovce</string>
+    <string name="tutorial_osc_body">Nemáš po ruce gamepad? Zapni v menu streamu „Ovládání na obrazovce“ a nad hrou se zobrazí gamepad. Každé tlačítko můžeš přesunout i zvětšit nebo zmenšit.</string>
+    <string name="tutorial_osc_try">Zapni ho</string>
+    <string name="tutorial_ps_touch_title">Touchpad</string>
+    <string name="tutorial_ps_touch_body">Ve streamu z PlayStation funguje obrazovka jako touchpad DualSense: přejížděj po ní a klepej jako na gamepadu.</string>
+    <string name="tutorial_ps_touch_try">Přejeď po touchpadu nebo klepni</string>
+
+    <string name="tutorial_game">Tvoje hra</string>
+    <string name="tutorial_starting">Spouštění…</string>
+    <string name="tutorial_info_played">Odehráno 12 hodin · naposledy včera</string>
+    <string name="tutorial_info_tag_adventure">Adventura</string>
+    <string name="tutorial_info_tag_media">12 snímků obrazovky</string>
+    <string name="tutorial_menu_status">Připraveno ke hraní</string>
+    <string name="tutorial_menu_artwork">Obrázky</string>
+    <string name="tutorial_menu_settings">Nastavení hry</string>
+    <string name="tutorial_menu_hide">Skrýt</string>
+    <string name="tutorial_side_theme">Motiv</string>
+    <string name="tutorial_side_sounds">Zvuky</string>
+
+    <string name="tutorial_end_kicker">Můžeš začít</string>
+    <string name="tutorial_end">Spáruj první zařízení</string>
+    <string name="tutorial_end_note">Připoj PC s Vibepollo, Apollo nebo Sunshine, případně svůj PlayStation.</string>
+    <string name="tutorial_start">Začít</string>
+    <string name="tutorial_end_replay_kicker">Hotovo</string>
+    <string name="tutorial_end_replay">To je všechno</string>
+    <string name="tutorial_end_replay_note">Průvodce si můžeš kdykoli zopakovat v Nastavení › O aplikaci.</string>
+</resources>

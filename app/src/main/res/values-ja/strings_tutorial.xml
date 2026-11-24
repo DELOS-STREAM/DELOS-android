@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The intro and the first-run tutorial (issue #129). "DELOS" is never translated or inflected. -->
+    <string name="tutorial_welcome">ようこそ</string>
+    <string name="tutorial_press_a">Aを押すか</string>
+    <string name="tutorial_tap_screen">画面をタップして開始</string>
+
+    <string name="tutorial_input_kicker">さあ、始めましょう</string>
+    <string name="tutorial_input">どの操作方法で遊びますか？</string>
+    <string name="tutorial_input_note">遊び方に合わせた操作方法をご紹介します。このチュートリアルは設定 › バージョン情報からいつでも見直せます。</string>
+    <string name="tutorial_controller">コントローラー</string>
+    <string name="tutorial_controller_note">ゲームパッド、または携帯ゲーム機の内蔵コントローラー</string>
+    <string name="tutorial_controller_connected">接続済み</string>
+    <string name="tutorial_touch">タッチ</string>
+    <string name="tutorial_touch_note">画面を指で操作</string>
+    <string name="tutorial_skip_all">チュートリアルをスキップ</string>
+    <string name="tutorial_skip">スキップ</string>
+    <string name="tutorial_continue">続ける</string>
+    <string name="tutorial_success">いいですね！</string>
+
+    <string name="tutorial_chapter_label">チャプター%1$d</string>
+    <plurals name="tutorial_chapter_lessons">
+        <item quantity="other">%d個の短いレッスン</item>
+    </plurals>
+    <string name="tutorial_step">%1$s · %2$d / %3$d</string>
+    <string name="tutorial_chapter_navigate">基本の操作</string>
+    <string name="tutorial_chapter_navigate_note">ライブラリ、メニュー、設定の使い方です。</string>
+    <string name="tutorial_chapter_play">ゲーム中の操作</string>
+    <string name="tutorial_chapter_play_note">ゲームのストリーミング中に役立つ操作です。</string>
+    <string name="tutorial_chapter_ps">PlayStation</string>
+    <string name="tutorial_chapter_ps_note">PlayStationからのストリーミングでは、一部の操作が異なります。</string>
+
+    <string name="tutorial_move_title">移動する</string>
+    <string name="tutorial_move_body">方向キーか左スティックで、ゲームの選択やメニュー内の移動ができます。ハイライトされたゲームが選択中です。</string>
+    <string name="tutorial_move_try">右を押す</string>
+    <string name="tutorial_choose_title">ゲームを選ぶ</string>
+    <string name="tutorial_choose_body">Aでハイライトされたゲームを起動します。ボタン、設定、メニュー項目など、選択中のものを開くこともできます。</string>
+    <string name="tutorial_choose_try">Aを押す</string>
+    <string name="tutorial_back_title">戻る</string>
+    <string name="tutorial_back_body">Bでいつでも一つ前に戻れます。メニューやページを閉じたり、起動中のゲームをキャンセルしたりできます。</string>
+    <string name="tutorial_back_try">Bを押してメニューを閉じる</string>
+    <string name="tutorial_info_title">ゲーム情報</string>
+    <string name="tutorial_info_body">ゲームを選んで下を押すと、プレイ時間、詳細、スクリーンショット、動画が見られます。</string>
+    <string name="tutorial_info_try">下を押す</string>
+    <string name="tutorial_options_title">オプション</string>
+    <string name="tutorial_options_body">右のメニューボタンで、選択中のゲームのオプションを開きます。実行中のゲームの終了、アートワークの変更、個別設定、非表示ができます。</string>
+    <string name="tutorial_options_try">右のメニューボタンを押す</string>
+    <string name="tutorial_side_title">サイドメニュー</string>
+    <string name="tutorial_side_body">左のメニューボタンでサイドメニューを開きます。DELOSの外観、サウンド、すべての設定を変更できます。</string>
+    <string name="tutorial_side_try">左のメニューボタンを押す</string>
+    <string name="tutorial_switch_title">PCとPlayStation</string>
+    <string name="tutorial_switch_body">スタート画面では、L1とR1でPCとPlayStationを切り替えられます。</string>
+    <string name="tutorial_switch_try">R1を押す</string>
+    <string name="tutorial_stream_title">ストリームメニュー</string>
+    <string name="tutorial_stream_body">プレイ中に戻るかGuideを短く押すと、ストリームメニューが開きます。キーボード、パフォーマンス表示、ビットレート、アップスケーラーなどを使えます。この入力はゲームには送られません。</string>
+    <string name="tutorial_stream_try">戻るかGuideを短く押す</string>
+    <string name="tutorial_hold_title">長押しでGuideを送信</string>
+    <string name="tutorial_hold_body">戻るかGuideを0.5秒長押しすると、PCにGuideボタンが送信され、SteamオーバーレイやGame Barを開けます。</string>
+    <string name="tutorial_hold_try">戻るかGuideを長押し</string>
+    <string name="tutorial_guide_sent">PCにGuideを送信しました</string>
+    <string name="tutorial_leave_title">切断と終了</string>
+    <string name="tutorial_leave_body">切断ではPC上のゲームは動いたままなので、後で再開できます。アプリ終了では、確認なしでPC上のゲームを閉じます。</string>
+    <string name="tutorial_leave_try">切断を選ぶ</string>
+    <string name="tutorial_leave_touch_try">切断をタップ</string>
+    <string name="tutorial_leave_disconnect">PC上のゲームは動いたままです</string>
+    <string name="tutorial_leave_quit">アプリ終了でPC上のゲームを閉じます</string>
+    <string name="tutorial_ps_buttons_title">PlayStationのボタン</string>
+    <string name="tutorial_ps_buttons_body">携帯ゲーム機にはタッチパッドやクリエイトボタンがありません。PlayStationのストリームでは、セレクトと戻るで代用できます。</string>
+    <string name="tutorial_ps_buttons_try">セレクトを短く押す</string>
+    <string name="tutorial_ps_select_tap">セレクトを短く押す</string>
+    <string name="tutorial_ps_select_hold">セレクトを長押し</string>
+    <string name="tutorial_ps_back_hold">戻るを長押し</string>
+
+    <string name="tutorial_swipe_title">ゲームを探す</string>
+    <string name="tutorial_swipe_body">ゲームの列をスワイプしてスクロールします。</string>
+    <string name="tutorial_swipe_try">列をスワイプ</string>
+    <string name="tutorial_tap_body">最初のタップでゲームを選択し、もう一度タップすると起動します。うっかり触れても起動しません。</string>
+    <string name="tutorial_tap_try">選択中のゲームをタップ</string>
+    <string name="tutorial_pull_body">ゲームを上に引き上げると、プレイ時間、詳細、スクリーンショット、動画が見られます。</string>
+    <string name="tutorial_pull_try">ゲームを上に引き上げる</string>
+    <string name="tutorial_hold_touch_body">ゲームを長押しするとオプションが開きます。実行中のゲームの終了、アートワークの変更、個別設定、非表示ができます。</string>
+    <string name="tutorial_hold_touch_try">ゲームを長押し</string>
+    <string name="tutorial_edge_body">画面の左端から内側にスワイプすると、サイドメニューが開きます。DELOSの外観、サウンド、すべての設定を変更できます。</string>
+    <string name="tutorial_edge_try">左端から内側にスワイプ</string>
+    <string name="tutorial_nav_title">上部バー</string>
+    <string name="tutorial_nav_body">上部のボタンで設定、プロフィール、PCを開けます。</string>
+    <string name="tutorial_nav_try">ボタンをタップ</string>
+    <string name="tutorial_stream_touch_body">プレイ中に画面の下端から上にスワイプするか、スマートフォンの戻るジェスチャーを使うと、ストリームメニューが開きます。</string>
+    <string name="tutorial_stream_touch_try">下端から上にスワイプ</string>
+    <string name="tutorial_trackpad_title">マウスとして使う</string>
+    <string name="tutorial_trackpad_body">デスクトップアプリでは、ストリームメニューのタッチスクリーンモードをトラックパッドに設定してください。ノートPCのように指でカーソルを動かし、タップでクリックできます。</string>
+    <string name="tutorial_trackpad_try">トラックパッドを選ぶ</string>
+    <string name="tutorial_osc_title">画面上のコントロール</string>
+    <string name="tutorial_osc_body">コントローラーが手元になくても大丈夫です。ストリームメニューで画面上のコントロールをオンにすると、ゲームにゲームパッドが重ねて表示されます。各ボタンの位置やサイズも変更できます。</string>
+    <string name="tutorial_osc_try">オンにする</string>
+    <string name="tutorial_ps_touch_title">タッチパッド</string>
+    <string name="tutorial_ps_touch_body">PlayStationのストリームでは、画面がDualSenseのタッチパッドになります。コントローラーと同じようにスワイプやタップで操作できます。</string>
+    <string name="tutorial_ps_touch_try">タッチパッドをスワイプかタップ</string>
+
+    <string name="tutorial_game">あなたのゲーム</string>
+    <string name="tutorial_starting">起動中…</string>
+    <string name="tutorial_info_played">プレイ時間12時間 · 最終プレイは昨日</string>
+    <string name="tutorial_info_tag_adventure">アドベンチャー</string>
+    <string name="tutorial_info_tag_media">スクリーンショット12枚</string>
+    <string name="tutorial_menu_status">プレイ準備完了</string>
+    <string name="tutorial_menu_artwork">アートワーク</string>
+    <string name="tutorial_menu_settings">ゲーム設定</string>
+    <string name="tutorial_menu_hide">非表示</string>
+    <string name="tutorial_side_theme">テーマ</string>
+    <string name="tutorial_side_sounds">サウンド</string>
+
+    <string name="tutorial_end_kicker">準備完了</string>
+    <string name="tutorial_end">最初のデバイスをペアリング</string>
+    <string name="tutorial_end_note">Vibepollo、Apollo、Sunshineを実行しているPC、またはPlayStationに接続しましょう。</string>
+    <string name="tutorial_start">始める</string>
+    <string name="tutorial_end_replay_kicker">完了</string>
+    <string name="tutorial_end_replay">これで全部です</string>
+    <string name="tutorial_end_replay_note">このチュートリアルは設定 › バージョン情報からいつでも見直せます。</string>
+</resources>

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="firstrun_boot_tagline">VibepolloからあなたのPCゲームを、手元にストリーミング</string>
-    <string name="firstrun_boot_begin">はじめる</string>
+    <string name="firstrun_boot_tagline">あなただけの島。ゲームの世界への入り口。</string>
     <string name="firstrun_boot_skip">ホームへスキップ</string>
     <string name="firstrun_create_new_title">だれがプレイしますか？</string>
     <string name="firstrun_create_new_note">プロフィールのアバターと名前を選んでください。</string>

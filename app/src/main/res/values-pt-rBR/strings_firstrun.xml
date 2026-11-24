@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="firstrun_boot_tagline">Seus jogos de PC, transmitidos do Vibepollo direto para suas mãos</string>
-    <string name="firstrun_boot_begin">Começar</string>
+    <string name="firstrun_boot_tagline">Sua ilha. Sua porta de entrada para o mundo dos games.</string>
     <string name="firstrun_boot_skip">Ir para o início</string>
     <string name="firstrun_create_new_title">Quem vai jogar?</string>
     <string name="firstrun_create_new_note">Escolha um avatar e um nome para o seu perfil.</string>

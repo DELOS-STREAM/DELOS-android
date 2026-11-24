@@ -157,7 +157,7 @@
     <string name="settings_native_based_title">Vychází z</string>
     <string name="settings_native_based_description">Open source streamování her, licencováno pod GPLv3.</string>
     <string name="settings_native_welcome_title">Zopakovat uvítání</string>
-    <string name="settings_native_welcome_description">Znovu otevře uvítací obrazovku. Profily a spárovaná PC zůstanou zachovány.</string>
+    <string name="settings_native_welcome_description">Znovu přehraje úvod a průvodce ovládáním. Profily a spárovaná PC zůstanou zachovány.</string>
     <string name="settings_native_diag_logs_title">Ukládat diagnostické záznamy</string>
     <string name="settings_native_diag_logs_description">Uchovává malý záznam toho, co aplikace Delos dělala, pro hlášení problému. Zůstává na tomto zařízení, dokud ho nesdílíš.</string>
     <string name="settings_native_igdb_title">Metadata her · IGDB</string>

@@ -854,11 +854,13 @@ fun Shell(
                                 shell.navigate(
                                     when {
                                         screen.back !is Screen.Boot -> screen.back ?: Screen.Start
-                                        pcs.none { it.paired } -> Screen.PairPc(back = Screen.Start)
-                                        else -> Screen.Start
+                                        else -> Screen.Tutorial(back = null, replay = false)
                                     }
                                 )
                             }
+                        }
+                        is Screen.Tutorial -> com.limelight.shell.screens.TutorialScreen(screen, keys) {
+                            shell.navigate(if (screen.replay) screen.back ?: Screen.Settings else if (pcs.any { it.paired }) Screen.Start else Screen.PairPc(back = Screen.Start))
                         }
                         is Screen.PairPc -> PairPcScreen(screen, pcs, startup.defaultPc)
                         is Screen.PairPs -> com.limelight.shell.ps.PsPairScreen(screen)
@@ -883,9 +885,10 @@ fun Shell(
                     // The back button (no controller in use) does what B does: the same back dispatch, so a screen's own handler wins as for B
                     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
                     val goBack = remember(backDispatcher) { { backDispatcher?.onBackPressed(); Unit } }
-                    // The game overview's screenshot viewer covers the whole screen, the status bar too
+                    // The game overview's screenshot viewer covers the whole screen, the status bar too; so do the intro film and the tutorial
+                    val immersive = shell.overviewViewer != null || shell.screen is Screen.Boot || shell.screen is Screen.Tutorial
                     val barAlpha by androidx.compose.animation.core.animateFloatAsState(
-                        if (shell.overviewViewer != null) 0f else 1f, tween(Motion.FADE, easing = Motion.Ease), label = "statusBarUnderViewer",
+                        if (immersive) 0f else 1f, tween(Motion.FADE, easing = Motion.Ease), label = "statusBarUnderViewer",
                     )
                     Box(Modifier.graphicsLayer { alpha = barAlpha }) {
                         StatusBar(
@@ -1193,7 +1196,8 @@ private fun hints(res: Resources, shell: ShellState, adjustable: Boolean, option
             Screen.Settings -> adjust + listOfNotNull(hint(Glyph.L1, R.string.shell_hint_previous_tab), hint(Glyph.R1, R.string.shell_hint_next_tab), hint(Glyph.Y, R.string.shell_hint_search), hint(Glyph.A, R.string.shell_hint_change), optionsHint, hint(Glyph.B, R.string.shell_hint_back))
             Screen.SettingsSearch -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             Screen.Start -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_connect), hint(Glyph.MENU_LEFT, R.string.shell_hint_menu), optionsHint)
-            is Screen.Boot -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back).takeIf { screen.back != null })
+            is Screen.Boot -> emptyList() // The intro says what to press itself
+            is Screen.Tutorial -> emptyList() // Each page owns its input-aware hints
             is Screen.CreateProfile -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))
             is Screen.PairPc -> listOfNotNull(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back), optionsHint)
             is Screen.PairPs -> listOf(hint(Glyph.A, R.string.shell_hint_select), hint(Glyph.B, R.string.shell_hint_back))

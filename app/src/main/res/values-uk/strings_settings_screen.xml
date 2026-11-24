@@ -146,7 +146,7 @@
     <string name="settings_native_based_title">Створено на основі</string>
     <string name="settings_native_based_description">Стрімінг ігор з відкритим кодом, ліцензія GPLv3.</string>
     <string name="settings_native_welcome_title">Показати вітання знову</string>
-    <string name="settings_native_welcome_description">Знову відкриває екран вітання. Профілі й спарені ПК зберігаються.</string>
+    <string name="settings_native_welcome_description">Знову відтворює вступ і навчання керуванню. Профілі й спарені ПК зберігаються.</string>
     <string name="settings_native_diag_logs_title">Вести журнали діагностики</string>
     <string name="settings_native_diag_logs_description">Веде невеликий журнал дій Delos для звіту про проблему. Лишається на цьому пристрої, поки ти ним не поділишся.</string>
     <string name="settings_native_igdb_title">Метадані ігор · IGDB</string>

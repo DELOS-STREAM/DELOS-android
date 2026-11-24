@@ -72,54 +72,15 @@ import com.limelight.shell.ui.px
 import com.limelight.shell.ui.tpx
 import com.limelight.shell.ui.rowNavGrid
 
-/** First launch (`#scr-boot`): the logo, the wordmark and "Get started"; [onSkip] when PCs are paired already. */
+/** First launch (`#scr-boot`): the intro film ([WelcomeIntro]); [onSkip] when PCs are paired already. */
 @Composable
 fun BootScreen(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
-    val colors = LocalDelosColors.current
-    val begin = remember { FocusRequester() }
-    InitialFocus(begin)
     // The second display says what the step is; B is listed only when this Boot was opened from another screen
     val canGoBack = (LocalShell.current.screen as? Screen.Boot)?.back != null
     PublishCompanionPage(remember(canGoBack) { BootPage(canGoBack) })
-    CenterColumn(gap = 28f) {
-        BootLogo(Modifier.padding(bottom = 8.px), LocalStage.current.compactScale)
-        // margin-left .24em balances the letter spacing after the last letter
-        BasicText(
-            "DELOS",
-            style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = (if (LocalStage.current.compact) 96 else 132).tpx, letterSpacing = .24.em),
-            modifier = Modifier.padding(start = (if (LocalStage.current.compact) 22 else 30).px),
-        )
-        BasicText(stringResource(R.string.firstrun_boot_tagline), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 28.tpx))
-        FocusRow(FocusSpacing.PILL, gap = if (LocalStage.current.compact) Compact.BUTTON_GAP else 24f, Modifier.padding(top = 26.px)) {
-            PillButton(stringResource(R.string.firstrun_boot_begin), Symbols.ARROW_FORWARD, onBegin, Modifier.focusRequester(begin), primary = true)
-            if (onSkip != null) PillButton(stringResource(R.string.firstrun_boot_skip), Symbols.FAST_FORWARD, onSkip)
-        }
-    }
+    WelcomeIntro(onBegin, onSkip)
 }
 
-/** `.boot-logo`: the Delos ring with its glow, the island inside and the moon circling it (7 s a turn). */
-@Composable
-private fun BootLogo(modifier: Modifier = Modifier, scale: Float = 1f) {
-    val colors = LocalDelosColors.current
-    val stage = LocalStage.current
-    val turn by rememberInfiniteTransition(label = "orbit").animateFloat(0f, 360f, infiniteRepeatable(tween(7000, easing = LinearEasing)), label = "orbitTurn")
-    Canvas(modifier.size((210f * scale).px)) {
-        val k = stage.dpPerPx * density * scale
-        val glow = 160f * k
-        drawCircle(Brush.radialGradient(0f to colors.glow, .66f to colors.glow.copy(alpha = colors.glow.alpha * .4f), 1f to Color.Transparent, center = center, radius = glow), radius = glow)
-        drawCircle(colors.accent, radius = 101f * k, style = Stroke(8f * k))
-        val isle = 37f * k
-        // radial-gradient(circle at 35% 30%, text, accent-3): the third color tints the island's shadow side
-        val light = Offset(center.x - isle * .3f, center.y - isle * .4f)
-        drawCircle(Brush.radialGradient(0f to colors.text, 1f to colors.accent3, center = light, radius = isle * 1.6f), radius = isle, alpha = .92f)
-        // The moon sits at the orbit's top right (top 18, right 30 in a 262 px box)
-        rotate(turn) {
-            val moon = center + Offset(87f * k, -99f * k)
-            drawCircle(Brush.radialGradient(0f to colors.accent2.copy(alpha = .6f), 1f to Color.Transparent, center = moon, radius = 44f * k), radius = 44f * k, center = moon)
-            drawCircle(colors.accent2, radius = 14f * k, center = moon)
-        }
-    }
-}
 
 /**
  * `#scr-create`: an avatar in circles and a name. [editing] changes the current profile ([initial])

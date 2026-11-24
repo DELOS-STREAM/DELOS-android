@@ -1066,7 +1066,7 @@ internal fun CardArt(pc: Pc, app: App, modifier: Modifier) {
  * letting go opens the overview).
  */
 @Composable
-private fun GameInfoHint(visible: Boolean, progress: () -> Float, onOpen: () -> Unit, modifier: Modifier) {
+internal fun GameInfoHint(visible: Boolean, progress: () -> Float, onOpen: () -> Unit, modifier: Modifier) {
     val kind = ControllerGlyphs.kind
     val k = LocalStage.current.dpPerPx * LocalDensity.current.density
     val shown by animateFloatAsState(if (visible) 1f else 0f, tween(Motion.FADE, easing = Motion.Ease), label = "gameInfoHint")

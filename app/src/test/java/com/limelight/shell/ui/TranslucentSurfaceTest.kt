@@ -87,6 +87,8 @@ class TranslucentSurfaceTest {
             Allowed("screens/OverviewVideo.kt", "Color.Black.copy(alpha = .62f)", "veil over the whole video thumbnail"),
             Allowed("screens/SideMenuHeader.kt", ".background(colors.surface)", "the streaming card inside the side menu's glass panel (no blur nested in a blur)"),
             // Dividers, tracks, bar segments, dots
+            Allowed("screens/TutorialParts.kt", "i < index -> colors.accent.copy(alpha = .55f)", "the tutorial's progress dots"),
+            Allowed("screens/TutorialParts.kt", ".background(TutorialGreen.copy(alpha = .14f))", "the small Connected badge on a choice card's glass"),
             Allowed("ui/ContextMenuLayer.kt", "height(1.px).background(Color.White.copy(alpha = .10f))", "divider"),
             Allowed("screens/InfoBar.kt", "width(2.px).height(28.px)", "divider"),
             Allowed("screens/HomeScreen.kt", ".background(textColor.copy(alpha = .55f))", "divider"),
