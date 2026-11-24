@@ -10,6 +10,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Added
+- **TV remote navigation and control**: Android TV and Google TV remotes operate the shell without requiring a gamepad or touch. Menu and Info buttons open context menus (button X); Play/Pause acts as Start; Channel Up/Down and Page Up/Down step through tabs (L1/R1); Yellow and Blue color keys map to Y and X. On remotes without dedicated buttons, long-pressing D-pad Center / OK dispatches button X. Settings, per-game settings, and artwork tabs are focusable via D-pad navigation.
+
 ## [1.3.2] - 2026-11-21
 _A clearer update card that opens straight from Check now. 1.3.1 was skipped: its tag points at a commit that was never released._
 

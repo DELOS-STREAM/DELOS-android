@@ -168,6 +168,21 @@ Apple.
   and a lift to 1.03, in 140 ms, out 110 ms. Focus items have no hover look: they take the focus.
 - The pointer icon is never hidden over the items.
 
+### TV remote control
+
+Android TV and Google TV media remotes (detected via `InputKinds.isTvRemote`) operate the shell without requiring a gamepad or touchscreen.
+
+- **Remote key map** (`GlobalKeys.remoteButton`, applied in `ShellActivity.dispatchKeyEvent` via `remoteAsPad`):
+  - **Menu** (`KEYCODE_MENU`) and **Info** (`KEYCODE_INFO`): mapped to **X** (context menu, screen-specific actions such as filter reset, search or reset to defaults).
+  - **Play/Pause** (`KEYCODE_MEDIA_PLAY_PAUSE`): mapped to **Start** (options / context actions).
+  - **Channel Up** / **Page Up** (`KEYCODE_CHANNEL_UP`, `KEYCODE_PAGE_UP`): mapped to **R1** (step forward through tabs).
+  - **Channel Down** / **Page Down** (`KEYCODE_CHANNEL_DOWN`, `KEYCODE_PAGE_DOWN`): mapped to **L1** (step backward through tabs).
+  - **Color keys**: Yellow (`KEYCODE_PROG_YELLOW`) maps to **Y**; Blue (`KEYCODE_PROG_BLUE`) maps to **X**.
+- **D-pad Center long-press** (`ShellActivity.onKeyLongPress`):
+  On remotes lacking dedicated Menu or color buttons, long-pressing **D-pad Center** / OK dispatches button **X** (context menu). Short press activates the focused item on release.
+- **Tab navigation**:
+  Settings, per-game settings, and artwork tabs (`TabPill`) support D-pad navigation. Moving Up from the first row in a settings list focuses the active tab pill; Left/Right navigates across tabs; Down returns to the list.
+
 ### Navigation
 
 Navigation must be **intuitive and direct**. Pressing a direction takes the focus where the user wants to go, ideally

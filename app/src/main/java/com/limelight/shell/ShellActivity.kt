@@ -179,14 +179,38 @@ class ShellActivity : ComponentActivity() {
 
     // Activity's public key dispatcher must still run after the shell's global controller keys. Every event first tells the input kind
     // what was used (ControllerGlyphs: the hints follow the last input); a hardware keyboard's keys then act as the pad's buttons
-    // (GlobalKeys.keyboardButton), except while a button is being recorded
+    // (GlobalKeys.keyboardButton), except while a button is being recorded; a TV remote's keys act via GlobalKeys.remoteButton
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         ControllerGlyphs.key(event)
         // Any key shows the fullscreen viewer's overlay again, before a global shortcut may consume it
         shellState?.overviewViewerInput?.invoke()
-        val shellEvent = if (keys.capture == null) keyboardAsPad(event) else event
+        if (event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER && event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+            event.startTracking()
+        }
+        val shellEvent = if (keys.capture == null) translateInputEvent(event) else event
         return keys.dispatch(shellEvent) || super.dispatchKeyEvent(shellEvent)
+    }
+
+    override fun onKeyLongPress(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+            val contextAction = KeyEvent(event.downTime, event.eventTime, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BUTTON_X, 0, 0, event.deviceId, event.scanCode, event.flags, event.source)
+            return keys.dispatch(contextAction)
+        }
+        return super.onKeyLongPress(keyCode, event)
+    }
+
+    /** Translates keyboard or TV remote events to corresponding gamepad buttons. */
+    private fun translateInputEvent(event: KeyEvent): KeyEvent = when {
+        InputKinds.fromPad(event.source) -> event
+        InputKinds.isKeyboard(event.device) -> keyboardAsPad(event)
+        else -> remoteAsPad(event)
+    }
+
+    /** A TV remote's key as the pad button it stands for ([GlobalKeys.remoteButton]); any other event as it is. */
+    private fun remoteAsPad(event: KeyEvent): KeyEvent {
+        val button = GlobalKeys.remoteButton(event.keyCode) ?: return event
+        return KeyEvent(event.downTime, event.eventTime, event.action, button, event.repeatCount, 0, event.deviceId, event.scanCode, event.flags, event.source)
     }
 
     /** A hardware keyboard's key as the pad button it stands for ([GlobalKeys.keyboardButton]); any other event as it is. */

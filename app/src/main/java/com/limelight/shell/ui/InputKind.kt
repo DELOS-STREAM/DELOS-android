@@ -113,6 +113,11 @@ object InputKinds {
     fun isKeyboard(device: InputDevice?): Boolean =
         device != null && !device.isVirtual && device.keyboardType == InputDevice.KEYBOARD_TYPE_ALPHABETIC && !fromPad(device.sources)
 
+    /** A TV remote or media control device: non-alphabetic, has D-pad or keyboard keys, not a gamepad. */
+    fun isTvRemote(device: InputDevice?): Boolean =
+        device != null && !device.isVirtual && (has(device.sources, InputDevice.SOURCE_DPAD) || has(device.sources, InputDevice.SOURCE_KEYBOARD)) &&
+            !fromPad(device.sources) && device.keyboardType != InputDevice.KEYBOARD_TYPE_ALPHABETIC
+
     private fun mouseLike(source: Int): Boolean =
         has(source, InputDevice.SOURCE_MOUSE) || has(source, InputDevice.SOURCE_MOUSE_RELATIVE) || has(source, InputDevice.SOURCE_TOUCHPAD)
 

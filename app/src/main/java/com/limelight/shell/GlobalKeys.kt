@@ -70,5 +70,20 @@ class GlobalKeys {
                 else -> null
             }
         }
+
+        /**
+         * The shell's TV remote map: maps TV remote navigation and media keys to gamepad buttons.
+         * Menu and Info map to X (context menu), Play/Pause to Start, Channel Up/Down and Page Up/Down
+         * to shoulder buttons (L1/R1 for tab navigation), and color buttons to Y/X.
+         */
+        fun remoteButton(keyCode: Int): Int? = when (keyCode) {
+            KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_INFO -> KeyEvent.KEYCODE_BUTTON_X
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> KeyEvent.KEYCODE_BUTTON_START
+            KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> KeyEvent.KEYCODE_BUTTON_R1
+            KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> KeyEvent.KEYCODE_BUTTON_L1
+            KeyEvent.KEYCODE_PROG_YELLOW -> KeyEvent.KEYCODE_BUTTON_Y
+            KeyEvent.KEYCODE_PROG_BLUE -> KeyEvent.KEYCODE_BUTTON_X
+            else -> null
+        }
     }
 }
