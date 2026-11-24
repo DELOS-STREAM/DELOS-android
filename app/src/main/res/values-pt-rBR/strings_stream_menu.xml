@@ -160,7 +160,7 @@
     <string name="stream_result_start_title">Não foi possível iniciar o stream</string>
     <string name="stream_result_lost_title">Conexão perdida</string>
     <string name="stream_result_closed_title">O PC encerrou o stream</string>
-    <string name="stream_result_host_closed">O PC encerrou o stream</string>
+    <string name="stream_result_host_closed">%1$s encerrou o stream</string>
     <string name="stream_result_blocked_hint">A conexão de rede atual do seu dispositivo está bloqueando o app Delos. A transmissão pela Internet pode não funcionar enquanto você estiver nesta rede.</string>
     <string name="stream_result_ports_hint">Verifique seu firewall e as regras de redirecionamento para a(s) porta(s):</string>
     <string name="stream_result_failed_stage">Falha ao iniciar %1$s (erro %2$d)</string>

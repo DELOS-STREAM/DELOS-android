@@ -172,7 +172,7 @@
     <string name="stream_result_start_title">Stream se nepodařilo spustit</string>
     <string name="stream_result_lost_title">Spojení ztraceno</string>
     <string name="stream_result_closed_title">PC ukončilo stream</string>
-    <string name="stream_result_host_closed">PC ukončilo stream</string>
+    <string name="stream_result_host_closed">Stream ukončilo zařízení %1$s</string>
     <string name="stream_result_blocked_hint">Aktuální síťové připojení tvého zařízení blokuje aplikaci Delos. Streamování přes internet nemusí na této síti fungovat.</string>
     <string name="stream_result_ports_hint">Zkontroluj firewall a pravidla přesměrování portů pro port(y):</string>
     <string name="stream_result_failed_stage">Nepodařilo se spustit %1$s (chyba %2$d)</string>

@@ -171,7 +171,7 @@ There are three outcomes.
 |---|---|---|---|
 | 1 | **Failed to start** | A connection stage failed, the decoder cannot start, a shortcut's PC is offline/unpaired. | The **result overlay** |
 | 2 | **Connection lost** | The stream terminated with an error. | The **result overlay** |
-| 3 | **Host closed** | The game exited, the PC ended the session normally. | No overlay; Home with the toast "The PC ended the stream" |
+| 3 | **Host closed** | The game exited, the PC ended the session normally. | No overlay; Home (a console: the start screen's PlayStation tab) with the toast "<name> ended the stream", the PC's or console's name in DELOS |
 
 ### 4.3 Result overlay
 

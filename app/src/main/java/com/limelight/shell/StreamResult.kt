@@ -194,8 +194,8 @@ fun describeShortcutFailure(res: Resources, pcName: String, failure: ShortcutFai
     ShortcutFailure.NOT_PAIRED -> ResultText(res.getString(R.string.stream_result_start_title), res.getString(R.string.stream_result_unpaired, pcName), res.getString(R.string.stream_result_unpaired_details))
 }
 
-/** The shown text of the PC ending the stream normally. */
-fun hostClosedToast(res: Resources): String = res.getString(R.string.stream_result_host_closed)
+/** The shown text of the PC or console named [hostName] (the name the user gave it in DELOS) ending the stream normally. */
+fun hostClosedToast(res: Resources, hostName: String): String = res.getString(R.string.stream_result_host_closed, hostName)
 
 /**
  * Where a stream that ended on its own goes: the shell (Home of the PC) with the [StreamResult], where a
@@ -209,15 +209,16 @@ object StreamOutcome {
         show(activity, StreamResult(kind, text.title, text.sentence, text.details, pcUuid ?: "", pcName ?: activity.getString(R.string.stream_result_default_pc), appId, appName ?: "", consoleId ?: ""))
     }
 
-    /** The PC ended the session normally. */
+    /** The PC or console ended the session normally. */
     @JvmStatic
     fun hostClosed(game: DelosStreamActivity) {
         val intent = game.intent
+        val hostName = intent.getStringExtra(DelosStreamActivity.EXTRA_PC_NAME) ?: game.getString(R.string.stream_result_default_pc)
         show(
             game,
             StreamResult(
-                StreamResultKind.HOST_CLOSED, hostClosedToast(game.resources), "", null,
-                intent.getStringExtra(DelosStreamActivity.EXTRA_PC_UUID) ?: "", intent.getStringExtra(DelosStreamActivity.EXTRA_PC_NAME) ?: game.getString(R.string.stream_result_default_pc),
+                StreamResultKind.HOST_CLOSED, hostClosedToast(game.resources, hostName), "", null,
+                intent.getStringExtra(DelosStreamActivity.EXTRA_PC_UUID) ?: "", hostName,
                 intent.getIntExtra(DelosStreamActivity.EXTRA_APP_ID, -1), intent.getStringExtra(DelosStreamActivity.EXTRA_APP_NAME) ?: "",
                 intent.getStringExtra(com.limelight.ps.PsConnection.EXTRA_CONSOLE) ?: "",
             ),

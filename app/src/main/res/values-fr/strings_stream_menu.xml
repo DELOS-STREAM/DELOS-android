@@ -149,7 +149,7 @@
     <string name="stream_result_start_title">Impossible de lancer le stream</string>
     <string name="stream_result_lost_title">Connexion perdue</string>
     <string name="stream_result_closed_title">Le PC a fermé le stream</string>
-    <string name="stream_result_host_closed">Le PC a mis fin au stream</string>
+    <string name="stream_result_host_closed">%1$s a mis fin au stream</string>
     <string name="stream_result_blocked_hint">La connexion réseau actuelle de ton appareil bloque Delos. Le streaming via Internet peut ne pas fonctionner sur ce réseau.</string>
     <string name="stream_result_ports_hint">Vérifie ton pare-feu et tes règles de redirection pour le(s) port(s) :</string>
     <string name="stream_result_failed_stage">Échec du démarrage de %1$s (erreur %2$d)</string>

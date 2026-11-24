@@ -152,10 +152,10 @@ class StreamResultIntentTest {
 
     @Test
     fun aResultWithoutDetailsKeepsThemNull() {
-        val closed = StreamResult(StreamResultKind.HOST_CLOSED, hostClosedToast(ApplicationProvider.getApplicationContext<Context>().resources), "", null, "pc-uuid", "Desk", -1, "")
+        val closed = StreamResult(StreamResultKind.HOST_CLOSED, hostClosedToast(ApplicationProvider.getApplicationContext<Context>().resources, "Desk"), "", null, "pc-uuid", "Desk", -1, "")
         val taken = StreamResult.take(closed.putInto(Intent()))!!
         assertEquals(StreamResultKind.HOST_CLOSED, taken.kind)
         assertNull(taken.details)
-        assertEquals("The PC ended the stream", taken.title)
+        assertEquals("Desk ended the stream", taken.title)
     }
 }
