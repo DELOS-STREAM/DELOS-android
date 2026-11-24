@@ -10,6 +10,12 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-11-24
+_Virtual displays set up on the host work again with Vibepollo and Vibeshine._
+
+### Fixed
+- **Virtual display on Vibepollo and Vibeshine**: with "Use Virtual Display" off, DELOS told the host to stream the physical display, which overrode a host set to always stream on a virtual display, so games opened on the main monitor. DELOS now only asks for a virtual display when the switch is on and otherwise leaves the choice to the host. Checked against the Vibepollo and Vibeshine source; not yet tested on a Vibeshine host (reported by Reddit users).
+
 ## [1.3.2] - 2026-11-21
 _A clearer update card that opens straight from Check now. 1.3.1 was skipped: its tag points at a commit that was never released._
 
@@ -395,7 +401,8 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 ### Removed
 - **Dead-code removal**: SBS 3D, performance logging and other dead code.
 
-[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.0...v1.3.2
 [1.3.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.1.0...v1.2.0

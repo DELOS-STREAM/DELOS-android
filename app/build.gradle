@@ -32,7 +32,7 @@ android {
         // (based on Artemis 20.2.6)
         def versionMajor = 1
         def versionMinor = 3
-        def versionPatch = 2
+        def versionPatch = 3
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
         versionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 
