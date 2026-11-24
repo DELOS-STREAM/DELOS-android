@@ -386,12 +386,12 @@ private fun BoxScope.LessonScene(lesson: Lesson, scene: SceneState, success: Boo
             NavButton(Symbols.ACCOUNT_CIRCLE, stringResource(R.string.shell_nav_profile), false) { complete() },
             NavButton(Symbols.DEVICES, stringResource(R.string.shell_nav_devices), false) { complete() },
         ), Modifier.graphicsLayer { scaleX = 1.7f; scaleY = 1.7f })
-        Scene.STREAM -> TutorialGameScreen(Modifier.fillMaxWidth(.88f).aspectRatio(16f / 9f)
+        Scene.STREAM -> TutorialGameScreen(Modifier.fillMaxWidth(.94f).aspectRatio(16f / 9f)
             .then(if (lesson == Lesson.STREAM_TOUCH) Modifier.bottomSwipe { scene.stream = true; complete() } else Modifier),
             if (scene.stream || success) "" else stringResource(R.string.tutorial_game)) {
             DockIn(scene.stream || success, Modifier.align(Alignment.BottomCenter))
         }
-        Scene.HOLD -> TutorialGameScreen(Modifier.fillMaxWidth(.88f).aspectRatio(16f / 9f), stringResource(R.string.tutorial_game)) {
+        Scene.HOLD -> TutorialGameScreen(Modifier.fillMaxWidth(.94f).aspectRatio(16f / 9f), stringResource(R.string.tutorial_game)) {
             // The press fills a ring; at half a second Guide reaches the PC
             LaunchedEffect(scene.holdSince) {
                 val since = scene.holdSince
@@ -409,7 +409,7 @@ private fun BoxScope.LessonScene(lesson: Lesson, scene: SceneState, success: Boo
                 Chip(Symbols.CHECK_CIRCLE, stringResource(R.string.tutorial_guide_sent), TutorialGreen)
             }
         }
-        Scene.LEAVE -> TutorialGameScreen(Modifier.fillMaxWidth(.88f).aspectRatio(16f / 9f), "") {
+        Scene.LEAVE -> TutorialGameScreen(Modifier.fillMaxWidth(.94f).aspectRatio(16f / 9f), "") {
             var picked by remember { mutableStateOf<BarItem?>(null) }
             LeaveDock(Modifier.align(Alignment.BottomCenter)) { item ->
                 picked = item
@@ -609,7 +609,7 @@ private fun HoldRing(hold: () -> Float, modifier: Modifier) {
 /** The stream's dock rising from the bottom of the game, as a tap on Back or Guide brings it. */
 @Composable
 private fun DockIn(visible: Boolean, modifier: Modifier) {
-    androidx.compose.animation.AnimatedVisibility(visible, modifier.padding(bottom = 18.px),
+    androidx.compose.animation.AnimatedVisibility(visible, modifier.fillMaxWidth().padding(bottom = 18.px),
         enter = fadeIn(tween(260)) + slideInVertically(tween(560, easing = EaseOut)) { it / 2 }) {
         ScaledDock(focus = false, onPick = {})
     }
@@ -618,15 +618,18 @@ private fun DockIn(visible: Boolean, modifier: Modifier) {
 /** The dock with Disconnect and Quit to choose from; the focus starts on Disconnect. */
 @Composable
 private fun LeaveDock(modifier: Modifier, onPick: (BarItem) -> Unit) {
-    Box(modifier.padding(bottom = 18.px)) { ScaledDock(focus = true, start = BarItem.DISCONNECT, onPick = onPick) }
+    Box(modifier.fillMaxWidth().padding(bottom = 18.px)) { ScaledDock(focus = true, start = BarItem.DISCONNECT, onPick = onPick) }
 }
 
-/** The stream's real dock at the stage's width, scaled into the game frame. */
+/** The stream's real dock, as wide as its tiles, scaled to fill the game frame's width and standing on its bottom edge. */
 @Composable
 private fun ScaledDock(focus: Boolean, start: BarItem = BarItem.RESUME, onPick: (BarItem) -> Unit) {
     val stage = LocalStage.current
     val items = BarItem.entries
-    val geometry = remember(stage) { DockGeometry(stage.stageWidth, 48f, stage.compact, stage.textScale, stage.stageHeight, items) }
+    val geometry = remember(stage) {
+        val tiles = DockGeometry(stage.stageWidth, 48f, false, stage.textScale, stage.stageHeight, items).tilesWidth
+        DockGeometry(tiles + 2f * 56f, 48f, false, stage.textScale, stage.stageHeight, items)
+    }
     val requesters = remember { items.associateWith { FocusRequester() } }
     var focused by remember { mutableStateOf(start) }
     val labels = listOf(R.string.stream_menu_tile_resume, R.string.stream_menu_tile_keyboard, R.string.stream_menu_tile_overlay, R.string.stream_menu_tile_bitrate,
@@ -636,10 +639,19 @@ private fun ScaledDock(focus: Boolean, start: BarItem = BarItem.RESUME, onPick: 
     val circles = items.mapIndexed { i, item -> BarCircleSpec(item, icons[i], stringResource(labels[i])) { onPick(item) } }
     if (focus) InitialFocus(requesters.getValue(start))
     CompositionLocalProvider(LocalDockGeometry provides geometry) {
-        Box(Modifier.wrapContentSize(unbounded = true).graphicsLayer { scaleX = .46f; scaleY = .46f }) {
+        androidx.compose.ui.layout.Layout({
             StreamMenuDock(stringResource(R.string.tutorial_game), circles, requesters, if (focus) focused else null, BarItem.RESUME, false,
                 circles.first { it.item == focused }.label, { 2000f }, { 0f }, { 0f },
                 { item, has -> if (has) focused = item }, rememberScrollState(), false, {}, {})
+        }, Modifier.fillMaxWidth()) { measurables, constraints ->
+            // Measured at its own size, laid out scaled down to the frame's width
+            val dock = measurables.first().measure(androidx.compose.ui.unit.Constraints())
+            val s = (constraints.maxWidth.toFloat() / dock.width).coerceAtMost(1f)
+            val h = (dock.height * s).toInt()
+            layout(constraints.maxWidth, h) {
+                // The dock's own box keeps room under its tiles for the stream's hints: drop it by that much, so the tiles sit low in the frame
+                dock.placeWithLayer((constraints.maxWidth - dock.width) / 2, (h - dock.height) / 2 + (h * .22f).toInt()) { scaleX = s; scaleY = s }
+            }
         }
     }
 }
@@ -780,7 +792,7 @@ private fun EndPage(key: Any, replay: Boolean, onDone: () -> Unit) {
         BasicText(stringResource(if (replay) R.string.tutorial_end_replay_note else R.string.tutorial_end_note), Modifier.padding(top = 22.px).widthIn(max = 1100.px).graphicsLayer { stagger(entrance(), 560f) },
             style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 30.tpx, textAlign = androidx.compose.ui.text.style.TextAlign.Center))
         Box(Modifier.padding(top = 60.px).graphicsLayer { stagger(entrance(), 680f, 30f) }) {
-            PillButton(stringResource(if (replay) R.string.shell_hint_done else R.string.tutorial_start), Symbols.ARROW_FORWARD, onDone, Modifier.focusRequester(focus), primary = true)
+            TutorialStartButton(stringResource(if (replay) R.string.shell_hint_done else R.string.tutorial_start), if (replay) Symbols.CHECK else Symbols.PLAY_ARROW, onDone, focus)
         }
     }
 }

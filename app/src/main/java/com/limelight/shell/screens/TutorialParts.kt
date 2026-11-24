@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -232,6 +233,25 @@ private fun Burst(modifier: Modifier) {
             val r = stagePx(36f + 150f * p, stage)
             val color = if (i % 3 == 0) colors.accent else TutorialGreen
             drawCircle(color.copy(alpha = 1f - p), radius = stagePx(5f * (1f - p) + 1f, stage), center = c + Offset(cos(a) * r, sin(a) * r))
+        }
+    }
+}
+
+/**
+ * The end page's one button in the look of the game overview's Play: a gold capsule with the living gold sweep (PlayEffect) round it
+ * while it has the focus, the usual focus ring and lift.
+ */
+@Composable
+internal fun TutorialStartButton(label: String, icon: String, onClick: () -> Unit, requester: FocusRequester) {
+    val colors = LocalDelosColors.current
+    val reduced = LocalReducedMotion.current
+    var focused by remember { mutableStateOf(false) }
+    Box(Modifier.focusRequester(requester).focusEffects(onClick, corner = 999f, focusScale = 1.06f, glow = null, onLookChange = { focused = it })) {
+        PlayEffect(focused, focused, reduced)
+        Row(Modifier.height(96.px).clip(CircleShape).background(colors.accent).padding(horizontal = 64.px),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.px)) {
+            Symbol(icon, 36.tpx, colors.onAccent, filled = true)
+            BasicText(label, maxLines = 1, style = TextStyle(color = colors.onAccent, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 30.tpx))
         }
     }
 }

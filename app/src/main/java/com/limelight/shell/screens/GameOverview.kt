@@ -1067,7 +1067,7 @@ private fun OverviewButton(
  * (a cached shader whose matrix turns); the pill, its text and the ring never rotate. Reduced motion keeps only the halo.
  */
 @Composable
-private fun BoxScope.PlayEffect(shown: Boolean, running: Boolean, reduced: Boolean) {
+internal fun BoxScope.PlayEffect(shown: Boolean, running: Boolean, reduced: Boolean) {
     val k = stageUnit()
     val accent = LocalDelosColors.current.accent
     val fade by animateFloatAsState(if (shown) 1f else 0f, if (reduced) snap() else tween(280, easing = Motion.Ease), label = "playFx")

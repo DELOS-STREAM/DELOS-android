@@ -201,23 +201,23 @@ private fun Wordmark(time: () -> Float, size: Int) {
 
 /** The film's timeline in milliseconds and its curves. */
 internal object IntroTimeline {
-    const val RING = 3000f
-    const val MOON = 4150f
-    const val HALO = 4400f
-    const val KICKER = 4800f
-    const val WORDMARK = 5000f
-    const val TAGLINE = 5800f
-    const val PROMPT = 6400f
-    const val END = 7600f
+    const val RING = 4900f
+    const val MOON = 6050f
+    const val HALO = 6300f
+    const val KICKER = 6700f
+    const val WORDMARK = 6900f
+    const val TAGLINE = 7700f
+    const val PROMPT = 8300f
+    const val END = 9500f
 
     fun progress(t: Float, start: Float, length: Float): Float = EaseOut.transform(((t - start) / length).coerceIn(0f, 1f))
     fun spring(t: Float, start: Float, length: Float): Float = EaseSpring.transform(((t - start) / length).coerceIn(0f, 1f))
     /** The ring's stroke: even speed in the middle, easing in and out at its ends. */
     fun drawn(t: Float, start: Float, length: Float): Float = Motion.EaseInOut.transform(((t - start) / length).coerceIn(0f, 1f))
 
-    /** The slow lift from black (1.8 s), and the flat colour melting into the animated background after it. */
+    /** The slow lift from black (1.8 s), the flat colour held for a moment, then melting into the animated background (2.4 s). */
     fun black(t: Float) = 1f - Motion.EaseInOut.transform((t / 1800f).coerceIn(0f, 1f))
-    fun cover(t: Float) = 1f - Motion.EaseInOut.transform(((t - 1400f) / 1800f).coerceIn(0f, 1f))
+    fun cover(t: Float) = 1f - Motion.EaseInOut.transform(((t - 2500f) / 2400f).coerceIn(0f, 1f))
 
     /** Fades [layer] in from [rise] stage-ish pixels below, starting at [start]. */
     fun rise(layer: androidx.compose.ui.graphics.GraphicsLayerScope, t: Float, start: Float, rise: Float) {
