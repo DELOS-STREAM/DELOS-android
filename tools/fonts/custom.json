@@ -1693,5 +1693,10 @@
     "codepoint": "F152",
     "regular": "console/b-swept-wing-regular.svg",
     "fill": "console/b-swept-wing-fill.svg"
+  },
+  "delos-playstation-mark": {
+    "codepoint": "F153",
+    "regular": "console/playstation-mark.svg",
+    "fill": "console/playstation-mark.svg"
   }
 }

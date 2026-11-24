@@ -716,4 +716,5 @@ object Symbols {
     const val MAC_MAGIC_MOUSE_SWIPE_LEFT = "\uF150"
     const val MAC_MAGIC_MOUSE_SWIPE_RIGHT = "\uF151"
     const val CONSOLE_PS5 = "\uF152"
+    const val PLAYSTATION_MARK = "\uF153"
 }

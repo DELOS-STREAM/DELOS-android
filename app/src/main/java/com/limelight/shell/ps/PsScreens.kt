@@ -96,7 +96,7 @@ fun PsModeSwitch(playStation: Boolean, onPick: (Boolean) -> Unit, y: Float) {
     com.limelight.shell.screens.TabRow(y, com.limelight.shell.screens.SettingsLayout.TABS_HEIGHT.px, left = 0f, right = stage.stageWidth) {
         com.limelight.shell.screens.ShoulderLabel("L1")
         com.limelight.shell.screens.TabPill(Symbols.DESKTOP_WINDOWS, stringResource(R.string.ps_mode_pc), !playStation, Modifier.padding(horizontal = 5.px)) { onPick(false) }
-        com.limelight.shell.screens.TabPill(Symbols.PAD_DUALSENSE_PS, stringResource(R.string.ps_mode_playstation), playStation, Modifier.padding(horizontal = 5.px)) { onPick(true) }
+        com.limelight.shell.screens.TabPill(Symbols.PLAYSTATION_MARK, stringResource(R.string.ps_mode_playstation), playStation, Modifier.padding(horizontal = 5.px)) { onPick(true) }
         com.limelight.shell.screens.ShoulderLabel("R1")
     }
 }
@@ -288,7 +288,7 @@ private fun SignInStep(screen: Screen.PairPs, step: PsPairStep.SignIn) {
             if (saved != null) PillButton(stringResource(R.string.ps_sign_in_keep), Symbols.CHECK, {
                 shell.navigate(Screen.PairPs(PsPairStep.Pin(step.host, saved), back = screen.back ?: Screen.Start))
             }, Modifier.focusRequester(first), primary = true)
-            PillButton(stringResource(R.string.ps_sign_in_button), Symbols.PAD_DUALSENSE_PS, { error = null; signIn.launch(Unit) },
+            PillButton(stringResource(R.string.ps_sign_in_button), Symbols.PLAYSTATION_MARK, { error = null; signIn.launch(Unit) },
                 if (saved == null) Modifier.focusRequester(first) else Modifier, primary = saved == null)
         }
     }
