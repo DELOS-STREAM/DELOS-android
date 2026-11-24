@@ -43,17 +43,30 @@ class Feedback(context: Context) {
     private var intro: MediaPlayer? = null
 
     /**
-     * The intro's sound track (owner's res/raw/intro_fx.wav, 13.2 s), timed to the intro's own clock from its first frame.
-     * Not with the UI sounds off. It plays to its end, also into the screen after the intro; leaving the app stops it.
+     * The intro's sound track (owner's res/raw/intro_fx.wav, 13.2 s). The intro is timed to it, so the sound is its clock
+     * ([introPositionMs]): start-up stalls and the audio output's latency cannot pull the two apart. Not with the UI sounds
+     * off. It plays to its end, also into the screen after the intro; leaving the app stops it. Returns whether it plays.
      */
-    fun playIntro() {
+    fun playIntro(): Boolean {
         stopIntro()
-        if (!soundsEnabled) return
-        val session = appContext.getSystemService(AudioManager::class.java)?.generateAudioSessionId() ?: return
+        if (!soundsEnabled) return false
+        val session = appContext.getSystemService(AudioManager::class.java)?.generateAudioSessionId() ?: return false
         intro = MediaPlayer.create(appContext, R.raw.intro_fx, attributes, session)?.apply {
             setOnCompletionListener { if (intro === it) intro = null; it.release() }
             start()
         }
+        return intro != null
+    }
+
+    /**
+     * Where the intro's sound is now, in milliseconds of what has reached the speaker (0 until it is heard), or null once it
+     * has ended or when it does not play. Between the player's timestamps it runs on the system clock, so it moves smoothly.
+     */
+    fun introPositionMs(): Float? {
+        val player = intro ?: return null
+        val stamp = player.timestamp ?: return 0f
+        if (stamp.mediaClockRate <= 0f) return stamp.anchorMediaTimeUs / 1000f
+        return (stamp.anchorMediaTimeUs + (System.nanoTime() - stamp.anchorSystemNanoTime) / 1000f * stamp.mediaClockRate) / 1000f
     }
 
     fun stopIntro() {

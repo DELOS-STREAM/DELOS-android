@@ -79,12 +79,19 @@ internal fun WelcomeIntro(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
     // Milliseconds of the film; starts past the end with reduced motion
     var time by remember { mutableFloatStateOf(if (reduced) IntroTimeline.END else 0f) }
     LaunchedEffect(Unit) {
+        // The owner's sound track is timed to the film, so while it plays it is the film's clock (locked: the film holds at
+        // its start until the sound is heard). Without it, or once it has ended, frames move the clock on, a start-up stall
+        // counting as one frame at most so nothing is skipped
+        val sound = !reduced && feedback.playIntro()
         var last = -1L
         while (true) {
             androidx.compose.runtime.withFrameNanos { now ->
-                if (last >= 0) time += (now - last) / 1_000_000f
-                // The owner's sound track is timed to the film: it starts with its first frame
-                else if (!reduced) feedback.playIntro()
+                val heard = if (sound) feedback.introPositionMs() else null
+                time = when {
+                    heard != null -> maxOf(time, heard)
+                    last >= 0 -> time + ((now - last) / 1_000_000f).coerceAtMost(MAX_FRAME_MS)
+                    else -> time
+                }
                 // The warp of the background follows the pulse (Shockwave): 0 to 1 over its run, off before and after
                 val wave = (time - IntroTimeline.SHOCK) / Shockwave.DURATION_MS
                 Shockwave.progress = if (!reduced && wave in 0f..1f) wave else -1f
@@ -303,6 +310,9 @@ private fun AnimatedLogo(time: () -> Float, scale: Float) {
         if (dot > 0f) drawCircle(colors.accent2, radius = 5.5f * u * dot, center = moon)
     }
 }
+
+/** The longest step one frame moves the film's clock when the sound does not drive it. */
+private const val MAX_FRAME_MS = 50f
 
 /** How many motes gather into the ring. */
 private const val RING_MOTES = 800
