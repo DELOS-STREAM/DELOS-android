@@ -39,6 +39,8 @@ data class StreamResult(
     val pcName: String,
     val appId: Int,
     val appName: String,
+    /** The PlayStation console of a PlayStation stream ([com.limelight.ps.PsConnection.EXTRA_CONSOLE]); empty for a PC. */
+    val consoleId: String = "",
     /** Tells one result from the next (the shell shows each once). */
     val id: Long = System.nanoTime(),
 ) {
@@ -46,7 +48,7 @@ data class StreamResult(
     fun putInto(intent: Intent): Intent = intent
         .putExtra(KIND, kind.name).putExtra(TITLE, title).putExtra(SENTENCE, sentence).putExtra(DETAILS, details)
         .putExtra(PC_UUID, pcUuid).putExtra(PC_NAME, pcName).putExtra(APP_ID, appId).putExtra(APP_NAME, appName)
-        .putExtra(ORIGIN, origin)
+        .putExtra(CONSOLE_ID, consoleId).putExtra(ORIGIN, origin)
 
     companion object {
         private const val KIND = "DelosResultKind"
@@ -57,6 +59,7 @@ data class StreamResult(
         private const val PC_NAME = "DelosResultPcName"
         private const val APP_ID = "DelosResultAppId"
         private const val APP_NAME = "DelosResultAppName"
+        private const val CONSOLE_ID = "DelosResultConsoleId"
         private const val ORIGIN = "DelosResultOrigin"
 
         /**
@@ -83,6 +86,7 @@ data class StreamResult(
                 intent.getStringExtra(PC_NAME) ?: "",
                 intent.getIntExtra(APP_ID, -1),
                 intent.getStringExtra(APP_NAME) ?: "",
+                intent.getStringExtra(CONSOLE_ID) ?: "",
             )
             intent.removeExtra(KIND)
             intent.removeExtra(TITLE)
@@ -92,6 +96,7 @@ data class StreamResult(
             intent.removeExtra(PC_NAME)
             intent.removeExtra(APP_ID)
             intent.removeExtra(APP_NAME)
+            intent.removeExtra(CONSOLE_ID)
             intent.removeExtra(ORIGIN)
             return result
         }
@@ -199,8 +204,9 @@ fun hostClosedToast(res: Resources): String = res.getString(R.string.stream_resu
 object StreamOutcome {
     /** The stream (or the shortcut that wanted to start one) failed: Delos shows [kind] with [text]. */
     @JvmStatic
-    fun failed(activity: Activity, kind: StreamResultKind, text: ResultText, pcUuid: String?, pcName: String?, appId: Int, appName: String?) {
-        show(activity, StreamResult(kind, text.title, text.sentence, text.details, pcUuid ?: "", pcName ?: activity.getString(R.string.stream_result_default_pc), appId, appName ?: ""))
+    @JvmOverloads
+    fun failed(activity: Activity, kind: StreamResultKind, text: ResultText, pcUuid: String?, pcName: String?, appId: Int, appName: String?, consoleId: String? = null) {
+        show(activity, StreamResult(kind, text.title, text.sentence, text.details, pcUuid ?: "", pcName ?: activity.getString(R.string.stream_result_default_pc), appId, appName ?: "", consoleId ?: ""))
     }
 
     /** The PC ended the session normally. */
@@ -213,17 +219,19 @@ object StreamOutcome {
                 StreamResultKind.HOST_CLOSED, hostClosedToast(game.resources), "", null,
                 intent.getStringExtra(DelosStreamActivity.EXTRA_PC_UUID) ?: "", intent.getStringExtra(DelosStreamActivity.EXTRA_PC_NAME) ?: game.getString(R.string.stream_result_default_pc),
                 intent.getIntExtra(DelosStreamActivity.EXTRA_APP_ID, -1), intent.getStringExtra(DelosStreamActivity.EXTRA_APP_NAME) ?: "",
+                intent.getStringExtra(com.limelight.ps.PsConnection.EXTRA_CONSOLE) ?: "",
             ),
         )
     }
 
-    /** The stream failed or was terminated; its own intent says which game on which PC. */
+    /** The stream failed or was terminated; its own intent says which game on which PC, or which PlayStation console. */
     @JvmStatic
     fun failed(game: DelosStreamActivity, kind: StreamResultKind, text: ResultText) {
         val intent = game.intent
         failed(
             game, kind, text, intent.getStringExtra(DelosStreamActivity.EXTRA_PC_UUID), intent.getStringExtra(DelosStreamActivity.EXTRA_PC_NAME),
             intent.getIntExtra(DelosStreamActivity.EXTRA_APP_ID, -1), intent.getStringExtra(DelosStreamActivity.EXTRA_APP_NAME),
+            intent.getStringExtra(com.limelight.ps.PsConnection.EXTRA_CONSOLE),
         )
     }
 

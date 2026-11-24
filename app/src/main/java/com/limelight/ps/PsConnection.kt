@@ -121,18 +121,20 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
     /**
      * Finds and wakes the console, opens the ctrl session (retried [ctrlTries] times, 2 s apart, while a console in rest mode wakes),
-     * then the stream; [beforeStream] runs once the session id is there. Throws when a step fails.
+     * then the stream; [beforeStream] runs once the session id is there. Throws when a step fails. The wake goes out again before
+     * every retry: a single burst of UDP from a handheld whose Wi-Fi is just waking can be lost, and the console never answers it.
      */
     private fun openSession(c: com.limelight.shell.ps.PsConsole, ctrlTries: Int, stepDown: Boolean = false, beforeStream: () -> Unit = {}) {
         val address = locate(c)
-        runCatching { PsDiscovery.wake(address, c.console.target.ps5, c.console.registKey) }
         val request = request(c.console.target, stepDown)
         var opened: PsCtrl? = null
         var lastError: Exception? = null
         for (attempt in 0 until ctrlTries) {
             if (!running) { opened?.close(); return }
+            try { PsDiscovery.wake(address, c.console.target.ps5, c.console.registKey) }
+            catch (e: Exception) { Log.w(TAG, "wake ${address.hostAddress}", e) }
             try { opened = PsCtrl(address, PS_PORT, c.console, request.codec).also { it.open() }; break }
-            catch (e: Exception) { lastError = e; Thread.sleep(2000) }
+            catch (e: Exception) { lastError = e; Log.i(TAG, "ctrl ${address.hostAddress}, try ${attempt + 1}/$ctrlTries: ${e.message}"); Thread.sleep(2000) }
         }
         val session = opened ?: throw lastError ?: PsException("no session")
         ctrl = session

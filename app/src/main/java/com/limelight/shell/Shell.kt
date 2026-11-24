@@ -315,13 +315,15 @@ fun Shell(
     }
 
     // A stream that ended on its own (it never started, the connection broke, the PC closed it): Home of
-    // that PC first, then a toast or the result overlay. Shown once; the activity only held it until here.
+    // that PC first (a PlayStation stream: the start screen's PlayStation tab), then a toast or the result overlay.
+    // Shown once; the activity only held it until here.
     val streamResult by results.collectAsStateWithLifecycle()
     LaunchedEffect(streamResult) {
         val r = streamResult ?: return@LaunchedEffect
         // Cleared only once it has been taken over below (the change restarts this effect)
-        if (r.pcUuid.isNotEmpty()) repo.selectPc(r.pcUuid)
-        if (profiles.all.isNotEmpty() && shell.screen !is Screen.Boot && shell.screen !is Screen.CreateProfile) shell.navigate(Screen.Home)
+        val playStation = r.consoleId.isNotEmpty()
+        if (playStation) com.limelight.shell.ps.PsMode.set(true) else if (r.pcUuid.isNotEmpty()) repo.selectPc(r.pcUuid)
+        if (profiles.all.isNotEmpty() && shell.screen !is Screen.Boot && shell.screen !is Screen.CreateProfile) shell.navigate(if (playStation) Screen.Start else Screen.Home)
         if (r.kind == StreamResultKind.HOST_CLOSED) {
             results.value = null
             shell.showToast(r.title, Symbols.INFO)
@@ -403,10 +405,15 @@ fun Shell(
             runCatching { shell.restoreScreenFocus?.invoke() }
         }
     }
-    // Try again: the same game on the same PC, started the way Home starts it (the per-game settings are read again)
+    // Try again: the same game on the same PC, started the way Home starts it (the per-game settings are read again);
+    // a PlayStation stream starts the same console again
     fun retryStream() {
         val r = shell.result ?: return
         shell.result = null
+        if (r.consoleId.isNotEmpty()) {
+            activity?.let { com.limelight.shell.ps.startPsStream(it, r.consoleId, r.pcName) }
+            return
+        }
         scope.launch {
             val target = if (r.pcUuid.isEmpty()) null else repo.awaitPc(r.pcUuid, 4_000) { it.paired && it.online }
             if (target == null) {
