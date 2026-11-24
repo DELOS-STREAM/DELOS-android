@@ -105,6 +105,8 @@ internal interface StreamMenuHost {
     val frameGenMultiplier: Int get() = 1
     val frameGenChoice: Int get() = 2
     fun setFrameGenMultiplier(multiplier: Int) {}
+    /** The multiplier the switch turns on next, without turning frame generation on. */
+    fun setFrameGenChoice(multiplier: Int) {}
 
     // More
     fun sendClipboard()

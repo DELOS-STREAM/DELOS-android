@@ -684,11 +684,13 @@ private fun PageRows(
             // 2×, 3×, 4×: the labels of the setting's choices
             val choices = listOf(R.string.frame_generation_2x, R.string.frame_generation_3x, R.string.frame_generation_4x).map { res.getString(it) }
             val choice = (if (multiplier > 1) multiplier else host.frameGenChoice).coerceIn(2, 4)
+            // While frame generation is off the multiplier only picks what the switch turns on (owner, 2026-11-24)
+            fun pick(m: Int) { if (multiplier > 1) host.setFrameGenMultiplier(m) else host.setFrameGenChoice(m) }
             KeyedRow(Symbols.HIGH_QUALITY, R.string.stream_menu_row_multiplier, MenuKey.MULTIPLIER, RowValue.Choice(choices[choice - 2], { direction ->
-                host.setFrameGenMultiplier(2 + Math.floorMod(choice - 2 + direction, choices.size))
+                pick(2 + Math.floorMod(choice - 2 + direction, choices.size))
                 changesTick()
             }, options = choices, selected = choice - 2, onPick = { i ->
-                host.setFrameGenMultiplier(i + 2)
+                pick(i + 2)
                 changesTick()
             }), enabled = available)
         }
