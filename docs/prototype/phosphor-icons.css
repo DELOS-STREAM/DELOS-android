@@ -148,7 +148,8 @@
 .ms[data-icon="async_decode"] { --phosphor-glyph: "\e6ac"; }
 .ms[data-icon="upscaler"] { --phosphor-glyph: "\e626"; }
 .ms[data-icon="upscaler_mode"] { --phosphor-glyph: "\e466"; }
-.ms[data-icon="frame_generation"] { --phosphor-glyph: "\edf6"; }
+.ms[data-icon="frame_generation"] { --phosphor-glyph: "\f154"; }
+.ms[data-icon="delos_tide"] { --phosphor-glyph: "\f155"; }
 .ms[data-icon="microphone"] { --phosphor-glyph: "\e326"; }
 .ms[data-icon="gyro_aim"] { --phosphor-glyph: "\edd8"; }
 .ms[data-icon="gyro_aim_sensitivity"] { --phosphor-glyph: "\edd6"; }

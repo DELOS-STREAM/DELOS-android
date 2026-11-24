@@ -90,7 +90,7 @@ fun settingIcon(key: String): String? = when (key) {
     "list_sgsr_quality" -> Symbols.UPSCALER_MODE
     "seekbar_sgsr_sharpness" -> Symbols.SHARPNESS
     "list_sgsr_supersampling_level" -> Symbols.HIGH_QUALITY
-    "list_frame_generation" -> Symbols.FRAME_GENERATION
+    "list_frame_generation" -> Symbols.DELOS_TIDE
     "video_format" -> Symbols.CODEC
     "list_pyrowave_chroma" -> Symbols.CHROMA
     "checkbox_enable_hdr" -> Symbols.HDR_ON

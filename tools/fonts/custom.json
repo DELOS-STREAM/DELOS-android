@@ -1697,6 +1697,16 @@
   "delos-playstation-mark": {
     "codepoint": "F153",
     "regular": "console/playstation-mark.svg",
-    "fill": "console/playstation-mark.svg"
+    "fill": "console/playstation-mark-fill.svg"
+  },
+  "delos-frame-generation": {
+    "codepoint": "F154",
+    "regular": "tide/frame-gen-regular.svg",
+    "fill": "tide/frame-gen-fill.svg"
+  },
+  "delos-tide": {
+    "codepoint": "F155",
+    "regular": "tide/tide-regular.svg",
+    "fill": "tide/tide-fill.svg"
   }
 }

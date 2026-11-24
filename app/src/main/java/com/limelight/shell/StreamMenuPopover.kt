@@ -314,6 +314,8 @@ internal fun ColumnScope.PopoverPage(
     // A second line under the title and the Experimental badge, as the settings row of the same feature shows them (DELOS Tide)
     subtitle: String? = null,
     experimental: Boolean = false,
+    // An icon before the title (DELOS Tide's own mark)
+    titleIcon: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LocalDelosColors.current
@@ -344,10 +346,13 @@ internal fun ColumnScope.PopoverPage(
                 compositingStrategy = CompositingStrategy.ModulateAlpha
             },
         ) {
-            MarqueeText(
-                title,
-                style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = L.POPOVER_TITLE_SIZE.fsp, letterSpacing = (-.005f).em),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.px)) {
+                if (titleIcon != null) com.limelight.shell.ui.Symbol(titleIcon, L.POPOVER_TITLE_SIZE.fsp * 1.15f, colors.accent)
+                MarqueeText(
+                    title,
+                    style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = L.POPOVER_TITLE_SIZE.fsp, letterSpacing = (-.005f).em),
+                )
+            }
             if (subtitle != null) Row(
                 Modifier.padding(top = 4.px),
                 verticalAlignment = Alignment.CenterVertically,
