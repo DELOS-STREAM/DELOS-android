@@ -61,6 +61,7 @@ import com.limelight.shell.ui.px
 import com.limelight.shell.ui.tpx
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.pow
 
 /**
  * The intro of the first launch and of a replayed tutorial (owner, 2026-11-24): one continuous opening over the whole window. Black
@@ -82,7 +83,7 @@ internal fun WelcomeIntro(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
             androidx.compose.runtime.withFrameNanos { now ->
                 if (last >= 0) time += (now - last) / 1_000_000f
                 // The warp of the background follows the pulse (Shockwave): 0 to 1 over its run, off before and after
-                val wave = (time - IntroTimeline.SHOCK) / SHOCK_MS
+                val wave = (time - IntroTimeline.SHOCK) / Shockwave.DURATION_MS
                 Shockwave.progress = if (!reduced && wave in 0f..1f) wave else -1f
                 last = now
             }
@@ -106,10 +107,17 @@ internal fun WelcomeIntro(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
             .focusable()
             .pointerInput(Unit) { detectTapGestures { press() } },
     ) {
-        // The shell's animated background lies behind every screen; a flat DELOS colour covers it first and melts away
+        // The dust gathers on black (owner, for contrast); the burst's shockwave then opens the shell's animated background, black
+        // left only beyond its front, until the front has passed every corner
         Canvas(Modifier.fillMaxSize()) {
-            val cover = IntroTimeline.cover(time)
-            if (cover > 0f) drawRect(colors.bg.copy(alpha = cover))
+            val wave = ((time - IntroTimeline.SHOCK) / Shockwave.DURATION_MS).coerceIn(0f, 1f)
+            if (time < IntroTimeline.SHOCK) { drawRect(Color.Black); return@Canvas }
+            if (wave >= 1f) return@Canvas
+            val c = Shockwave.center
+            val front = Shockwave.radius(wave, size.width, size.height)
+            val edge = 150f
+            val outer = front + edge
+            drawRect(Brush.radialGradient(0f to Color.Transparent, ((front - edge).coerceAtLeast(0f) / outer) to Color.Transparent, 1f to Color.Black, center = c, radius = outer))
         }
         Column(Modifier.align(Alignment.Center).padding(bottom = 30.px), horizontalAlignment = Alignment.CenterHorizontally) {
             AnimatedLogo({ time }, if (stage.compact) .8f else 1f)
@@ -144,11 +152,6 @@ internal fun WelcomeIntro(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
                 PillButton(stringResource(R.string.firstrun_boot_skip), Symbols.FAST_FORWARD, onSkip, compact = true)
             }
         }
-        // It all opens slowly from black
-        Canvas(Modifier.fillMaxSize()) {
-            val black = IntroTimeline.black(time)
-            if (black > 0f) drawRect(Color.Black.copy(alpha = black))
-        }
     }
 }
 
@@ -160,6 +163,7 @@ internal fun WelcomeIntro(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
 private fun AnimatedLogo(time: () -> Float, scale: Float) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
+    val window = androidx.compose.ui.platform.LocalWindowInfo.current.containerSize
     Canvas(Modifier.size((240f * scale).px).onGloballyPositioned { c ->
         // Where the shockwave starts (window pixels): the ring's centre and radius
         Shockwave.center = c.positionInWindow() + Offset(c.size.width / 2f, c.size.height / 2f)
@@ -171,74 +175,128 @@ private fun AnimatedLogo(time: () -> Float, scale: Float) {
         val stroke = 3f * u
         val radius = 20f * u - stroke / 2f
         val moon = center + Offset(18.5f * u, -12.5f * u)
-        val start = Math.toDegrees(kotlin.math.atan2(-12.5, 18.5)).toFloat()
+        // The ring fills from its lower left, clockwise (owner)
+        val start = 135f
         val dot = IntroTimeline.spring(t, IntroTimeline.MOON, 420f)
         val halo = IntroTimeline.spring(t, IntroTimeline.HALO, 520f)
-        // A soft light the ring gathers as it closes
-        val bloom = IntroTimeline.progress(t, IntroTimeline.RING + 500f, 1400f)
-        if (bloom > 0f) {
-            val glow = radius * 1.9f
-            drawCircle(Brush.radialGradient(0f to colors.glow.copy(alpha = colors.glow.alpha * .7f * bloom), .6f to colors.glow.copy(alpha = colors.glow.alpha * .25f * bloom), 1f to Color.Transparent, center = center, radius = glow), radius = glow)
+        // The ring gathers from dust (owner): motes in the PlayStation background's look (mostly fine light specks, a few larger ones
+        // with a soft halo, some warm, twinkling, adding light) rise from the bottom middle, swing out to the logo's left and circle
+        // it clockwise a few times, faster and faster as they close in, filling the ring from its lower left. They stay on the ring
+        // until the pulse, then ride the shockwave out and fade; the solid ring, drawn as they land, stays
+        val wave = ((t - IntroTimeline.SHOCK) / Shockwave.DURATION_MS).coerceIn(0f, 1f)
+        val front = if (t < IntroTimeline.SHOCK) 0f else Shockwave.front(wave)
+        // The pulse (owner): the logo winds back like a spring, shrinking just before the burst, then shoots out past its size and
+        // bounces back as the shockwave leaves it
+        val bump = when {
+            t < IntroTimeline.SHOCK - WIND_MS -> 1f
+            t < IntroTimeline.SHOCK -> 1f - .12f * Motion.EaseInOut.transform((t - IntroTimeline.SHOCK + WIND_MS) / WIND_MS)
+            else -> {
+                val k = ((t - IntroTimeline.SHOCK) / 1000f).coerceAtMost(1f)
+                val w = 3f * 3.1416f * k
+                1f + kotlin.math.exp(-3.5f * k) * (-.12f * kotlin.math.cos(w) + .14f * kotlin.math.sin(w)) * (1f - k * k * k)
+            }
         }
-        // The ring gathers from dust (owner): motes in the PlayStation background's look (small sharp near-white points with a faint
-        // halo, some warm, twinkling, adding light) float up from below the screen on wandering paths, start circling round the logo
-        // and settle onto the ring, each at its own pace, in the direction the ring is drawn; the solid stroke fades in under them
         for (i in 0 until RING_MOTES) {
             val r1 = hash(i, 1); val r2 = hash(i, 2); val r3 = hash(i, 3); val r4 = hash(i, 4); val r5 = hash(i, 5)
             val along = i / RING_MOTES.toFloat()
-            val land = IntroTimeline.RING + 250f + along * 1050f + (r1 - .5f) * 420f
-            val flight = 1900f + r2 * 800f
-            val p = (t - (land - flight)) / flight
+            val land = IntroTimeline.RING + 300f + along * RING_FILL_MS + (r1 - .5f) * 300f
+            val flight = 3200f + r2 * 1000f
+            val p = ((t - (land - flight)) / flight).coerceAtMost(1f)
             if (p <= 0f) continue
             val targetDeg = start + 360f * along
-            val pos: Offset
-            if (p < .55f) {
-                // Floating up from below the screen, swaying, to where it joins the circling
-                val q = Motion.EaseInOut.transform(p / .55f)
-                val joinDeg = Math.toRadians((targetDeg - 170f - 160f * r5).toDouble())
-                val joinR = radius * (1.5f + .9f * r4)
-                val join = center + Offset((kotlin.math.cos(joinDeg) * joinR).toFloat(), (kotlin.math.sin(joinDeg) * joinR).toFloat())
-                val from = center + Offset((r3 - .5f) * radius * 10f, radius * (6f + 3f * r4))
-                val sway = kotlin.math.sin(q * 3.1416f * (1.5f + r2) + r1 * 6.28f) * radius * .45f * (1f - q)
-                pos = from + (join - from) * q + Offset(sway, 0f)
-            } else {
-                // Circling in: on round the centre to its place while the orbit tightens, with a soft radial breathing
-                val q = Motion.EaseInOut.transform(((p - .55f) / .45f).coerceAtMost(1f))
-                val deg = Math.toRadians((targetDeg - 170f - 160f * r5 + (170f + 160f * r5) * q).toDouble())
-                val r = radius * (1.5f + .9f * r4 - (.5f + .9f * r4) * q) + kotlin.math.sin(q * 6.28f + r1 * 6.28f) * radius * .06f * (1f - q)
-                pos = center + Offset((kotlin.math.cos(deg) * r).toFloat(), (kotlin.math.sin(deg) * r).toFloat())
+            // One smooth spiral per mote, in polar terms round the logo's centre, both driven by the same clock so the path never
+            // stops or kinks: the radius closes in from far below the screen first (a rise from the bottom middle), the angle
+            // starts slowly and speeds up as the orbit tightens (out to the left, then one to three turns clockwise round the
+            // logo), easing only in the last moment onto the mote's own place just off the ring's line
+            val home = radius * (1f + (r3 - .5f) * .16f)
+            val r0 = radius * (6.5f + 2.5f * r5)
+            val fromDeg = 90f + (r3 - .5f) * 30f
+            val laps = 360f * (1f + kotlin.math.floor(r2 * 2.99f))
+            val turn = 1f - (1f - p.pow(2.8f)).pow(1.6f)
+            val deg = Math.toRadians((fromDeg + (targetDeg + laps - fromDeg) * turn).toDouble())
+            val wobble = kotlin.math.sin(p * 3.1416f * (2f + 2f * r1) + r4 * 6.28f) * radius * .16f * (1f - p).pow(1.5f)
+            val r = home + (r0 - home) * (1f - p).pow(2.6f) + wobble
+            // Landed dust winds back and springs out with the logo
+            val rr = r * (if (p >= 1f) bump else 1f)
+            var pos = center + Offset((kotlin.math.cos(deg) * rr).toFloat(), (kotlin.math.sin(deg) * rr).toFloat())
+            var fade = (p / .12f).coerceAtMost(1f) * (.75f + .25f * kotlin.math.sin(t * (.004f + .006f * r2) + r3 * 6.28f))
+            if (front > 0f) {
+                // Carried out by the shockwave, each at its own share of the front's speed, fading on the way
+                val dir = Math.toRadians(targetDeg.toDouble())
+                val out = (Shockwave.radius(wave, window.width.toFloat(), window.height.toFloat()) - radius) * (.55f + .5f * r4)
+                pos += Offset((kotlin.math.cos(dir) * out).toFloat(), (kotlin.math.sin(dir) * out).toFloat())
+                fade *= 1f - ((t - IntroTimeline.SHOCK) / DUST_GONE_MS).coerceIn(0f, 1f)
             }
-            val twinkle = .75f + .25f * kotlin.math.sin(t * (.004f + .006f * r2) + r3 * 6.28f)
-            val fade = (p / .12f).coerceAtMost(1f) * (1f - ((t - land - 150f) / 600f).coerceIn(0f, 1f)) * twinkle
             if (fade <= 0f) continue
-            val warm = r4 < .35f
-            val core = if (warm) colors.accent else androidx.compose.ui.graphics.lerp(colors.accent, Color.White, .75f)
-            val size = stroke * (.16f + .2f * r5)
-            drawCircle(core.copy(alpha = .22f * fade), radius = size * 3.2f, center = pos, blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
-            drawCircle(core.copy(alpha = fade), radius = size, center = pos, blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
+            // Mostly fine specks, a few larger and brighter with an orange glow (owner); the glow is a plain faint disc, not a
+            // gradient, so there is no shader per mote per frame
+            val grain = hash(i, 6)
+            val warm = r4 < .3f
+            val core = if (warm) colors.accent else androidx.compose.ui.graphics.lerp(colors.accent, Color.White, .6f + .35f * hash(i, 7))
+            val dotR = stroke * (.035f + .17f * grain.pow(3f))
+            val bright = fade * (.45f + .55f * hash(i, 8)) * (.6f + .4f * grain)
+            if (grain > .45f) drawCircle(colors.accent.copy(alpha = .16f * bright), radius = dotR * 4.5f, center = pos, blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
+            drawCircle(core.copy(alpha = bright.coerceAtMost(1f)), radius = dotR, center = pos, blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
         }
-        // The solid ring fades in under the settling dust, running round in the direction it is drawn
-        val solid = IntroTimeline.drawn(t, IntroTimeline.RING + 400f, 1100f)
-        val solidAlpha = IntroTimeline.progress(t, IntroTimeline.RING + 400f, 1300f)
-        // The pulse when the ring closes: the logo bumps and a wave runs out (the backdrop's warp follows it: Shockwave)
-        val pulse = ((t - IntroTimeline.SHOCK) / 700f).coerceIn(0f, 1f)
-        val bump = if (pulse in 0f..1f) 1f + .07f * kotlin.math.sin(pulse * 3.1416f) else 1f
-        if (pulse > 0f && pulse < 1f) {
-            val wave = radius * (1f + 5f * EaseOut.transform(pulse))
-            drawCircle(colors.accent.copy(alpha = .55f * (1f - pulse)), radius = wave, center = center, style = Stroke(stroke * (1.4f - pulse)))
+        // The solid ring, drawn round behind the landing dust, clockwise from the lower left; it stays after the pulse
+        val solid = ((t - IntroTimeline.RING - 450f) / RING_FILL_MS).coerceIn(0f, 1f)
+        val solidAlpha = IntroTimeline.progress(t, IntroTimeline.RING + 450f, 1200f)
+        val ringTopLeft = center - Offset(radius * bump, radius * bump)
+        val ringSize = androidx.compose.ui.geometry.Size(radius * 2f * bump, radius * 2f * bump)
+        // The dust's orange light on the ring (owner): a glow hugging the stroke while the dust is on it, gone with the dust after the
+        // burst, so the finished mark looks as it does everywhere else (no glow)
+        val lit = solidAlpha * (1f - ((t - IntroTimeline.SHOCK) / DUST_GONE_MS).coerceIn(0f, 1f))
+        if (solid > 0f && lit > 0f) for ((width, alpha) in RING_GLOW) drawArc(colors.accent.copy(alpha = alpha * lit), start, 360f * solid, false,
+            topLeft = ringTopLeft, size = ringSize, style = Stroke(stroke * bump * width, cap = StrokeCap.Round))
+        if (solid > 0f) drawArc(colors.accent.copy(alpha = solidAlpha), start, 360f * solid, false, topLeft = ringTopLeft,
+            size = ringSize, style = Stroke(stroke * bump, cap = StrokeCap.Round))
+        // Sparks (owner): at the burst some of the dust flies off the ring in every direction like sparks in the wind: fast at
+        // first, braked by the air, drifting with a breeze up and to the right, flickering out
+        val since = t - IntroTimeline.SHOCK
+        if (since > 0f && since < SPARK_MAX_MS) for (j in 0 until SPARKS) {
+            val s1 = hash(j, 11); val s2 = hash(j, 12); val s3 = hash(j, 13); val s4 = hash(j, 14); val s5 = hash(j, 15)
+            val life = 900f + (SPARK_MAX_MS - 900f) * s1
+            val age = since / life
+            if (age >= 1f) continue
+            val ang = s2 * 6.2832f
+            val dir = Offset(kotlin.math.cos(ang), kotlin.math.sin(ang))
+            val v0 = u * (.15f + .8f * s3.pow(1.6f))
+            val decay = kotlin.math.exp(-SPARK_DRAG * since)
+            val gust = since / 2000f
+            val wind = Offset(40f * u * gust * gust, -26f * u * gust * gust)
+            val sway = kotlin.math.sin(since * (.003f + .004f * s4) + s5 * 6.28f) * u * 4f * age
+            val pos = center + dir * (radius * bump) + dir * (v0 / SPARK_DRAG * (1f - decay)) + wind + Offset(-dir.y * sway, dir.x * sway)
+            val vel = dir * (v0 * decay) + Offset(80f * u * gust / 2000f, -52f * u * gust / 2000f)
+            val flicker = .55f + .45f * kotlin.math.sin(since * (.02f + .03f * s4) + s5 * 40f)
+            val a = (1f - age).pow(1.3f) * flicker
+            val core = if (s5 < .55f) colors.accent else androidx.compose.ui.graphics.lerp(colors.accent, Color.White, .8f)
+            drawLine(core.copy(alpha = a), pos - vel * 26f, pos, strokeWidth = u * (.2f + .35f * s3), cap = StrokeCap.Round,
+                blendMode = androidx.compose.ui.graphics.BlendMode.Plus)
         }
-        if (solid > 0f) drawArc(colors.accent.copy(alpha = solidAlpha), start, 360f * solid, false, topLeft = center - Offset(radius * bump, radius * bump),
-            size = androidx.compose.ui.geometry.Size(radius * 2f * bump, radius * 2f * bump), style = Stroke(stroke * bump, cap = StrokeCap.Round))
         if (halo > 0f) drawCircle(colors.accent2.copy(alpha = .35f * halo.coerceAtMost(1f)), radius = 9f * u * halo, center = moon)
         if (dot > 0f) drawCircle(colors.accent2, radius = 5.5f * u * dot, center = moon)
     }
 }
 
 /** How many motes gather into the ring. */
-private const val RING_MOTES = 220
+private const val RING_MOTES = 460
 
-/** How long the shockwave runs out to the screen's edges. */
-private const val SHOCK_MS = 1300f
+/** How many sparks fly off at the burst, how long the longest lives, and the air's braking (per millisecond). */
+private const val SPARKS = 240
+private const val SPARK_MAX_MS = 2600f
+private const val SPARK_DRAG = .0028f
+
+/** How long after the burst the dust (riding the shockwave) and its light on the ring are gone. */
+private const val DUST_GONE_MS = 1500f
+
+/** The ring's glow while the dust lights it: wider strokes (times the ring's) at low alpha round the solid one. */
+private val RING_GLOW = listOf(3.2f to .08f, 1.9f to .16f)
+
+/** How long the dust takes to fill the ring, from its first mote landing to its last. */
+private const val RING_FILL_MS = 2100f
+
+/** How long the logo winds back before the burst. */
+private const val WIND_MS = 420f
 
 /** A fixed pseudo-random value in 0..1 for mote [i] and channel [k]. */
 private fun hash(i: Int, k: Int): Float {
@@ -273,27 +331,18 @@ private fun Wordmark(time: () -> Float, size: Int) {
 
 /** The film's timeline in milliseconds and its curves. */
 internal object IntroTimeline {
-    const val RING = 3200f
-    const val SHOCK = 4700f
-    const val MOON = 4900f
-    const val HALO = 5150f
-    const val KICKER = 5500f
-    const val WORDMARK = 5700f
-    const val TAGLINE = 6500f
-    const val PROMPT = 7100f
-    const val END = 8300f
+    const val RING = 3800f
+    const val SHOCK = 6850f
+    const val MOON = 7100f
+    const val HALO = 7350f
+    const val KICKER = 7750f
+    const val WORDMARK = 7950f
+    const val TAGLINE = 8750f
+    const val PROMPT = 9350f
+    const val END = 10600f
 
     fun progress(t: Float, start: Float, length: Float): Float = EaseOut.transform(((t - start) / length).coerceIn(0f, 1f))
     fun spring(t: Float, start: Float, length: Float): Float = EaseSpring.transform(((t - start) / length).coerceIn(0f, 1f))
-    /** The ring's stroke: even speed in the middle, easing in and out at its ends. */
-    fun drawn(t: Float, start: Float, length: Float): Float = Motion.EaseInOut.transform(((t - start) / length).coerceIn(0f, 1f))
-
-    /**
-     * One continuous lift: black thins out over 1.6 s, and the flat DELOS colour under it already melts into the animated background
-     * from 0.8 s to 3 s, so there is no step between the two.
-     */
-    fun black(t: Float) = 1f - Motion.EaseInOut.transform((t / 1600f).coerceIn(0f, 1f))
-    fun cover(t: Float) = 1f - Motion.EaseInOut.transform(((t - 800f) / 2200f).coerceIn(0f, 1f))
 
     /** Fades [layer] in from [rise] stage-ish pixels below, starting at [start]. */
     fun rise(layer: androidx.compose.ui.graphics.GraphicsLayerScope, t: Float, start: Float, rise: Float) {
