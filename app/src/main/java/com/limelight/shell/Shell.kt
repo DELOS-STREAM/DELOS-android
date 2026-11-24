@@ -827,7 +827,8 @@ fun Shell(
             // is shown (and while it fades out)
             // On in the very frame an overlay appears (its blur would otherwise start empty and clipped)
             Box(Modifier.fillMaxSize().then(if (blurSource || screenGlass || shell.result != null) Modifier.hazeSource(haze) else Modifier)) {
-                Box(Modifier.fillMaxSize().hazeSource(backdropHaze).backdropMirrorSource(backdropMirror)) {
+                // The intro's shockwave warps the animated background while it runs (ui/Shockwave.kt)
+                Box(Modifier.fillMaxSize().hazeSource(backdropHaze).backdropMirrorSource(backdropMirror).then(with(com.limelight.shell.ui.Shockwave) { Modifier.shockwave() })) {
                     ShellBackdrop(shell, appearance, colors, heroShown = shell.screen == Screen.Home, animate = shell.launch == null && shell.portal == null)
                 }
                 AnimatedContent(
