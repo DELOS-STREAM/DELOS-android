@@ -68,6 +68,12 @@ import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.Unbounded
 import com.limelight.shell.ui.compact
 import com.limelight.shell.ui.focusEffects
+import com.limelight.shell.ui.PointerLook
+import com.limelight.shell.ui.animateFocusScale
+import com.limelight.shell.ui.pressInput
+import com.limelight.shell.ui.rememberPressPulse
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import com.limelight.shell.ui.px
 import com.limelight.shell.ui.stagePx
 import com.limelight.shell.ui.tpx
@@ -239,38 +245,59 @@ private fun Burst(modifier: Modifier) {
 }
 
 /**
- * The end page's one button in the look of the game overview's Play: a gold capsule with the living gold sweep (PlayEffect) round it
- * while it has the focus, the usual focus ring and lift.
+ * The end page's one button, the game overview's Play 1:1 (GameOverview.OverviewButton, primary): the 86 px gold capsule, its focus
+ * lift and press squeeze, the overview's ring (a 4 px accent band 2 px out with its soft glow) and Play's living gold sweep.
  */
 @Composable
 internal fun TutorialStartButton(label: String, icon: String, onClick: () -> Unit, requester: FocusRequester) {
     val colors = LocalDelosColors.current
     val reduced = LocalReducedMotion.current
-    var focused by remember { mutableStateOf(false) }
     val stage = LocalStage.current
-    // As Play: no shared focus plate or glow (they draw a rectangle round a capsule); the capsule's own ring, the halo and the sweep
-    // The focus node is larger than the capsule: the halo and the sweep reach ~40 px out and must not be cut at its bounds
-    Box(Modifier.focusRequester(requester).focusEffects(onClick, corner = 48f, focusScale = 1.06f, ring = null, glow = null, onLookChange = { focused = it })
-        .padding(44.px)) {
-      Box {
-        PlayEffect(focused, focused, reduced)
-        Row(Modifier.height(96.px)
-            .drawBehind {
-                if (focused) {
-                    val gap = stagePx(4f, stage)
-                    val w = stagePx(4f, stage)
-                    val r = size.height / 2f + gap + w / 2f
-                    drawRoundRect(colors.text, Offset(-gap - w / 2f, -gap - w / 2f),
-                        androidx.compose.ui.geometry.Size(size.width + 2f * gap + w, size.height + 2f * gap + w),
-                        androidx.compose.ui.geometry.CornerRadius(r, r), style = Stroke(w))
+    var focused by remember { mutableStateOf(false) }
+    val pulse = rememberPressPulse()
+    val scale = animateFocusScale(focused, pulse.pressed, 1.06f)
+    // Room round the capsule for the ring, its glow, the halo and the sweep (they reach ~40 px out)
+    Box(Modifier.padding(44.px)) {
+        Box(
+            Modifier
+                .focusEffects(
+                    onClick = onClick, corner = 999f, focusScale = 1f, press = false, pressPulse = pulse,
+                    ring = null, glow = null, focusRequester = requester,
+                    onFocusChange = { focused = it }, onTouchTap = { it },
+                )
+                .pressInput(pulse)
+                .graphicsLayer {
+                    val s = scale.value * PointerLook.scale(0f, pulse.amount)
+                    scaleX = s
+                    scaleY = s
                 }
+                .drawBehind {
+                    if (!focused) return@drawBehind
+                    // The overview's ring: RingStyle(2f, 999f), a 4 px band and its 30 px glow
+                    val w = stagePx(4f, stage)
+                    val pad = stagePx(2f, stage)
+                    val r = size.height / 2f + pad
+                    val glow = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                        style = android.graphics.Paint.Style.STROKE
+                        strokeWidth = w * 2f
+                        maskFilter = android.graphics.BlurMaskFilter(stagePx(30f, stage), android.graphics.BlurMaskFilter.Blur.NORMAL)
+                        color = colors.glow.toArgb()
+                    }
+                    drawContext.canvas.nativeCanvas.drawRoundRect(-pad - w, -pad - w, size.width + pad + w, size.height + pad + w, r + w, r + w, glow)
+                    drawRoundRect(colors.accent, Offset(-pad - w / 2f, -pad - w / 2f),
+                        androidx.compose.ui.geometry.Size(size.width + 2f * pad + w, size.height + 2f * pad + w),
+                        androidx.compose.ui.geometry.CornerRadius(r + w / 2f), style = Stroke(w))
+                },
+        ) {
+            PlayEffect(focused, focused, reduced)
+            Row(
+                Modifier.height(86.px).clip(CircleShape).background(colors.accent).padding(horizontal = 54.px),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.px),
+            ) {
+                Symbol(icon, 32.tpx, colors.onAccent, filled = focused)
+                BasicText(label, maxLines = 1, style = TextStyle(color = colors.onAccent, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 26.tpx))
             }
-            .clip(CircleShape).background(colors.accent).padding(horizontal = 64.px),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.px)) {
-            Symbol(icon, 36.tpx, colors.onAccent, filled = true)
-            BasicText(label, maxLines = 1, style = TextStyle(color = colors.onAccent, fontFamily = Figtree, fontWeight = FontWeight.Bold, fontSize = 30.tpx))
         }
-      }
     }
 }
 

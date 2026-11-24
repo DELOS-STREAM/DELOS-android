@@ -160,7 +160,6 @@ private fun AnimatedLogo(time: () -> Float, scale: Float) {
         val radius = 20f * u - stroke / 2f
         val moon = center + Offset(18.5f * u, -12.5f * u)
         val start = Math.toDegrees(kotlin.math.atan2(-12.5, 18.5)).toFloat()
-        val ring = IntroTimeline.drawn(t, IntroTimeline.RING, 1200f)
         val dot = IntroTimeline.spring(t, IntroTimeline.MOON, 420f)
         val halo = IntroTimeline.spring(t, IntroTimeline.HALO, 520f)
         // A soft light the ring gathers as it closes
@@ -169,12 +168,37 @@ private fun AnimatedLogo(time: () -> Float, scale: Float) {
             val glow = radius * 1.9f
             drawCircle(Brush.radialGradient(0f to colors.glow.copy(alpha = colors.glow.alpha * .7f * bloom), .6f to colors.glow.copy(alpha = colors.glow.alpha * .25f * bloom), 1f to Color.Transparent, center = center, radius = glow), radius = glow)
         }
-        if (ring > 0f) drawArc(colors.accent, start, 360f * ring, false, topLeft = center - Offset(radius, radius),
+        // The ring gathers from dust (as the PlayStation background's motes): each mote flies in from outside to its place on the ring
+        // when the stroke reaches it, in the direction the ring is drawn; the stroke follows a little behind and makes it solid
+        val motes = RING_MOTES
+        for (i in 0 until motes) {
+            val along = i / motes.toFloat()
+            // Arrives when the ring's head gets there: starts 380 ms before, lands in 520 ms
+            val arrive = IntroTimeline.RING + 120f + along * 1200f
+            val p = ((t - (arrive - 380f)) / 520f).coerceIn(0f, 1f)
+            if (p <= 0f) continue
+            val e = EaseOut.transform(p)
+            val angle = Math.toRadians((start + 360f * along).toDouble())
+            val target = center + Offset((kotlin.math.cos(angle) * radius).toFloat(), (kotlin.math.sin(angle) * radius).toFloat())
+            // A fixed scatter per mote: farther out and a little ahead along the ring, swirling in
+            val seed = (i * 7919) % 97 / 97f
+            val spread = radius * (.7f + .9f * seed)
+            val swirl = Math.toRadians((start + 360f * along + 40f + 50f * seed).toDouble())
+            val from = center + Offset((kotlin.math.cos(swirl) * (radius + spread)).toFloat(), (kotlin.math.sin(swirl) * (radius + spread)).toFloat())
+            val pos = from + (target - from) * e
+            val fade = if (p < 1f) e else (1f - ((t - arrive - 140f) / 500f).coerceIn(0f, 1f))
+            if (fade > 0f) drawCircle(colors.accent.copy(alpha = fade), radius = stroke * (.55f + .25f * (1f - e)), center = pos)
+        }
+        val solid = IntroTimeline.drawn(t, IntroTimeline.RING + 260f, 1200f)
+        if (solid > 0f) drawArc(colors.accent, start, 360f * solid, false, topLeft = center - Offset(radius, radius),
             size = androidx.compose.ui.geometry.Size(radius * 2f, radius * 2f), style = Stroke(stroke, cap = StrokeCap.Round))
         if (halo > 0f) drawCircle(colors.accent2.copy(alpha = .35f * halo.coerceAtMost(1f)), radius = 9f * u * halo, center = moon)
         if (dot > 0f) drawCircle(colors.accent2, radius = 5.5f * u * dot, center = moon)
     }
 }
+
+/** How many motes gather into the ring. */
+private const val RING_MOTES = 72
 
 /** "DELOS", each letter dropping in after the one before. */
 @Composable
