@@ -202,23 +202,26 @@ private fun Wordmark(time: () -> Float, size: Int) {
 
 /** The film's timeline in milliseconds and its curves. */
 internal object IntroTimeline {
-    const val RING = 4900f
-    const val MOON = 6050f
-    const val HALO = 6300f
-    const val KICKER = 6700f
-    const val WORDMARK = 6900f
-    const val TAGLINE = 7700f
-    const val PROMPT = 8300f
-    const val END = 9500f
+    const val RING = 3200f
+    const val MOON = 4350f
+    const val HALO = 4600f
+    const val KICKER = 5000f
+    const val WORDMARK = 5200f
+    const val TAGLINE = 6000f
+    const val PROMPT = 6600f
+    const val END = 7800f
 
     fun progress(t: Float, start: Float, length: Float): Float = EaseOut.transform(((t - start) / length).coerceIn(0f, 1f))
     fun spring(t: Float, start: Float, length: Float): Float = EaseSpring.transform(((t - start) / length).coerceIn(0f, 1f))
     /** The ring's stroke: even speed in the middle, easing in and out at its ends. */
     fun drawn(t: Float, start: Float, length: Float): Float = Motion.EaseInOut.transform(((t - start) / length).coerceIn(0f, 1f))
 
-    /** The slow lift from black (1.8 s), the flat colour held for a moment, then melting into the animated background (2.4 s). */
-    fun black(t: Float) = 1f - Motion.EaseInOut.transform((t / 1800f).coerceIn(0f, 1f))
-    fun cover(t: Float) = 1f - Motion.EaseInOut.transform(((t - 2500f) / 2400f).coerceIn(0f, 1f))
+    /**
+     * One continuous lift: black thins out over 1.6 s, and the flat DELOS colour under it already melts into the animated background
+     * from 0.8 s to 3 s, so there is no step between the two.
+     */
+    fun black(t: Float) = 1f - Motion.EaseInOut.transform((t / 1600f).coerceIn(0f, 1f))
+    fun cover(t: Float) = 1f - Motion.EaseInOut.transform(((t - 800f) / 2200f).coerceIn(0f, 1f))
 
     /** Fades [layer] in from [rise] stage-ish pixels below, starting at [start]. */
     fun rise(layer: androidx.compose.ui.graphics.GraphicsLayerScope, t: Float, start: Float, rise: Float) {
