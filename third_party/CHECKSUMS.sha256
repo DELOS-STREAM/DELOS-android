@@ -10,11 +10,12 @@ ed39b86eee0868d911516c4034e8395af31aaa7bfb8ac7e4415846b59ee28d1f  app/src/main/j
 85304e3a7dad92b3afcd39429e8072792d1a481c2d8c2ff7fdad5414fa32514e  app/src/main/res/font/phosphor_fill.ttf
 594f8f5412e4946876e91fde84dd3c898a8b1f95db1bdb968a72cc32bb5527f9  app/src/main/res/font/phosphor_regular.ttf
 af82d541d5007a370b0fd6e05d573ae7214fb0b5c1ece3327c17ebd971bf19d1  app/src/main/res/font/unbounded.ttf
-86bae9cbe479da868cf6618c91ccb54bdb235b6f637cd7eb59120f8b16893063  app/src/main/res/raw/ui_back.wav
-f1f61cb7b44c6a890d523028c1496fdfe612bd6f9fca9cc0df1ae2ac7555ae16  app/src/main/res/raw/ui_error.wav
-441a2145027ebbdf2a3730276f19523eee03b10af95d5b58d4fa68b05d011429  app/src/main/res/raw/ui_move.wav
-6aaa9375991c24123c5f582bd3431acba8a6e0d691bb2aae2bf363641e2c769e  app/src/main/res/raw/ui_open.wav
-c896cdcc6cf480adb352d6db7680b1f2068fd0eff364904b0db44c46baf7cc47  app/src/main/res/raw/ui_select.wav
+b1ba78bd7b0de44cc100fdb7159856c7185951c56ccebe9487e89d9c8fc6371d  app/src/main/res/raw/intro_fx.wav
+7359c44302b57f82e43a5a36a3e421c31845982e0cb82e137245cef83044e151  app/src/main/res/raw/ui_back.wav
+ca7599d8a8fb873324d3d1b1a1a2aae3377b408adef3b7c05a17132e41dda177  app/src/main/res/raw/ui_error.wav
+dc26b0c10ebb03c6dca9b3bf26dbbe8aa18b130edbf7ac3e6be4b7ab37bf0c75  app/src/main/res/raw/ui_move.wav
+0304c1645b5cbb1527bc16a806828d2523060c55aaeba0bd58900061ba180336  app/src/main/res/raw/ui_open.wav
+73f265592221152611ec220d4fa3ff13c95cb727cc0b81ebc43edcf7961dc20b  app/src/main/res/raw/ui_select.wav
 621008afc4f5d59357fcf06ffa644dd5aade5e091bdc363742710445f73cdaf8  gradle/wrapper/gradle-wrapper.jar
 4674b210d8a1a0926e070843950aef43367cf44dcac86081c25540e03c089e58  app/src/main/assets/licenses/Simple-Icons-CC0.txt
 140d37233e7f3ce7313798befa9600893bcceaf41a55fa0fa5ad52f7f657a268  tools/fonts/controller/Figtree-OFL.txt

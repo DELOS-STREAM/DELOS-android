@@ -12,7 +12,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ### Added
 - **Intro and controls tutorial**: the first launch opens with a short intro with its own sound: glowing dust gathers into the DELOS logo on black, bursts in a shockwave that opens the animated background, then "Your island. Your gateway to the world of gaming." Then you pick controller or touch and learn the controls in three short chapters (getting around, playing, PlayStation), each lesson on the real menus and waiting for the real button or gesture. It ends with "Let's start" to pair your first device; Settings › About › Replay the welcome plays it all again. Existing users see it once after updating.
-- **Windows Back shortcuts**: an optional Controls setting makes a Back tap send Guide for Game Bar and a half-second hold open Task View with Win+Tab. Guide still opens the stream menu on a tap and stays pressed on the PC while held; PlayStation streams keep their existing controls. The controller tutorial includes the same saved switch and adapts its Guide lessons when it is enabled.
+- **Windows Back shortcuts**: an optional Controls setting makes a Back tap send Guide for Game Bar and a short hold (0.3 s) open Task View with Win+Tab. Guide still opens the stream menu on a tap and stays pressed on the PC while held; PlayStation streams keep their existing controls. The controller tutorial includes the same saved switch and adapts its Guide lessons when it is enabled.
 
 ### Fixed
 - **Virtual display on Vibepollo and Vibeshine**: with "Use Virtual Display" off, DELOS told the host to use the physical display, which overrode a host set to always stream on a virtual display. DELOS now only asks for a virtual display when the switch is on and otherwise leaves the choice to the host.
@@ -21,6 +21,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 _A clearer update card that opens straight from Check now. 1.3.1 was skipped: its tag points at a commit that was never released._
 
 ### Changed
+- **Interface sounds**: new sounds for moving, choosing, going back, opening and errors, from Romain Raynal's free Open Sounds collection. Switching between the PC and PlayStation tabs now makes the same sound as switching Settings tabs.
 - **Update card**: the offer of a new version sits in the centre of the screen, wider, with a deep shadow and over a blur of what lies behind it, like the problem report card. Both cards slightly dim the screen behind them and lose the A and B icons on their buttons.
 - **Check now**: when it finds a new version, the update card opens at once over Settings instead of waiting until you return to the home screen.
 
