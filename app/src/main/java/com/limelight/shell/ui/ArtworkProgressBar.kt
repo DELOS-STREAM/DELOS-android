@@ -26,6 +26,10 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,7 +40,8 @@ import com.limelight.shell.data.ArtworkProgress
 
 /**
  * Downloading artwork or metadata: a glass pill with the count and a bar at the bottom
- * of every screen, above the button hints.
+ * of every screen, above the button hints. It shows only once a run has lasted [SHOW_AFTER_MS]:
+ * a quick check (the metadata refresh at every start finds everything cached) never flashes it.
  */
 @Composable
 fun ArtworkProgressBar(progress: ArtworkProgress?, label: String) {
@@ -47,9 +52,15 @@ fun ArtworkProgressBar(progress: ArtworkProgress?, label: String) {
         last[0] = progress
         lastLabel[0] = label
     }
+    val running = progress != null
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(running) {
+        if (running) delay(SHOW_AFTER_MS)
+        shown = running
+    }
     Box(Modifier.fillMaxSize().padding(bottom = 118.px), contentAlignment = Alignment.BottomCenter) {
         AnimatedVisibility(
-            progress != null,
+            shown,
             enter = fadeIn(tween(300)) + slideInVertically(tween(400, easing = EaseOut)) { it / 2 },
             exit = fadeOut(tween(400)),
         ) {
@@ -75,3 +86,5 @@ fun ArtworkProgressBar(progress: ArtworkProgress?, label: String) {
         }
     }
 }
+
+private const val SHOW_AFTER_MS = 700L

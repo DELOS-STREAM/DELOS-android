@@ -992,8 +992,10 @@ fun Shell(
                 }
             }
 
+            // Not over the intro and the tutorial: they own the whole window
             val artworkProgress = artwork.progress.value
-            ArtworkProgressBar(artworkProgress ?: metadata.progress.value,
+            val fullWindow = shell.screen is Screen.Boot || shell.screen is Screen.Tutorial
+            ArtworkProgressBar((artworkProgress ?: metadata.progress.value).takeUnless { fullWindow },
                 label = res.getString(if (artworkProgress != null) R.string.shell_progress_artwork else R.string.shell_progress_metadata))
             ShellHints(shell, library, pcs, tracker, keys, uiScale)
             val launch = shell.launch
