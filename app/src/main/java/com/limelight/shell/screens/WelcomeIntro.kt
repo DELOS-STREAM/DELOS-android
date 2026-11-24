@@ -88,7 +88,7 @@ internal fun WelcomeIntro(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
             androidx.compose.runtime.withFrameNanos { now ->
                 val heard = if (sound) feedback.introPositionMs() else null
                 time = when {
-                    heard != null -> maxOf(time, heard)
+                    heard != null -> maxOf(time, if (heard > 0f) heard + SOUND_SYNC_MS else 0f)
                     last >= 0 -> time + ((now - last) / 1_000_000f).coerceAtMost(MAX_FRAME_MS)
                     else -> time
                 }
@@ -313,6 +313,12 @@ private fun AnimatedLogo(time: () -> Float, scale: Float) {
 
 /** The longest step one frame moves the film's clock when the sound does not drive it. */
 private const val MAX_FRAME_MS = 50f
+
+/**
+ * Where the film stands against the heard sound, in milliseconds: the owner's track is timed so that its burst lands this
+ * much before the picture's (tuned by ear on the Odin's speaker, 2026-11-24).
+ */
+private const val SOUND_SYNC_MS = -350f
 
 /** How many motes gather into the ring. */
 private const val RING_MOTES = 800
