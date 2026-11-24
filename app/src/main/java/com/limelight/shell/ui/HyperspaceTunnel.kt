@@ -108,8 +108,8 @@ float segment(float2 p, float2 a, float2 b) {
     float2 ab = b - a;
     return length(p - a - ab * clamp(dot(p - a, ab) / max(dot(ab, ab), .000001), 0., 1.));
 }
-// Distances to the centre lines of the four PlayStation shapes (owner-approved A2 set, issue #128; the same geometry as
-// PsShapes.kt): the 256-unit source grid around (128, 128) divided by 96, y down
+// Distances to the centre lines of the four PlayStation shapes (owner-approved A2 set, issue #128; geometry in
+// tools/fonts/ps-alt/round3 NOTES of the icon work): the 256-unit source grid around (128, 128) divided by 96, y down
 float shapeTriangle(float2 p) {
     p.x = abs(p.x);
     float d = min(segment(p, float2(0., -.8333), float2(.2646, -.375)), segment(p, float2(0., -.8333), float2(0., .8333)));

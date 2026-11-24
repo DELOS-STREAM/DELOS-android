@@ -3,6 +3,7 @@ package com.limelight.shell.ui
 import android.content.Context
 import android.os.Build
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -130,11 +131,14 @@ fun delosColors(appearance: Appearance, systemHue: SystemHues?): DelosColors {
 
 val LocalDelosColors = staticCompositionLocalOf<DelosColors> { error("DelosColors not provided") }
 
-/** Cross-fades every token when the theme changes (the prototype's 0.6 s color transition). */
+/**
+ * Cross-fades every token when the theme changes (the prototype's 0.6 s color transition); [animate] false switches at once.
+ * The palette is a static composition local, so every frame of a cross-fade recomposes the whole interface.
+ */
 @Composable
-fun animateDelosColors(target: DelosColors): DelosColors {
+fun animateDelosColors(target: DelosColors, animate: Boolean = true): DelosColors {
     @Composable
-    fun anim(c: Color) = animateColorAsState(c, tween(600), label = "theme").value
+    fun anim(c: Color) = animateColorAsState(c, if (animate) tween(600) else snap(), label = "theme").value
     return target.copy(
         bg = anim(target.bg), bg2 = anim(target.bg2), surface = anim(target.surface), surface2 = anim(target.surface2),
         surface3 = anim(target.surface3), line = anim(target.line), text = anim(target.text), text2 = anim(target.text2),

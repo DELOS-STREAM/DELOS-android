@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -141,7 +142,10 @@ fun Backdrop(appearance: Appearance, colors: DelosColors, hero: GameArt?, modifi
             )
         }
         if (psAlpha > 0f) com.limelight.shell.ps.PlayStationBackground(appearance.reducedMotion, Modifier.graphicsLayer { alpha = psAlpha })
-        Box(Modifier.fillMaxSize().drawBehind { drawVignette(colors.scrim) })
+        // The PlayStation background's dust is made ahead, off the main thread, so switching to it does not jerk
+        var backdropSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+        LaunchedEffect(backdropSize) { com.limelight.shell.ps.PsDustCache.prewarm(backdropSize) }
+        Box(Modifier.fillMaxSize().onSizeChanged { backdropSize = it }.drawBehind { drawVignette(colors.scrim) })
     }
 }
 

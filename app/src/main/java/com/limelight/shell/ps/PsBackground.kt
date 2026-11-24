@@ -22,9 +22,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.withTransform
+import kotlinx.coroutines.sync.withLock
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
@@ -64,16 +62,16 @@ fun PlayStationBackground(reducedMotion: Boolean, modifier: Modifier = Modifier)
                 val dt = if (last == 0L) 0.0 else min((now - last) / 1e9, .1)
                 last = now
                 clock[0] += dt * speed
-                if (now - drawn >= 15_000_000L) { drawn = now; tick++ }
+                // 30 Hz is enough for the slow dust and halves its cost (owner, 2026-11-24: PC <-> PS still jerked a little)
+                if (now - drawn >= 31_000_000L) { drawn = now; tick++ }
             }
         }
     }
     var viewSize by remember { mutableStateOf(IntSize.Zero) }
-    var dust by remember { mutableStateOf<PsDust?>(null) }
+    var dust by remember { mutableStateOf(PsDustCache.ready(viewSize)) }
     LaunchedEffect(viewSize) {
         if (viewSize.width == 0 || viewSize.height == 0) return@LaunchedEffect
-        val unit = min(viewSize.width / W, viewSize.height / H)
-        dust = withContext(Dispatchers.Default) { PsDust(viewSize.width / unit * PICTURE, viewSize.height / unit * PICTURE, unit / PICTURE) }
+        dust = PsDustCache.get(viewSize)
     }
     val path = remember { Path() }
     val cost = remember { LongArray(4) }
@@ -90,7 +88,6 @@ fun PlayStationBackground(reducedMotion: Boolean, modifier: Modifier = Modifier)
             drawRect(Brush.verticalGradient(0f to NAVY_TOP, 1f to NAVY_BOTTOM, endY = h), size = Size(w, h))
             drawGlow(w, h, t)
             drawRibbons(w, h, t, path)
-            drawShapes(w, h, t)
             val motes = dust ?: return@scale
             val began = System.nanoTime()
             drawIntoCanvas { canvas ->
@@ -102,6 +99,30 @@ fun PlayStationBackground(reducedMotion: Boolean, modifier: Modifier = Modifier)
             }
             if (BuildConfig.DEBUG) logCost(cost, motes, began, System.nanoTime())
         }
+    }
+}
+
+/**
+ * The dust is made once per view size and kept for the process: switching PC <-> PlayStation composes the background anew,
+ * and making ~49 000 motes then (with the garbage it leaves) jerked the cross-fade. [prewarm] makes it early, off the main
+ * thread, while the PC start screen shows.
+ */
+internal object PsDustCache {
+    private var size = IntSize.Zero
+    @Volatile private var dust: PsDust? = null
+    private val lock = kotlinx.coroutines.sync.Mutex()
+
+    fun ready(viewSize: IntSize): PsDust? = dust?.takeIf { size == viewSize }
+
+    suspend fun get(viewSize: IntSize): PsDust = lock.withLock {
+        ready(viewSize) ?: withContext(Dispatchers.Default) {
+            val unit = min(viewSize.width / W, viewSize.height / H)
+            PsDust(viewSize.width / unit * PICTURE, viewSize.height / unit * PICTURE, unit / PICTURE)
+        }.also { dust = it; size = viewSize }
+    }
+
+    suspend fun prewarm(viewSize: IntSize) {
+        if (viewSize.width > 0 && viewSize.height > 0) get(viewSize)
     }
 }
 
@@ -169,34 +190,3 @@ private fun DrawScope.drawRibbons(w: Float, h: Float, t: Float, path: Path) {
             style = Stroke(1.4f), blendMode = BlendMode.Plus)
     }
 }
-
-/**
- * The four PlayStation shapes ([PsShapes], owner 2026-11-24): [SHAPES] faint outlines at three depths, each with its own lane,
- * speed and slow turn, rising and wrapping from the top back to the bottom, under the dust.
- */
-private fun DrawScope.drawShapes(w: Float, h: Float, t: Float) {
-    for (i in 0 until SHAPES) {
-        val depth = (i % 3) / 2f // 0 far, 1 near
-        val size = 16f + depth * 24f
-        val rise = 6f + depth * 10f
-        val span = h + size * 4f
-        val lane = fract(i * .618f + .11f)
-        val x = w * lane + sin(t * .2f + i * 1.7f) * 24f
-        val y = h + size * 2f - (fract(i * .37f) * span + t * rise) % span
-        val turn = (t * (.05f + depth * .05f) * (if (i % 2 == 0) 1f else -1f) + i) * 57.29578f
-        val colour = hsl(if (i % 4 == 1) 196f else 212f, 90f, 74f, .1f + depth * .16f)
-        // The stroke in canvas units, divided by the scale the unit-box shape is drawn at
-        val stroke = Stroke((1.1f + depth * .7f) / size, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        withTransform({
-            translate(x, y)
-            rotate(turn, pivot = Offset.Zero)
-            scale(size, size, pivot = Offset.Zero)
-        }) {
-            drawPath(PsShapes.path(i % PsShapes.COUNT), colour, style = stroke, blendMode = BlendMode.Plus)
-        }
-    }
-}
-
-private const val SHAPES = 18
-
-private fun fract(v: Float) = v - kotlin.math.floor(v)

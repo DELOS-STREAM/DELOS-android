@@ -17,6 +17,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
@@ -300,9 +302,13 @@ private fun ShellTheme(store: AppearanceStore, feedback: Feedback, content: @Com
     val appearance by store.appearance.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val systemHue = remember { systemAccentHue(context) }
-    // The PlayStation mode turns DELOS blue (the colors cross-fade like any palette change)
+    // The PlayStation mode turns DELOS blue. That switch happens at once: a cross-fade of the palette recomposed the whole
+    // interface every frame for 0.6 s and jerked the PC <-> PS switch (owner, 2026-11-24); the backgrounds still cross-fade
     val playStation by com.limelight.shell.ps.PsMode.active.collectAsStateWithLifecycle()
-    val colors = animateDelosColors(if (playStation) com.limelight.shell.ps.playStationColors() else delosColors(appearance, systemHue))
+    var lastPlayStation by remember { mutableStateOf(playStation) }
+    val modeSwitch = playStation != lastPlayStation
+    SideEffect { lastPlayStation = playStation }
+    val colors = animateDelosColors(if (playStation) com.limelight.shell.ps.playStationColors() else delosColors(appearance, systemHue), animate = !modeSwitch)
     val view = LocalView.current
     DisposableEffect(view) {
         // Compose plays the system click on every focus move; Delos has its own UI sounds
