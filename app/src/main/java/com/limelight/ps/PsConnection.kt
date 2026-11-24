@@ -84,9 +84,21 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         try {
             if (c == null) throw PsException("console $consoleId is not paired")
             if (resumeParked(c)) return
-            openSession(c, ctrlTries = 15) {
-                listener.stageComplete(STAGE_WAKE)
-                listener.stageStarting(STAGE_STREAM)
+            // A console just waking from rest can take the session and then send no session id until it is fully up: the
+            // session is opened again (wake included) a few times before the start fails
+            var tries = 0
+            while (true) {
+                try {
+                    openSession(c, ctrlTries = 15) {
+                        listener.stageComplete(STAGE_WAKE)
+                        listener.stageStarting(STAGE_STREAM)
+                    }
+                    break
+                } catch (e: NoSessionId) {
+                    abandonSession()
+                    if (!running || ++tries >= SESSION_ID_TRIES) throw e
+                    Log.i(TAG, "no session id, try $tries/$SESSION_ID_TRIES: opening again")
+                }
             }
         } catch (e: Exception) {
             Log.w(TAG, "connect", e)
@@ -145,7 +157,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             runCatching { session.readLoop { type, payload -> if (type == PsCtrl.SESSION_ID) { sessionId = PsCtrl.sessionId(payload); synchronized(ready) { ready.notifyAll() } } } }
         }
         synchronized(ready) { if (sessionId == null) ready.wait(10_000) }
-        val id = sessionId ?: throw PsException("the console sent no session id")
+        val id = sessionId ?: throw NoSessionId()
         session.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, 1, 0x59)); session.send(PsCtrl.MIC_TOGGLE, byteArrayOf(0, 1, 1, 0x59)); session.send(PsCtrl.DISPLAY_DEVICES, ByteArray(4))
         if (!running) { abandonSession(); return }
         beforeStream()
@@ -1024,6 +1036,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         /** The handheld's Select: held this long it is Create; a tap's touchpad click lasts [TAP_PULSE_MS]. */
         private const val SELECT_HOLD_MS = 500L
         private const val TAP_PULSE_MS = 80L
+        /** How many times a start opens the session again when a waking console sends no session id (10 s each). */
+        private const val SESSION_ID_TRIES = 3
 
         /** Moonlight's stick Y is positive up; the console's is positive down. */
         private fun flip(y: Short): Short = (-y.toInt()).coerceIn(-32768, 32767).toShort()
@@ -1108,3 +1122,6 @@ internal object Nal {
         }
     }
 }
+
+/** The ctrl session opened, but the console sent no session id in time (it is still waking from rest). */
+private class NoSessionId : Exception("the console sent no session id")
