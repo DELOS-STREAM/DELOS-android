@@ -108,19 +108,31 @@ float segment(float2 p, float2 a, float2 b) {
     float2 ab = b - a;
     return length(p - a - ab * clamp(dot(p - a, ab) / max(dot(ab, ab), .000001), 0., 1.));
 }
-// Signed distances of the face-button shapes in a unit box (iq's formulas): an equilateral triangle (apex up on the screen) and a box
-float sdTriangle(float2 p, float r) {
-    const float k = 1.7320508;
-    p.y = -p.y;
-    p.x = abs(p.x) - r;
-    p.y = p.y + r / k;
-    if (p.x + k * p.y > 0.) p = float2(p.x - k * p.y, -k * p.x - p.y) / 2.;
-    p.x -= clamp(p.x, -2. * r, 0.);
-    return -length(p) * sign(p.y);
+// Distances to the centre lines of the four PlayStation shapes (owner-approved A2 set, issue #128; the same geometry as
+// PsShapes.kt): the 256-unit source grid around (128, 128) divided by 96, y down
+float shapeTriangle(float2 p) {
+    p.x = abs(p.x);
+    float d = min(segment(p, float2(0., -.8333), float2(.2646, -.375)), segment(p, float2(0., -.8333), float2(0., .8333)));
+    return min(d, min(segment(p, float2(.4775, -.0063), float2(.9623, .8333)), segment(p, float2(.9623, .8333), float2(.25, .8333))));
 }
-float sdBox(float2 p, float2 b) {
-    float2 d = abs(p) - b;
-    return length(max(d, 0.)) + min(max(d.x, d.y), 0.);
+float shapeCircle(float2 p) {
+    float2 q = abs(p);
+    float r = .8333;
+    // An arc from 15° to 75° in each quarter: the ring inside it, the nearer end outside it
+    float a = atan(q.y, q.x);
+    float arc = (a > .2618 && a < 1.309) ? abs(length(q) - r)
+        : min(length(q - r * float2(.9659, .2588)), length(q - r * float2(.2588, .9659)));
+    float chevron = min(segment(q, float2(.5833, .1042), float2(.4792, 0.)), segment(q, float2(.1042, .5833), float2(0., .4792)));
+    return min(arc, chevron);
+}
+float shapeCross(float2 p) {
+    float2 q = abs(p);
+    return min(segment(q, float2(0.), float2(.75)), min(segment(q, float2(.5143, .75), float2(.75)), segment(q, float2(.75, .5143), float2(.75))));
+}
+float shapeSquare(float2 p) {
+    float2 q = abs(p);
+    float d = min(segment(q, float2(.8333, .1667), float2(.8333)), segment(q, float2(.8333), float2(.1667, .8333)));
+    return min(d, segment(q, float2(.5417), float2(.8333)));
 }
 
 half4 main(float2 fragCoord) {
@@ -206,10 +218,10 @@ half4 main(float2 fragCoord) {
             float cs = cos(spin), sn = sin(spin);
             p = float2(cs * p.x - sn * p.y, sn * p.x + cs * p.y) / size;
             float kind = mod(fs, 4.);
-            float d = kind < 1. ? abs(sdTriangle(p, .8))
-                : kind < 2. ? abs(length(p) - .72)
-                : kind < 3. ? min(segment(p, float2(-.62, -.62), float2(.62, .62)), segment(p, float2(-.62, .62), float2(.62, -.62)))
-                : abs(sdBox(p, float2(.62)));
+            float d = kind < 1. ? shapeTriangle(p)
+                : kind < 2. ? shapeCircle(p)
+                : kind < 3. ? shapeCross(p)
+                : shapeSquare(p);
             float line = exp(-d * d / .0049);
             float halo = exp(-d * 6.) * .22;
             float envelope = smoothstep(.02, .2, z) * (1. - smoothstep(.72, 1., z));
