@@ -1013,6 +1013,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             ControllerPacket.LS_CLK_FLAG to PsButton.L3, ControllerPacket.RS_CLK_FLAG to PsButton.R3,
             ControllerPacket.PLAY_FLAG to PsButton.OPTIONS, ControllerPacket.BACK_FLAG to PsButton.SHARE,
             ControllerPacket.SPECIAL_BUTTON_FLAG to PsButton.PS, ControllerPacket.TOUCHPAD_FLAG to PsButton.TOUCHPAD,
+            // The share button of a pad that has one, and the on-screen controls' Create (never Select's tap-or-hold)
+            ControllerPacket.MISC_FLAG to PsButton.SHARE,
         )
 
         /** [BUTTONS] for a pad without Create and a touchpad: Select is handled apart (tap = touchpad, held = Create), Guide is PS. */

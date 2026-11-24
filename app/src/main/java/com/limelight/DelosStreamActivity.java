@@ -806,7 +806,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     }
 
     private void initVirtualController(){
-        virtualController = new VirtualController(controllerHandler, (FrameLayout)rootView, this);
+        virtualController = new VirtualController(controllerHandler, (FrameLayout)rootView, this, psConsoleId != null);
         virtualController.refreshLayout();
         virtualController.show();
     }

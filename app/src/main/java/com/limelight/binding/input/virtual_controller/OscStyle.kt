@@ -28,6 +28,8 @@ object OscStyle {
     private var accent = 0xFFF5B83D.toInt()
     private var onAccent = 0xFF1A1405.toInt()
     private var typeface: Typeface = Typeface.DEFAULT_BOLD
+    private var symbols: Typeface? = null
+    private val bounds = android.graphics.Rect()
 
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
@@ -56,6 +58,7 @@ object OscStyle {
             val figtree = ResourcesCompat.getFont(context, R.font.figtree)
             typeface = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Typeface.create(figtree, 600, false) else Typeface.create(figtree, Typeface.BOLD)
         }
+        runCatching { symbols = ResourcesCompat.getFont(context, R.font.phosphor_regular) }
     }
 
     private fun alpha(color: Int, a: Float) = ColorUtils.setAlphaComponent(color, (a.coerceIn(0f, 1f) * 255).toInt())
@@ -68,7 +71,8 @@ object OscStyle {
     /**
      * A button: a circle when it is about square (face buttons, L3 / R3), else a pill (shoulders, triggers,
      * Back / Start), or a rounded square ([square], the keyboard's square keys). Pressed: filled with the
-     * main color.
+     * main color. A [label] that is one icon glyph ([isGlyph], a PlayStation stream's ✕ ○ □ △, Create, Options, PS and touchpad)
+     * is drawn from the icon font.
      */
     @JvmStatic
     @JvmOverloads
@@ -92,18 +96,32 @@ object OscStyle {
         line.strokeWidth = s
         line.color = if (pressed) alpha(accent, pressedAlpha(opacity)) else alpha(Color.WHITE, LINE_ALPHA * opacity)
         canvas.drawRoundRect(rect, radius, radius, line)
-        if (!label.isNullOrEmpty()) {
-            text.typeface = typeface
-            text.color = if (pressed) alpha(onAccent, pressedAlpha(opacity)) else alpha(Color.WHITE, .92f * opacity)
-            // Letters about a third of a circle; longer labels smaller, fitted to the pill's width
-            text.textSize = if (round || label.length <= 2) min(rect.width(), rect.height()) * .32f else rect.height() * .26f
-            val fit = rect.width() * .64f
-            val measured = text.measureText(label)
-            if (measured > fit) text.textSize *= fit / measured
-            val baseline = rect.centerY() - (text.descent() + text.ascent()) / 2f
-            canvas.drawText(label, rect.centerX(), baseline, text)
+        if (label.isNullOrEmpty()) return
+        text.color = if (pressed) alpha(onAccent, pressedAlpha(opacity)) else alpha(Color.WHITE, .92f * opacity)
+        if (isGlyph(label) && symbols != null) {
+            // The icon fitted inside: on a face button about the size of its letters, in a pill about half of its height
+            text.typeface = symbols
+            text.textSize = rect.height()
+            text.getTextBounds(label, 0, label!!.length, bounds)
+            val target = if (round) min(rect.width(), rect.height()) * .36f else rect.height() * .56f
+            val k = min(target / max(1, bounds.height()), (if (round) target else rect.width() * .7f) / max(1, bounds.width()))
+            text.textSize *= k
+            text.getTextBounds(label, 0, label.length, bounds)
+            canvas.drawText(label, rect.centerX(), rect.centerY() - bounds.exactCenterY(), text)
+            return
         }
+        text.typeface = typeface
+        // Letters about a third of a circle; longer labels smaller, fitted to the pill's width
+        text.textSize = if (round || label!!.length <= 2) min(rect.width(), rect.height()) * .32f else rect.height() * .26f
+        val fit = rect.width() * .64f
+        val measured = text.measureText(label)
+        if (measured > fit) text.textSize *= fit / measured
+        val baseline = rect.centerY() - (text.descent() + text.ascent()) / 2f
+        canvas.drawText(label!!, rect.centerX(), baseline, text)
     }
+
+    /** One private-use character: an icon of the icon font. */
+    private fun isGlyph(label: String?) = label != null && label.length == 1 && label[0] in '\uE000'..'\uF8FF'
 
     /** The D-pad: a cross of four arms, the pressed ones (one or two) filled with the main color. */
     @JvmStatic

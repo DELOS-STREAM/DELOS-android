@@ -305,6 +305,15 @@
 .ms[data-icon="desktop_app"] { --phosphor-glyph: "\e560"; }
 .ms[data-icon="remote_input"] { --phosphor-glyph: "\e644"; }
 .ms[data-icon="remote_monitor"] { --phosphor-glyph: "\eae6"; }
+.ms[data-icon="virtual_display_app"] { --phosphor-glyph: "\e64c"; }
+.ms[data-icon="terminate_app"] { --phosphor-glyph: "\e46e"; }
+.ms[data-icon="resume_app"] { --phosphor-glyph: "\e3d0"; }
+.ms[data-icon="disconnect_app"] { --phosphor-glyph: "\eb56"; }
+.ms[data-icon="launcher_app"] { --phosphor-glyph: "\e464"; }
+.ms[data-icon="face_cross"] { --phosphor-glyph: "\e4f6"; }
+.ms[data-icon="face_circle"] { --phosphor-glyph: "\e18a"; }
+.ms[data-icon="face_square"] { --phosphor-glyph: "\e45e"; }
+.ms[data-icon="face_triangle"] { --phosphor-glyph: "\e4b0"; }
 .ms[data-icon="robot"] { --phosphor-glyph: "\e762"; }
 .ms[data-icon="cat"] { --phosphor-glyph: "\e748"; }
 .ms[data-icon="magic_wand"] { --phosphor-glyph: "\e6b6"; }

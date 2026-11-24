@@ -57,6 +57,8 @@ public class VirtualController {
     // Whether the layout follows the frame's size (refreshLayout), not a size given (the debug previews' layOutDefault)
     private boolean followFrame = false;
 
+    private final boolean playStation;
+
     private final Runnable relayoutRunnable = new Runnable() {
         @Override
         public void run() {
@@ -87,9 +89,15 @@ public class VirtualController {
     private final VibrationEffect defaultVibrationEffect;
 
     public VirtualController(final ControllerHandler controllerHandler, FrameLayout layout, final Context context) {
+        this(controllerHandler, layout, context, false);
+    }
+
+    /** [playStation]: a PlayStation stream's controls (the DualSense's names and glyphs, the PS button and a real touchpad). */
+    public VirtualController(final ControllerHandler controllerHandler, FrameLayout layout, final Context context, boolean playStation) {
         this.controllerHandler = controllerHandler;
         this.frame_layout = layout;
         this.context = context;
+        this.playStation = playStation;
         this.handler = new Handler(Looper.getMainLooper());
         DisplayMetrics screen = context.getResources().getDisplayMetrics();
         this.panelWidth = screen.widthPixels;
@@ -155,6 +163,17 @@ public class VirtualController {
 
     Handler getHandler() {
         return handler;
+    }
+
+    boolean isPlayStation() {
+        return playStation;
+    }
+
+    /** A finger on the on-screen touchpad ({@link OscTouchpad}), sent as the controller's touchpad contact. */
+    void sendTouchpad(byte eventType, int pointerId, float x, float y) {
+        if (controllerHandler != null) {
+            controllerHandler.reportOscTouch(eventType, pointerId, x, y);
+        }
     }
 
     /**

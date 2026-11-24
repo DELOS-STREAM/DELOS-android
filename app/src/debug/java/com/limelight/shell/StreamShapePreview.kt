@@ -29,7 +29,7 @@ import com.limelight.ui.VideoFit
  *   `--es preview_saved_from <W>x<H>` first lays the default layout out on a screen of that size and carries it over to this one the way a
  *   stored layout is loaded, as if the user had changed every control there (`OscPlacement`: anchored, in layout units). The settings are
  *   fixed (Guide shown, 90 % opacity), not read: that would load the native library,
- *   which the emulator cannot.
+ *   which the emulator cannot. `--es preview_state ps` shows a PlayStation stream's controls.
  * - `stream_video`: only the video rectangle. `--es preview_state <fit|fill|stretch>` (default fit) and `--es preview_video <W>x<H>`
  *   (the stream size, default 1920x1080); `VideoFit` does the maths, the outline is what the container measures to, bars are dark.
  * Combine with `--es preview_shape <W>x<H>@<dpi>`. The controls are laid out for the pixel size of the box they are in (the simulated panel
@@ -46,7 +46,7 @@ internal object StreamShapePreview {
         val mode = intent.getStringExtra("preview_state") ?: "fit"
         val savedFrom = size(intent, "preview_saved_from")
         return when (intent.getStringExtra("preview_screen")) {
-            "stream_osc" -> { { Controls(video, savedFrom) } }
+            "stream_osc" -> { { Controls(video, savedFrom, mode == "ps") } }
             "stream_video" -> { { VideoOnly(video, mode) } }
             else -> null
         }
@@ -96,7 +96,7 @@ internal object StreamShapePreview {
     }
 
     @Composable
-    private fun Controls(video: Pair<Int, Int>, savedFrom: Pair<Int, Int>?) {
+    private fun Controls(video: Pair<Int, Int>, savedFrom: Pair<Int, Int>?, playStation: Boolean) {
         androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
             GameScene()
             BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -108,7 +108,7 @@ internal object StreamShapePreview {
                     modifier = Modifier.fillMaxSize(),
                     factory = {
                         FrameLayout(context).also { layout ->
-                            layOutControls(layout, width, height, savedFrom)
+                            layOutControls(layout, width, height, savedFrom, playStation)
                         }
                     },
                 )
@@ -117,18 +117,18 @@ internal object StreamShapePreview {
     }
 
     /** The default controls on [width] x [height], or those of [savedFrom] carried over to it. */
-    private fun layOutControls(layout: FrameLayout, width: Int, height: Int, savedFrom: Pair<Int, Int>?) {
+    private fun layOutControls(layout: FrameLayout, width: Int, height: Int, savedFrom: Pair<Int, Int>?, playStation: Boolean) {
         val context = layout.context
         val config = PreferenceConfiguration().apply {
             showGuideButton = true
             oscOpacity = 90
         }
-        val controller = VirtualController(null, layout, context)
+        val controller = VirtualController(null, layout, context, playStation)
         if (savedFrom == null) {
             controller.layOutDefault(width, height, config)
         } else {
             // What a layout changed on [savedFrom] stores, then loaded here
-            val saved = VirtualController(null, FrameLayout(context), context)
+            val saved = VirtualController(null, FrameLayout(context), context, playStation)
             saved.layOutDefault(savedFrom.first, savedFrom.second, config)
             val from = OscGeometry.Panel(savedFrom.first, savedFrom.second)
             val stored = saved.elements.map { OscPlacement.fromRect(it.elementId, it.rect(), true, from) }

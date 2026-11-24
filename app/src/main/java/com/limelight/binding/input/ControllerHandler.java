@@ -3190,6 +3190,14 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         sendControllerInputPacket(defaultContext);
     }
 
+    /**
+     * A finger on the on-screen touchpad (a PlayStation stream's): [x] and [y] from 0 to 1 over the pad, sent as the first
+     * controller's touchpad contact ({@code MoonBridge.LI_TOUCH_EVENT_*}).
+     */
+    public void reportOscTouch(byte eventType, int pointerId, float x, float y) {
+        conn.sendControllerTouchEvent((byte) defaultContext.controllerNumber, eventType, pointerId, x, y, 1f);
+    }
+
     @Override
     public void reportControllerState(int controllerId, int buttonFlags,
                                       float leftStickX, float leftStickY,
