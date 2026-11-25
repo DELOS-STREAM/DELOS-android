@@ -247,6 +247,7 @@ class ShellActivity : ComponentActivity() {
         com.limelight.binding.audio.VolumeController.get(this).keepSoundOnDevice(
             profiles.settings().getBoolean(com.limelight.preferences.PreferenceConfiguration.SOUND_ON_DEVICE_STRING, true))
         feedback.reroute()
+        feedback.holdOutput(true)
         languageSettings?.let { AppLanguage.mirror(this, it) }
         profiles.streamProfiles.resume()
         placement?.start()
@@ -256,7 +257,10 @@ class ShellActivity : ComponentActivity() {
     override fun onStop() {
         placement?.stop()
         companion?.stop()
-        if (::feedback.isInitialized) feedback.stopIntro()
+        if (::feedback.isInitialized) {
+            feedback.stopIntro()
+            feedback.holdOutput(false)
+        }
         super.onStop()
     }
 

@@ -35,6 +35,7 @@ enum class Cue { MOVE, SELECT, BACK, OPEN, ERROR }
 class Feedback(context: Context) {
     private val appContext = context.applicationContext
     var soundsEnabled = true
+        set(value) { field = value; updateHold() }
     var hapticsEnabled = true
 
     /** The view used for haptic feedback; set by the activity once the content view exists. */
@@ -72,6 +73,8 @@ class Feedback(context: Context) {
         if (next?.id == output?.id) return
         output = next
         tracks.values.forEach { it.release() }
+        releaseHold()
+        updateHold()
         tracks = buildTracks()
         intro?.route(output)
     }
@@ -218,11 +221,51 @@ class Feedback(context: Context) {
         }
     }
 
+    /**
+     * The device's output closes 2 s after the last sound (Android's standby) and the Odin's speaker then played the first cue
+     * after a pause louder than the next ones (owner, 2026-11-25). While the shell is in the foreground a silent looping track
+     * keeps the output open, so every cue sounds the same. Not with the UI sounds off.
+     */
+    fun holdOutput(on: Boolean) {
+        holdWanted = on
+        updateHold()
+    }
+
+    private var holdWanted = false
+    private var hold: android.media.AudioTrack? = null
+
+    private fun updateHold() {
+        if (!(holdWanted && soundsEnabled)) { releaseHold(); return }
+        if (hold != null) return
+        hold = runCatching {
+            val frames = 4_800
+            android.media.AudioTrack.Builder()
+                .setAudioAttributes(attributes)
+                .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(48_000)
+                    .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
+                .setTransferMode(android.media.AudioTrack.MODE_STATIC)
+                .setBufferSizeInBytes(frames * 4)
+                .build()
+                .apply {
+                    preferredDevice = output
+                    write(ShortArray(frames * 2), 0, frames * 2)
+                    setLoopPoints(0, frames, -1)
+                    play()
+                }
+        }.getOrNull()
+    }
+
+    private fun releaseHold() {
+        hold?.release()
+        hold = null
+    }
+
     fun release() {
         stopIntro()
         main.removeCallbacks(rerouteLater)
         audioManager?.unregisterAudioDeviceCallback(devices)
         tracks.values.forEach { it.release() }
+        releaseHold()
         audioWorkers.shutdown()
         routeScope.cancel()
     }
