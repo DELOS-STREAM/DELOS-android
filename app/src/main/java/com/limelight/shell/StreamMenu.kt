@@ -174,10 +174,23 @@ class StreamMenu(private val game: DelosStreamActivity) {
         return edgeGesture
     }
 
+    /**
+     * The menu's sounds and haptics, made once for the stream: a set made anew for every opening decoded the sounds and built their
+     * tracks each time, and a cue played on a track that new could come out cut short (owner, 2026-11-25).
+     */
+    private var feedbackOrNull: Feedback? = null
+    private val feedback: Feedback get() = feedbackOrNull ?: Feedback(game).also { feedbackOrNull = it }
+
+    /** Frees the menu's sounds: the stream activity is going away. */
+    fun release() {
+        feedbackOrNull?.release()
+        feedbackOrNull = null
+    }
+
     fun show() {
         if (isOpen || game.isFinishing) return
         val appearance = AppearanceStore { ProfileStore.currentSettings(game) }.appearance.value
-        val feedback = Feedback(game).also { it.hapticsEnabled = appearance.haptics }
+        val feedback = this.feedback.also { it.hapticsEnabled = appearance.haptics; it.soundsEnabled = appearance.sounds; it.silenceNextFocus() }
         val d = ComponentDialog(game, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
         d.window?.apply {
             setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
@@ -228,7 +241,6 @@ class StreamMenu(private val game: DelosStreamActivity) {
                 (overlay.parent as? ViewGroup)?.removeView(overlay)
                 overlayHome.addView(overlay, overlayIndex.coerceIn(0, overlayHome.childCount), overlayParams)
             }
-            feedback.release()
             analogNavigation.reset()
             menuReady = false
             dialog = null
@@ -430,7 +442,9 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override fun setBackdrop(amount: Float) {
             if (!blurOn || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
             val w = menu?.window ?: return
-            w.attributes = w.attributes.apply { blurBehindRadius = (amount * blurRadius).toInt() }
+            // New window attributes are a round trip to the window manager: only when the radius really changes
+            val radius = (amount * blurRadius).toInt()
+            if (w.attributes.blurBehindRadius != radius) w.attributes = w.attributes.apply { blurBehindRadius = radius }
         }
         override fun runWhenStreamFocused(action: () -> Unit) = whenGameFocused(action)
         override val keyboardAndMouse get() = game.conn?.supportsKeyboardAndMouse() ?: true

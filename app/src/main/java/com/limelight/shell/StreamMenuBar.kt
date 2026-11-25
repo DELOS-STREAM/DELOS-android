@@ -111,7 +111,19 @@ internal class BarCircleSpec(
     val showState: Boolean = true,
     val opensPage: Boolean = false,
     val onClick: () -> Unit,
-)
+) {
+    /**
+     * Two specs that show the same tile are equal, whatever their [onClick]: the menu builds new specs whenever it recomposes
+     * (every focus move), and a tile that looks the same must not be composed again for it. The dock calls the newest [onClick].
+     */
+    override fun equals(other: Any?): Boolean = other is BarCircleSpec && item == other.item && icon == other.icon && label == other.label &&
+        on == other.on && state == other.state && showState == other.showState && opensPage == other.opensPage
+
+    override fun hashCode(): Int = item.hashCode() * 31 + label.hashCode()
+}
+
+/** The shadow of a tile at rest and of the focused tile (its deeper shadow and its glow), each blurred once and shared by all tiles. */
+internal class TileShadows(val rest: androidx.compose.ui.graphics.ImageBitmap, val focused: androidx.compose.ui.graphics.ImageBitmap)
 
 /** A dimmed tile that opens no page does nothing while a popover is open (and cannot take the focus out of it). */
 private fun tileFocusable(spec: BarCircleSpec, popOpen: Boolean): Boolean = !(popOpen && !spec.opensPage)
@@ -196,13 +208,37 @@ internal fun StreamMenuDock(
             val reachable = circles.filter { tileFocusable(it, popOpen) }
             val firstReachable = reachable.firstOrNull()
             val lastReachable = reachable.lastOrNull()
+            // The tiles' shadows, blurred once for all of them: drawn blurred anew they cost the render thread most of a frame
+            // whenever a tile near the focus was redrawn (every frame of a focus move, and of the ring's breath)
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val accent = LocalDelosColors.current.accent
+            val shadows = remember(k, g, accent, density) {
+                val side = ((g.tile + 2 * SHADOW_ROOM) * k).roundToInt().coerceAtLeast(1)
+                val m = SHADOW_ROOM * k
+                val box = Rect(m, m, m + g.tile * k, m + g.tile * k)
+                val corner = g.tileRadius * k
+                TileShadows(
+                    // 0 18px 40px -14px .55 at rest
+                    rest = renderOnce(side, density) { drawBoxShadow(box, corner, 18f * k, 40f * k, -14f * k, Color.Black.copy(alpha = .55f)) },
+                    // focused: 0 26px 56px -14px .6 and 0 0 60px -8px glow-soft
+                    focused = renderOnce(side, density) {
+                        drawBoxShadow(box, corner, 26f * k, 56f * k, -14f * k, Color.Black.copy(alpha = .60f))
+                        drawBoxShadow(box, corner, 0f, 60f * k, -8f * k, accent.copy(alpha = .22f))
+                    },
+                )
+            }
+            // A tile whose spec is unchanged is skipped when the menu recomposes, so its click goes through the newest list
+            val newest = androidx.compose.runtime.rememberUpdatedState(circles)
             circles.forEach { spec ->
                 val wrapLeft = if (spec === firstReachable && lastReachable !== spec) requesters.getValue(lastReachable!!.item) else null
                 val wrapRight = if (spec === lastReachable && firstReachable !== spec) requesters.getValue(firstReachable!!.item) else null
-                TileCell(
-                    spec, spec.item == focusItem, popOpen, requesters.getValue(spec.item), wrapLeft, wrapRight, enter, exit, onCircleFocused,
-                    Modifier.offset(tileLeft(spec.item, g).px, 0.px),
-                )
+                androidx.compose.runtime.key(spec.item) {
+                    val click = remember(spec.item) { { newest.value.firstOrNull { it.item == spec.item }?.onClick?.invoke(); Unit } }
+                    TileCell(
+                        spec, click, shadows, spec.item == focusItem, popOpen, requesters.getValue(spec.item), wrapLeft, wrapRight, enter, exit, onCircleFocused,
+                        Modifier.offset(tileLeft(spec.item, g).px, 0.px),
+                    )
+                }
             }
         }
         if (g.scrolls) DockScroller(scroll, onOutsideTap, tiles) else tiles()
@@ -374,6 +410,26 @@ private fun TileRing(target: BarItem, firstItem: BarItem, enter: () -> Float, ex
         label = "breatheValue",
     )
     val room = SHADOW_ROOM
+    // The glow at rest and at the peak of its breath, each blurred once: breathing cross-fades the two. Blurring the glow again
+    // for every frame of the breath (its radius changes) kept the menu from reaching the display's rate.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val glowColor = colors.glow
+    val accent = colors.accent
+    val glows = remember(k, g, glowColor, accent, rm, density) {
+        val side = ((g.ring + 2 * room) * k).roundToInt().coerceAtLeast(1)
+        fun glow(b: Float) = renderOnce(side, density) {
+            val m = room * k
+            val box = Rect(m, m, m + g.ring * k, m + g.ring * k)
+            val corner = g.ringRadius * k
+            val stroke = L.RING_WIDTH * k
+            // 0 0 44px 4px glow, breathing to 0 0 62px 8px (the spread is folded into the strength: a positive one would show the shape itself)
+            drawBoxShadow(box, corner, 0f, Motion.lerp(44f, 62f, b) * k, 0f, glowColor.copy(alpha = (glowColor.alpha * Motion.lerp(1.15f, 1.3f, b)).coerceAtMost(1f)))
+            // inset 0 0 30px -4px glow-soft, breathing to 36px -2px
+            val inner = Rect(box.left + stroke, box.top + stroke, box.right - stroke, box.bottom - stroke)
+            drawInsetShadow(inner, corner - stroke, Motion.lerp(30f, 36f, b) * k, Motion.lerp(-4f, -2f, b) * k, accent.copy(alpha = .22f))
+        }
+        glow(0f) to if (rm) null else glow(1f)
+    }
     Box(
         Modifier
             .offset { IntOffset((x.value * k).roundToInt(), (g.ringTop * k).roundToInt()) }
@@ -395,8 +451,9 @@ private fun TileRing(target: BarItem, firstItem: BarItem, enter: () -> Float, ex
                     val m = room * k
                     val box = Rect(m, m, m + g.ring * k, m + g.ring * k)
                     val corner = g.ringRadius * k
-                    // 0 0 44px 4px glow, breathing to 0 0 62px 8px (the spread is folded into the strength: a positive one would show the shape itself)
-                    drawBoxShadow(box, corner, 0f, Motion.lerp(44f, 62f, b) * k, 0f, colors.glow.copy(alpha = colors.glow.alpha * Motion.lerp(1.15f, 1.3f, b)))
+                    val peak = glows.second
+                    drawImage(glows.first, alpha = if (peak == null) 1f else 1f - b)
+                    if (peak != null && b > 0f) drawImage(peak, alpha = b)
                     val stroke = L.RING_WIDTH * k
                     drawRoundRect(
                         colors.accent,
@@ -405,9 +462,6 @@ private fun TileRing(target: BarItem, firstItem: BarItem, enter: () -> Float, ex
                         cornerRadius = CornerRadius(corner - stroke / 2f),
                         style = Stroke(stroke),
                     )
-                    // inset 0 0 30px -4px glow-soft, breathing to 36px -2px
-                    val inner = Rect(box.left + stroke, box.top + stroke, box.right - stroke, box.bottom - stroke)
-                    drawInsetShadow(inner, corner - stroke, Motion.lerp(30f, 36f, b) * k, Motion.lerp(-4f, -2f, b) * k, colors.accent.copy(alpha = .22f))
                 },
         )
     }
@@ -424,6 +478,8 @@ private fun TileRing(target: BarItem, firstItem: BarItem, enter: () -> Float, ex
 @Composable
 private fun TileCell(
     spec: BarCircleSpec,
+    onClick: () -> Unit,
+    shadows: TileShadows,
     focused: Boolean,
     popOpen: Boolean,
     requester: FocusRequester,
@@ -467,7 +523,7 @@ private fun TileCell(
             }
             .focusRequester(requester)
             .focusEffects(
-                { if (!popOpen || spec.opensPage) spec.onClick() },
+                { if (!popOpen || spec.opensPage) onClick() },
                 corner = g.tileRadius, focusScale = 1f, ring = null, glow = null, pressPulse = press,
                 onFocusChange = { onFocused(spec.item, it) },
             ),
@@ -494,12 +550,10 @@ private fun TileCell(
                 }
                 .drawBehind {
                     val m = SHADOW_ROOM * k
-                    val box = Rect(m, m, m + g.tile * k, m + g.tile * k)
                     val corner = g.tileRadius * k
-                    // 0 18px 40px -14px .55 at rest; focused: 0 26px 56px -14px .6 and 0 0 60px -8px glow-soft
-                    drawBoxShadow(box, corner, 18f * k, 40f * k, -14f * k, Color.Black.copy(alpha = .55f * (1f - lift)))
-                    drawBoxShadow(box, corner, 26f * k, 56f * k, -14f * k, Color.Black.copy(alpha = .60f * lift))
-                    drawBoxShadow(box, corner, 0f, 60f * k, -8f * k, colors.accent.copy(alpha = .22f * lift))
+                    // The shadow at rest fades into the focused tile's shadow and glow ([TileShadows])
+                    if (lift < 1f) drawImage(shadows.rest, alpha = 1f - lift)
+                    if (lift > 0f) drawImage(shadows.focused, alpha = lift)
                     inset(m) {
                         drawRoundRect(Backing.copy(alpha = L.TILE_BACKING_ALPHA), cornerRadius = CornerRadius(corner))
                         drawTileFill(corner)

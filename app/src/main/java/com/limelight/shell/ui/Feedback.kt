@@ -50,6 +50,9 @@ class Feedback(context: Context) {
     private val audioManager = appContext.getSystemService(AudioManager::class.java)
     private val volume = VolumeController.get(appContext)
     private val audioWorkers = Executors.newFixedThreadPool(6)
+    // Restarting a cue's track is three calls into the audio service: on the main thread they held up the frame of every focus
+    // move (measured on the Odin in the stream menu: a 30 ms frame per move). One thread, so the cues keep their order.
+    private val cuePlayer = Executors.newSingleThreadExecutor()
 
     /** The output DELOS's own sounds go to (null: the system's routing), followed as devices come and go. */
     private var output: AudioDeviceInfo? = volume.preferredDevice()
@@ -215,7 +218,10 @@ class Feedback(context: Context) {
     }
 
     fun play(cue: Cue) {
-        if (soundsEnabled) tracks[cue]?.play(volume.gain)
+        if (soundsEnabled) tracks[cue]?.let { track ->
+            val gain = volume.gain
+            runCatching { cuePlayer.execute { track.play(gain) } } // refused after release()
+        }
         if (hapticsEnabled) {
             if (rumbleMotorOnly) pulse(cue) else view?.performHapticFeedback(hapticFor(cue))
         }
@@ -267,6 +273,7 @@ class Feedback(context: Context) {
         tracks.values.forEach { it.release() }
         releaseHold()
         audioWorkers.shutdown()
+        cuePlayer.shutdown()
         routeScope.cancel()
     }
 

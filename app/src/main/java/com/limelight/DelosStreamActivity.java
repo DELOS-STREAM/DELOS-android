@@ -1372,6 +1372,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         if (streamMenu != null) {
             streamMenu.closeForDisplayRemoval();
             streamMenu.flushAutoSave();
+            streamMenu.release();
         }
         super.onDestroy();
 

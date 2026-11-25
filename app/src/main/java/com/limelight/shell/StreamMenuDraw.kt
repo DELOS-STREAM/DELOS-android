@@ -128,3 +128,12 @@ internal fun DrawScope.drawTileOnFill(corner: Float, accent: Color, alpha: Float
         cornerRadius = CornerRadius(corner),
     )
 }
+
+/** A [side] × [side] picture of what [draw] paints, made once: for blurred shapes that would otherwise be blurred again on every frame. */
+internal fun renderOnce(side: Int, density: androidx.compose.ui.unit.Density, draw: DrawScope.() -> Unit): androidx.compose.ui.graphics.ImageBitmap {
+    val image = androidx.compose.ui.graphics.ImageBitmap(side, side)
+    androidx.compose.ui.graphics.drawscope.CanvasDrawScope().draw(
+        density, androidx.compose.ui.unit.LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(image), androidx.compose.ui.geometry.Size(side.toFloat(), side.toFloat()), draw)
+    return image
+}
+
