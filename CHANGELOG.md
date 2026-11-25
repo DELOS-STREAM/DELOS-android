@@ -36,6 +36,8 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - **Back on the PC dashboard**: Back on a PC's dashboard returns to the start screen.
 - **Covers on wide, low screens**: home covers keep their 2:3 shape on wide stages lower than 1080.
 - **Metadata pill**: the metadata pill no longer flashes when DELOS starts.
+- **Double interface sounds**: in the stream menu, the keyboard over the stream and the trailer player, Android's own click played together with the DELOS sound. Only the DELOS sound plays now, and a sound in the stream menu is no longer cut short after the menu was opened again.
+- **Smoother stream menu**: the focus ring's glow and the tiles' shadows were blurred again for every frame, and each focus move waited for its sound to start. Both are fixed: on the AYN Odin over a PlayStation stream the menu skips about a third as many screen refreshes while the focus moves. The menu still draws 60 frames a second over a stream.
 
 ## [1.3.3] - 2026-11-24
 _Virtual displays set up on the host work again with Vibepollo and Vibeshine._
