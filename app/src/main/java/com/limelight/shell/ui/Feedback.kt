@@ -115,15 +115,45 @@ class Feedback(context: Context) {
         Cue.MOVE to R.raw.ui_move, Cue.SELECT to R.raw.ui_select, Cue.BACK to R.raw.ui_back, Cue.OPEN to R.raw.ui_open, Cue.ERROR to R.raw.ui_error,
     ).mapNotNull { (cue, res) -> decode(res)?.let { cue to it } }.toMap()
 
-    /** Each cue keeps its original PCM; streaming permits live attenuation and amplification on the chosen device output. */
-    private var tracks: Map<Cue, PcmPlayback> = buildTracks()
+    /**
+     * Each cue a static track (restarted from its start on every play; a streaming track per cue dropped the short sounds on the
+     * Odin), with the volume controller's gain: attenuation as the track volume, amplification as an amplified copy of the PCM,
+     * written again only when the gain changes.
+     */
+    private inner class CueTrack(private val clip: Clip) {
+        val track: android.media.AudioTrack = android.media.AudioTrack.Builder()
+            .setAudioAttributes(attributes)
+            .setAudioFormat(clip.format)
+            .setTransferMode(android.media.AudioTrack.MODE_STATIC)
+            .setBufferSizeInBytes(clip.pcm.size * 4)
+            .build()
+            .also { it.preferredDevice = output; it.write(clip.pcm, 0, clip.pcm.size, android.media.AudioTrack.WRITE_BLOCKING) }
+        private var loaded = 1f
+
+        fun play(gain: Float) {
+            runCatching {
+                track.stop()
+                val wanted = maxOf(1f, gain)
+                if (wanted != loaded) {
+                    val pcm = if (wanted > 1f) FloatArray(clip.pcm.size) { (clip.pcm[it] * wanted).coerceIn(-1f, 1f) } else clip.pcm
+                    track.write(pcm, 0, pcm.size, android.media.AudioTrack.WRITE_BLOCKING)
+                    loaded = wanted
+                }
+                track.setVolume(minOf(1f, gain))
+                track.reloadStaticData()
+                track.play()
+            }
+        }
+
+        fun release() = track.release()
+    }
+
+    private var tracks: Map<Cue, CueTrack> = buildTracks()
     private val routeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     init { routeScope.launch { volume.state.map { it.preferredId }.distinctUntilChanged().collect { reroute() } } }
 
-    private fun buildTracks(): Map<Cue, PcmPlayback> = clips.mapNotNull { (cue, clip) ->
-        runCatching {
-            PcmPlayback(clip.pcm, clip.format, attributes, volume, audioWorkers).also { it.route(output) }
-        }.getOrNull()?.let { cue to it }
+    private fun buildTracks(): Map<Cue, CueTrack> = clips.mapNotNull { (cue, clip) ->
+        runCatching { CueTrack(clip) }.getOrNull()?.let { cue to it }
     }.toMap()
 
     /** A 16- or 24-bit PCM WAV in res/raw as float PCM. */
@@ -182,7 +212,7 @@ class Feedback(context: Context) {
     }
 
     fun play(cue: Cue) {
-        if (soundsEnabled) tracks[cue]?.play()
+        if (soundsEnabled) tracks[cue]?.play(volume.gain)
         if (hapticsEnabled) {
             if (rumbleMotorOnly) pulse(cue) else view?.performHapticFeedback(hapticFor(cue))
         }
