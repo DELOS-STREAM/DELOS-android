@@ -118,12 +118,16 @@ public class DualSenseController extends AbstractController {
         }
     }
 
-    /** Input report 0x01 over USB: sticks 1..4, triggers 5..6, buttons 8..10, gyro 16..21, accelerometer 22..27. */
+    /**
+     * Input report 0x01 over USB: sticks 1..4, triggers 5..6, buttons 8..10, gyro 16..21, accelerometer 22..27. Sticks in the
+     * drivers' convention (as Android's axes: Y positive down; reportControllerState turns it for the host), which is also the
+     * DualSense's own: no sign change.
+     */
     private boolean handleRead(ByteBuffer b) {
         leftStickX = axis(b.get(1));
-        leftStickY = -axis(b.get(2));
+        leftStickY = axis(b.get(2));
         rightStickX = axis(b.get(3));
-        rightStickY = -axis(b.get(4));
+        rightStickY = axis(b.get(4));
         leftTrigger = (b.get(5) & 0xFF) / 255f;
         rightTrigger = (b.get(6) & 0xFF) / 255f;
         int b0 = b.get(8) & 0xFF, b1 = b.get(9) & 0xFF, b2 = b.get(10) & 0xFF;
