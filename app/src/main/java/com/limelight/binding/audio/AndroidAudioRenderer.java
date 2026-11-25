@@ -50,6 +50,39 @@ public class AndroidAudioRenderer implements AudioRenderer {
             lastGain = Float.NaN;
             LimeLog.info("Stream sound " + (wanted == null ? "follows the system routing" : "kept on " + wanted.getProductName() + " (DualSense plugged in)"));
         }
+        // A track the system restored after a device change keeps its old route and ignores the preferred device (the controller
+        // plugged in again mid-stream): the writing thread builds a new one
+        AudioDeviceInfo routed = t.getRoutedDevice();
+        if (wanted != null && routed != null && routed.getId() != wanted.getId()) rebuildWanted = true;
+    }
+
+    /** Delos: the playing track is on the wrong output; playDecodedAudio replaces it (on the thread that writes to it). */
+    private volatile boolean rebuildWanted;
+    private long lastRebuildMs;
+    private int trackChannelConfig, trackSampleRate, trackBufferSize;
+    private boolean trackLowLatency;
+
+    /** Delos: the same track anew, on the device's own output, replacing [track]; at most once a second. */
+    private void rebuildTrack() {
+        rebuildWanted = false;
+        long now = android.os.SystemClock.uptimeMillis();
+        if (now - lastRebuildMs < 1000) return;
+        lastRebuildMs = now;
+        try {
+            AudioTrack fresh = createAudioTrack(trackChannelConfig, trackSampleRate, trackBufferSize, trackLowLatency);
+            AudioTrack old = track;
+            fresh.setPreferredDevice(DeviceOutput.INSTANCE.offDualSense(context));
+            fresh.addOnRoutingChangedListener((android.media.AudioRouting.OnRoutingChangedListener) router -> keepSoundOffController(fresh), null);
+            fresh.play();
+            track = fresh;
+            lastGain = Float.NaN;
+            old.pause();
+            old.flush();
+            old.release();
+            LimeLog.info("Stream sound track rebuilt on " + (fresh.getPreferredDevice() == null ? "the system routing" : fresh.getPreferredDevice().getProductName()));
+        } catch (Exception e) {
+            LimeLog.warning("Stream sound track rebuild failed: " + e);
+        }
     }
 
 
@@ -194,6 +227,10 @@ public class AndroidAudioRenderer implements AudioRenderer {
                     created.addOnRoutingChangedListener((android.media.AudioRouting.OnRoutingChangedListener) router -> keepSoundOffController(created), null);
                 }
                 track.play();
+                trackChannelConfig = channelConfig;
+                trackSampleRate = sampleRate;
+                trackBufferSize = bufferSize;
+                trackLowLatency = lowLatency;
 
                 // Successfully created working AudioTrack. We're done here.
                 LimeLog.info("Audio track configuration: "+bufferSize+" "+lowLatency);
@@ -223,6 +260,7 @@ public class AndroidAudioRenderer implements AudioRenderer {
         // Only queue up to 40 ms of pending audio data in addition to what AudioTrack is buffering for us.
         int pending = pendingAudioMs.getAsInt();
         if (pending < 40) {
+            if (rebuildWanted) rebuildTrack();
             float gain = volume.getGain();
             if (gain != lastGain) {
                 track.setVolume(Math.min(1f, gain));
