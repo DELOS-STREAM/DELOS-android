@@ -9,6 +9,8 @@ import android.view.ViewGroup
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -63,6 +65,12 @@ class StreamLoader private constructor(
     private val pcName: String,
     initialParameters: String,
     val reducedMotion: Boolean,
+    /**
+     * Returning into a console session kept in the background (PsSessionPark): the stream is back within a moment, so the loader
+     * shows a black screen instead of the tunnel and leaves on the first picture without the opening. Should the return take
+     * longer than [QUIET_MS] (the kept session was lost and a new one opens), the normal scene appears.
+     */
+    private val quiet: Boolean = false,
 ) : ConnectionProgress {
     private val stages = LaunchStageQueue(LaunchHandoff.line, LaunchHandoff.lineAt, LINE_MS)
     private val changes = Channel<Unit>(Channel.CONFLATED)
@@ -141,6 +149,8 @@ class StreamLoader private constructor(
 
         /** The longest the reveal waits for the first presented frame after the stream runs. */
         private const val FRAME_WAIT_MS = 3000L
+        /** A quiet loader (a return into a kept console session) turns into the normal scene after this long without a stream. */
+        private const val QUIET_MS = 1500L
 
         const val LINE_MS = HyperspaceConfig.LINE_MS
         private val told = HashMap<String, Int>()
@@ -233,11 +243,14 @@ class StreamLoader private constructor(
                 if (playStation) null else LaunchHandoff.background, logo, info, playStation = playStation)
             val view = ComposeView(activity)
             val appearance = AppearanceStore { ProfileStore.currentSettings(activity) }.appearance.value
-            val loader = StreamLoader(activity, view, pcName, info, appearance.reducedMotion)
+            val quiet = intent.getBooleanExtra(DelosStreamActivity.EXTRA_RESUMED, false)
+            // A quiet loader has no opening, so the decoder prepares none (reduced motion's path)
+            val calm = appearance.reducedMotion || quiet
+            val loader = StreamLoader(activity, view, pcName, info, calm, quiet)
             val colors = if (playStation) com.limelight.shell.ps.playStationColors() else delosColors(appearance, systemAccentHue(activity))
             view.setContent {
                 CompositionLocalProvider(LocalDelosColors provides colors) {
-                    Stage(textScale = appearance.uiScale / 100f) { LoaderScene(loader, card, appearance.reducedMotion) }
+                    Stage(textScale = appearance.uiScale / 100f) { LoaderScene(loader, card, calm) }
                 }
             }
             activity.addContentView(view, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -254,6 +267,8 @@ class StreamLoader private constructor(
             var drained by remember { mutableStateOf(false) }
             val logo by rememberLogo(loader.activity, loader.activity.intent.getStringExtra(DelosStreamActivity.EXTRA_PC_UUID),
                 loader.activity.intent.getIntExtra(DelosStreamActivity.EXTRA_APP_ID, 0), card.logo)
+            var quiet by remember { mutableStateOf(loader.quiet) }
+            if (loader.quiet) LaunchedEffect(loader) { delay(QUIET_MS); quiet = false }
             DisposableEffect(loader) { onDispose { loader.dispose() } }
             LaunchedEffect(target) { progress.animateTo(target, tween(600, easing = EaseOut)) }
             LaunchedEffect(loader) {
@@ -280,6 +295,7 @@ class StreamLoader private constructor(
                     while (!loader.activity.isFinishing && !loader.arrival.isLaunchFrameReady) delay(16)
                 }
                 if (loader.activity.isFinishing) return@LaunchedEffect
+                if (quiet) { loader.remove(); return@LaunchedEffect }
                 loader.parameters.value = loader.activity.launchStreamParameters
                 progress.animateTo(1f, tween(250, easing = EaseOut))
                 var effectAvailable = !reducedMotion
@@ -320,7 +336,9 @@ class StreamLoader private constructor(
                 }
                 loader.remove()
             }
-            LaunchScene(card.copy(logo = logo, streamParameters = loader.parameters.value), line,
+            if (quiet) androidx.compose.foundation.layout.Box(
+                Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black).consumeAllTouches())
+            else LaunchScene(card.copy(logo = logo, streamParameters = loader.parameters.value), line,
                 progress = { progress.value }, opening = { opening.value }, clock = clock,
                 modifier = Modifier.consumeAllTouches(), onCancel = { loader.activity.cancelLoader() })
         }

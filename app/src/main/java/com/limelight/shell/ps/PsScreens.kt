@@ -178,10 +178,10 @@ private fun psStreamIntent(context: android.content.Context, consoleId: String, 
 /**
  * Opens the stream window of console [consoleId] as a PC game does (Shell's launch): the stream runs in its own task, where the
  * system slides a new window in from the side; a scale-up from the whole screen fades it in over this one instead. Also Try again
- * after a failed PlayStation stream.
+ * after a failed PlayStation stream. [resumed]: the return into a session kept in the background, which shows no tunnel.
  */
-internal fun startPsStream(context: android.content.Context, consoleId: String, name: String) {
-    val intent = psStreamIntent(context, consoleId, name)
+internal fun startPsStream(context: android.content.Context, consoleId: String, name: String, resumed: Boolean = false) {
+    val intent = psStreamIntent(context, consoleId, name).putExtra(com.limelight.DelosStreamActivity.EXTRA_RESUMED, resumed)
     var base: android.content.Context? = context
     while (base is android.content.ContextWrapper && base !is android.app.Activity) base = base.baseContext
     val root = (base as? android.app.Activity)?.window?.decorView

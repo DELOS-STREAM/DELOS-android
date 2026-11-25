@@ -213,6 +213,8 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     public static final String EXTRA_APP_ID = "AppId";
     public static final String EXTRA_UNIQUEID = "UniqueId";
     public static final String EXTRA_PC_UUID = "UUID";
+    /** The stream returns into a console session kept in the background: the loader stays black instead of the tunnel (StreamLoader). */
+    public static final String EXTRA_RESUMED = "ResumedSession";
     public static final String EXTRA_PC_NAME = "PcName";
     public static final String EXTRA_APP_HDR = "HDR";
     public static final String EXTRA_SERVER_CERT = "ServerCert";
