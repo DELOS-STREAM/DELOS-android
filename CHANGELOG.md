@@ -11,19 +11,42 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 ## [Unreleased]
 
 ### Added
+- **PlayStation Remote Play** ([#25](https://github.com/DELOS-STREAM/DELOS-android/issues/25)): DELOS streams a PlayStation 5 on the home network. A new PC | PlayStation switch on the start screen opens the PlayStation side with its own blue look; pairing finds the console, signs in to PlayStation Network for the account and takes the 8-digit PIN the console shows. Tested on the AYN Odin with a PS5; a PS4 and play over the internet are not tested.
+- **PlayStation streams**: a console stream runs in the same stream screen as a PC game, with HEVC up to 1080p at 60 fps, HDR where the display supports it, the upscaler, the statistics overlay and the stream menu (Brightness instead of Bitrate, Rest mode instead of Quit, Create on the More page). DELOS wakes a console from rest mode, finds it again when its address changed, and opens a new session by itself after ten seconds of silence.
+- **Back into the stream** ([#121](https://github.com/DELOS-STREAM/DELOS-android/issues/121)): leaving a PlayStation stream for the home screen or another app keeps the session for five minutes. Opening DELOS again returns straight into the stream, without waking the console or the launch tunnel.
+- **PlayStation settings**: PlayStation streams have settings of their own, so PC settings stay as they are: resolution, frame rate, codec, upscaler, audio buffer and more. The bitrate is automatic by default; a fixed bitrate goes from 2 to 50 Mbit/s, or to 200 Mbit/s once unlocked, on a slider coloured green, orange and red for the chosen resolution. Upscaler, supersampling and frame generation changed in the stream menu are kept for the next console stream.
+- **PlayStation controls on a handheld**: with a controller that is not a PlayStation one, Select is the touchpad click and holding Back on the AYN Odin is Create; fingers on the screen act as the touchpad, which a setting turns off. Gyro aiming adds the device's turn to the right stick, always or while L2 is held, with a sensitivity for each axis. The on-screen controls show a DualSense layout on a console stream.
+- **Microphone on PlayStation** ([#124](https://github.com/DELOS-STREAM/DELOS-android/issues/124)): a PlayStation setting sends the device's microphone to the console for voice chat, after Android's microphone permission. The stream menu's More page mutes it.
+- **Wired DualSense** ([#125](https://github.com/DELOS-STREAM/DELOS-android/issues/125)): a DualSense on USB plays haptics and adaptive trigger effects in PC and PlayStation streams. Android asks for the USB permission once and keeps it when "Always" is chosen; a switch in the PC and PlayStation settings turns this off, and another keeps the stream's sound on the device instead of the controller. DualSense speaker sound is not available over Remote Play.
 - **Volume dial and DualSense level matching** ([#125](https://github.com/DELOS-STREAM/DELOS-android/issues/125)): hardware volume keys show a glass dial below the centre of the screen, with a spring-animated gold ring, output icon and 0–100% readout, instead of Android’s panel. With a USB DualSense, stream audio, interface sounds and the intro use automatic software level matching without changing the controller’s haptics. Overview trailers remain outside this audio path.
-- **Wired DualSense settings** ([#125](https://github.com/DELOS-STREAM/DELOS-android/issues/125)): PC and PlayStation settings expose the existing USB DualSense support and device-audio switches, both on by default, with help in all ten languages. These rows configure existing streaming behavior.
+- **DELOS Tide frame generation (experimental)**: between two pictures of the game DELOS shows generated ones, 2×, 3× or 4×, in PC and PlayStation streams, SDR and HDR. It is set in Settings, per game and on its own tile in the stream menu, and the statistics show the game's and the generated frame rate. It needs a graphics driver with frame extrapolation (Snapdragon) and can show warping on fast camera turns.
 - **Intro and controls tutorial**: the first launch opens with a short intro with its own sound: glowing dust gathers into the DELOS logo on black, bursts in a shockwave that opens the animated background, then "Your island. Your gateway to the world of gaming." Then you pick controller or touch and learn the controls in three short chapters (getting around, playing, PlayStation), each lesson on the real menus and waiting for the real button or gesture. It ends with "Let's start" to pair your first device; Settings › About › Replay the welcome plays it all again. Existing users see it once after updating.
+- **Interface sounds**: new sounds for moving, choosing, going back, opening and errors, from Romain Raynal's free Open Sounds collection. Switching between the PC and PlayStation tabs makes the same sound as switching Settings tabs, and every sound is equally loud.
 - **Windows Back shortcuts**: an optional Controls setting makes a Back tap send Guide for Game Bar and a short hold (0.3 s) open Task View with Win+Tab. Guide still opens the stream menu on a tap and stays pressed on the PC while held; PlayStation streams keep their existing controls. The controller tutorial includes the same saved switch and adapts its Guide lessons when it is enabled.
+- **Art for host utilities**: Desktop, Virtual Display, Remote Input, Remote Monitor, Steam Big Picture, Terminate, Resume, Disconnect, Playnite and Xbox entries of Sunshine, Apollo, Vibepollo, Vibeshine and their forks get DELOS's own bundled art. They are recognised by the host's fixed identifier or exact name and are never looked up online, so a utility no longer gets a random game's cover.
+- **Android TV remotes**: on an Android TV or Google TV, a TV remote now operates DELOS without a controller or touch. Menu and Info open the context menu, Play/Pause is the right menu button, Channel or Page Up/Down step through the tabs, and the yellow and blue keys act as Y and X. On a remote without a Menu key, holding OK opens the context menu, and the tabs of the settings screens can be reached with the D-pad. The contributor reported remote navigation working on a RayNeo Pocket TV Pro (Android TV 14). Other devices are not affected. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
+- **Lighter look on Android TV**: the first profile created on an Android TV starts with the still background, no hero blur and reduced motion, because TV hardware is usually slower than a handheld. Every option can be turned back on in Settings → Appearance, and profiles that already exist keep their look. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
+
+### Changed
+- **Stream menu**: the PC stream menu has a Frame generation tile; Brightness moved to the More page. Help texts in settings and in the stream menu can be scrolled with a finger and travel on after a pause.
+- **Focus plate in settings**: the plate behind the focused settings row is frosted glass that blurs the background, like the top bar.
+- **Stream end message**: the message after a stream that ended by itself names the PC or console.
 
 ### Fixed
-- **Virtual display on Vibepollo and Vibeshine**: with "Use Virtual Display" off, DELOS told the host to use the physical display, which overrode a host set to always stream on a virtual display. DELOS now only asks for a virtual display when the switch is on and otherwise leaves the choice to the host.
+- **Back on the PC dashboard**: Back on a PC's dashboard returns to the start screen.
+- **Covers on wide, low screens**: home covers keep their 2:3 shape on wide stages lower than 1080.
+- **Metadata pill**: the metadata pill no longer flashes when DELOS starts.
+
+## [1.3.3] - 2026-11-24
+_Virtual displays set up on the host work again with Vibepollo and Vibeshine._
+
+### Fixed
+- **Virtual display on Vibepollo and Vibeshine**: with "Use Virtual Display" off, DELOS told the host to stream the physical display, which overrode a host set to always stream on a virtual display, so games opened on the main monitor. DELOS now only asks for a virtual display when the switch is on and otherwise leaves the choice to the host. Checked against the Vibepollo and Vibeshine source; not yet tested on a Vibeshine host (reported by Reddit users).
 
 ## [1.3.2] - 2026-11-21
 _A clearer update card that opens straight from Check now. 1.3.1 was skipped: its tag points at a commit that was never released._
 
 ### Changed
-- **Interface sounds**: new sounds for moving, choosing, going back, opening and errors, from Romain Raynal's free Open Sounds collection. Switching between the PC and PlayStation tabs now makes the same sound as switching Settings tabs.
 - **Update card**: the offer of a new version sits in the centre of the screen, wider, with a deep shadow and over a blur of what lies behind it, like the problem report card. Both cards slightly dim the screen behind them and lose the A and B icons on their buttons.
 - **Check now**: when it finds a new version, the update card opens at once over Settings instead of waiting until you return to the home screen.
 
@@ -405,7 +428,8 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 ### Removed
 - **Dead-code removal**: SBS 3D, performance logging and other dead code.
 
-[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.0...v1.3.2
 [1.3.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.1.0...v1.2.0

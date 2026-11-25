@@ -149,19 +149,32 @@ class AppearanceStore(private val settings: () -> SharedPreferences) {
     private inline fun <reified E : Enum<E>> enumOr(name: String?, default: E): E =
         enumValues<E>().firstOrNull { it.name == name } ?: default
 
-    private companion object {
-        const val KEY_DARK = "ui_dark"
-        const val KEY_MATERIAL_YOU = "ui_material_you"
-        const val KEY_PALETTE = "ui_palette"
-        const val KEY_CLOCK = "ui_clock"
-        const val KEY_MATCH_GAME = "ui_match_game_colors"
-        const val KEY_BACKGROUND = "ui_background"
-        const val KEY_HERO = "ui_hero_background"
-        const val KEY_HERO_BLUR = "ui_hero_blur"
-        const val KEY_HERO_OPACITY = "ui_hero_opacity"
-        const val KEY_UI_SCALE = "ui_scale"
-        const val KEY_REDUCED_MOTION = "ui_reduced_motion"
-        const val KEY_SOUNDS = "ui_sounds"
-        const val KEY_HAPTICS = "ui_haptics"
+    companion object {
+        /**
+         * The lighter look a profile starts with on an Android TV (TV hardware is usually slower than a handheld): the still
+         * background, no hero blur and reduced motion, written into the new profile's [prefs]. A value already stored there
+         * (a look chosen before the profile existed) is kept. Existing profiles are never touched.
+         */
+        fun applyTvDefaults(prefs: SharedPreferences) {
+            val editor = prefs.edit()
+            if (!prefs.contains(KEY_BACKGROUND)) editor.putString(KEY_BACKGROUND, BackgroundKind.STILL.name)
+            if (!prefs.contains(KEY_HERO_BLUR)) editor.putInt(KEY_HERO_BLUR, 0)
+            if (!prefs.contains(KEY_REDUCED_MOTION)) editor.putBoolean(KEY_REDUCED_MOTION, true)
+            editor.apply()
+        }
+
+        private const val KEY_DARK = "ui_dark"
+        private const val KEY_MATERIAL_YOU = "ui_material_you"
+        private const val KEY_PALETTE = "ui_palette"
+        private const val KEY_CLOCK = "ui_clock"
+        private const val KEY_MATCH_GAME = "ui_match_game_colors"
+        private const val KEY_BACKGROUND = "ui_background"
+        private const val KEY_HERO = "ui_hero_background"
+        private const val KEY_HERO_BLUR = "ui_hero_blur"
+        private const val KEY_HERO_OPACITY = "ui_hero_opacity"
+        private const val KEY_UI_SCALE = "ui_scale"
+        private const val KEY_REDUCED_MOTION = "ui_reduced_motion"
+        private const val KEY_SOUNDS = "ui_sounds"
+        private const val KEY_HAPTICS = "ui_haptics"
     }
 }

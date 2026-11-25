@@ -304,7 +304,7 @@ fun Modifier.focusEffects(
         .onKeyEvent {
             // Handled on both edges so Android does not synthesize a fallback key (A → D-pad center)
             if (it.key !in ACTIVATE_KEYS) return@onKeyEvent false
-            if (it.type == KeyEventType.KeyUp) activate(false)
+            if (it.type == KeyEventType.KeyUp && !it.nativeKeyEvent.isCanceled) activate(false)
             true
         }
         // Up and Down that reach the shell's root go to the first element of the next row (RowNav); a caller's focusProperties win
