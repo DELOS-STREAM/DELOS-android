@@ -364,12 +364,6 @@ private fun ShellTheme(store: AppearanceStore, feedback: Feedback, content: @Com
     val modeSwitch = playStation != lastPlayStation
     SideEffect { lastPlayStation = playStation }
     val colors = animateDelosColors(if (playStation) com.limelight.shell.ps.playStationColors() else delosColors(appearance, systemHue), animate = !modeSwitch)
-    val view = LocalView.current
-    DisposableEffect(view) {
-        // Compose plays the system click on every focus move; Delos has its own UI sounds
-        view.isSoundEffectsEnabled = false
-        onDispose { }
-    }
     SideEffect {
         feedback.soundsEnabled = appearance.sounds
         feedback.hapticsEnabled = appearance.haptics

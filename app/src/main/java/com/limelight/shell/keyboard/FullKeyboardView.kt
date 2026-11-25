@@ -24,6 +24,7 @@ fun createFullKeyboardView(context: Context, state: FullKeyboardState): ComposeV
     return ComposeView(context).apply {
         descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         setContent {
+            com.limelight.shell.ui.NoSystemSounds()
             CompositionLocalProvider(LocalDelosColors provides colors, LocalReducedMotion provides appearance.reducedMotion) {
                 FullKeyboard(state)
             }

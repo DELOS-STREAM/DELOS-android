@@ -128,7 +128,10 @@ private class PlayerWindow(
     private val web = playerView(anchor.context, player)
     private val above = ComposeView(anchor.context).apply {
         setParentCompositionContext(parent)
-        setContent(content)
+        setContent {
+            com.limelight.shell.ui.NoSystemSounds()
+            content()
+        }
     }
     private val root = PlayerWindowRoot(anchor.context, onPointer).apply {
         addView(web, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))

@@ -268,9 +268,25 @@ fun rememberMarginBringIntoView(state: ScrollableState, before: Float, after: Fl
     }
 }
 
-/** Plans the stage for the available space ([StagePlanner]) and provides [LocalStage]. */
+/**
+ * Turns the system's own interface sounds off for the Compose view this is called in. Compose plays Android's click on every
+ * focus move and tap (where the system's touch sounds are on); DELOS has its own sounds (Feedback), and both at once are heard as
+ * two layers. The switch belongs to the view Compose draws into ([LocalView]), not to the ComposeView around it, so every
+ * window's content calls this: [Stage] does it for all that use a stage.
+ */
+@Composable
+fun NoSystemSounds() {
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.DisposableEffect(view) {
+        view.isSoundEffectsEnabled = false
+        onDispose { }
+    }
+}
+
+/** Plans the stage for the available space ([StagePlanner]) and provides [LocalStage]; the window's system sounds go off ([NoSystemSounds]). */
 @Composable
 fun Stage(textScale: Float, content: @Composable () -> Unit) {
+    NoSystemSounds()
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val plan = StagePlanner.plan(maxWidth.value, maxHeight.value)
         val density = LocalDensity.current
