@@ -1000,6 +1000,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         /** Closes a console session parked in the background: another stream (a PC's) starts and the console's must not compete. */
         @JvmStatic
         fun closeParkedSession() = PsSessionPark.closeAny()
+
+        /** The console whose session waits in the background and still answers: the shell returns into its stream (#121). */
+        fun parkedConsole(): String? = PsSessionPark.waiting(PARK_QUIET_MS)
         /** Audio: this long without any unit is a real gap, after which the jitter buffer fills to its start depth again. */
         private const val AUDIO_GAP_MS = 200L
         /** Senkusha's result per console id, for this process. */

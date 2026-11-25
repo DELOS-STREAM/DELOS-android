@@ -252,6 +252,17 @@ class ShellActivity : ComponentActivity() {
         profiles.streamProfiles.resume()
         placement?.start()
         companion?.start()
+        resumeParkedConsole()
+    }
+
+    /**
+     * Coming back to DELOS after leaving a PlayStation stream for another app (the home screen, the screen off): the session was kept
+     * (PsSessionPark), so its stream opens again at once. A stream the user left himself is never parked, so nothing opens then.
+     */
+    private fun resumeParkedConsole() {
+        val id = com.limelight.ps.PsConnection.parkedConsole() ?: return
+        val console = com.limelight.shell.ps.PsConsoleStore.get(this).consoles.value.firstOrNull { it.id == id } ?: return
+        com.limelight.shell.ps.startPsStream(this, console.id, console.name)
     }
 
     override fun onStop() {

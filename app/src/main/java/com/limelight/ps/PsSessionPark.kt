@@ -9,7 +9,8 @@ internal class PsStreamInfo(val width: Int, val height: Int, val videoHeader: By
 
 /**
  * A PlayStation session kept alive while the stream activity is in the background (#121): the Takion stream keeps its heartbeats,
- * acks and controller state, the ctrl connection answers its heartbeats, and pictures and sound are dropped. Starting the same
+ * acks and controller state, the ctrl connection answers its heartbeats, and pictures and sound are dropped. Coming back to DELOS
+ * opens the stream again by itself ([waiting], ShellActivity.onResume); starting the same
  * console again within [KEEP_MS] takes the session back without waking the console or a new session; after that, or when a
  * session for another console starts, the parked one is closed. One session at most.
  */
@@ -44,6 +45,10 @@ internal object PsSessionPark {
         Log.i(TAG, "parked session taken back after ${(SystemClock.uptimeMillis() - p.at) / 1000} s")
         return Triple(p.stream, p.ctrl, p.request to p.info)
     }
+
+    /** The console whose parked session still answers (packets within [quietLimitMs]), so the shell can return into its stream; null otherwise. */
+    @Synchronized
+    fun waiting(quietLimitMs: Long): String? = parked?.takeIf { it.stream.alive && it.stream.quietMs <= quietLimitMs }?.consoleId
 
     @Synchronized
     private fun drop(stream: PsStream) { if (parked?.stream === stream) closeParked() }

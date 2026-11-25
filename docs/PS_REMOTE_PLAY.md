@@ -69,8 +69,9 @@ announces one controller and its feedback packets carry no controller index); Du
 15. Silence: 2.5 s without a packet shows the poor-connection notice; at 10 s a new session is opened (find, wake, ctrl,
     stream) for up to 20 s while the stream screen, decoder and audio stay; only then does the stream end.
 16. Background: leaving the stream activity without leaving the stream (Home, another app) parks the session
-    (`PsSessionPark`) for 5 minutes with its heartbeats and acks running; starting the same console again takes it back
-    without a wake or a new session, from a keyframe.
+    (`PsSessionPark`) for 5 minutes with its heartbeats and acks running. Coming back to DELOS opens the stream again by
+    itself (`ShellActivity.onResume`, while the parked session still answers); starting the same console also takes it
+    back. Either way there is no wake and no new session, and the picture starts from a keyframe.
 17. DualSense: the console is told the controller is a DualSense, so it sends haptics as voice-coil PCM (audio marker 0x02);
     its mean level per channel drives the two rumble motors. Trigger effects (data type 11) go to `setAdaptiveTriggers`,
     which a wired DualSense driven by `DualSenseController` (USB, "bind all USB" on) applies; PC hosts' 0x5503 effects take
