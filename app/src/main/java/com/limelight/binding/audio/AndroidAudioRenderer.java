@@ -44,24 +44,32 @@ public class AndroidAudioRenderer implements AudioRenderer {
         AudioDeviceInfo current = t.getPreferredDevice();
         if ((wanted == null ? current != null : current == null || current.getId() != wanted.getId())) {
             t.setPreferredDevice(wanted);
+            // Without a DualSense the keys are Android's again: DELOS's own volume goes back to neutral
+            if (wanted == null) { volumeStep = VOLUME_STEPS; boost = 1f; t.setVolume(1f); }
             LimeLog.info("Stream sound " + (wanted == null ? "follows the system routing" : "kept on " + wanted.getProductName() + " (DualSense plugged in)"));
         }
     }
 
-    /** Delos: the stream's own volume in [VOLUME_STEPS] steps, used while the sound is kept off a plugged-in DualSense. */
+    /**
+     * Delos: the stream's own volume, used while its sound is kept off a plugged-in DualSense, in steps of 1/[VOLUME_STEPS]: up to
+     * [VOLUME_STEPS] it is the track's volume, above it the samples are amplified, up to 200 %. Android then lets an app set only the
+     * controller's volume (the media route), so the device's speaker can be no louder than its own media volume without this.
+     * The DualSense's haptics are a track of their own (DualSenseHaptics) and are never amplified.
+     */
     private volatile int volumeStep = VOLUME_STEPS;
+    private volatile float boost = 1f;
     public static final int VOLUME_STEPS = 15;
 
     /**
-     * Delos: the volume keys while the sound is kept off a DualSense. Android's keys then change the controller's volume (the media
-     * route), not the sound the player hears, so DELOS turns its own sound up or down instead ([direction] +1 or -1). Returns the new
-     * volume in percent, or -1 when the keys are Android's (no DualSense, or the setting is off).
+     * Delos: the volume keys while the sound is kept off a DualSense ([direction] +1 or -1). Returns the new volume in percent, or -1
+     * when the keys are Android's (no DualSense, or the setting is off).
      */
     public int adjustVolume(int direction) {
         AudioTrack t = track;
         if (!soundOnDevice || t == null || t.getPreferredDevice() == null) return -1;
-        volumeStep = Math.max(0, Math.min(VOLUME_STEPS, volumeStep + direction));
-        t.setVolume(volumeStep / (float) VOLUME_STEPS);
+        volumeStep = Math.max(0, Math.min(2 * VOLUME_STEPS, volumeStep + direction));
+        t.setVolume(Math.min(volumeStep, VOLUME_STEPS) / (float) VOLUME_STEPS);
+        boost = Math.max(volumeStep, VOLUME_STEPS) / (float) VOLUME_STEPS;
         return volumeStep * 100 / VOLUME_STEPS;
     }
 
@@ -235,6 +243,13 @@ public class AndroidAudioRenderer implements AudioRenderer {
         // Only queue up to 40 ms of pending audio data in addition to what AudioTrack is buffering for us.
         int pending = pendingAudioMs.getAsInt();
         if (pending < 40) {
+            // Delos: above 100 % the samples are amplified, held at full scale rather than wrapping
+            float gain = boost;
+            if (gain > 1f) {
+                for (int i = 0; i < audioData.length; i++) {
+                    audioData[i] = (short) Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, Math.round(audioData[i] * gain)));
+                }
+            }
             // This will block until the write is completed. That can cause a backlog
             // of pending audio data, so we do the above check to be able to bound
             // latency at 40 ms in that situation.
