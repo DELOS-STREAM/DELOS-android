@@ -410,4 +410,8 @@
     <string name="title_low_latency_frame_balance">LFR</string>
     <string name="summary_low_latency_frame_balance">Minimiza o atraso descartando quadros na fila. Pode não funcionar em todos os dispositivos.</string>
     <string name="category_perf_monitor_settings">Monitor de desempenho</string>
+    <string name="title_checkbox_dualsense_usb">DualSense USB: gatilhos e barra de luz</string>
+    <string name="summary_checkbox_dualsense_usb">Um DualSense via USB usa os gatilhos adaptáveis e a barra de luz do jogo. O Android pede permissão USB uma vez. Desativado: o Android controla a vibração simples. Sem resposta háptica de áudio no PC.</string>
+    <string name="title_checkbox_sound_on_device">Manter o som no dispositivo</string>
+    <string name="summary_checkbox_sound_on_device">Com um DualSense via USB, o som do stream sai pelo alto-falante ou pelos fones do dispositivo, não pelo controle. As teclas de volume passam a ajustar o volume do stream.</string>
 </resources>

@@ -98,4 +98,6 @@
     <string name="ps_notice">Aplicación no oficial de la comunidad. No está afiliada a Sony Interactive Entertainment ni cuenta con su respaldo. «PlayStation» es una marca comercial registrada o una marca comercial de Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Pantalla táctil como panel táctil</string>
     <string name="ps_settings_touchscreen_touchpad_description">Los dedos en la pantalla actúan como el panel táctil del DualSense, para deslizar y tocar. Desactivado: la pantalla ignora los toques.</string>
+    <string name="ps_settings_dualsense_usb_title">DualSense USB: háptica y gatillos</string>
+    <string name="ps_settings_dualsense_usb_description">Un DualSense conectado por USB reproduce la vibración háptica de la consola en sus actuadores y usa sus gatillos adaptativos. Android pide permiso USB una vez. Desactivado: Android lo gestiona con vibración básica.</string>
 </resources>

@@ -214,4 +214,6 @@
     <string name="stream_help_format_keys">%1$s을(를) PC로 한 번 보낸 뒤 스트림으로 돌아가요.</string>
     <string name="stream_help_format_command">호스트에 정의된 명령 %1$s을(를) PC에서 바로 실행해요. Vibepollo 또는 Apollo에서 설정해요.</string>
     <string name="help_checkbox_back_game_bar">Windows 전용이에요. 뒤로를 짧게 누르면 Guide(Game Bar), 500ms 길게 누르면 작업 보기(Win+Tab)를 열어요. Guide는 스트림 메뉴를 열어요. PlayStation은 바뀌지 않아요.</string>
+    <string name="help_checkbox_dualsense_usb">USB로 연결한 DualSense에서 게임의 적응형 트리거와 라이트 바를 사용해요. Android가 USB 사용 권한을 한 번 요청해요. 끄면 Android가 기본 진동을 제어해요. PC의 오디오 햅틱은 지원하지 않아요.</string>
+    <string name="help_checkbox_sound_on_device">USB로 DualSense를 연결하면 스트림 소리를 컨트롤러가 아닌 기기의 스피커나 헤드폰으로 재생해요. 볼륨 키로 스트림 볼륨을 조절할 수 있어요.</string>
 </resources>

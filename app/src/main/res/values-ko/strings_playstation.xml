@@ -98,4 +98,6 @@
     <string name="ps_notice">비공식 커뮤니티 앱입니다. Sony Interactive Entertainment와 제휴하지 않았으며 승인을 받지 않았습니다. “PlayStation”은 Sony Interactive Entertainment Inc.의 등록 상표 또는 상표입니다.</string>
     <string name="ps_settings_touchscreen_touchpad_title">터치스크린을 터치패드로</string>
     <string name="ps_settings_touchscreen_touchpad_description">화면의 손가락이 DualSense 터치패드처럼 동작해 스와이프와 터치에 쓰입니다. 끄기: 화면이 터치를 무시합니다.</string>
+    <string name="ps_settings_dualsense_usb_title">USB DualSense 햅틱과 트리거</string>
+    <string name="ps_settings_dualsense_usb_description">USB로 연결한 DualSense가 액추에이터와 적응형 트리거로 콘솔의 햅틱을 재현해요. Android가 USB 사용 권한을 한 번 요청해요. 끄면 Android가 기본 진동으로 제어해요.</string>
 </resources>

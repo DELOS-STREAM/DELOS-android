@@ -152,6 +152,7 @@ The header pills. The per-app settings tab pills use the same glyphs.
 | Audio configuration | `speaker-hifi` | `SURROUND_SOUND` |  |
 | Audio effects | `equalizer` | `EQUALIZER` |  |
 | Play audio on the PC | `speaker-high` | `SPEAKER` |  |
+| Keep the sound on the device (PC and PlayStation) | `speaker-low` | `PLAYER_VOLUME_LOW` | device output; distinct from the host-speaker setting |
 | Interface sounds | `music-note` | `MUSIC_NOTE` | the Music genre has the piano keys |
 
 ### Settings > Controls: gamepad
@@ -162,6 +163,7 @@ The header pills. The per-app settings tab pills use the same glyphs.
 | Multiple controllers | `plugs-connected` | `GAMEPAD_DETECT` |  |
 | USB driver | `usb` | `USB` |  |
 | USB override | `plug` | `USB_OVERRIDE` |  |
+| Wired DualSense support (PC and PlayStation) | `delos-pad-dualsense-r2` | `PAD_DUALSENSE_R2` | the physical adaptive trigger; controller caps stay unchanged |
 | Mouse emulation | `mouse` | `MOUSE` |  |
 | Analog scrolling | `mouse-scroll` | `ANALOG_SCROLL` |  |
 | Flip face buttons | `circles-four` | `GAMEPAD_BUTTONS` |  |

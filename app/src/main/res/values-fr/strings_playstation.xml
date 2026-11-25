@@ -98,4 +98,6 @@
     <string name="ps_notice">Application communautaire non officielle. Elle n\'est ni affiliée à Sony Interactive Entertainment ni approuvée par elle. « PlayStation » est une marque déposée ou une marque commerciale de Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Écran tactile comme pavé tactile</string>
     <string name="ps_settings_touchscreen_touchpad_description">Les doigts sur l’écran agissent comme le pavé tactile de la DualSense, pour glisser et toucher. Désactivé : l’écran ignore les touchers.</string>
+    <string name="ps_settings_dualsense_usb_title">DualSense USB : haptique et gâchettes</string>
+    <string name="ps_settings_dualsense_usb_description">Un DualSense relié en USB restitue l’haptique de la console via ses actionneurs et ses gâchettes adaptatives. Android demande une fois l’accès USB. Désactivé : Android le gère avec des vibrations simples.</string>
 </resources>

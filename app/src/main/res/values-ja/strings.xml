@@ -422,4 +422,8 @@
     <string name="title_low_latency_frame_balance">LFR</string>
     <string name="summary_low_latency_frame_balance">キューに溜まったフレームを破棄して遅延を最小限にします。すべての端末で動作するとは限りません。</string>
     <string name="category_perf_monitor_settings">パフォーマンスモニター</string>
+    <string name="title_checkbox_dualsense_usb">USB DualSenseのトリガーとライトバー</string>
+    <string name="summary_checkbox_dualsense_usb">USB接続のDualSenseでゲームのアダプティブトリガーとライトバーを使います。Androidが初回にUSB使用許可を求めます。オフではAndroidが通常の振動を制御します。PCの音声ハプティクスは非対応です。</string>
+    <string name="title_checkbox_sound_on_device">音声を端末で再生</string>
+    <string name="summary_checkbox_sound_on_device">USB接続のDualSenseを使うとき、ストリーム音声をコントローラーではなく端末のスピーカーやヘッドホンで再生します。音量キーでストリーム音量を調整できます。</string>
 </resources>

@@ -323,6 +323,8 @@ private fun psOnlyRows(tab: PsSettingsTab, values: Map<String, *>, prefs: Shared
             ) { editor, v -> editor.putString(PsPrefs.VIDEO_QUEUE, v) },
         )
         PsSettingsTab.AUDIO -> listOf(
+            toggle(PsPrefs.SOUND_ON_DEVICE, Symbols.PLAYER_VOLUME_LOW, R.string.title_checkbox_sound_on_device,
+                R.string.summary_checkbox_sound_on_device, true),
             choice(PsPrefs.AUDIO_BUFFER, Symbols.TIMER, R.string.ps_settings_audio_buffer_title, R.string.ps_settings_audio_buffer_description,
                 listOf("low", "normal", "high"), values[PsPrefs.AUDIO_BUFFER] as? String ?: "low",
                 listOf(R.string.ps_settings_audio_buffer_low, R.string.ps_settings_audio_buffer_normal, R.string.ps_settings_audio_buffer_high).map { res.getString(it) },
@@ -340,6 +342,8 @@ private fun psOnlyRows(tab: PsSettingsTab, values: Map<String, *>, prefs: Shared
             },
         )
         PsSettingsTab.CONTROLLER -> listOf(
+            toggle(PsPrefs.DUALSENSE_USB, Symbols.PAD_DUALSENSE_R2, R.string.ps_settings_dualsense_usb_title,
+                R.string.ps_settings_dualsense_usb_description, true),
             toggle(PsPrefs.TOUCHSCREEN_TOUCHPAD, Symbols.PAD_DUALSENSE_TOUCHPAD, R.string.ps_settings_touchscreen_touchpad_title,
                 R.string.ps_settings_touchscreen_touchpad_description, true),
             choice(PsPrefs.GYRO_AIM, Symbols.GYRO_AIM, R.string.ps_settings_gyro_aim_title, R.string.ps_settings_gyro_aim_description,

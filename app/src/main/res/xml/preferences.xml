@@ -246,6 +246,12 @@
             android:summary="@string/summary_checkbox_enable_audiofx"
             android:title="@string/title_checkbox_enable_audiofx"
             app:iconSpaceReserved="false" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="checkbox_sound_on_device"
+            android:summary="@string/summary_checkbox_sound_on_device"
+            android:title="@string/title_checkbox_sound_on_device"
+            app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -280,6 +286,13 @@
             android:key="checkbox_usb_bind_all"
             android:summary="@string/summary_checkbox_usb_bind_all"
             android:title="@string/title_checkbox_usb_bind_all"
+            app:iconSpaceReserved="false" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:dependency="checkbox_usb_driver"
+            android:key="checkbox_dualsense_usb"
+            android:summary="@string/summary_checkbox_dualsense_usb"
+            android:title="@string/title_checkbox_dualsense_usb"
             app:iconSpaceReserved="false" />
         <CheckBoxPreference
             android:defaultValue="true"

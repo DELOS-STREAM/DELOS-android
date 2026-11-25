@@ -219,4 +219,6 @@
     <string name="stream_help_format_keys">Jednou pošle do PC %1$s a vrátí se do streamu.</string>
     <string name="stream_help_format_command">Hned spustí v PC příkaz %1$s definovaný v PC. Nastavuje se ve Vibepollo nebo Apollo.</string>
     <string name="help_checkbox_back_game_bar">Jen Windows. Klepnutí na Zpět pošle Guide (Game Bar), podržení 500 ms otevře Task View (Win+Tab). Guide dál otevírá nabídku streamu. PlayStation beze změny.</string>
+    <string name="help_checkbox_dualsense_usb">DualSense přes USB používá adaptivní spouště a světelnou lištu podle hry. Android jednou požádá o přístup k USB. Vypnuto: Android zajistí běžné vibrace. PC nepodporuje zvukovou haptiku.</string>
+    <string name="help_checkbox_sound_on_device">S DualSense připojeným přes USB hraje zvuk streamu z reproduktoru nebo sluchátek zařízení, ne z gamepadu. Tlačítka hlasitosti pak nastavují hlasitost streamu.</string>
 </resources>

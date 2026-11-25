@@ -450,4 +450,8 @@
     <string name="summary_low_latency_frame_balance">Minimizes delay by dropping queued frames. May not work on every device.</string>
     <string name="category_perf_monitor_settings">Performance Monitor</string>
 
+    <string name="title_checkbox_dualsense_usb">Wired DualSense triggers and light bar</string>
+    <string name="summary_checkbox_dualsense_usb">A USB DualSense uses the game’s adaptive triggers and light bar. Android asks once for USB permission. Off: Android handles simple rumble. No audio haptics on PC.</string>
+    <string name="title_checkbox_sound_on_device">Keep the sound on the device</string>
+    <string name="summary_checkbox_sound_on_device">With a DualSense connected by USB, stream audio plays on the device’s speaker or headphones, not the controller. Volume keys adjust the stream volume.</string>
 </resources>

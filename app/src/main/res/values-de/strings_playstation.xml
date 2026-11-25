@@ -98,4 +98,6 @@
     <string name="ps_notice">Inoffizielle Community-App. Nicht mit Sony Interactive Entertainment verbunden und nicht von Sony Interactive Entertainment unterstützt. „PlayStation“ ist eine eingetragene Marke oder Marke von Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Touchscreen als Touchpad</string>
     <string name="ps_settings_touchscreen_touchpad_description">Finger auf dem Bildschirm wirken als Touchpad des DualSense, für Wischen und Berührungen. Aus: Der Bildschirm ignoriert Berührungen.</string>
+    <string name="ps_settings_dualsense_usb_title">USB-DualSense: Haptik und Trigger</string>
+    <string name="ps_settings_dualsense_usb_description">Ein per USB verbundener DualSense gibt die Haptik der Konsole über seine Aktuatoren und adaptiven Trigger wieder. Android fragt einmal nach USB-Zugriff. Aus: Android übernimmt mit einfacher Vibration.</string>
 </resources>

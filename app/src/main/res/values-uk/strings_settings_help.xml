@@ -214,4 +214,6 @@
     <string name="stream_help_format_keys">Один раз надсилає %1$s на ПК, потім повертає до стріму.</string>
     <string name="stream_help_format_command">Одразу виконує на ПК команду хоста %1$s. Задається у Vibepollo або Apollo.</string>
     <string name="help_checkbox_back_game_bar">Лише Windows. Натискання Назад надсилає Guide (Game Bar), утримання 500 мс відкриває подання завдань (Win+Tab). Guide відкриває меню стриму. PlayStation без змін.</string>
+    <string name="help_checkbox_dualsense_usb">DualSense через USB використовує адаптивні тригери та світлову панель гри. Android один раз запитує дозвіл на USB. Вимкнено: Android керує простою вібрацією. На ПК немає звукової гаптики.</string>
+    <string name="help_checkbox_sound_on_device">З DualSense через USB звук стріму відтворюється через динамік або навушники пристрою, а не контролер. Клавіші гучності тоді регулюють гучність стріму.</string>
 </resources>

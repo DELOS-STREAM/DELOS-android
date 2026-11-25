@@ -380,4 +380,8 @@
     <string name="title_low_latency_frame_balance">LFR</string>
     <string name="summary_low_latency_frame_balance">대기 중인 프레임을 버려서 지연을 최소화해요. 일부 기기에서는 작동하지 않을 수 있어요.</string>
     <string name="category_perf_monitor_settings">성능 모니터</string>
+    <string name="title_checkbox_dualsense_usb">USB DualSense 트리거와 라이트 바</string>
+    <string name="summary_checkbox_dualsense_usb">USB로 연결한 DualSense에서 게임의 적응형 트리거와 라이트 바를 사용해요. Android가 USB 사용 권한을 한 번 요청해요. 끄면 Android가 기본 진동을 제어해요. PC의 오디오 햅틱은 지원하지 않아요.</string>
+    <string name="title_checkbox_sound_on_device">기기에서 소리 재생 유지</string>
+    <string name="summary_checkbox_sound_on_device">USB로 DualSense를 연결하면 스트림 소리를 컨트롤러가 아닌 기기의 스피커나 헤드폰으로 재생해요. 볼륨 키로 스트림 볼륨을 조절할 수 있어요.</string>
 </resources>

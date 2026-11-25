@@ -411,4 +411,8 @@
     <string name="summary_low_latency_frame_balance">Мінімізує затримку, відкидаючи кадри з черги. Може працювати не на кожному пристрої.</string>
     <string name="category_perf_monitor_settings">Монітор продуктивності</string>
 
+    <string name="title_checkbox_dualsense_usb">USB DualSense: тригери та світлова панель</string>
+    <string name="summary_checkbox_dualsense_usb">DualSense через USB використовує адаптивні тригери та світлову панель гри. Android один раз запитує дозвіл на USB. Вимкнено: Android керує простою вібрацією. На ПК немає звукової гаптики.</string>
+    <string name="title_checkbox_sound_on_device">Залишати звук на пристрої</string>
+    <string name="summary_checkbox_sound_on_device">З DualSense через USB звук стріму відтворюється через динамік або навушники пристрою, а не контролер. Клавіші гучності тоді регулюють гучність стріму.</string>
 </resources>

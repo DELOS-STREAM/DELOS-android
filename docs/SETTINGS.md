@@ -58,6 +58,9 @@ Translation is off by default. The four presets chosen there are offered in the 
 without a vibration motor, no per-app override). The row is not stored: it shows and applies the rumble
 preset keys through `RumblePreferences` (see [RUMBLE.md](RUMBLE.md)) and reads Custom after Advanced edits.
 
+- `checkbox_dualsense_usb` (Controls → Gamepad, default on, depends on `checkbox_usb_driver`, hidden without USB host): wired DualSense adaptive triggers and light bar; Android requests USB permission once, and off leaves Android in charge with simple rumble (no PC audio haptics).
+- `checkbox_sound_on_device` (Audio, default on, hidden without USB host): with a wired DualSense, keep stream audio on the device speaker/headphones rather than the controller; volume keys adjust the stream volume.
+
 ## Catalog and stores
 
 - `shell/settings/SettingsCatalog.kt` reads titles, summaries, defaults, dependencies, choices, types,

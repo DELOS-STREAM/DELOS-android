@@ -98,4 +98,6 @@
     <string name="ps_notice">非公式のコミュニティアプリです。Sony Interactive Entertainment とは提携しておらず、同社の承認も受けていません。“PlayStation”は Sony Interactive Entertainment Inc. の登録商標または商標です。</string>
     <string name="ps_settings_touchscreen_touchpad_title">タッチスクリーンをタッチパッドに</string>
     <string name="ps_settings_touchscreen_touchpad_description">画面上の指が DualSense のタッチパッドとして働き、スワイプやタッチに使えます。オフ：画面はタッチを無視します。</string>
+    <string name="ps_settings_dualsense_usb_title">USB DualSenseのハプティクスとトリガー</string>
+    <string name="ps_settings_dualsense_usb_description">USB接続のDualSenseで、コンソールのハプティクスをアクチュエーターとアダプティブトリガーに再現します。Androidが初回にUSB使用許可を求めます。オフではAndroidが通常の振動を制御します。</string>
 </resources>

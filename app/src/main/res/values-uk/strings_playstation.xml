@@ -98,4 +98,6 @@
     <string name="ps_notice">Неофіційний застосунок спільноти. Не пов’язаний із Sony Interactive Entertainment і не схвалений нею. «PlayStation» є зареєстрованою торговельною маркою або торговельною маркою Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Сенсорний екран як тачпад</string>
     <string name="ps_settings_touchscreen_touchpad_description">Пальці на екрані працюють як тачпад DualSense для свайпів і дотиків. Вимкнено: екран ігнорує дотики.</string>
+    <string name="ps_settings_dualsense_usb_title">USB DualSense: гаптика та тригери</string>
+    <string name="ps_settings_dualsense_usb_description">DualSense через USB відтворює гаптику консолі своїми актуаторами й адаптивними тригерами. Android один раз запитує дозвіл на USB. Вимкнено: Android керує контролером із простою вібрацією.</string>
 </resources>

@@ -47,6 +47,8 @@ announces one controller and its feedback packets carry no controller index); Du
 9. PlayStation settings (`Screen.PsSettings`, the button under the console circles) are a file of their own (`PsPrefs`,
    `ps_settings`): the classic stream keys plus keyframe-on-loss, video queue depth, audio buffer and swapped channels.
    Defaults on first use: 1080p, 60 fps, HEVC, DELOS's recommended bitrate. Remote Play offers 360p to 1080p at 30 or 60 fps.
+   - `ps_dualsense_usb` (Controls, default on): a USB DualSense plays console haptics through its actuators and adaptive triggers; Android requests USB permission once, and off leaves Android in charge with simple rumble.
+   - `ps_sound_on_device` (Audio, default on): with a USB DualSense, stream audio stays on the device speaker/headphones, not the controller; volume keys adjust the stream volume.
 10. Bitrate: automatic by default (the console adapts to the reported loss, up to `PsPrefs.autoCeilingKbps`). A fixed
     bitrate is 2–50 Mbit/s, or 2–200 Mbit/s with `ps_unlock_bitrate`; turning the unlock off brings a higher value back to
     50. The slider's track is coloured by resolution: green up to `PsPrefs.idealBitrateKbps` (30 Mbit/s at 1080p), orange up

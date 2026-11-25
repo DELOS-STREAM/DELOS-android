@@ -210,4 +210,6 @@
     <string name="stream_help_format_keys">Envoie %1$s une fois au PC, puis revient au stream.</string>
     <string name="stream_help_format_command">Exécute aussitôt sur le PC la commande %1$s définie par le PC. À configurer dans Vibepollo ou Apollo.</string>
     <string name="help_checkbox_back_game_bar">Windows uniquement. Retour bref : Guide (Game Bar). Maintien de 500 ms : Vue des tâches (Win+Tab). Guide ouvre le menu du stream. PlayStation reste inchangé.</string>
+    <string name="help_checkbox_dualsense_usb">Un DualSense USB utilise les gâchettes adaptatives et la barre lumineuse du jeu. Android demande une fois l’accès USB. Désactivé : Android gère les vibrations simples. Pas d’haptique audio sur PC.</string>
+    <string name="help_checkbox_sound_on_device">Avec un DualSense USB, le son du stream sort du haut-parleur ou du casque de l’appareil, pas de la manette. Les touches de volume règlent alors le volume du stream.</string>
 </resources>

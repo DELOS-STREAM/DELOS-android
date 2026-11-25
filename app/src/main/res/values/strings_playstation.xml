@@ -99,4 +99,6 @@
     <string name="ps_notice">Unofficial community app. Not affiliated with or endorsed by Sony Interactive Entertainment. “PlayStation” is a registered trademark or trademark of Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Touchscreen as touchpad</string>
     <string name="ps_settings_touchscreen_touchpad_description">Fingers on the screen act as the DualSense touchpad, for swipes and touches. Off: the screen ignores touches.</string>
+    <string name="ps_settings_dualsense_usb_title">Wired DualSense haptics and triggers</string>
+    <string name="ps_settings_dualsense_usb_description">A DualSense connected by USB plays the console’s haptics through its actuators and adaptive triggers. Android asks once for USB permission. Off: Android handles it with simple rumble.</string>
 </resources>

@@ -411,4 +411,8 @@
     <string name="summary_low_latency_frame_balance">Minimiza el retardo descartando fotogramas en cola. Puede no funcionar en todos los dispositivos.</string>
     <string name="category_perf_monitor_settings">Monitor de rendimiento</string>
 
+    <string name="title_checkbox_dualsense_usb">DualSense USB: gatillos y barra luminosa</string>
+    <string name="summary_checkbox_dualsense_usb">Un DualSense por USB usa los gatillos adaptativos y la barra luminosa del juego. Android pide permiso USB una vez. Desactivado: Android ofrece vibración básica. Sin háptica de audio en PC.</string>
+    <string name="title_checkbox_sound_on_device">Mantener el sonido en el dispositivo</string>
+    <string name="summary_checkbox_sound_on_device">Con un DualSense por USB, el audio del stream sale por el altavoz o los auriculares del dispositivo, no por el mando. Las teclas de volumen ajustan entonces el volumen del stream.</string>
 </resources>

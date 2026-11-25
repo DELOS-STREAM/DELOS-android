@@ -98,4 +98,6 @@
     <string name="ps_notice">Aplicativo não oficial da comunidade. Não é afiliado à Sony Interactive Entertainment nem endossado por ela. “PlayStation” é uma marca registrada ou marca comercial da Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Tela sensível ao toque como touchpad</string>
     <string name="ps_settings_touchscreen_touchpad_description">Os dedos na tela agem como o touchpad do DualSense, para deslizar e tocar. Desligado: a tela ignora toques.</string>
+    <string name="ps_settings_dualsense_usb_title">DualSense USB: resposta háptica e gatilhos</string>
+    <string name="ps_settings_dualsense_usb_description">Um DualSense conectado via USB reproduz a resposta háptica do console nos atuadores e nos gatilhos adaptáveis. O Android pede permissão USB uma vez. Desativado: o Android controla com vibração simples.</string>
 </resources>

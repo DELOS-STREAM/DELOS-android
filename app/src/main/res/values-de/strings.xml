@@ -446,4 +446,8 @@
     <string name="summary_low_latency_frame_balance">Minimiert die Verzögerung, indem eingereihte Frames verworfen werden. Funktioniert evtl. nicht auf jedem Gerät.</string>
     <string name="category_perf_monitor_settings">Leistungsmonitor</string>
 
+    <string name="title_checkbox_dualsense_usb">USB-DualSense: Trigger und Lichtleiste</string>
+    <string name="summary_checkbox_dualsense_usb">Ein USB-DualSense nutzt die adaptiven Trigger und die Lichtleiste des Spiels. Android fragt einmal nach USB-Zugriff. Aus: Android übernimmt einfache Vibrationen. Keine Audio-Haptik am PC.</string>
+    <string name="title_checkbox_sound_on_device">Ton auf dem Gerät lassen</string>
+    <string name="summary_checkbox_sound_on_device">Mit einem USB-DualSense läuft der Stream-Ton über Lautsprecher oder Kopfhörer des Geräts, nicht über den Controller. Die Lautstärketasten regeln dann die Stream-Lautstärke.</string>
 </resources>

@@ -98,4 +98,6 @@
     <string name="ps_notice">Neoficiální komunitní aplikace. Není spojena se společností Sony Interactive Entertainment ani jí není schválena. „PlayStation“ je registrovaná ochranná známka nebo ochranná známka společnosti Sony Interactive Entertainment Inc.</string>
     <string name="ps_settings_touchscreen_touchpad_title">Dotyková obrazovka jako touchpad</string>
     <string name="ps_settings_touchscreen_touchpad_description">Prsty na obrazovce fungují jako touchpad ovladače DualSense, pro přejetí a dotyky. Vypnuto: obrazovka dotyky ignoruje.</string>
+    <string name="ps_settings_dualsense_usb_title">USB DualSense: haptika a spouště</string>
+    <string name="ps_settings_dualsense_usb_description">DualSense připojený přes USB přehrává haptiku konzole svými aktuátory a používá adaptivní spouště. Android jednou požádá o přístup k USB. Vypnuto: gamepad řídí Android s běžnými vibracemi.</string>
 </resources>

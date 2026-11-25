@@ -116,7 +116,7 @@ data class SettingsCapabilities(
             if (pm.hasSystemFeature("com.nvidia.feature.shield")) hidden += "checkbox_absolute_mouse_mode"
             hidden += motionHiddenKeys(Build.VERSION.SDK_INT,
                 pm.hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER) || pm.hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE))
-            if (!pm.hasSystemFeature(PackageManager.FEATURE_USB_HOST)) hidden += setOf("checkbox_usb_driver", "checkbox_usb_bind_all")
+            if (!pm.hasSystemFeature(PackageManager.FEATURE_USB_HOST)) hidden += setOf("checkbox_usb_driver", "checkbox_usb_bind_all", "checkbox_dualsense_usb", "checkbox_sound_on_device")
             if (!pm.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE) || pm.hasSystemFeature("com.amazon.software.fireos")) hidden += "checkbox_enable_pip"
             val vibrator = activity.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
             if (vibrator?.hasVibrator() != true) hidden += setOf("checkbox_vibrate_fallback", "seekbar_vibrate_fallback_strength", "checkbox_vibrate_osc", "checkbox_vibrate_keyboard", "checkbox_enable_device_rumble", "list_rumble_feel")

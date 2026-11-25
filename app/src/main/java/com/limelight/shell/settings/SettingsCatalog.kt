@@ -111,10 +111,12 @@ fun settingIcon(key: String): String? = when (key) {
     "list_audio_config" -> Symbols.SURROUND_SOUND
     "checkbox_enable_audiofx" -> Symbols.EQUALIZER
     "checkbox_host_audio" -> Symbols.SPEAKER
+    "checkbox_sound_on_device" -> Symbols.PLAYER_VOLUME_LOW
     "seekbar_deadzone" -> Symbols.STICK_DEADZONE
     "checkbox_multi_controller" -> Symbols.GAMEPAD_DETECT
     "checkbox_usb_driver" -> Symbols.USB
     "checkbox_usb_bind_all" -> Symbols.USB_OVERRIDE
+    "checkbox_dualsense_usb" -> Symbols.PAD_DUALSENSE_R2
     "checkbox_mouse_emulation" -> Symbols.MOUSE
     "analog_scrolling" -> Symbols.ANALOG_SCROLL
     "checkbox_flip_face_buttons" -> Symbols.GAMEPAD_BUTTONS

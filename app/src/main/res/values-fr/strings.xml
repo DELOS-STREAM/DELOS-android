@@ -416,4 +416,8 @@
     <string name="summary_low_latency_frame_balance">Réduit le délai en supprimant les images en file d’attente. Peut ne pas fonctionner sur tous les appareils.</string>
     <string name="category_perf_monitor_settings">Moniteur de performances</string>
 
+    <string name="title_checkbox_dualsense_usb">DualSense USB : gâchettes et barre lumineuse</string>
+    <string name="summary_checkbox_dualsense_usb">Un DualSense USB utilise les gâchettes adaptatives et la barre lumineuse du jeu. Android demande une fois l’accès USB. Désactivé : Android gère les vibrations simples. Pas d’haptique audio sur PC.</string>
+    <string name="title_checkbox_sound_on_device">Garder le son sur l’appareil</string>
+    <string name="summary_checkbox_sound_on_device">Avec un DualSense USB, le son du stream sort du haut-parleur ou du casque de l’appareil, pas de la manette. Les touches de volume règlent alors le volume du stream.</string>
 </resources>

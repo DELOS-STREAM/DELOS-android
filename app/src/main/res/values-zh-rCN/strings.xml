@@ -416,4 +416,8 @@
     <string name="summary_low_latency_frame_balance">通过丢弃排队中的帧来最大程度降低延迟。可能并非在所有设备上都能工作。</string>
     <string name="category_perf_monitor_settings">性能监视器</string>
 
+    <string name="title_checkbox_dualsense_usb">USB DualSense扳机与灯条</string>
+    <string name="summary_checkbox_dualsense_usb">通过USB连接的DualSense使用游戏的自适应扳机和灯条。Android会请求一次USB使用权限。关闭：由Android控制普通震动。PC不支持音频触觉反馈。</string>
+    <string name="title_checkbox_sound_on_device">在设备上播放声音</string>
+    <string name="summary_checkbox_sound_on_device">连接USB DualSense时，串流声音通过设备的扬声器或耳机播放，而非手柄。音量键此时可调节串流音量。</string>
 </resources>
