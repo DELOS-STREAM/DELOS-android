@@ -168,6 +168,33 @@ Apple.
   and a lift to 1.03, in 140 ms, out 110 ms. Focus items have no hover look: they take the focus.
 - The pointer icon is never hidden over the items.
 
+### TV remote control
+
+On an Android TV or Google TV device (`isTvDevice`: the leanback feature) a TV remote operates the shell without a controller or
+touch. A TV remote is a physical device with D-pad or keyboard keys that is neither a pad nor a keyboard with letters
+(`InputKinds.isTvRemote`). On every other device, and for keys of a virtual device (injected keys, a remote-control app), nothing
+below applies: those keys pass through untouched.
+
+- **Key map** (`GlobalKeys.remoteButton`, applied in `ShellActivity.dispatchKeyEvent`):
+
+  | Remote key | Acts as |
+  |---|---|
+  | Menu, Info, Blue | X (the context menu, a screen's own X action); the same as a keyboard's menu key |
+  | Play/Pause | Start (the right menu button) |
+  | Channel Up, Page Up | R1 (next tab) |
+  | Channel Down, Page Down | L1 (previous tab) |
+  | Yellow | Y (filter, search, Undo) |
+
+  The D-pad, OK and Back are not mapped: Android delivers them as navigation already.
+- **Holding OK** (`RemoteHold`): on a remote without a Menu key, holding OK (D-pad Center) is X. The hold is the key's first
+  repeat; X fires once and the release is consumed, so the focused element is not activated as well. A short press activates the
+  focused element on its release as before. Not active while a button is being recorded.
+- **Tabs**: the tabs of settings, per-game settings and artwork take the focus on an Android TV
+  ([MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md), 9.1 rule 8).
+- **Look of a new profile** (`AppearanceStore.applyTvDefaults`, called by `ProfileStore.create`): the first profile made on an
+  Android TV starts with the still background, hero blur 0 and reduced motion on. The values are stored in the profile, so
+  later profiles copy them and the user can change each in Settings → Appearance. Profiles that already exist keep their look.
+
 ### Navigation
 
 Navigation must be **intuitive and direct**. Pressing a direction takes the focus where the user wants to go, ideally

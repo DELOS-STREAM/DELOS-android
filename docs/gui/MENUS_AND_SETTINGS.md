@@ -436,6 +436,10 @@ The tabs of settings, per-app settings and artwork are `TabPill` in `screens/Set
 5. A tap selects a tab (select cue, a short squeeze).
 6. L1 / R1 step through the tabs. The L1 / R1 labels stand beside the row.
 7. The selected state is shown only by the pill.
+8. Exception, Android TV only (`isTvDevice`: the leanback feature): a remote may have no key for L1 / R1, so the tabs take the
+   focus there. Up from the first row reaches the tab row, Left/Right moves across the tabs, OK selects the focused tab, Down
+   returns to the rows. A focused tab has a focus ring (4 px, offset 2), a 1.04 scale and a glow, its text in `text`, a filled
+   icon, and a collapsed tab shows its label while focused. On every other device rules 1 to 7 hold unchanged.
 
 ### 9.2 Tab pill
 

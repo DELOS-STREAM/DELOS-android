@@ -10,6 +10,10 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 
 ## [Unreleased]
 
+### Added
+- **Android TV remotes**: on an Android TV or Google TV, a TV remote now operates DELOS without a controller or touch. Menu and Info open the context menu, Play/Pause is the right menu button, Channel or Page Up/Down step through the tabs, and the yellow and blue keys act as Y and X. On a remote without a Menu key, holding OK opens the context menu, and the tabs of the settings screens can be reached with the D-pad. The contributor reported remote navigation working on a RayNeo Pocket TV Pro (Android TV 14). Other devices are not affected. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
+- **Lighter look on Android TV**: the first profile created on an Android TV starts with the still background, no hero blur and reduced motion, because TV hardware is usually slower than a handheld. Every option can be turned back on in Settings → Appearance, and profiles that already exist keep their look. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
+
 ## [1.3.3] - 2026-11-24
 _Virtual displays set up on the host work again with Vibepollo and Vibeshine._
 

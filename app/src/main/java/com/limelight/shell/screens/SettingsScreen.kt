@@ -433,7 +433,8 @@ internal fun Modifier.tabScroll(scroll: ScrollState): Modifier {
 
 /**
  * A tab of a row switched with L1 / R1 (the settings categories, the artwork kinds). Tabs are touch only: they are never
- * focusable, so the D-pad and the stick pass over them, and the selected one is shown by the accent pill of the surrounding
+ * focusable, so the D-pad and the stick pass over them (except on an Android TV, where they take the focus with a ring and a
+ * focused tab shows its label), and the selected one is shown by the accent pill of the surrounding
  * [com.limelight.shell.ui.SelectionPillHost] with dark ([DelosColors.onAccent]) icon and label, fading to the quiet
  * [DelosColors.text2] when another tab is selected. A tap squeezes the tab for a moment and plays the select cue.
  */
@@ -442,10 +443,13 @@ internal fun TabPill(icon: String, label: String, selected: Boolean, modifier: M
     val colors = LocalDelosColors.current
     val reduced = LocalReducedMotion.current
     val feedback = LocalFeedback.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val tv = remember(context) { com.limelight.shell.ui.isTvDevice(context) }
+    var focused by remember { mutableStateOf(false) }
     // Inside a SelectionPillHost the selected tab's accent pill is the host's, gliding between the tabs
     val hosted = LocalSelectionPill.current != null
     val fade = if (reduced) snap<Color>() else tween(Motion.FADE, easing = Motion.Ease)
-    val contentColor by animateColorAsState(if (selected) colors.onAccent else colors.text2, fade, label = "tabContent")
+    val contentColor by animateColorAsState(if (selected) colors.onAccent else if (focused) colors.text else colors.text2, fade, label = "tabContent")
     val currentClick by rememberUpdatedState(onClick)
     // In a row that scrolls (TabRow) the selected tab is brought into view with 56 px to spare, out of the fade at the cut edges
     val requester = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
@@ -454,20 +458,35 @@ internal fun TabPill(icon: String, label: String, selected: Boolean, modifier: M
     LaunchedEffect(selected, size) {
         if (selected && size.width > 0) requester.bringIntoView(androidx.compose.ui.geometry.Rect(-spare, 0f, size.width + spare, size.height.toFloat()))
     }
-    Row(modifier.selectionPillTarget(selected).bringIntoViewRequester(requester).onSizeChanged { size = it }
-        .pointerTap(999f, cue = Cue.SELECT) { currentClick() }
-        .clip(CircleShape)
-        .then(if (selected && !hosted) Modifier.background(colors.accent) else Modifier)
-        .semantics {
-            role = Role.Tab
-            this.selected = selected
-            onClick { feedback.play(Cue.SELECT); currentClick(); true }
-        }
-        .height(targetPx(66)).padding(horizontal = (if (collapse && !selected) 16 else 22).cpx),
-        horizontalArrangement = Arrangement.spacedBy(12.px), verticalAlignment = Alignment.CenterVertically) {
-        Symbol(icon, 30.tpx, contentColor, filled = selected)
-        // A collapsed tab shows its icon alone until it is the selected one
-        if (!collapse || selected) BasicText(label, style = TextStyle(color = contentColor,
+    Row(
+        modifier
+            .selectionPillTarget(selected)
+            .bringIntoViewRequester(requester)
+            .onSizeChanged { size = it }
+            .then(
+                // An Android TV's remote may have no L1 / R1 stand-in, so the tabs take the focus there; everywhere else they are touch only
+                if (tv) Modifier.focusEffects(
+                    onClick = { currentClick() },
+                    corner = 999f,
+                    focusScale = 1.04f,
+                    ring = FocusRing(4f, 2f),
+                    glow = FocusGlow(offsetY = 4f, blur = 16f, spread = -4f),
+                    onFocusChange = { focused = it },
+                ) else Modifier.pointerTap(999f, cue = Cue.SELECT) { currentClick() }
+            )
+            .clip(CircleShape)
+            .then(if (selected && !hosted) Modifier.background(colors.accent) else Modifier)
+            .semantics {
+                role = Role.Tab
+                this.selected = selected
+                onClick { feedback.play(Cue.SELECT); currentClick(); true }
+            }
+            .height(targetPx(66)).padding(horizontal = (if (collapse && !selected && !focused) 16 else 22).cpx),
+        horizontalArrangement = Arrangement.spacedBy(12.px), verticalAlignment = Alignment.CenterVertically
+    ) {
+        Symbol(icon, 30.tpx, contentColor, filled = selected || focused)
+        // A collapsed tab shows its icon alone until it is the selected or focused one
+        if (!collapse || selected || focused) BasicText(label, style = TextStyle(color = contentColor,
             fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 22.tpx))
         // The count of this tab's custom per-game settings (a quiet accent3 pill; dark on the selected tab's accent pill)
         if (badge > 0) {
