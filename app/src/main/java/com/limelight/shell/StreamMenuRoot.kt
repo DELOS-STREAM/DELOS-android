@@ -519,6 +519,7 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
             add(MoreRow.RUMBLE)
             add(if (host.playStation) MoreRow.CREATE else MenuKey.SCREEN_BRIGHTNESS)
             if (host.microphoneAvailable) add(MoreRow.MICROPHONE)
+            if (host.gyroAimMode != null) add(MoreRow.GYRO_AIM)
             if (host.gyroAimAvailable) { add(MoreRow.GYRO_AIM_H); add(MoreRow.GYRO_AIM_V) }
             if (host.gyroSmoothingAvailable) add(MoreRow.GYRO)
         }
@@ -597,6 +598,19 @@ private fun PageRows(
                 RowValue.Slider(host.brightnessPercent, 5, 100, 5, " %") { toggle { host.setBrightness(it) } })
             if (host.microphoneAvailable) KeyedRow(Symbols.MICROPHONE, R.string.stream_menu_row_microphone, MoreRow.MICROPHONE,
                 RowValue.Toggle(!host.microphoneMuted) { toggle { host.setMicrophoneMuted(!it) } })
+            host.gyroAimMode?.let { mode ->
+                // Applies at once and is stored: the same value as the PlayStation settings' row; the sensitivities show while it is on
+                val modes = listOf("off", "aim", "always")
+                val labels = listOf(R.string.ps_settings_gyro_aim_off, R.string.ps_settings_gyro_aim_l2, R.string.ps_settings_gyro_aim_always).map { res.getString(it) }
+                val at = modes.indexOf(mode).coerceAtLeast(0)
+                KeyedRow(Symbols.GYRO_AIM, R.string.ps_settings_gyro_aim_title, MoreRow.GYRO_AIM, RowValue.Choice(labels[at], { direction ->
+                    host.setGyroAimMode(modes[Math.floorMod(at + direction, modes.size)])
+                    changesTick()
+                }, options = labels, selected = at, onPick = { i ->
+                    host.setGyroAimMode(modes[i])
+                    changesTick()
+                }))
+            }
             if (host.gyroAimAvailable) {
                 // Apply at once and are stored: the same values as the PlayStation settings' rows; changesTick recomposes the value
                 KeyedRow(Symbols.GYRO_AIM_SENSITIVITY, R.string.ps_settings_gyro_aim_h_title, MoreRow.GYRO_AIM_H,

@@ -60,6 +60,10 @@ internal interface StreamMenuHost {
      * percent; a change applies at once and is stored (the same values as the PlayStation settings' rows).
      */
     val gyroAimAvailable: Boolean get() = false
+
+    /** A PlayStation stream's gyro aiming ("off", "aim": while L2 is held, "always"), changed live and stored (PsPrefs.GYRO_AIM); null on a PC stream. */
+    val gyroAimMode: String? get() = null
+    fun setGyroAimMode(mode: String) {}
     fun gyroAimSensitivity(horizontal: Boolean): Int = 100
     fun setGyroAimSensitivity(horizontal: Boolean, percent: Int) {}
 

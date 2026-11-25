@@ -93,6 +93,7 @@
     <string name="ps_settings_gyro_aim_h_description">Cuánto se mueve el stick derecho al girar el dispositivo a la izquierda o a la derecha. El menú de la transmisión cambia el mismo valor.</string>
     <string name="ps_settings_gyro_aim_v_title">Apuntado con giroscopio: arriba y abajo</string>
     <string name="ps_settings_gyro_aim_v_description">Cuánto se mueve el stick derecho al inclinar el dispositivo hacia arriba o hacia abajo. El menú de la transmisión cambia el mismo valor.</string>
+    <string name="stream_help_gyro_aiming">Girar el dispositivo mueve el stick derecho para apuntar. Se aplica al instante y se guarda.</string>
     <string name="stream_help_gyro_aiming_left_and_right">Sensibilidad lateral del apuntado con giroscopio. Se aplica al instante y se guarda.</string>
     <string name="stream_help_gyro_aiming_up_and_down">Sensibilidad vertical del apuntado con giroscopio. Se aplica al instante y se guarda.</string>
     <string name="ps_notice">Aplicación no oficial de la comunidad. No está afiliada a Sony Interactive Entertainment ni cuenta con su respaldo. «PlayStation» es una marca comercial registrada o una marca comercial de Sony Interactive Entertainment Inc.</string>

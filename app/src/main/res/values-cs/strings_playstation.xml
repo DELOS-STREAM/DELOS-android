@@ -93,6 +93,7 @@
     <string name="ps_settings_gyro_aim_h_description">Jak moc se pravá páčka pohne, když zařízení otočíš vlevo nebo vpravo. Menu streamu mění stejnou hodnotu.</string>
     <string name="ps_settings_gyro_aim_v_title">Míření gyroskopem: nahoru a dolů</string>
     <string name="ps_settings_gyro_aim_v_description">Jak moc se pravá páčka pohne, když zařízení nakloníš nahoru nebo dolů. Menu streamu mění stejnou hodnotu.</string>
+    <string name="stream_help_gyro_aiming">Natáčení zařízení pohybuje pravou páčkou pro míření. Projeví se hned a zůstane uložené.</string>
     <string name="stream_help_gyro_aiming_left_and_right">Citlivost míření gyroskopem do stran. Projeví se hned a zůstane uložená.</string>
     <string name="stream_help_gyro_aiming_up_and_down">Citlivost míření gyroskopem nahoru a dolů. Projeví se hned a zůstane uložená.</string>
     <string name="ps_notice">Neoficiální komunitní aplikace. Není spojena se společností Sony Interactive Entertainment ani jí není schválena. „PlayStation“ je registrovaná ochranná známka nebo ochranná známka společnosti Sony Interactive Entertainment Inc.</string>

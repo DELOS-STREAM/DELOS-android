@@ -411,6 +411,8 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override val microphoneMuted get() = (game.conn as? com.limelight.ps.PsConnection)?.microphoneMuted != false
         override fun setMicrophoneMuted(muted: Boolean) { (game.conn as? com.limelight.ps.PsConnection)?.setMicrophoneMuted(muted) }
         override val gyroAimAvailable get() = (game.conn as? com.limelight.ps.PsConnection)?.gyroAimAvailable == true
+        override val gyroAimMode get() = (game.conn as? com.limelight.ps.PsConnection)?.gyroAimMode
+        override fun setGyroAimMode(mode: String) { (game.conn as? com.limelight.ps.PsConnection)?.setGyroAimMode(mode) }
         override fun gyroAimSensitivity(horizontal: Boolean) = (game.conn as? com.limelight.ps.PsConnection)?.gyroAimSensitivity(horizontal) ?: 100
         override fun setGyroAimSensitivity(horizontal: Boolean, percent: Int) { (game.conn as? com.limelight.ps.PsConnection)?.setGyroAimSensitivity(horizontal, percent) }
         override fun dismiss() { menu?.dismiss() }

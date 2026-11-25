@@ -93,6 +93,7 @@
     <string name="ps_settings_gyro_aim_h_description">Quanto o analógico direito se move quando você gira o aparelho para a esquerda ou para a direita. O menu da transmissão altera o mesmo valor.</string>
     <string name="ps_settings_gyro_aim_v_title">Mira por giroscópio: cima e baixo</string>
     <string name="ps_settings_gyro_aim_v_description">Quanto o analógico direito se move quando você inclina o aparelho para cima ou para baixo. O menu da transmissão altera o mesmo valor.</string>
+    <string name="stream_help_gyro_aiming">Girar o dispositivo move o analógico direito para mirar. Vale na hora e fica salvo.</string>
     <string name="stream_help_gyro_aiming_left_and_right">Sensibilidade lateral da mira por giroscópio. Vale na hora e fica salva.</string>
     <string name="stream_help_gyro_aiming_up_and_down">Sensibilidade vertical da mira por giroscópio. Vale na hora e fica salva.</string>
     <string name="ps_notice">Aplicativo não oficial da comunidade. Não é afiliado à Sony Interactive Entertainment nem endossado por ela. “PlayStation” é uma marca registrada ou marca comercial da Sony Interactive Entertainment Inc.</string>

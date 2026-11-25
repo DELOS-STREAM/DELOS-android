@@ -85,7 +85,8 @@ announces one controller and its feedback packets carry no controller index); Du
     `checkbox_vibrate_fallback` on).
 20. Gyro aiming (PS settings, Controls): the device's turn added to the right stick, always or while L2 is held. Each axis
     has its own sensitivity, 25–300 % in steps of 5 (`ps_gyro_aim_h` default 100, `ps_gyro_aim_v` default 180). The stream
-    menu's More page changes the same two values live, for every game. Values per game are not possible: a PS5's discovery
+    menu's More page switches gyro aiming (Off, While L2, Always) and changes the same two values live, for every game;
+    all three are stored in the PlayStation settings. Values per game are not possible: a PS5's discovery
     answer names no running title during Remote Play (observed on the Odin in two streams, 2026-11-23). Turn rates under
     1.5 deg/s, before the sensitivity, move nothing.
 21. Bitrate policy: with automatic bitrate and `ps_visible_loss` on (default) the congestion report carries only the loss FEC

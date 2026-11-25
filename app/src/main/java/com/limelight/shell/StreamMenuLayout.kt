@@ -69,6 +69,9 @@ internal object MoreRow {
     /** A console stream's More row that mutes the microphone (shown while it is on, PsPrefs.MICROPHONE). */
     const val MICROPHONE = "Microphone"
 
+    /** A console stream's More row that sets gyro aiming: off, while L2 is held, always. */
+    const val GYRO_AIM = "Gyro aiming"
+
     /** A console stream's More slider rows for the gyro aiming sensitivity of each axis (shown while gyro aiming is on). */
     const val GYRO_AIM_H = "Gyro aiming left and right"
     const val GYRO_AIM_V = "Gyro aiming up and down"

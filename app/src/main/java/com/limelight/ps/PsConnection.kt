@@ -526,7 +526,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     @Volatile private var aimHeld = false
     @Volatile private var aimX = 0f
     @Volatile private var aimY = 0f
-    private val gyroAim = psPrefs.getString(PsPrefs.GYRO_AIM, "off") ?: "off"
+    @Volatile private var gyroAim = psPrefs.getString(PsPrefs.GYRO_AIM, "off") ?: "off"
     // Stick units per deg/s past the game's dead zone at 100 %: full deflection at 40 deg/s (owner, 2026-11-23: 120 deg/s was
     // too slow). Each axis has its own factor (PsPrefs.gyroAim), and the stream menu changes them live
     @Volatile private var aimH = 1f
@@ -540,6 +540,18 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
     /** Whether gyro aiming is on for this stream (the stream menu then offers its two sensitivities). */
     val gyroAimAvailable: Boolean get() = gyroAim != "off"
+
+    /** Gyro aiming as the PlayStation setting has it: "off", "aim" (while L2 is held) or "always". */
+    val gyroAimMode: String get() = gyroAim
+
+    /** Changes gyro aiming at once and stores it (the stream menu): the same value as the PlayStation settings' row. */
+    fun setGyroAimMode(mode: String) {
+        if (mode != "off" && mode != "aim" && mode != "always") return
+        gyroAim = mode
+        psPrefs.edit().putString(PsPrefs.GYRO_AIM, mode).apply()
+        // What the gyro added to the right stick goes away when aiming no longer applies
+        if (!aiming()) update { it.copy(rx = aimedX(), ry = aimedY()) }
+    }
 
     /** The sensitivity in use (percent), sideways ([horizontal]) or up and down. */
     fun gyroAimSensitivity(horizontal: Boolean): Int = Math.round((if (horizontal) aimH else aimV) * 100f)
