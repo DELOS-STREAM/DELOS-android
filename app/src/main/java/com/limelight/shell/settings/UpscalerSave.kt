@@ -23,3 +23,6 @@ fun upscalerSaveValues(enabled: Boolean, mode: Int, sharpness: Int, level: Int):
 
 /** The per-game override that keeps the live gyro smoothing strength (kept by the stream menu): only this key, clamped to 0..100. */
 fun gyroSmoothingSaveValues(percent: Int): Map<String, Any> = mapOf("seekbar_gyro_smoothing" to percent.coerceIn(0, 100))
+
+/** The stored frame generation setting for a live [multiplier] (kept by a PlayStation stream's menu): "1" is off, "2" to "4" the multiplier. */
+fun frameGenSaveValues(multiplier: Int): Map<String, Any> = mapOf("list_frame_generation" to (if (multiplier in 2..4) multiplier else 1).toString())

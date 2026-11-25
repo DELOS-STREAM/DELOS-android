@@ -111,6 +111,9 @@ this frame rate: lower the supersampling or the frame rate". No setting changes 
 - There is no save button. Every change on the Upscaler page applies live and is kept for this game automatically, as
   that game's overrides of the four upscaler settings (`MenuAutoSave`).
 - The save happens about 500 ms after the last change, or when the menu closes or the stream ends.
+- A PlayStation stream has no per-game settings: the same changes, and the frame generation switch and multiplier, are
+  written to the PlayStation settings (`PsPrefs`), so the next console stream starts with them. On a PC stream frame
+  generation set in the menu lasts for that stream only.
 - The profile is never written from the menu.
 - Nothing is written while the menu merely opens.
 - There is no toast.

@@ -45,6 +45,7 @@ import com.limelight.shell.settings.MenuSavedSetting
 import com.limelight.shell.settings.OscOpacity
 import com.limelight.shell.settings.gyroSmoothingSaveValues
 import com.limelight.shell.settings.upscalerSaveValues
+import com.limelight.shell.settings.frameGenSaveValues
 import com.limelight.shell.ui.Feedback
 import com.limelight.shell.ui.LocalDelosColors
 import com.limelight.shell.ui.LocalFeedback
@@ -337,10 +338,26 @@ class StreamMenu(private val game: DelosStreamActivity) {
      * The game's per-game store, from the launch identity in its intent. A stream started without one (no snapshot, PC or
      * app ID) has no game to keep settings for: menu changes stay session-only there, as before.
      */
-    private val saveTarget by lazy { GameSettingsStore.forLaunch(game) }
+    private val saveTarget: ((Map<String, Any>) -> Unit)? by lazy {
+        // A PlayStation stream has no per-game settings: what the menu changes is kept in the PlayStation settings, so the next
+        // console stream starts with it (owner, 2026-11-25). A PC stream keeps it for the running game.
+        if (game.conn is com.limelight.ps.PsConnection) ::savePlayStation else GameSettingsStore.forLaunch(game)?.let { it::save }
+    }
+
+    private fun savePlayStation(values: Map<String, Any>) {
+        val editor = com.limelight.ps.PsPrefs.prefs(game).edit()
+        values.forEach { (key, value) ->
+            when (value) {
+                is Boolean -> editor.putBoolean(key, value)
+                is Int -> editor.putInt(key, value)
+                else -> editor.putString(key, value.toString())
+            }
+        }
+        editor.apply()
+    }
     private val autoSaveHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val autoSaveTick = Runnable { autoSave.tick(); scheduleAutoSave() }
-    private val autoSave = MenuAutoSave(MenuAutoSave.DELAY_MS, android.os.SystemClock::uptimeMillis, ::liveValues) { saveTarget?.save(it) }
+    private val autoSave = MenuAutoSave(MenuAutoSave.DELAY_MS, android.os.SystemClock::uptimeMillis, ::liveValues) { saveTarget?.invoke(it) }
 
     /** The live upscaler and supersampling controls of the running stream. */
     private val upscaler get() = game.surfaceController
@@ -349,6 +366,7 @@ class StreamMenu(private val game: DelosStreamActivity) {
     private fun liveValues(setting: MenuSavedSetting): Map<String, Any> = when (setting) {
         MenuSavedSetting.UPSCALER -> upscalerSaveValues(upscaler.isUpscalingRequested, game.prefConfig.sgsrMode.index(), game.prefConfig.sgsrSharpness, upscaler.supersamplingLevel)
         MenuSavedSetting.GYRO_SMOOTHING -> gyroSmoothingSaveValues(game.prefConfig.gyroSmoothing)
+        MenuSavedSetting.FRAME_GEN -> frameGenSaveValues(upscaler.frameGenMultiplier)
     }
 
     /** Called only by a user's change of a menu row (never while the menu opens). */
@@ -464,7 +482,8 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override fun setSupersamplingLevel(level: Int) { upscaler.setSupersamplingLevel(level); upscalerChanged() }
         private fun upscalerChanged() = this@StreamMenu.menuSettingChanged(MenuSavedSetting.UPSCALER)
 
-        // Frame generation: live, for this stream (the stored setting stays the next stream's)
+        // Frame generation: live, for this stream (a PC's stored setting stays the next stream's); a PlayStation stream keeps
+        // the change in the PlayStation settings like the upscaler
         override val frameGenAvailable get() = upscaler.isFrameGenAvailable
         override val frameGenMultiplier get() = upscaler.frameGenMultiplier
         private var frameGenLastChoice = if (prefs.frameGenMultiplier > 1) prefs.frameGenMultiplier else 2
@@ -472,6 +491,7 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override fun setFrameGenMultiplier(multiplier: Int) {
             if (multiplier > 1) frameGenLastChoice = multiplier
             upscaler.setFrameGenMultiplier(multiplier)
+            if (playStation) this@StreamMenu.menuSettingChanged(MenuSavedSetting.FRAME_GEN)
         }
         override fun setFrameGenChoice(multiplier: Int) { frameGenLastChoice = multiplier.coerceIn(2, 4) }
 
