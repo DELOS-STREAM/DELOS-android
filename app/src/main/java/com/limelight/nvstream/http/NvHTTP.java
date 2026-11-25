@@ -921,7 +921,9 @@ public class NvHTTP {
             "&rikey="+bytesToHex(context.riKey.getEncoded()) +
             "&rikeyid="+context.riKeyId +
             (!enableHdr ? "" : "&hdrMode=1&clientHdrCapVersion=0&clientHdrCapSupportedFlagsInUint32=0&clientHdrCapMetaDataId=NV_STATIC_METADATA_TYPE_1&clientHdrCapDisplayData=0x0x0x0x0x0x0x0x0x0x0") +
-            "&virtualDisplay=" + (context.streamConfig.getVirtualDisplay() ? 1 : 0) +
+            // Delos: only a request for a virtual display is sent. Vibepollo and Vibeshine read a literal virtualDisplay=0 as "this client
+            // wants the physical display" and override the host's own virtual display mode; Apollo treats a missing value as 0 anyway
+            (context.streamConfig.getVirtualDisplay() ? "&virtualDisplay=1" : "") +
             "&localAudioPlayMode=" + (context.streamConfig.getPlayLocalAudio() ? 1 : 0) +
             "&surroundAudioInfo=" + context.streamConfig.getAudioConfiguration().getSurroundAudioInfo() +
             "&remoteControllersBitmap=" + context.streamConfig.getAttachedGamepadMask() +

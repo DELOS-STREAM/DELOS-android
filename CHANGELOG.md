@@ -399,7 +399,8 @@ _Fork baseline: Moonlight 12.2 merge, Android 10 minimum, dead-code removal, Del
 ### Removed
 - **Dead-code removal**: SBS 3D, performance logging and other dead code.
 
-[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.3.0...v1.3.2
 [1.3.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/DELOS-STREAM/DELOS-android/compare/v1.1.0...v1.2.0
