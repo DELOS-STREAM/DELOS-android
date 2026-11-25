@@ -182,6 +182,8 @@ Android TV and Google TV media remotes (detected via `InputKinds.isTvRemote`) op
   On remotes lacking dedicated Menu or color buttons, long-pressing **D-pad Center** / OK dispatches button **X** (context menu). Short press activates the focused item on release.
 - **Tab navigation**:
   Settings, per-game settings, and artwork tabs (`TabPill`) support D-pad navigation. Moving Up from the first row in a settings list focuses the active tab pill; Left/Right navigates across tabs; Down returns to the list.
+- **Android TV appearance defaults** (`AppearanceStore.from`, `Appearance.defaults`):
+  On devices reporting `PackageManager.FEATURE_LEANBACK`, a fresh profile starts with lighter GPU defaults (`BackgroundKind.STILL`, `heroBlur = 0`, `reducedMotion = true`) for smooth navigation on constrained TV hardware; non-TV devices keep the standard defaults, and users can still re-enable any visual option in Settings → Appearance.
 
 ### Navigation
 

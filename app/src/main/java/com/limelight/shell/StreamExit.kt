@@ -81,7 +81,7 @@ object StreamExit {
             title != null -> game.getString(R.string.stream_exit_quitting, title)
             else -> game.getString(R.string.stream_exit_quitting_game)
         }
-        val appearance = AppearanceStore { ProfileStore.currentSettings(game) }.appearance.value
+        val appearance = AppearanceStore.from(game) { ProfileStore.currentSettings(game) }.appearance.value
         val colors = delosColors(appearance, systemAccentHue(game))
         val portal = Portal((System.nanoTime() and 0x7fffffff).toInt(), if (quit) Symbols.POWER_SETTINGS_NEW else Symbols.HOME, label, pcName, cancellable = false)
         val shown = mutableStateOf<Portal?>(null)

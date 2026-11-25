@@ -1,6 +1,8 @@
 package com.limelight.shell.settings
 
+import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.content.res.Resources
 import androidx.annotation.StringRes
 import com.limelight.R
@@ -84,13 +86,35 @@ data class Appearance(
     val reducedMotion: Boolean = false,
     val sounds: Boolean = true,
     val haptics: Boolean = true,
-)
+) {
+    companion object {
+        /** Lighter defaults for Android TV devices, which typically have constrained GPUs. */
+        fun defaults(isTv: Boolean): Appearance = if (isTv) {
+            Appearance(
+                background = BackgroundKind.STILL,
+                heroBlur = 0,
+                reducedMotion = true,
+            )
+        } else {
+            Appearance()
+        }
+    }
+}
+
+/** Whether the device runs Android TV (Leanback). */
+fun isTvDevice(context: Context): Boolean =
+    context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 
 /**
  * Stores [Appearance] under `ui_*` keys in the current profile's [settings] (ProfileStore.settings), so
  * every profile has its own and the classic UI and the stream are not affected.
  */
-class AppearanceStore(private val settings: () -> SharedPreferences) {
+class AppearanceStore private constructor(
+    private val defaults: Appearance,
+    private val settings: () -> SharedPreferences,
+) {
+    constructor(settings: () -> SharedPreferences) : this(Appearance(), settings)
+
     private val prefs: SharedPreferences get() = settings()
     private val state = MutableStateFlow(read())
 
@@ -110,7 +134,6 @@ class AppearanceStore(private val settings: () -> SharedPreferences) {
     }
 
     private fun read(): Appearance {
-        val defaults = Appearance()
         return Appearance(
             dark = prefs.getBoolean(KEY_DARK, defaults.dark),
             materialYou = prefs.getBoolean(KEY_MATERIAL_YOU, defaults.materialYou),
@@ -149,19 +172,22 @@ class AppearanceStore(private val settings: () -> SharedPreferences) {
     private inline fun <reified E : Enum<E>> enumOr(name: String?, default: E): E =
         enumValues<E>().firstOrNull { it.name == name } ?: default
 
-    private companion object {
-        const val KEY_DARK = "ui_dark"
-        const val KEY_MATERIAL_YOU = "ui_material_you"
-        const val KEY_PALETTE = "ui_palette"
-        const val KEY_CLOCK = "ui_clock"
-        const val KEY_MATCH_GAME = "ui_match_game_colors"
-        const val KEY_BACKGROUND = "ui_background"
-        const val KEY_HERO = "ui_hero_background"
-        const val KEY_HERO_BLUR = "ui_hero_blur"
-        const val KEY_HERO_OPACITY = "ui_hero_opacity"
-        const val KEY_UI_SCALE = "ui_scale"
-        const val KEY_REDUCED_MOTION = "ui_reduced_motion"
-        const val KEY_SOUNDS = "ui_sounds"
-        const val KEY_HAPTICS = "ui_haptics"
+    companion object {
+        fun from(context: Context, settings: () -> SharedPreferences): AppearanceStore =
+            AppearanceStore(Appearance.defaults(isTvDevice(context)), settings)
+
+        private const val KEY_DARK = "ui_dark"
+        private const val KEY_MATERIAL_YOU = "ui_material_you"
+        private const val KEY_PALETTE = "ui_palette"
+        private const val KEY_CLOCK = "ui_clock"
+        private const val KEY_MATCH_GAME = "ui_match_game_colors"
+        private const val KEY_BACKGROUND = "ui_background"
+        private const val KEY_HERO = "ui_hero_background"
+        private const val KEY_HERO_BLUR = "ui_hero_blur"
+        private const val KEY_HERO_OPACITY = "ui_hero_opacity"
+        private const val KEY_UI_SCALE = "ui_scale"
+        private const val KEY_REDUCED_MOTION = "ui_reduced_motion"
+        private const val KEY_SOUNDS = "ui_sounds"
+        private const val KEY_HAPTICS = "ui_haptics"
     }
 }

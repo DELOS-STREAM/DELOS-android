@@ -1,12 +1,14 @@
 package com.limelight.shell.settings
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /** The look of a fresh install (owner's choice, 2026-11-16): what a profile without stored appearance keys reads. */
@@ -45,5 +47,32 @@ class AppearanceDefaultsTest {
         assertEquals(false, read.dark)
         assertEquals(115, read.uiScale)
         assertEquals(BackgroundKind.AURORA, read.background)
+    }
+
+    @Test
+    fun androidTvGetsReducedMotionAndStillBackgroundByDefault() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        shadowOf(context.packageManager).setSystemFeature(PackageManager.FEATURE_LEANBACK, true)
+        val prefs = freshProfile()
+        val read = AppearanceStore.from(context) { prefs }.appearance.value
+        assertEquals(BackgroundKind.STILL, read.background)
+        assertEquals(0, read.heroBlur)
+        assertEquals(true, read.reducedMotion)
+    }
+
+    @Test
+    fun androidTvStillRespectsExplicitlySavedChoices() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        shadowOf(context.packageManager).setSystemFeature(PackageManager.FEATURE_LEANBACK, true)
+        val prefs = freshProfile()
+        prefs.edit()
+            .putString("ui_background", BackgroundKind.CONTOUR.name)
+            .putInt("ui_hero_blur", 5)
+            .putBoolean("ui_reduced_motion", false)
+            .commit()
+        val read = AppearanceStore.from(context) { prefs }.appearance.value
+        assertEquals(BackgroundKind.CONTOUR, read.background)
+        assertEquals(5, read.heroBlur)
+        assertEquals(false, read.reducedMotion)
     }
 }

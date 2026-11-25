@@ -47,7 +47,7 @@ object OscStyle {
     @JvmStatic
     fun refresh(context: Context) {
         runCatching {
-            val appearance = AppearanceStore { ProfileStore.currentSettings(context) }.appearance.value
+            val appearance = AppearanceStore.from(context) { ProfileStore.currentSettings(context) }.appearance.value
             val colors = delosColors(appearance.copy(dark = true), systemAccentHue(context))
             accent = colors.accent.toArgb()
             onAccent = colors.onAccent.toArgb()

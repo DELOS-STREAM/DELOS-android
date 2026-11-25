@@ -116,7 +116,7 @@ class ShellActivity : ComponentActivity() {
         // Everything below reads the current profile's settings
         profiles = ProfileStore(this)
         bindLanguage()
-        appearance = AppearanceStore(profiles::settings)
+        appearance = AppearanceStore.from(this, profiles::settings)
         repo = PcRepository(this, profiles::settings)
         val settingsAgain = intent.getBooleanExtra(ShellPlacement.EXTRA_RESTORE_SETTINGS, false) && profiles.profiles.value.all.isNotEmpty()
         val shell = ShellState(if (profiles.profiles.value.all.isEmpty()) Screen.Boot() else if (settingsAgain) Screen.Settings else Screen.Start)

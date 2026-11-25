@@ -227,7 +227,7 @@ class StreamLoader private constructor(
                 GameArt("$pcUuid/$appId", hue, (hue + 35f) % 360f, Symbols.SPORTS_ESPORTS, cover),
                 LaunchHandoff.background, logo, info)
             val view = ComposeView(activity)
-            val appearance = AppearanceStore { ProfileStore.currentSettings(activity) }.appearance.value
+            val appearance = AppearanceStore.from(activity) { ProfileStore.currentSettings(activity) }.appearance.value
             val loader = StreamLoader(activity, view, pcName, info, appearance.reducedMotion)
             val colors = delosColors(appearance, systemAccentHue(activity))
             view.setContent {

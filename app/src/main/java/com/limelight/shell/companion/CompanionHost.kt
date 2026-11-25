@@ -156,7 +156,7 @@ internal class CompanionHost(
         @JvmStatic
         fun forStream(activity: Activity, pcName: String?, gameName: String?, pcId: String?, requested: String?): CompanionHost {
             val feed = StreamFeed(requested)
-            val appearance = AppearanceStore { ProfileStore.currentSettings(activity) }.appearance
+            val appearance = AppearanceStore.from(activity) { ProfileStore.currentSettings(activity) }.appearance
             return CompanionHost(activity, { appearance }) {
                 CompanionState.Stream(pcName, gameName, feed.stats, feed.commands, pcId.orEmpty(), feed.start)
             }.also { it.stream = feed }

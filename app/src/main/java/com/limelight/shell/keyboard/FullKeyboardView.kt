@@ -19,7 +19,7 @@ import com.limelight.shell.ui.systemAccentHue
  * focus, so the stream view keeps receiving the keys.
  */
 fun createFullKeyboardView(context: Context, state: FullKeyboardState): ComposeView {
-    val appearance = AppearanceStore { ProfileStore.currentSettings(context) }.appearance.value
+    val appearance = AppearanceStore.from(context) { ProfileStore.currentSettings(context) }.appearance.value
     val colors = delosColors(appearance, systemAccentHue(context))
     return ComposeView(context).apply {
         descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
