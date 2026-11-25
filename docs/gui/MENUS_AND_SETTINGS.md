@@ -427,13 +427,19 @@ area. The legend holds the three glyphs with their names and "Cost of the curren
 
 The tabs of settings, per-app settings and artwork are `TabPill` in `screens/SettingsScreen.kt`.
 
-### 9.1 Tab navigation
+### 9.1 Tabs are touch only
 
-1. The tabs are focusable via D-pad (Up from the top row reaches the tab row, Left/Right steps across tabs, Down returns to the active row in the list).
-2. When focused, tabs display standard focus ring styling and expand collapsed icon labels.
-3. A tap or Center click selects a tab (select cue, a short squeeze).
-4. L1 / R1 step through the tabs (and Channel Up / Down or Page Up / Down on TV remotes).
-5. The selected state is shown by the accent pill.
+1. The tabs are never focusable. The D-pad and the stick pass over them.
+2. Up from the first row does not reach the tab row.
+3. Left/Right inside rows is not affected.
+4. The tabs have no focus ring.
+5. A tap selects a tab (select cue, a short squeeze).
+6. L1 / R1 step through the tabs. The L1 / R1 labels stand beside the row.
+7. The selected state is shown only by the pill.
+8. Exception, Android TV only (`isTvDevice`: the leanback feature): a remote may have no key for L1 / R1, so the tabs take the
+   focus there. Up from the first row reaches the tab row, Left/Right moves across the tabs, OK selects the focused tab, Down
+   returns to the rows. A focused tab has a focus ring (4 px, offset 2), a 1.04 scale and a glow, its text in `text`, a filled
+   icon, and a collapsed tab shows its label while focused. On every other device rules 1 to 7 hold unchanged.
 
 ### 9.2 Tab pill
 

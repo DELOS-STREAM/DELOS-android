@@ -72,9 +72,10 @@ class GlobalKeys {
         }
 
         /**
-         * The shell's TV remote map: maps TV remote navigation and media keys to gamepad buttons.
-         * Menu and Info map to X (context menu), Play/Pause to Start, Channel Up/Down and Page Up/Down
-         * to shoulder buttons (L1/R1 for tab navigation), and color buttons to Y/X.
+         * The shell's TV remote map (docs/gui/CONTROLS_AND_TEXT.md, "TV remote control"): the pad button a remote's [keyCode] stands
+         * for, or null for a key the shell leaves alone. Menu, Info and the blue key are X (the context menu, a screen's X action),
+         * as the menu key of a keyboard is; Play/Pause is the right menu button; Channel and Page Up / Down are R1 / L1 (the tabs);
+         * the yellow key is Y. The activity applies it only to a TV remote on an Android TV.
          */
         fun remoteButton(keyCode: Int): Int? = when (keyCode) {
             KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_INFO -> KeyEvent.KEYCODE_BUTTON_X

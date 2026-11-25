@@ -10,6 +10,8 @@ import androidx.preference.PreferenceManager
 import com.limelight.LimeLog
 import com.limelight.R
 import com.limelight.shell.ui.Symbols
+import com.limelight.shell.ui.isTvDevice
+import com.limelight.shell.settings.AppearanceStore
 import com.limelight.shell.settings.SettingsCatalog
 import com.limelight.shell.settings.GameSettingsStore
 import com.limelight.shell.settings.StreamProfileStore
@@ -107,6 +109,8 @@ class ProfileStore(context: Context, private val later: (Long, () -> Unit) -> Un
     fun create(name: String, avatar: Int): Profile {
         val profile = Profile(UUID.randomUUID().toString(), name, avatar)
         copySettings(into = settingsOf(profile.id), from = state.value.current)
+        // The first profile made on an Android TV starts with the lighter look; later ones copy the current profile's
+        if (state.value.current == null && isTvDevice(app)) AppearanceStore.applyTvDefaults(settingsOf(profile.id))
         ProfileLayouts.copy(app, state.value.current?.id, profile.id)
         settingsOf(profile.id).edit().putBoolean("ui_layouts_initialized", true).apply()
         save(Profiles(state.value.all + profile, profile.id))

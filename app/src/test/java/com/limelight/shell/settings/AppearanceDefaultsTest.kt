@@ -50,29 +50,26 @@ class AppearanceDefaultsTest {
     }
 
     @Test
-    fun androidTvGetsReducedMotionAndStillBackgroundByDefault() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        shadowOf(context.packageManager).setSystemFeature(PackageManager.FEATURE_LEANBACK, true)
+    fun aProfileMadeOnAnAndroidTvStartsWithTheLighterLook() {
         val prefs = freshProfile()
-        val read = AppearanceStore.from(context) { prefs }.appearance.value
-        assertEquals(BackgroundKind.STILL, read.background)
-        assertEquals(0, read.heroBlur)
-        assertEquals(true, read.reducedMotion)
+        AppearanceStore.applyTvDefaults(prefs)
+        assertEquals(firstRun.copy(background = BackgroundKind.STILL, heroBlur = 0, reducedMotion = true), AppearanceStore { prefs }.appearance.value)
     }
 
     @Test
-    fun androidTvStillRespectsExplicitlySavedChoices() {
+    fun theTvLookKeepsWhatWasAlreadyChosen() {
+        val prefs = freshProfile()
+        prefs.edit().putString("ui_background", BackgroundKind.CONTOUR.name).putInt("ui_hero_blur", 5).putBoolean("ui_reduced_motion", false).commit()
+        AppearanceStore.applyTvDefaults(prefs)
+        assertEquals(firstRun, AppearanceStore { prefs }.appearance.value)
+    }
+
+    @Test
+    fun anExistingProfileOnAnAndroidTvKeepsItsLook() {
+        // The leanback feature alone changes nothing: only a profile made on the TV gets the lighter look written
         val context = ApplicationProvider.getApplicationContext<Context>()
         shadowOf(context.packageManager).setSystemFeature(PackageManager.FEATURE_LEANBACK, true)
         val prefs = freshProfile()
-        prefs.edit()
-            .putString("ui_background", BackgroundKind.CONTOUR.name)
-            .putInt("ui_hero_blur", 5)
-            .putBoolean("ui_reduced_motion", false)
-            .commit()
-        val read = AppearanceStore.from(context) { prefs }.appearance.value
-        assertEquals(BackgroundKind.CONTOUR, read.background)
-        assertEquals(5, read.heroBlur)
-        assertEquals(false, read.reducedMotion)
+        assertEquals(firstRun, AppearanceStore { prefs }.appearance.value)
     }
 }

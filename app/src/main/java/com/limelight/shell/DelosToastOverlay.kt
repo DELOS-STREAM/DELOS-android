@@ -80,7 +80,7 @@ object DelosToastOverlay {
             show = { text, durationMs, kind -> session.state.showToast(text, durationMs = durationMs, kind = kind) },
             onStart = {
                 // Wait for onStart: setContentView and the intended window geometry are now ready.
-                val appearance = AppearanceStore.from(activity) { ProfileStore.currentSettings(activity) }.appearance.value
+                val appearance = AppearanceStore { ProfileStore.currentSettings(activity) }.appearance.value
                 val colors = delosColors(appearance, systemAccentHue(activity))
                 val (overlay, view) = overlayView(activity) {
                     HostContent(session, appearance, colors, window = null)

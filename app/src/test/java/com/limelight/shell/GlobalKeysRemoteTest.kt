@@ -73,5 +73,23 @@ class GlobalKeysRemoteTest {
             `when`(keyboardType).thenReturn(InputDevice.KEYBOARD_TYPE_NON_ALPHABETIC)
         }
         assertTrue(InputKinds.isTvRemote(tvRemoteDpad))
+
+        // Neither a remote nor a keyboard: a mouse and a touchscreen are left alone
+        for (source in listOf(InputDevice.SOURCE_MOUSE, InputDevice.SOURCE_TOUCHSCREEN)) {
+            val other = mock(InputDevice::class.java).apply {
+                `when`(isVirtual).thenReturn(false)
+                `when`(sources).thenReturn(source)
+                `when`(keyboardType).thenReturn(InputDevice.KEYBOARD_TYPE_NONE)
+            }
+            assertFalse(InputKinds.isTvRemote(other))
+        }
+
+        // Injected keys (a virtual device) are not a remote's, whatever they look like
+        val injected = mock(InputDevice::class.java).apply {
+            `when`(isVirtual).thenReturn(true)
+            `when`(sources).thenReturn(InputDevice.SOURCE_DPAD or InputDevice.SOURCE_KEYBOARD)
+            `when`(keyboardType).thenReturn(InputDevice.KEYBOARD_TYPE_NON_ALPHABETIC)
+        }
+        assertFalse(InputKinds.isTvRemote(injected))
     }
 }

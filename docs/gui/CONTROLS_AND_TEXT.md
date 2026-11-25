@@ -170,20 +170,30 @@ Apple.
 
 ### TV remote control
 
-Android TV and Google TV media remotes (detected via `InputKinds.isTvRemote`) operate the shell without requiring a gamepad or touchscreen.
+On an Android TV or Google TV device (`isTvDevice`: the leanback feature) a TV remote operates the shell without a controller or
+touch. A TV remote is a physical device with D-pad or keyboard keys that is neither a pad nor a keyboard with letters
+(`InputKinds.isTvRemote`). On every other device, and for keys of a virtual device (injected keys, a remote-control app), nothing
+below applies: those keys pass through untouched.
 
-- **Remote key map** (`GlobalKeys.remoteButton`, applied in `ShellActivity.dispatchKeyEvent` via `remoteAsPad`):
-  - **Menu** (`KEYCODE_MENU`) and **Info** (`KEYCODE_INFO`): mapped to **X** (context menu, screen-specific actions such as filter reset, search or reset to defaults).
-  - **Play/Pause** (`KEYCODE_MEDIA_PLAY_PAUSE`): mapped to **Start** (options / context actions).
-  - **Channel Up** / **Page Up** (`KEYCODE_CHANNEL_UP`, `KEYCODE_PAGE_UP`): mapped to **R1** (step forward through tabs).
-  - **Channel Down** / **Page Down** (`KEYCODE_CHANNEL_DOWN`, `KEYCODE_PAGE_DOWN`): mapped to **L1** (step backward through tabs).
-  - **Color keys**: Yellow (`KEYCODE_PROG_YELLOW`) maps to **Y**; Blue (`KEYCODE_PROG_BLUE`) maps to **X**.
-- **D-pad Center long-press** (`ShellActivity.onKeyLongPress`):
-  On remotes lacking dedicated Menu or color buttons, long-pressing **D-pad Center** / OK dispatches button **X** (context menu). Short press activates the focused item on release.
-- **Tab navigation**:
-  Settings, per-game settings, and artwork tabs (`TabPill`) support D-pad navigation. Moving Up from the first row in a settings list focuses the active tab pill; Left/Right navigates across tabs; Down returns to the list.
-- **Android TV appearance defaults** (`AppearanceStore.from`, `Appearance.defaults`):
-  On devices reporting `PackageManager.FEATURE_LEANBACK`, a fresh profile starts with lighter GPU defaults (`BackgroundKind.STILL`, `heroBlur = 0`, `reducedMotion = true`) for smooth navigation on constrained TV hardware; non-TV devices keep the standard defaults, and users can still re-enable any visual option in Settings → Appearance.
+- **Key map** (`GlobalKeys.remoteButton`, applied in `ShellActivity.dispatchKeyEvent`):
+
+  | Remote key | Acts as |
+  |---|---|
+  | Menu, Info, Blue | X (the context menu, a screen's own X action); the same as a keyboard's menu key |
+  | Play/Pause | Start (the right menu button) |
+  | Channel Up, Page Up | R1 (next tab) |
+  | Channel Down, Page Down | L1 (previous tab) |
+  | Yellow | Y (filter, search, Undo) |
+
+  The D-pad, OK and Back are not mapped: Android delivers them as navigation already.
+- **Holding OK** (`RemoteHold`): on a remote without a Menu key, holding OK (D-pad Center) is X. The hold is the key's first
+  repeat; X fires once and the release is consumed, so the focused element is not activated as well. A short press activates the
+  focused element on its release as before. Not active while a button is being recorded.
+- **Tabs**: the tabs of settings, per-game settings and artwork take the focus on an Android TV
+  ([MENUS_AND_SETTINGS.md](MENUS_AND_SETTINGS.md), 9.1 rule 8).
+- **Look of a new profile** (`AppearanceStore.applyTvDefaults`, called by `ProfileStore.create`): the first profile made on an
+  Android TV starts with the still background, hero blur 0 and reduced motion on. The values are stored in the profile, so
+  later profiles copy them and the user can change each in Settings → Appearance. Profiles that already exist keep their look.
 
 ### Navigation
 

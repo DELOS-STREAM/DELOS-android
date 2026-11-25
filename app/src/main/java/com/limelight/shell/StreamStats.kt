@@ -299,7 +299,7 @@ class StreamStatsPanel internal constructor(
         fun attach(activity: Activity, container: ViewGroup, compact: Boolean): StreamStatsPanel {
             val view = ComposeView(activity)
             val settings = ProfileStore.currentSettings(activity)
-            val appearance = AppearanceStore.from(activity) { settings }.appearance.value
+            val appearance = AppearanceStore { settings }.appearance.value
             val panel = StreamStatsPanel(view, container, StatsPosition.read(settings), compact)
             panel.applyGravity()
             val metrics = activity.resources.displayMetrics

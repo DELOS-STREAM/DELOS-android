@@ -113,7 +113,10 @@ object InputKinds {
     fun isKeyboard(device: InputDevice?): Boolean =
         device != null && !device.isVirtual && device.keyboardType == InputDevice.KEYBOARD_TYPE_ALPHABETIC && !fromPad(device.sources)
 
-    /** A TV remote or media control device: non-alphabetic, has D-pad or keyboard keys, not a gamepad. */
+    /**
+     * A TV remote: a physical device with D-pad or keyboard keys that is neither a pad nor a keyboard with letters. A virtual
+     * device (injected keys, the on-screen keyboard, a remote-control app) is not one: its keys pass through as they are.
+     */
     fun isTvRemote(device: InputDevice?): Boolean =
         device != null && !device.isVirtual && (has(device.sources, InputDevice.SOURCE_DPAD) || has(device.sources, InputDevice.SOURCE_KEYBOARD)) &&
             !fromPad(device.sources) && device.keyboardType != InputDevice.KEYBOARD_TYPE_ALPHABETIC
@@ -152,3 +155,7 @@ object InputKinds {
     /** The push of a pad's left stick or hat: the largest of the four axes, 0..1. */
     fun stickMagnitude(x: Float, y: Float, hatX: Float, hatY: Float): Float = max(max(abs(x), abs(y)), max(abs(hatX), abs(hatY)))
 }
+
+/** Whether the device is an Android TV or Google TV one (the leanback feature). */
+fun isTvDevice(context: android.content.Context): Boolean =
+    context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)

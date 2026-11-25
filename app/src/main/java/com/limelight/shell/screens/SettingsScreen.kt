@@ -433,7 +433,8 @@ internal fun Modifier.tabScroll(scroll: ScrollState): Modifier {
 
 /**
  * A tab of a row switched with L1 / R1 (the settings categories, the artwork kinds). Tabs are touch only: they are never
- * focusable, so the D-pad and the stick pass over them, and the selected one is shown by the accent pill of the surrounding
+ * focusable, so the D-pad and the stick pass over them (except on an Android TV, where they take the focus with a ring and a
+ * focused tab shows its label), and the selected one is shown by the accent pill of the surrounding
  * [com.limelight.shell.ui.SelectionPillHost] with dark ([DelosColors.onAccent]) icon and label, fading to the quiet
  * [DelosColors.text2] when another tab is selected. A tap squeezes the tab for a moment and plays the select cue.
  */
@@ -442,6 +443,8 @@ internal fun TabPill(icon: String, label: String, selected: Boolean, modifier: M
     val colors = LocalDelosColors.current
     val reduced = LocalReducedMotion.current
     val feedback = LocalFeedback.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val tv = remember(context) { com.limelight.shell.ui.isTvDevice(context) }
     var focused by remember { mutableStateOf(false) }
     // Inside a SelectionPillHost the selected tab's accent pill is the host's, gliding between the tabs
     val hosted = LocalSelectionPill.current != null
@@ -460,13 +463,16 @@ internal fun TabPill(icon: String, label: String, selected: Boolean, modifier: M
             .selectionPillTarget(selected)
             .bringIntoViewRequester(requester)
             .onSizeChanged { size = it }
-            .focusEffects(
-                onClick = { currentClick() },
-                corner = 999f,
-                focusScale = 1.04f,
-                ring = FocusRing(4f, 2f),
-                glow = FocusGlow(offsetY = 4f, blur = 16f, spread = -4f),
-                onFocusChange = { focused = it },
+            .then(
+                // An Android TV's remote may have no L1 / R1 stand-in, so the tabs take the focus there; everywhere else they are touch only
+                if (tv) Modifier.focusEffects(
+                    onClick = { currentClick() },
+                    corner = 999f,
+                    focusScale = 1.04f,
+                    ring = FocusRing(4f, 2f),
+                    glow = FocusGlow(offsetY = 4f, blur = 16f, spread = -4f),
+                    onFocusChange = { focused = it },
+                ) else Modifier.pointerTap(999f, cue = Cue.SELECT) { currentClick() }
             )
             .clip(CircleShape)
             .then(if (selected && !hosted) Modifier.background(colors.accent) else Modifier)

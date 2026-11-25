@@ -11,8 +11,14 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 ## [Unreleased]
 
 ### Added
-- **TV remote navigation and control**: Android TV and Google TV remotes operate the shell without requiring a gamepad or touch. Menu and Info buttons open context menus (button X); Play/Pause acts as Start; Channel Up/Down and Page Up/Down step through tabs (L1/R1); Yellow and Blue color keys map to Y and X. On remotes without dedicated buttons, long-pressing D-pad Center / OK dispatches button X. Settings, per-game settings, and artwork tabs are focusable via D-pad navigation.
-- **Android TV performance defaults**: On Android TV (`FEATURE_LEANBACK`) devices, fresh profiles default to a static background (`Still`), zero hero blur, and reduced motion for responsive UI performance on TV hardware; all options remain configurable in Settings.
+- **Android TV remotes**: on an Android TV or Google TV, a TV remote now operates DELOS without a controller or touch. Menu and Info open the context menu, Play/Pause is the right menu button, Channel or Page Up/Down step through the tabs, and the yellow and blue keys act as Y and X. On a remote without a Menu key, holding OK opens the context menu, and the tabs of the settings screens can be reached with the D-pad. The contributor reported remote navigation working on a RayNeo Pocket TV Pro (Android TV 14). Other devices are not affected. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
+- **Lighter look on Android TV**: the first profile created on an Android TV starts with the still background, no hero blur and reduced motion, because TV hardware is usually slower than a handheld. Every option can be turned back on in Settings → Appearance, and profiles that already exist keep their look. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
+
+## [1.3.3] - 2026-11-24
+_Virtual displays set up on the host work again with Vibepollo and Vibeshine._
+
+### Fixed
+- **Virtual display on Vibepollo and Vibeshine**: with "Use Virtual Display" off, DELOS told the host to stream the physical display, which overrode a host set to always stream on a virtual display, so games opened on the main monitor. DELOS now only asks for a virtual display when the switch is on and otherwise leaves the choice to the host. Checked against the Vibepollo and Vibeshine source; not yet tested on a Vibeshine host (reported by Reddit users).
 
 ## [1.3.2] - 2026-11-21
 _A clearer update card that opens straight from Check now. 1.3.1 was skipped: its tag points at a commit that was never released._

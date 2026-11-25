@@ -1,8 +1,6 @@
 package com.limelight.shell.settings
 
-import android.content.Context
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.content.res.Resources
 import androidx.annotation.StringRes
 import com.limelight.R
@@ -86,35 +84,13 @@ data class Appearance(
     val reducedMotion: Boolean = false,
     val sounds: Boolean = true,
     val haptics: Boolean = true,
-) {
-    companion object {
-        /** Lighter defaults for Android TV devices, which typically have constrained GPUs. */
-        fun defaults(isTv: Boolean): Appearance = if (isTv) {
-            Appearance(
-                background = BackgroundKind.STILL,
-                heroBlur = 0,
-                reducedMotion = true,
-            )
-        } else {
-            Appearance()
-        }
-    }
-}
-
-/** Whether the device runs Android TV (Leanback). */
-fun isTvDevice(context: Context): Boolean =
-    context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+)
 
 /**
  * Stores [Appearance] under `ui_*` keys in the current profile's [settings] (ProfileStore.settings), so
  * every profile has its own and the classic UI and the stream are not affected.
  */
-class AppearanceStore private constructor(
-    private val defaults: Appearance,
-    private val settings: () -> SharedPreferences,
-) {
-    constructor(settings: () -> SharedPreferences) : this(Appearance(), settings)
-
+class AppearanceStore(private val settings: () -> SharedPreferences) {
     private val prefs: SharedPreferences get() = settings()
     private val state = MutableStateFlow(read())
 
@@ -134,6 +110,7 @@ class AppearanceStore private constructor(
     }
 
     private fun read(): Appearance {
+        val defaults = Appearance()
         return Appearance(
             dark = prefs.getBoolean(KEY_DARK, defaults.dark),
             materialYou = prefs.getBoolean(KEY_MATERIAL_YOU, defaults.materialYou),
@@ -173,8 +150,18 @@ class AppearanceStore private constructor(
         enumValues<E>().firstOrNull { it.name == name } ?: default
 
     companion object {
-        fun from(context: Context, settings: () -> SharedPreferences): AppearanceStore =
-            AppearanceStore(Appearance.defaults(isTvDevice(context)), settings)
+        /**
+         * The lighter look a profile starts with on an Android TV (TV hardware is usually slower than a handheld): the still
+         * background, no hero blur and reduced motion, written into the new profile's [prefs]. A value already stored there
+         * (a look chosen before the profile existed) is kept. Existing profiles are never touched.
+         */
+        fun applyTvDefaults(prefs: SharedPreferences) {
+            val editor = prefs.edit()
+            if (!prefs.contains(KEY_BACKGROUND)) editor.putString(KEY_BACKGROUND, BackgroundKind.STILL.name)
+            if (!prefs.contains(KEY_HERO_BLUR)) editor.putInt(KEY_HERO_BLUR, 0)
+            if (!prefs.contains(KEY_REDUCED_MOTION)) editor.putBoolean(KEY_REDUCED_MOTION, true)
+            editor.apply()
+        }
 
         private const val KEY_DARK = "ui_dark"
         private const val KEY_MATERIAL_YOU = "ui_material_you"

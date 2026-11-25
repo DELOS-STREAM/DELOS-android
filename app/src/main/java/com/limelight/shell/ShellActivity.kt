@@ -27,6 +27,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.limelight.shell.ui.ControllerGlyphs
 import com.limelight.shell.ui.InputKinds
+import com.limelight.shell.ui.isTvDevice
 import com.limelight.shell.companion.CompanionHost
 import com.limelight.shell.companion.CompanionState
 import com.limelight.shell.data.ArtworkStore
@@ -116,7 +117,7 @@ class ShellActivity : ComponentActivity() {
         // Everything below reads the current profile's settings
         profiles = ProfileStore(this)
         bindLanguage()
-        appearance = AppearanceStore.from(this, profiles::settings)
+        appearance = AppearanceStore(profiles::settings)
         repo = PcRepository(this, profiles::settings)
         val settingsAgain = intent.getBooleanExtra(ShellPlacement.EXTRA_RESTORE_SETTINGS, false) && profiles.profiles.value.all.isNotEmpty()
         val shell = ShellState(if (profiles.profiles.value.all.isEmpty()) Screen.Boot() else if (settingsAgain) Screen.Settings else Screen.Start)
@@ -179,35 +180,41 @@ class ShellActivity : ComponentActivity() {
 
     // Activity's public key dispatcher must still run after the shell's global controller keys. Every event first tells the input kind
     // what was used (ControllerGlyphs: the hints follow the last input); a hardware keyboard's keys then act as the pad's buttons
-    // (GlobalKeys.keyboardButton), except while a button is being recorded; a TV remote's keys act via GlobalKeys.remoteButton
+    // (GlobalKeys.keyboardButton), except while a button is being recorded. On an Android TV a remote's keys act as pad buttons too
+    // (GlobalKeys.remoteButton) and holding its OK key is X (RemoteHold); on every other device those keys pass through untouched
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         ControllerGlyphs.key(event)
         // Any key shows the fullscreen viewer's overlay again, before a global shortcut may consume it
         shellState?.overviewViewerInput?.invoke()
-        if (event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER && event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-            event.startTracking()
+        if (keys.capture != null) return keys.dispatch(event) || super.dispatchKeyEvent(event)
+        if (event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER && tvRemote(event)) {
+            when (remoteHold.step(event.action, event.repeatCount)) {
+                RemoteHold.Step.FIRE -> {
+                    // GlobalKeys acts on a button's release, so the release alone is the whole press of X
+                    keys.dispatch(KeyEvent(event.downTime, event.eventTime, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BUTTON_X, 0, 0, event.deviceId, event.scanCode, event.flags, event.source))
+                    return true
+                }
+                RemoteHold.Step.CONSUME -> return true
+                RemoteHold.Step.PASS -> Unit
+            }
         }
-        val shellEvent = if (keys.capture == null) translateInputEvent(event) else event
+        val shellEvent = when {
+            InputKinds.fromPad(event.source) -> event
+            InputKinds.isKeyboard(event.device) -> keyboardAsPad(event)
+            tvRemote(event) -> remoteAsPad(event)
+            else -> event
+        }
         return keys.dispatch(shellEvent) || super.dispatchKeyEvent(shellEvent)
     }
 
-    override fun onKeyLongPress(keyCode: Int, event: KeyEvent): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-            val contextAction = KeyEvent(event.downTime, event.eventTime, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BUTTON_X, 0, 0, event.deviceId, event.scanCode, event.flags, event.source)
-            return keys.dispatch(contextAction)
-        }
-        return super.onKeyLongPress(keyCode, event)
-    }
+    private val tv by lazy { isTvDevice(this) }
+    private val remoteHold = RemoteHold()
 
-    /** Translates keyboard or TV remote events to corresponding gamepad buttons. */
-    private fun translateInputEvent(event: KeyEvent): KeyEvent = when {
-        InputKinds.fromPad(event.source) -> event
-        InputKinds.isKeyboard(event.device) -> keyboardAsPad(event)
-        else -> remoteAsPad(event)
-    }
+    /** A key of a TV remote on an Android TV ([InputKinds.isTvRemote]): the only keys the remote map and the OK hold apply to. */
+    private fun tvRemote(event: KeyEvent): Boolean = tv && InputKinds.isTvRemote(event.device)
 
-    /** A TV remote's key as the pad button it stands for ([GlobalKeys.remoteButton]); any other event as it is. */
+    /** A TV remote's key as the pad button it stands for ([GlobalKeys.remoteButton]); any other key as it is. */
     private fun remoteAsPad(event: KeyEvent): KeyEvent {
         val button = GlobalKeys.remoteButton(event.keyCode) ?: return event
         return KeyEvent(event.downTime, event.eventTime, event.action, button, event.repeatCount, 0, event.deviceId, event.scanCode, event.flags, event.source)
