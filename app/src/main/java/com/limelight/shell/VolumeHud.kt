@@ -39,6 +39,8 @@ class VolumeHud(
     private val activity: ComponentActivity,
     private val appearance: Supplier<Appearance>,
     private val keepOnDevice: BooleanSupplier,
+    /** The PlayStation palette: the shell's PlayStation tab or a PlayStation stream. */
+    private val playStation: BooleanSupplier = BooleanSupplier { com.limelight.shell.ps.PsMode.active.value },
 ) : DefaultLifecycleObserver {
     private val volume = VolumeController.get(activity)
     private val main = Handler(Looper.getMainLooper())
@@ -96,21 +98,23 @@ class VolumeHud(
                 importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
             }
             val initial = volume.state.value.previousLevel
+            val glass = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(0, 0)).apply { shape = GradientDrawable.OVAL }
             view.setContent {
                 val state by volume.state.collectAsState()
+                // Recomposes on the shell's PC <-> PS switch while the dial shows; the supplier says which palette applies
+                com.limelight.shell.ps.PsMode.active.collectAsState().value
                 CompositionLocalProvider(LocalStage provides metrics,
                     LocalReducedMotion provides look.reducedMotion) {
-                    VolumeDial(state.level, initial, state.route)
+                    VolumeDial(state.level, initial, state.route, playStation.asBoolean) { top, bottom -> glass.colors = intArrayOf(top, bottom) }
                 }
             }
             d.setContentView(view)
             val window = requireNotNull(d.window)
+            window.setBackgroundDrawable(glass)
             WindowCompat.setDecorFitsSystemWindows(window, false)
             window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             window.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_FULLSCREEN)
-            window.setBackgroundDrawable(GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                intArrayOf(0xB81E2A3F.toInt(), 0xB80A111D.toInt())).apply { shape = GradientDrawable.OVAL })
             window.attributes = window.attributes.apply {
                 gravity = Gravity.TOP or Gravity.LEFT
                 windowAnimations = 0
@@ -177,9 +181,9 @@ class VolumeHud(
         private val hosts = WeakHashMap<Activity, VolumeHud>()
 
         @JvmStatic
-        fun attach(activity: ComponentActivity, keepOnDevice: BooleanSupplier): VolumeHud {
+        fun attach(activity: ComponentActivity, keepOnDevice: BooleanSupplier, playStation: BooleanSupplier): VolumeHud {
             val store = AppearanceStore { ProfileStore.currentSettings(activity) }
-            return VolumeHud(activity, Supplier { store.appearance.value }, keepOnDevice)
+            return VolumeHud(activity, Supplier { store.appearance.value }, keepOnDevice, playStation)
         }
 
         /** Dialogs that own input forward only their hardware volume keys to the same host. */

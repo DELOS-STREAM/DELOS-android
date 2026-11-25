@@ -279,7 +279,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         com.limelight.shell.DelosToastOverlay.attach(this);
         volumeHud = com.limelight.shell.VolumeHud.attach(this, () -> psConsoleId != null
                 ? com.limelight.ps.PsPrefs.INSTANCE.prefs(this).getBoolean(com.limelight.ps.PsPrefs.SOUND_ON_DEVICE, true)
-                : prefConfig == null || prefConfig.soundOnDevice);
+                : prefConfig == null || prefConfig.soundOnDevice, () -> psConsoleId != null);
 
         // External-display DelosStreamActivity runs as a separate task. Android otherwise applies its default
         // side-slide even though the Delos loader is a continuation of the shell's launch scene.
