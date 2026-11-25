@@ -27,6 +27,7 @@ import android.util.SparseArray;
 import android.view.InputDevice;
 import android.view.InputEvent;
 import android.view.KeyEvent;
+import android.view.KeyCharacterMap;
 import android.view.MotionEvent;
 import android.view.Surface;
 import com.limelight.utils.DelosToast;
@@ -609,7 +610,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 for (UsbDevice dev : usbManager.getDeviceList().values()) {
                     // We explicitly check not to claim devices that appear as InputDevices
                     // otherwise we will double count them.
-                    if (UsbDriverService.shouldClaimDevice(dev, false) &&
+                    if (UsbDriverService.shouldClaimDevice(dev, false, false) &&
                             !UsbDriverService.isRecognizedInputDevice(dev)) {
                         LimeLog.info("Counting UsbDevice: "+dev.getDeviceName());
                         mask |= 1 << count++;
@@ -3276,9 +3277,86 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         context.leftTrigger = (byte)(leftTrigger * 0xFF);
         context.rightTrigger = (byte)(rightTrigger * 0xFF);
 
+        // Delos: the Guide/PS button of a controller DELOS drives over USB (a wired DualSense) is a tap (the stream menu) or a hold
+        // (Guide on the host), like a controller Android drives (issue #102); its flag reaches the host only through that decision
+        if (context instanceof InputDeviceContext) {
+            InputDeviceContext dev = (InputDeviceContext) context;
+            boolean guide = (buttonFlags & ControllerPacket.SPECIAL_BUTTON_FLAG) != 0;
+            if (guide != dev.usbGuideDown) {
+                dev.usbGuideDown = guide;
+                mainThreadHandler.post(() -> usbGuideEdge(dev, guide));
+            }
+            buttonFlags &= ~ControllerPacket.SPECIAL_BUTTON_FLAG;
+            if (dev.guideTapHold.gesture.isGuideDown()) buttonFlags |= ControllerPacket.SPECIAL_BUTTON_FLAG;
+            // While the stream menu is open, this controller drives it (Android sees none of its input) and the host sees it let go
+            if (gestures.isStreamMenuOpen()) {
+                int menuFlags = buttonFlags & ~ControllerPacket.SPECIAL_BUTTON_FLAG;
+                if (leftStickY > MENU_STICK) menuFlags |= ControllerPacket.DOWN_FLAG;
+                if (leftStickY < -MENU_STICK) menuFlags |= ControllerPacket.UP_FLAG;
+                if (leftStickX > MENU_STICK) menuFlags |= ControllerPacket.RIGHT_FLAG;
+                if (leftStickX < -MENU_STICK) menuFlags |= ControllerPacket.LEFT_FLAG;
+                int changed = menuFlags ^ dev.menuFlags;
+                dev.menuFlags = menuFlags;
+                if (changed != 0) {
+                    final int now = menuFlags;
+                    mainThreadHandler.post(() -> sendMenuKeys(changed, now));
+                }
+                if (context.inputMap != 0 || context.leftStickX != 0 || context.leftStickY != 0 || context.rightStickX != 0 || context.rightStickY != 0) {
+                    context.inputMap = 0; context.leftStickX = 0; context.leftStickY = 0; context.rightStickX = 0; context.rightStickY = 0;
+                    context.leftTrigger = 0; context.rightTrigger = 0;
+                    sendControllerInputPacket(context);
+                }
+                return;
+            }
+            dev.menuFlags = 0;
+        }
         context.inputMap = buttonFlags;
 
         sendControllerInputPacket(context);
+    }
+
+    /** Delos: the open stream menu's keys of a USB controller, from the buttons that changed and those down now. */
+    private void sendMenuKeys(int changed, int down) {
+        long now = SystemClock.uptimeMillis();
+        for (int[] pair : MENU_KEYS) {
+            if ((changed & pair[0]) == 0) continue;
+            int action = (down & pair[0]) != 0 ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP;
+            gestures.streamMenuKey(new KeyEvent(now, now, action, pair[1], 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, 0, InputDevice.SOURCE_GAMEPAD));
+        }
+    }
+
+    /** A USB controller's buttons as the keys the stream menu reads. */
+    private static final int[][] MENU_KEYS = {
+            {ControllerPacket.UP_FLAG, KeyEvent.KEYCODE_DPAD_UP}, {ControllerPacket.DOWN_FLAG, KeyEvent.KEYCODE_DPAD_DOWN},
+            {ControllerPacket.LEFT_FLAG, KeyEvent.KEYCODE_DPAD_LEFT}, {ControllerPacket.RIGHT_FLAG, KeyEvent.KEYCODE_DPAD_RIGHT},
+            {ControllerPacket.A_FLAG, KeyEvent.KEYCODE_BUTTON_A}, {ControllerPacket.B_FLAG, KeyEvent.KEYCODE_BUTTON_B},
+            {ControllerPacket.X_FLAG, KeyEvent.KEYCODE_BUTTON_X}, {ControllerPacket.Y_FLAG, KeyEvent.KEYCODE_BUTTON_Y},
+            {ControllerPacket.LB_FLAG, KeyEvent.KEYCODE_BUTTON_L1}, {ControllerPacket.RB_FLAG, KeyEvent.KEYCODE_BUTTON_R1},
+            {ControllerPacket.PLAY_FLAG, KeyEvent.KEYCODE_BUTTON_START}, {ControllerPacket.BACK_FLAG, KeyEvent.KEYCODE_BUTTON_SELECT},
+    };
+    /** How far a stick moves (of 1) to be a menu direction. */
+    private static final float MENU_STICK = 0.6f;
+
+    /** Delos: an edge of a USB controller's Guide/PS button, on the main thread: the same tap/hold as handleButtonDown/Up. */
+    private void usbGuideEdge(InputDeviceContext context, boolean down) {
+        TapHoldButton tapHold = context.guideTapHold;
+        long now = SystemClock.uptimeMillis();
+        if (down) {
+            if (tapHold.gesture.onDown(now)) {
+                tapHold.timer = () -> {
+                    tapHold.timer = null;
+                    if (tapHold.gesture.onHoldTimeout(SystemClock.uptimeMillis()) == GuideTapHold.Action.GUIDE_DOWN) refreshGuideState(context);
+                };
+                mainThreadHandler.postAtTime(tapHold.timer, now + tapHold.gesture.holdMs());
+            }
+            return;
+        }
+        tapHold.cancelTimer();
+        switch (tapHold.gesture.onUp()) {
+            case GUIDE_UP: refreshGuideState(context); break;
+            case TAP_MENU: gestures.showGameMenu(); break;
+            default: break;
+        }
     }
 
     @Override
@@ -3502,6 +3580,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             return null;
         }
         public boolean hasMode;
+        /** Delos: the Guide/PS button of a USB controller (reportControllerState) is down. */
+        public boolean usbGuideDown;
+        /** Delos: a USB controller's buttons as the open stream menu last saw them (sendMenuKeys). */
+        public int menuFlags;
         public boolean hasPaddles;
         public boolean hasShare;
         public boolean needsClickpadEmulation;

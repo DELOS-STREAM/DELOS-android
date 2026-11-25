@@ -34,6 +34,8 @@ public class UsbDriverService extends Service implements UsbDriverListener {
     private UsbManager usbManager;
     private PreferenceConfiguration prefConfig;
     private boolean started;
+    /** Delos: the running stream takes a wired DualSense from Android (UsbDriverBinder.setClaimDualSense). */
+    private boolean claimDualSense;
 
     private final UsbEventReceiver receiver = new UsbEventReceiver();
     private final UsbDriverBinder binder = new UsbDriverBinder();
@@ -141,6 +143,11 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             UsbDriverService.this.start();
         }
 
+        /** Delos: whether this stream takes a wired DualSense from Android (its triggers, light bar, haptics; #125). Before [start]. */
+        public void setClaimDualSense(boolean claim) {
+            UsbDriverService.this.claimDualSense = claim;
+        }
+
         public void stop() {
             UsbDriverService.this.stop();
         }
@@ -148,7 +155,7 @@ public class UsbDriverService extends Service implements UsbDriverListener {
 
     private void handleUsbDeviceState(UsbDevice device) {
         // Are we able to operate it?
-        if (shouldClaimDevice(device, prefConfig.bindAllUsb)) {
+        if (shouldClaimDevice(device, prefConfig.bindAllUsb, claimDualSense)) {
             // Do we have permission yet?
             if (!usbManager.hasPermission(device)) {
                 // Let's ask for permission
@@ -290,15 +297,16 @@ public class UsbDriverService extends Service implements UsbDriverListener {
         return true;
     }
 
-    public static boolean shouldClaimDevice(UsbDevice device, boolean claimAllAvailable) {
+    public static boolean shouldClaimDevice(UsbDevice device, boolean claimAllAvailable, boolean claimDualSense) {
         LimeLog.info("UsbDevice info: "+device.toString());
         return ((!kernelSupportsXboxOne() || !isRecognizedInputDevice(device) || claimAllAvailable) && XboxOneController.canClaimDevice(device)) ||
                 ((!isRecognizedInputDevice(device) || claimAllAvailable) && Xbox360Controller.canClaimDevice(device)) ||
                 // We must not call isRecognizedInputDevice() because wireless controllers don't share the same product ID as the dongle
                 ((!kernelSupportsXbox360W() || claimAllAvailable) && Xbox360WirelessDongle.canClaimDevice(device)) ||
                 ((!isRecognizedInputDevice(device) || claimAllAvailable) && ProConController.canClaimDevice(device)) ||
-                // A wired DualSense: Android drives it itself; DELOS takes it (for its adaptive triggers) when claiming all is on
-                ((!isRecognizedInputDevice(device) || claimAllAvailable) && DualSenseController.canClaimDevice(device));
+                // A wired DualSense: Android drives it itself; DELOS takes it (adaptive triggers, light bar) when the stream's
+                // settings ask for it (#125) or claiming all is on
+                ((claimDualSense || !isRecognizedInputDevice(device) || claimAllAvailable) && DualSenseController.canClaimDevice(device));
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -322,7 +330,7 @@ public class UsbDriverService extends Service implements UsbDriverListener {
 
         // Enumerate existing devices
         for (UsbDevice dev : usbManager.getDeviceList().values()) {
-            if (shouldClaimDevice(dev, prefConfig.bindAllUsb)) {
+            if (shouldClaimDevice(dev, prefConfig.bindAllUsb, claimDualSense)) {
                 // Start the process of claiming this device
                 handleUsbDeviceState(dev);
             }

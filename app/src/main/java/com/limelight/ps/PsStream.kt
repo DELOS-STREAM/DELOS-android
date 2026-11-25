@@ -25,6 +25,8 @@ interface PsStreamListener {
     fun onVideoFrame(frame: ByteArray, index: Int, receivedUs: Long) {}
     fun onAudio(opus: ByteArray, frameIndex: Int) {}
     fun onRumble(left: Int, right: Int) {}
+    /** DualSense haptics PCM (audio marker 0x02); true when the listener played it on the controller's actuators itself. */
+    fun onHaptics(pcm: ByteArray): Boolean = false
     /** DualSense trigger effects (data type 11, 8.4): each trigger's mode and 10 parameter bytes in the DualSense format. */
     fun onTriggerEffects(leftMode: Int, rightMode: Int, left: ByteArray, right: ByteArray) {}
     /** The console's pad info (8.4): light bar colour and whether the game resets the motion origin. */
@@ -162,6 +164,8 @@ class PsStream(
         }
         if (n == 0) return
         if (hapticUnits++ == 0L) Log.i(TAG, "First DualSense haptics unit: ${pcm.size} bytes")
+        // A DualSense on USB plays the PCM on its voice coils (DualSenseHaptics); otherwise its strength drives the motors
+        if (listener.onHaptics(pcm)) return
         hapticAtNs = System.nanoTime()
         val l = minOf(255L, left * HAPTIC_GAIN / n / 128).toInt()
         val r = minOf(255L, right * HAPTIC_GAIN / n / 128).toInt()

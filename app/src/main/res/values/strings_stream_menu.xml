@@ -192,6 +192,8 @@
     <string name="stream_result_lost_title">Connection lost</string>
     <string name="stream_result_closed_title">The PC closed the stream</string>
     <string name="stream_result_host_closed">%1$s ended the stream</string>
+    <!-- The volume keys during a stream while the sound is kept off a plugged-in DualSense: the stream's own volume -->
+    <string name="stream_volume_toast">Sound %1$d %%</string>
     <string name="stream_result_blocked_hint">Your device\'s current network connection is blocking Delos. Streaming over the Internet may not work while connected to this network.</string>
     <string name="stream_result_ports_hint">Check your firewall and port forwarding rules for port(s):</string>
     <!-- %1$s: the connection stage that failed (a technical name such as "RTSP handshake"), %2$d: error code -->

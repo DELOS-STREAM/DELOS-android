@@ -273,8 +273,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
                 runCatching { AudioSource(audioHeader).also { it.start(); audioSource = it } }.onFailure { Log.w(TAG, "audio: ${it.message}") }
             }
             if (request.codec.hdr) listener.setHdrMode(true, null)
-            listener.setMotionEventState(0, MoonBridge.LI_MOTION_TYPE_GYRO, MOTION_RATE_HZ)
-            listener.setMotionEventState(0, MoonBridge.LI_MOTION_TYPE_ACCEL, MOTION_RATE_HZ)
+            listener.setMotionEventState(activePad.toShort(), MoonBridge.LI_MOTION_TYPE_GYRO, MOTION_RATE_HZ)
+            listener.setMotionEventState(activePad.toShort(), MoonBridge.LI_MOTION_TYPE_ACCEL, MOTION_RATE_HZ)
             started = true
             lastPacketMs = SystemClock.uptimeMillis()
             thread(name = "ps-watchdog", isDaemon = true) { watchdog() }
@@ -299,14 +299,15 @@ class PsConnection(context: Context, private val consoleId: String, private val 
             audioSource?.offer(opus, frameIndex)
         }
 
-        override fun onRumble(left: Int, right: Int) = listener.rumble(0, (left * 257).toShort(), (right * 257).toShort())
+        override fun onRumble(left: Int, right: Int) = listener.rumble(activePad.toShort(), (left * 257).toShort(), (right * 257).toShort())
+        override fun onHaptics(pcm: ByteArray): Boolean = dualSenseHaptics()?.also { it.play(pcm) } != null
 
         // Both triggers' effects to a DualSense DELOS drives over USB (#125): 0x04 right, 0x08 left, as a PC host's 0x5503
         override fun onTriggerEffects(leftMode: Int, rightMode: Int, left: ByteArray, right: ByteArray) =
-            listener.setAdaptiveTriggers(0, 0x0C, leftMode.toByte(), rightMode.toByte(), left, right)
+            listener.setAdaptiveTriggers(activePad.toShort(), 0x0C, leftMode.toByte(), rightMode.toByte(), left, right)
 
         override fun onPadInfo(red: Int, green: Int, blue: Int, motionReset: Boolean) {
-            listener.setControllerLED(0, red.toByte(), green.toByte(), blue.toByte())
+            listener.setControllerLED(activePad.toShort(), red.toByte(), green.toByte(), blue.toByte())
             if (motionReset) synchronized(padLock) { orientation = floatArrayOf(0f, 0f, 0f, 1f) }
         }
 
@@ -351,6 +352,22 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     /** Set by the stream menu's rest-mode tile: [stop] puts the console in rest mode (ctrl GOTO_BED, 4.5) before it disconnects. */
     @Volatile var restOnStop = false
 
+    // The DualSense's voice coils (#125): opened on the first haptics unit, looked for again at most every [HAPTICS_RETRY_MS]
+    // while none is plugged in, closed with the stream
+    private val hapticsLock = Any()
+    private var haptics: com.limelight.binding.audio.DualSenseHaptics? = null
+    private var hapticsTriedAt = 0L
+
+    private fun dualSenseHaptics(): com.limelight.binding.audio.DualSenseHaptics? = synchronized(hapticsLock) {
+        if (!running || !psPrefs.getBoolean(PsPrefs.DUALSENSE_USB, true)) return null
+        haptics?.let { return it }
+        val now = SystemClock.uptimeMillis()
+        if (hapticsTriedAt != 0L && now - hapticsTriedAt < HAPTICS_RETRY_MS) return null
+        hapticsTriedAt = now
+        haptics = com.limelight.binding.audio.DualSenseHaptics.open(appContext)
+        haptics
+    }
+
     override fun stop() {
         running = false
         connectThread?.interrupt()
@@ -358,6 +375,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         // The audio renderer is set up only when the console sent an audio header (AudioSource)
         val hadAudio = audioSource != null
         audioSource?.close(); audioSource = null
+        synchronized(hapticsLock) { haptics?.close(); haptics = null; hapticsTriedAt = 0L }
         microphone?.close(); microphone = null
         if (restOnStop) runCatching { ctrl?.send(PsCtrl.GOTO_BED) }.onFailure { Log.w(TAG, "rest mode: ${it.message}") }
         val s = stream; val info = streamInfo; val request = sessionRequest
@@ -407,20 +425,31 @@ class PsConnection(context: Context, private val consoleId: String, private val 
      */
     override fun sendTouchEvent(eventType: Byte, pointerId: Int, x: Float, y: Float, pressureOrDistance: Float, contactAreaMajor: Float, contactAreaMinor: Float, rotation: Short): Int {
         if (eventType == MoonBridge.LI_TOUCH_EVENT_HOVER || eventType == MoonBridge.LI_TOUCH_EVENT_HOVER_LEAVE) return 0
-        return sendControllerTouchEvent(0, eventType, pointerId, x.coerceIn(0f, 1f), y.coerceIn(0f, 1f), pressureOrDistance)
+        return sendControllerTouchEvent(activePad.toByte(), eventType, pointerId, x.coerceIn(0f, 1f), y.coerceIn(0f, 1f), pressureOrDistance)
     }
     override fun sendPenEvent(eventType: Byte, toolType: Byte, penButtons: Byte, x: Float, y: Float, pressureOrDistance: Float, contactAreaMajor: Float, contactAreaMinor: Float, rotation: Short, tilt: Byte) = MoonBridge.LI_ERR_UNSUPPORTED
     override fun sendUtf8Text(text: String) {}
     override fun sendControllerArrivalEvent(controllerNumber: Byte, activeGamepadMask: Short, type: Byte, supportedButtonFlags: Int, capabilities: Short): Int {
-        if (controllerNumber.toInt() != 0) return 0
-        firstPadIsPlayStation = type == MoonBridge.LI_CTYPE_PS
-        // A pad that arrives after the stream started (the Odin's comes a few seconds later) has no motion listeners yet: ask
-        // for its gyro and accelerometer again, as a PC host does on an arrival (gyro aiming and the console's motion need them)
-        if (started) android.os.Handler(android.os.Looper.getMainLooper()).post {
-            listener.setMotionEventState(0, MoonBridge.LI_MOTION_TYPE_GYRO, MOTION_RATE_HZ)
-            listener.setMotionEventState(0, MoonBridge.LI_MOTION_TYPE_ACCEL, MOTION_RATE_HZ)
-        }
+        padIsPlayStation[controllerNumber.toInt()] = type == MoonBridge.LI_CTYPE_PS
+        if (controllerNumber.toInt() == activePad) usePad(controllerNumber.toInt())
         return 0
+    }
+
+    /**
+     * Remote Play plays one controller (6.3), and DELOS may know several (a handheld's built-in pad and a DualSense plugged in by
+     * USB, all announced when the stream starts): the one that plays is the last one used. Its motion is asked for, as a PC host
+     * does on an arrival, and its kind decides the button mapping.
+     */
+    @Volatile private var activePad = 0
+    private val padIsPlayStation = java.util.concurrent.ConcurrentHashMap<Int, Boolean>()
+
+    private fun usePad(number: Int) {
+        activePad = number
+        firstPadIsPlayStation = padIsPlayStation[number] ?: false
+        if (started) android.os.Handler(android.os.Looper.getMainLooper()).post {
+            listener.setMotionEventState(number.toShort(), MoonBridge.LI_MOTION_TYPE_GYRO, MOTION_RATE_HZ)
+            listener.setMotionEventState(number.toShort(), MoonBridge.LI_MOTION_TYPE_ACCEL, MOTION_RATE_HZ)
+        }
     }
 
     // Whether the controller that plays is a PlayStation pad (it has its own Create button and touchpad)
@@ -436,10 +465,15 @@ class PsConnection(context: Context, private val consoleId: String, private val 
     private val touches = LinkedHashMap<Int, PsTouch>()
     @Volatile private var ps5 = true
 
-    /** The first controller plays; Remote Play announces one controller (6.3). */
+    /** The controller that plays ([activePad]); another one takes over as soon as it is used. */
     override fun sendControllerInput(controllerNumber: Short, activeGamepadMask: Short, buttonFlags: Int, leftTrigger: Byte, rightTrigger: Byte,
                                      leftStickX: Short, leftStickY: Short, rightStickX: Short, rightStickY: Short) {
-        if (controllerNumber.toInt() != 0) return
+        if (controllerNumber.toInt() != activePad) {
+            val used = buttonFlags != 0 || (leftTrigger.toInt() and 0xFF) > TAKE_OVER_TRIGGER || (rightTrigger.toInt() and 0xFF) > TAKE_OVER_TRIGGER ||
+                maxOf(Math.abs(leftStickX.toInt()), Math.abs(leftStickY.toInt()), Math.abs(rightStickX.toInt()), Math.abs(rightStickY.toInt())) > TAKE_OVER_STICK
+            if (!used) return
+            usePad(controllerNumber.toInt())
+        }
         // A pad without Create and a touchpad (a handheld's built-in controls, owner 2026-11-23): Select (the upper left menu
         // button) clicks the touchpad on a tap and is Create while held; Guide is the PS button: on the Odin that is holding the
         // lower right Back button (a tap opens the stream menu, as on a PC stream); its Home button never reaches apps. A
@@ -523,7 +557,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
     /** Gyro in deg/s and accel in m/s² from the controller handler, as rad/s and g with an orientation integrated from the gyro. */
     override fun sendControllerMotionEvent(controllerNumber: Byte, motionType: Byte, x: Float, y: Float, z: Float): Int {
-        if (controllerNumber.toInt() != 0) return 0
+        if (controllerNumber.toInt() != activePad) return 0
         when (motionType) {
             MoonBridge.LI_MOTION_TYPE_GYRO -> {
                 val gx = Math.toRadians(x.toDouble()).toFloat(); val gy = Math.toRadians(y.toDouble()).toFloat(); val gz = Math.toRadians(z.toDouble()).toFloat()
@@ -561,7 +595,7 @@ class PsConnection(context: Context, private val consoleId: String, private val 
 
     /** Touchpad pointers (0..1 of the pad) as the console's touch coordinates (8.3). */
     override fun sendControllerTouchEvent(controllerNumber: Byte, eventType: Byte, pointerId: Int, x: Float, y: Float, pressure: Float): Int {
-        if (controllerNumber.toInt() != 0) return 0
+        if (controllerNumber.toInt() != activePad) return 0
         val id = pointerId and 0x7F
         synchronized(padLock) {
             when (eventType) {
@@ -1006,6 +1040,9 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         }
         /** L2 past this (of 255) is aiming, for gyro aiming while L2 is held. */
         private const val AIM_TRIGGER = 64
+        /** How far another controller's trigger or stick must move to take over from the one that plays. */
+        private const val TAKE_OVER_TRIGGER = 32
+        private const val TAKE_OVER_STICK = 9_000
         /** Gyro aiming: turn rates below this (deg/s) are sensor noise; past it the stick starts at this dead zone (of 32767). */
         private const val AIM_NOISE = 1.5f
         private const val AIM_DEAD_ZONE = 6000f
@@ -1038,6 +1075,8 @@ class PsConnection(context: Context, private val consoleId: String, private val 
         private const val TAP_PULSE_MS = 80L
         /** How many times a start opens the session again when a waking console sends no session id (10 s each). */
         private const val SESSION_ID_TRIES = 3
+        /** How often a stream without a DualSense on USB looks for one again when haptics arrive. */
+        private const val HAPTICS_RETRY_MS = 2_000L
 
         /** Moonlight's stick Y is positive up; the console's is positive down. */
         private fun flip(y: Short): Short = (-y.toInt()).coerceIn(-32768, 32767).toShort()

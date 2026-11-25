@@ -161,6 +161,7 @@
     <string name="stream_result_lost_title">接続が切断されました</string>
     <string name="stream_result_closed_title">PCがストリームを終了しました</string>
     <string name="stream_result_host_closed">%1$sがストリームを終了しました</string>
+    <string name="stream_volume_toast">音量 %1$d %%</string>
     <string name="stream_result_blocked_hint">お使いの端末の現在のネットワーク接続は、Delosをブロックしています。このネットワークに接続している間は、インターネット経由のストリーミングが動作しない可能性があります。</string>
     <string name="stream_result_ports_hint">次のポートについて、ファイアウォールとポート転送の設定を確認してください：</string>
     <string name="stream_result_failed_stage">%1$sを開始できませんでした（エラー%2$d）</string>

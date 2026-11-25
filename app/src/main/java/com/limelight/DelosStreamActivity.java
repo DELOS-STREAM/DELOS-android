@@ -182,6 +182,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     private final WifiLockHolder wifiLocks = new WifiLockHolder();
 
+    /** Delos: the stream's audio renderer, for the volume keys while its sound is kept off a DualSense. */
+    private AndroidAudioRenderer audioRenderer;
+
     private boolean connectedToUsbDriverService = false;
     private ServiceConnection usbDriverServiceConnection = new ServiceConnection() {
         @Override
@@ -189,6 +192,10 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             UsbDriverService.UsbDriverBinder binder = (UsbDriverService.UsbDriverBinder) iBinder;
             binder.setListener(controllerHandler);
             binder.setStateListener(DelosStreamActivity.this);
+            // Delos: a wired DualSense is DELOS's when this stream's settings ask for it (PlayStation or PC settings, #125)
+            binder.setClaimDualSense(psConsoleId != null
+                    ? com.limelight.ps.PsPrefs.INSTANCE.prefs(DelosStreamActivity.this).getBoolean(com.limelight.ps.PsPrefs.DUALSENSE_USB, true)
+                    : prefConfig.dualSenseUsb);
             binder.start();
             connectedToUsbDriverService = true;
         }
@@ -1029,7 +1036,10 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             // A surface that appears after a cancel must not start a connection
             if (loaderCancelled || isFinishing()) return;
             connecting = true;
-            conn.start(new AndroidAudioRenderer(DelosStreamActivity.this, prefConfig.playHostAudio, conn::getPendingAudioDurationMs),
+            conn.start(audioRenderer = new AndroidAudioRenderer(DelosStreamActivity.this, prefConfig.playHostAudio, conn::getPendingAudioDurationMs,
+                    psConsoleId != null
+                            ? com.limelight.ps.PsPrefs.INSTANCE.prefs(DelosStreamActivity.this).getBoolean(com.limelight.ps.PsPrefs.SOUND_ON_DEVICE, true)
+                            : prefConfig.soundOnDevice),
                     decoderRenderer, DelosStreamActivity.this);
         }
 
@@ -2149,10 +2159,26 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         if (inputBlocked) {
             return true;
         }
+        if (volumeKeyTaken(event)) {
+            return true;
+        }
         if (streamMenuTakesKey(event)) {
             return true;
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    /** Delos: the volume keys turn the stream's own sound up or down while it is kept off a plugged-in DualSense. */
+    private boolean volumeKeyTaken(KeyEvent event) {
+        int code = event.getKeyCode();
+        if (code != KeyEvent.KEYCODE_VOLUME_UP && code != KeyEvent.KEYCODE_VOLUME_DOWN) return false;
+        AndroidAudioRenderer renderer = audioRenderer;
+        if (renderer == null) return false;
+        if (event.getAction() != KeyEvent.ACTION_DOWN) return renderer.adjustVolume(0) >= 0;
+        int percent = renderer.adjustVolume(code == KeyEvent.KEYCODE_VOLUME_UP ? 1 : -1);
+        if (percent < 0) return false;
+        DelosToast.show(this, getString(R.string.stream_volume_toast, percent), DelosToast.SHORT, ToastKind.INFO);
+        return true;
     }
 
     /** B, Back and Escape cancel a cancellable loader on release; both edges are consumed so the game never sees them. */
@@ -2240,6 +2266,11 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         if (streamMenu != null) {
             streamMenu.show();
         }
+    }
+
+    @Override
+    public boolean streamMenuKey(KeyEvent event) {
+        return streamMenu != null && streamMenu.onExternalKey(event);
     }
 
     public void hideGameMenu() {

@@ -71,6 +71,10 @@ public class PreferenceConfiguration {
     private static final String ENABLE_PIP_PREF_STRING = "checkbox_enable_pip";
     private static final String ENABLE_PERF_OVERLAY_STRING = "checkbox_enable_perf_overlay";
     private static final String BIND_ALL_USB_STRING = "checkbox_usb_bind_all";
+    /** Delos: PC streams take a wired DualSense from Android for its adaptive triggers and light bar (#125). */
+    public static final String DUALSENSE_USB_STRING = "checkbox_dualsense_usb";
+    /** Delos: the stream's sound stays on the device when a DualSense is plugged in by USB, not on the controller. */
+    public static final String SOUND_ON_DEVICE_STRING = "checkbox_sound_on_device";
     private static final String MOUSE_EMULATION_STRING = "checkbox_mouse_emulation";
     private static final String REMEMBER_MOUSE_MODE_PREF_STRING = "checkbox_remember_mouse_mode";
     private static final String ANALOG_SCROLLING_PREF_STRING = "analog_scrolling";
@@ -328,6 +332,8 @@ public class PreferenceConfiguration {
     public boolean trackpadSwapAxis;
 
     public boolean bindAllUsb;
+    public boolean dualSenseUsb;
+    public boolean soundOnDevice;
     public boolean mouseEmulation;
     public AnalogStickForScrolling analogStickForScrolling;
     public boolean mouseNavButtons;
@@ -896,6 +902,8 @@ public class PreferenceConfiguration {
         config.enablePerfOverlay = prefs.getBoolean(ENABLE_PERF_OVERLAY_STRING, DEFAULT_ENABLE_PERF_OVERLAY);
         config.enablePerfOverlayLite = prefs.getBoolean("checkbox_enable_perf_overlay_lite",DEFAULT_ENABLE_PERF_OVERLAY);
         config.bindAllUsb = prefs.getBoolean(BIND_ALL_USB_STRING, DEFAULT_BIND_ALL_USB);
+        config.dualSenseUsb = prefs.getBoolean(DUALSENSE_USB_STRING, true);
+        config.soundOnDevice = prefs.getBoolean(SOUND_ON_DEVICE_STRING, true);
         config.mouseEmulation = prefs.getBoolean(MOUSE_EMULATION_STRING, DEFAULT_MOUSE_EMULATION);
         config.mouseNavButtons = prefs.getBoolean(MOUSE_NAV_BUTTONS_STRING, DEFAULT_MOUSE_NAV_BUTTONS);
         config.rememberMouseMode = prefs.getBoolean(REMEMBER_MOUSE_MODE_PREF_STRING, DEFAULT_REMEMBER_MOUSE_MODE);

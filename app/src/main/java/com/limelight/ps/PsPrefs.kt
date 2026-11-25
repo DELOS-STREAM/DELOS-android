@@ -65,6 +65,15 @@ object PsPrefs {
     /** Boolean, default true: fingers on the device's screen are the DualSense touchpad's touches (gestures, no click). */
     const val TOUCHSCREEN_TOUCHPAD = "ps_touchscreen_touchpad"
 
+    /**
+     * Boolean, default true: a DualSense plugged in by USB is driven by DELOS during PlayStation streams: the console's haptics on
+     * its voice coils, its adaptive triggers and light bar (#125). Off: Android drives it, and the haptics come as rumble.
+     */
+    const val DUALSENSE_USB = "ps_dualsense_usb"
+
+    /** Boolean, default true: the stream's sound stays on the device when a DualSense is plugged in, not on the controller. */
+    const val SOUND_ON_DEVICE = "ps_sound_on_device"
+
     /** Boolean, default false: a fixed bitrate may go past [MAX_BITRATE_KBPS], up to [UNLOCKED_MAX_BITRATE_KBPS]. */
     const val UNLOCK_BITRATE = "ps_unlock_bitrate"
 

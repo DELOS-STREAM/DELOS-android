@@ -3,6 +3,7 @@ package com.limelight.binding.audio;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioAttributes;
+import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -22,12 +23,46 @@ public class AndroidAudioRenderer implements AudioRenderer {
     /** Audio the connection still holds ahead of this renderer, in ms (moonlight-common-c's queue, or a PlayStation jitter queue). */
     private final IntSupplier pendingAudioMs;
 
+    /** Delos: the sound stays on the device, not on a DualSense plugged in by USB (whose audio interface Android routes to). */
+    private final boolean soundOnDevice;
+
     private AudioTrack track;
 
-    public AndroidAudioRenderer(Context context, boolean enableAudioFx, IntSupplier pendingAudioMs) {
+    public AndroidAudioRenderer(Context context, boolean enableAudioFx, IntSupplier pendingAudioMs, boolean soundOnDevice) {
         this.context = context;
         this.enableAudioFx = enableAudioFx;
         this.pendingAudioMs = pendingAudioMs;
+        this.soundOnDevice = soundOnDevice;
+    }
+
+    /**
+     * Delos: while a DualSense is plugged in, the track plays on the device's own output ({@link DeviceOutput}). Runs again on every
+     * routing change, so plugging the controller or headphones in or out mid-stream is followed.
+     */
+    private void keepSoundOffController(AudioTrack t) {
+        AudioDeviceInfo wanted = DeviceOutput.INSTANCE.offDualSense(context);
+        AudioDeviceInfo current = t.getPreferredDevice();
+        if ((wanted == null ? current != null : current == null || current.getId() != wanted.getId())) {
+            t.setPreferredDevice(wanted);
+            LimeLog.info("Stream sound " + (wanted == null ? "follows the system routing" : "kept on " + wanted.getProductName() + " (DualSense plugged in)"));
+        }
+    }
+
+    /** Delos: the stream's own volume in [VOLUME_STEPS] steps, used while the sound is kept off a plugged-in DualSense. */
+    private volatile int volumeStep = VOLUME_STEPS;
+    public static final int VOLUME_STEPS = 15;
+
+    /**
+     * Delos: the volume keys while the sound is kept off a DualSense. Android's keys then change the controller's volume (the media
+     * route), not the sound the player hears, so DELOS turns its own sound up or down instead ([direction] +1 or -1). Returns the new
+     * volume in percent, or -1 when the keys are Android's (no DualSense, or the setting is off).
+     */
+    public int adjustVolume(int direction) {
+        AudioTrack t = track;
+        if (!soundOnDevice || t == null || t.getPreferredDevice() == null) return -1;
+        volumeStep = Math.max(0, Math.min(VOLUME_STEPS, volumeStep + direction));
+        t.setVolume(volumeStep / (float) VOLUME_STEPS);
+        return volumeStep * 100 / VOLUME_STEPS;
     }
 
     private AudioTrack createAudioTrack(int channelConfig, int sampleRate, int bufferSize, boolean lowLatency) {
@@ -165,6 +200,11 @@ public class AndroidAudioRenderer implements AudioRenderer {
 
             try {
                 track = createAudioTrack(channelConfig, sampleRate, bufferSize, lowLatency);
+                if (soundOnDevice) {
+                    final AudioTrack created = track;
+                    keepSoundOffController(created);
+                    created.addOnRoutingChangedListener((android.media.AudioRouting.OnRoutingChangedListener) router -> keepSoundOffController(created), null);
+                }
                 track.play();
 
                 // Successfully created working AudioTrack. We're done here.
