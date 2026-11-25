@@ -200,6 +200,21 @@
         <service
             android:name=".binding.input.driver.UsbDriverService"
             android:label="@string/service_label_usb" />
+        <!-- A wired DualSense: Android's "Open DELOS to handle it" with "Always" keeps the USB permission, so DELOS does not ask
+             again at every stream (#125). The activity only takes the permission and closes; UsbDriverService claims the device. -->
+        <activity
+            android:name=".binding.input.driver.UsbAttachActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/usb_dualsense" />
+        </activity>
 
         <!-- Help pages from stream errors, for devices without a browser (Android TV) -->
         <activity

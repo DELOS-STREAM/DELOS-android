@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Controllers DELOS drives itself over USB (UsbAttachActivity): Sony DualSense (054c:0ce6) and DualSense Edge (054c:0df2) -->
+<resources>
+    <usb-device vendor-id="1356" product-id="3302" />
+    <usb-device vendor-id="1356" product-id="3570" />
+</resources>
