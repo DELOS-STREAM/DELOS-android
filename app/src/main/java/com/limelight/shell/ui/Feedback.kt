@@ -6,8 +6,6 @@ import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioManager
-import android.media.AudioTrack
-import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
 import android.os.Build
@@ -19,6 +17,13 @@ import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.limelight.R
+import com.limelight.binding.audio.PcmPlayback
+import com.limelight.binding.audio.VolumeController
+import java.util.concurrent.Executors
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.collect
 
 enum class Cue { MOVE, SELECT, BACK, OPEN, ERROR }
 
@@ -42,9 +47,11 @@ class Feedback(context: Context) {
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
         .build()
     private val audioManager = appContext.getSystemService(AudioManager::class.java)
+    private val volume = VolumeController.get(appContext)
+    private val audioWorkers = Executors.newFixedThreadPool(6)
 
     /** The output DELOS's own sounds go to (null: the system's routing), followed as devices come and go. */
-    private var output: AudioDeviceInfo? = com.limelight.binding.audio.DeviceOutput.offDualSense(appContext)
+    private var output: AudioDeviceInfo? = volume.preferredDevice()
     private val main = Handler(Looper.getMainLooper())
     private val rerouteLater = Runnable { reroute() }
     // A track re-pointed after a device change kept playing on the controller (restored by the system on the old route), so the
@@ -60,14 +67,17 @@ class Feedback(context: Context) {
         main.postDelayed(rerouteLater, REROUTE_DELAY_MS)
     }
 
-    private fun reroute() {
-        output = com.limelight.binding.audio.DeviceOutput.offDualSense(appContext)
+    fun reroute() {
+        val next = volume.preferredDevice()
+        if (next?.id == output?.id) return
+        output = next
         tracks.values.forEach { it.release() }
         tracks = buildTracks()
-        intro?.preferredDevice = output
+        intro?.route(output)
     }
 
-    private var intro: MediaPlayer? = null
+    private var intro: PcmPlayback? = null
+    private val introClip by lazy { decode(R.raw.intro_fx) }
 
     /**
      * The intro's sound track (owner's res/raw/intro_fx.wav, 13.2 s). The intro is timed to it, so the sound is its clock
@@ -77,11 +87,10 @@ class Feedback(context: Context) {
     fun playIntro(): Boolean {
         stopIntro()
         if (!soundsEnabled) return false
-        val session = appContext.getSystemService(AudioManager::class.java)?.generateAudioSessionId() ?: return false
-        intro = MediaPlayer.create(appContext, R.raw.intro_fx, attributes, session)?.apply {
-            setOnCompletionListener { if (intro === it) intro = null; it.release() }
-            preferredDevice = output
-            start()
+        val clip = introClip ?: return false
+        intro = PcmPlayback(clip.pcm, clip.format, attributes, volume, audioWorkers).apply {
+            route(output)
+            play()
         }
         return intro != null
     }
@@ -91,10 +100,7 @@ class Feedback(context: Context) {
      * has ended or when it does not play. Between the player's timestamps it runs on the system clock, so it moves smoothly.
      */
     fun introPositionMs(): Float? {
-        val player = intro ?: return null
-        val stamp = player.timestamp ?: return 0f
-        if (stamp.mediaClockRate <= 0f) return stamp.anchorMediaTimeUs / 1000f
-        return (stamp.anchorMediaTimeUs + (System.nanoTime() - stamp.anchorSystemNanoTime) / 1000f * stamp.mediaClockRate) / 1000f
+        return intro?.positionMs()
     }
 
     fun stopIntro() {
@@ -109,18 +115,14 @@ class Feedback(context: Context) {
         Cue.MOVE to R.raw.ui_move, Cue.SELECT to R.raw.ui_select, Cue.BACK to R.raw.ui_back, Cue.OPEN to R.raw.ui_open, Cue.ERROR to R.raw.ui_error,
     ).mapNotNull { (cue, res) -> decode(res)?.let { cue to it } }.toMap()
 
-    /** Each cue a static track (SoundPool cannot be routed past the controller), restarted from its start on every play. */
-    private var tracks: Map<Cue, AudioTrack> = buildTracks()
+    /** Each cue keeps its original PCM; streaming permits live attenuation and amplification on the chosen device output. */
+    private var tracks: Map<Cue, PcmPlayback> = buildTracks()
+    private val routeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    init { routeScope.launch { volume.state.map { it.preferredId }.distinctUntilChanged().collect { reroute() } } }
 
-    private fun buildTracks(): Map<Cue, AudioTrack> = clips.mapNotNull { (cue, clip) ->
+    private fun buildTracks(): Map<Cue, PcmPlayback> = clips.mapNotNull { (cue, clip) ->
         runCatching {
-            AudioTrack.Builder()
-                .setAudioAttributes(attributes)
-                .setAudioFormat(clip.format)
-                .setTransferMode(AudioTrack.MODE_STATIC)
-                .setBufferSizeInBytes(clip.pcm.size * 4)
-                .build()
-                .also { it.preferredDevice = output; it.write(clip.pcm, 0, clip.pcm.size, AudioTrack.WRITE_BLOCKING) }
+            PcmPlayback(clip.pcm, clip.format, attributes, volume, audioWorkers).also { it.route(output) }
         }.getOrNull()?.let { cue to it }
     }.toMap()
 
@@ -180,7 +182,7 @@ class Feedback(context: Context) {
     }
 
     fun play(cue: Cue) {
-        if (soundsEnabled) tracks[cue]?.let { t -> runCatching { t.stop(); t.reloadStaticData(); t.play() } }
+        if (soundsEnabled) tracks[cue]?.play()
         if (hapticsEnabled) {
             if (rumbleMotorOnly) pulse(cue) else view?.performHapticFeedback(hapticFor(cue))
         }
@@ -191,6 +193,8 @@ class Feedback(context: Context) {
         main.removeCallbacks(rerouteLater)
         audioManager?.unregisterAudioDeviceCallback(devices)
         tracks.values.forEach { it.release() }
+        audioWorkers.shutdown()
+        routeScope.cancel()
     }
 
     private fun hapticFor(cue: Cue): Int = when (cue) {

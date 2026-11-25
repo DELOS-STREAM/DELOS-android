@@ -161,7 +161,6 @@
     <string name="stream_result_lost_title">З’єднання втрачено</string>
     <string name="stream_result_closed_title">ПК закрив стрім</string>
     <string name="stream_result_host_closed">Пристрій %1$s завершив стрім</string>
-    <string name="stream_volume_toast">Звук %1$d %%</string>
     <string name="stream_result_blocked_hint">Поточне мережеве з’єднання твого пристрою блокує Delos. Стрімінг через інтернет може не працювати, поки ти в цій мережі.</string>
     <string name="stream_result_ports_hint">Перевір брандмауер і правила переадресації портів для порту(ів):</string>
     <string name="stream_result_failed_stage">Не вдалося запустити %1$s (помилка %2$d)</string>

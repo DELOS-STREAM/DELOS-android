@@ -161,7 +161,6 @@
     <string name="stream_result_lost_title">连接已断开</string>
     <string name="stream_result_closed_title">电脑已关闭串流</string>
     <string name="stream_result_host_closed">%1$s 已结束串流</string>
-    <string name="stream_volume_toast">声音 %1$d %%</string>
     <string name="stream_result_blocked_hint">设备当前的网络连接正在屏蔽 Delos。连接此网络时，可能无法通过互联网串流。</string>
     <string name="stream_result_ports_hint">请检查防火墙和端口转发规则中的端口：</string>
     <string name="stream_result_failed_stage">启动 %1$s 失败（错误 %2$d）</string>

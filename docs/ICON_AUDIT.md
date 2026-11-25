@@ -451,6 +451,9 @@ The header pills. The per-app settings tab pills use the same glyphs.
 | Video player: previous / next item | `skip-back` / `skip-forward` | `PLAYER_PREVIOUS` / `PLAYER_NEXT` |  |
 | Video player: sound / muted | `speaker-high` / `speaker-slash` | `PLAYER_SOUND` / `PLAYER_MUTED` | repeat: `speaker-high` is Play audio on the PC's |
 | Video player: low / no volume | `speaker-low` / `speaker-none` | `PLAYER_VOLUME_LOW` / `PLAYER_VOLUME_NONE` | the sound button at a low or zero volume |
+| Volume dial: speaker / muted | `speaker-high` / `speaker-slash` | `SPEAKER` / `PLAYER_MUTED` | same sound meaning as the player |
+| Volume dial: cable/USB headphones | `headphones` | `VOLUME_HEADPHONES` | Regular output glyph |
+| Volume dial: Bluetooth badge | `bluetooth` | `VOLUME_BLUETOOTH` | beside headphones, absent when muted |
 | A video that cannot play | `warning` | `WARNING` |  |
 | Game modes: single player / with others | `user` / `users-four` | `MODE_SINGLE` / `MODE_MULTI` |  |
 | Perspective | `cube-focus` | `PERSPECTIVE` |  |

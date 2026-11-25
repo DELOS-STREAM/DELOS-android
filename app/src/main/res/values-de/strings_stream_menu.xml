@@ -190,7 +190,6 @@
     <string name="stream_result_lost_title">Verbindung verloren</string>
     <string name="stream_result_closed_title">Der PC hat den Stream beendet</string>
     <string name="stream_result_host_closed">%1$s hat den Stream beendet</string>
-    <string name="stream_volume_toast">Ton %1$d %%</string>
     <string name="stream_result_blocked_hint">Die aktuelle Netzwerkverbindung deines Geräts blockiert Delos. Streaming übers Internet funktioniert in diesem Netzwerk womöglich nicht.</string>
     <string name="stream_result_ports_hint">Prüfe deine Firewall- und Portweiterleitungsregeln für diese Ports:</string>
     <!-- %1$s: the connection stage that failed (a technical name such as "RTSP handshake"), %2$d: error code -->

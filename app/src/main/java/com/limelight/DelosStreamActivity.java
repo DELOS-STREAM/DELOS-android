@@ -182,8 +182,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     private final WifiLockHolder wifiLocks = new WifiLockHolder();
 
-    /** Delos: the stream's audio renderer, for the volume keys while its sound is kept off a DualSense. */
-    private AndroidAudioRenderer audioRenderer;
+    private com.limelight.shell.VolumeHud volumeHud;
 
     private boolean connectedToUsbDriverService = false;
     private ServiceConnection usbDriverServiceConnection = new ServiceConnection() {
@@ -278,6 +277,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         super.onCreate(savedInstanceState);
         ControllerGlyphs.INSTANCE.start(this);
         com.limelight.shell.DelosToastOverlay.attach(this);
+        volumeHud = com.limelight.shell.VolumeHud.attach(this, () -> psConsoleId != null
+                ? com.limelight.ps.PsPrefs.INSTANCE.prefs(this).getBoolean(com.limelight.ps.PsPrefs.SOUND_ON_DEVICE, true)
+                : prefConfig == null || prefConfig.soundOnDevice);
 
         // External-display DelosStreamActivity runs as a separate task. Android otherwise applies its default
         // side-slide even though the Delos loader is a continuation of the shell's launch scene.
@@ -1036,7 +1038,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             // A surface that appears after a cancel must not start a connection
             if (loaderCancelled || isFinishing()) return;
             connecting = true;
-            conn.start(audioRenderer = new AndroidAudioRenderer(DelosStreamActivity.this, prefConfig.playHostAudio, conn::getPendingAudioDurationMs,
+            conn.start(new AndroidAudioRenderer(DelosStreamActivity.this, prefConfig.playHostAudio, conn::getPendingAudioDurationMs,
                     psConsoleId != null
                             ? com.limelight.ps.PsPrefs.INSTANCE.prefs(DelosStreamActivity.this).getBoolean(com.limelight.ps.PsPrefs.SOUND_ON_DEVICE, true)
                             : prefConfig.soundOnDevice),
@@ -2152,14 +2154,12 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     // Back is decided in ControllerHandler (issue #102).
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (volumeHud != null && volumeHud.handle(event)) return true;
         ControllerGlyphs.INSTANCE.key(event);
         if (cancelLoaderOnKey(event)) {
             return true;
         }
         if (inputBlocked) {
-            return true;
-        }
-        if (volumeKeyTaken(event)) {
             return true;
         }
         if (streamMenuTakesKey(event)) {
@@ -2168,18 +2168,6 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         return super.dispatchKeyEvent(event);
     }
 
-    /** Delos: the volume keys turn the stream's own sound up or down while it is kept off a plugged-in DualSense. */
-    private boolean volumeKeyTaken(KeyEvent event) {
-        int code = event.getKeyCode();
-        if (code != KeyEvent.KEYCODE_VOLUME_UP && code != KeyEvent.KEYCODE_VOLUME_DOWN) return false;
-        AndroidAudioRenderer renderer = audioRenderer;
-        if (renderer == null) return false;
-        if (event.getAction() != KeyEvent.ACTION_DOWN) return renderer.adjustVolume(0) >= 0;
-        int percent = renderer.adjustVolume(code == KeyEvent.KEYCODE_VOLUME_UP ? 1 : -1);
-        if (percent < 0) return false;
-        DelosToast.show(this, getString(R.string.stream_volume_toast, percent), DelosToast.SHORT, ToastKind.INFO);
-        return true;
-    }
 
     /** B, Back and Escape cancel a cancellable loader on release; both edges are consumed so the game never sees them. */
     private boolean cancelLoaderOnKey(KeyEvent event) {

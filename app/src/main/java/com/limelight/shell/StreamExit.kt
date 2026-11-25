@@ -91,6 +91,7 @@ object StreamExit {
         val blur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && game.getSystemService(WindowManager::class.java).isCrossWindowBlurEnabled
         val dialog = ComponentDialog(game, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
         dialog.setCancelable(false)
+        dialog.setOnKeyListener { _, _, event -> VolumeHud.dispatch(game, event) }
         val view = ComposeView(dialog.context).apply {
             setContent {
                 CompositionLocalProvider(LocalDelosColors provides colors) {

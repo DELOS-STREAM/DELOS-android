@@ -160,6 +160,9 @@ hold precompiled SPIR-V of the PyroWave codec as C++ arrays. They run on the dev
 | `app/src/main/res/raw/ui_{back,error,move,open,select}.wav` | [Open Sounds](https://www.romainraynal.fr/en/opensounds) by Romain Raynal, chosen and named by the owner | downloaded 2026-11-24 | royalty-free, free for commercial use, credit appreciated (credited in `docs/CREDITS.md`) | n/a |
 | `app/src/main/res/raw/intro_fx.wav` | made for Delos by the owner (Meitoncz) | 2026-11-24 | original to Delos, project licence | n/a |
 
+The volume dial adds the upstream `headphones` and `bluetooth` glyphs as `VOLUME_HEADPHONES` and `VOLUME_BLUETOOTH`.
+They use the same pinned Phosphor sources and MIT notice; both generated font digests are in `third_party/CHECKSUMS.sha256`.
+
 - Fonts: `tools/fonts/subset_fonts.py` downloads the eight source files, checks each against a SHA-256
   digest in the script, and writes the four subset TTFs, the licence files, `Symbols.kt` and
   `docs/prototype/phosphor-icons.css`. See `docs/ICONS.md`. The fontTools version is not pinned, so the

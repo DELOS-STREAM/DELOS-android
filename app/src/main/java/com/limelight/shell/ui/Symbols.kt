@@ -338,6 +338,8 @@ object Symbols {
     const val PLAYER_NEXT = "\uE5A6"
     const val PLAYER_VOLUME_LOW = "\uE44C"
     const val PLAYER_VOLUME_NONE = "\uE44E"
+    const val VOLUME_HEADPHONES = "\uE2A6"
+    const val VOLUME_BLUETOOTH = "\uE0DA"
     const val MODE_SINGLE = "\uE4C2"
     const val MODE_MULTI = "\uE68C"
     const val PERSPECTIVE = "\uED0A"

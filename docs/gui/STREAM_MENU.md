@@ -116,6 +116,43 @@ this frame rate: lower the supersampling or the frame rate". No setting changes 
 - There is no toast.
 - A stream without its launch identity stays session-only.
 
+### 1.7 Volume dial
+
+The hardware volume keys use one display-only dial in the shell and stream, including the stream menu and exit window.
+It has no focus, touch or controller target. It replaces Android's volume panel and the old stream-volume toast.
+
+| Property | Approved value |
+|---|---|
+| Stage placement | Centre (960, 864) on 1920 × 1080; bottom clearance 92 stage pixels |
+| Dial | 248 stage pixels; 8 px compositor background blur, translucent dark gradient, circular outline |
+| Ring | Radius 91, stroke 8, round ends; gold `#f6b73c`, track `#eef3fb` at 12.5% |
+| Fill motion | 420 ms `EaseSpring`, retargeted from the currently drawn level; clamped arc at both endpoints |
+| Centre | 42 px output glyph, 43 px Unbounded Medium percentage, 22 px Figtree Medium percent sign; no route caption |
+| Output glyph | Speaker; headphones for cable/USB; headphones with a Bluetooth badge; speaker-slash when muted |
+| Appearance | 280 ms fade and 620 ms 16 px rise; 240 ms exit; hides 1500 ms after the last key-down |
+| Reduced motion | Immediate level changes and appearance, no spring or slide |
+
+The shared `VolumeController` exposes 0–15 steps (0–100%, rounded). Without a USB DualSense it changes Android's media
+index with flag 0, so no system panel appears. With a USB DualSense it changes only the gain of audio played by Delos,
+whether the sound is kept on the device or allowed onto the controller; the haptics track and its system index are untouched.
+For device audio, the reference is the last real media index recorded for that physical output before controller takeover.
+For controller audio, it is the active controller media index. Gain is the amplitude ratio derived from Android's decibel curve;
+attenuation uses track volume and amplification uses saturated samples. The requested index is capped at the platform maximum.
+
+If no device reference has ever been recorded, the initial gain is neutral and the dial starts at 9/15 (60%); this is not
+persisted as a measured reference. A muted reference stays silent until Volume Up, then uses index 1 as its decibel reference.
+Android can still enforce hardware mute on an off-route output: software cannot guarantee matching every hardware level.
+Stream PCM, interface cues and the original 48 kHz stereo 24-bit intro all use this gain. The intro follows
+`AudioTrack.getTimestamp`; the existing `SOUND_SYNC_MS = -350` visual offset is unchanged.
+
+The HUD is a small non-focusable, non-touchable window. Android 12+ background blur can sample the real SurfaceView
+through the compositor; Compose does not pretend to sample that video. Blur availability depends on the OS/compositor.
+Placement on shorter stages clears the hint and cutout areas without shrinking the dial.
+
+**Known limitation:** overview trailers (WebView/YouTube) are outside the shared PCM gain and device-output routing.
+Their audio is not automatically level-matched when a DualSense is connected. Real-device blur, routing, loudness and
+intro synchronization require hardware verification; a browser prototype does not prove those behaviors.
+
 ## 2. Stream menu
 
 ### 2.1 Design

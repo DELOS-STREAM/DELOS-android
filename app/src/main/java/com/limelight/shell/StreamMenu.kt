@@ -220,7 +220,7 @@ class StreamMenu(private val game: DelosStreamActivity) {
         }
         d.setContentView(root)
         // While the menu is open the buttons reach its window, not the stream: the shortcut closes it again
-        d.setOnKeyListener { _, _, event -> onKey(event) }
+        d.setOnKeyListener { _, _, event -> VolumeHud.dispatch(game, event) || onKey(event) }
         d.setOnDismissListener {
             toastCover?.release?.invoke()
             if (overlayHome != null) {

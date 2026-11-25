@@ -67,6 +67,7 @@ import com.limelight.utils.DelosToast
 class ShellActivity : ComponentActivity() {
     private lateinit var feedback: Feedback
     private lateinit var appearance: AppearanceStore
+    private var volumeHud: VolumeHud? = null
     private lateinit var repo: PcRepository
     private lateinit var boxArt: BoxArtCache
     private lateinit var artwork: ArtworkStore
@@ -119,6 +120,9 @@ class ShellActivity : ComponentActivity() {
         profiles = ProfileStore(this)
         bindLanguage()
         appearance = AppearanceStore(profiles::settings)
+        volumeHud = VolumeHud(this, { appearance.appearance.value }, {
+            profiles.settings().getBoolean(com.limelight.preferences.PreferenceConfiguration.SOUND_ON_DEVICE_STRING, true)
+        })
         repo = PcRepository(this, profiles::settings)
         val settingsAgain = intent.getBooleanExtra(ShellPlacement.EXTRA_RESTORE_SETTINGS, false) && profiles.profiles.value.all.isNotEmpty()
         val shell = ShellState(if (profiles.profiles.value.all.isEmpty()) Screen.Boot() else if (settingsAgain) Screen.Settings else Screen.Start)
@@ -184,6 +188,7 @@ class ShellActivity : ComponentActivity() {
     // (GlobalKeys.keyboardButton), except while a button is being recorded
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (volumeHud?.handle(event) == true) return true
         ControllerGlyphs.key(event)
         // Any key shows the fullscreen viewer's overlay again, before a global shortcut may consume it
         shellState?.overviewViewerInput?.invoke()
@@ -239,6 +244,9 @@ class ShellActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (movedToMain) return
+        com.limelight.binding.audio.VolumeController.get(this).keepSoundOnDevice(
+            profiles.settings().getBoolean(com.limelight.preferences.PreferenceConfiguration.SOUND_ON_DEVICE_STRING, true))
+        feedback.reroute()
         languageSettings?.let { AppLanguage.mirror(this, it) }
         profiles.streamProfiles.resume()
         placement?.start()
