@@ -14,6 +14,9 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - **Android TV remotes**: on an Android TV or Google TV, a TV remote now operates DELOS without a controller or touch. Menu and Info open the context menu, Play/Pause is the right menu button, Channel or Page Up/Down step through the tabs, and the yellow and blue keys act as Y and X. On a remote without a Menu key, holding OK opens the context menu, and the tabs of the settings screens can be reached with the D-pad. The contributor reported remote navigation working on a RayNeo Pocket TV Pro (Android TV 14). Other devices are not affected. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
 - **Lighter look on Android TV**: the first profile created on an Android TV starts with the still background, no hero blur and reduced motion, because TV hardware is usually slower than a handheld. Every option can be turned back on in Settings → Appearance, and profiles that already exist keep their look. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
 
+### Fixed
+- **Library covers on wide (20:9) phones**: on wide landscape phone screens whose stage height is below 1080 px (`StageShape.WIDE`), the home screen now uses the responsive top-down layout (`HomeCompact`) so 2:3 portrait covers scale proportionally instead of being cropped to nearly square tiles. (Fixes [#131](https://github.com/DELOS-STREAM/DELOS-android/issues/131))
+
 ## [1.3.3] - 2026-11-24
 _Virtual displays set up on the host work again with Vibepollo and Vibeshine._
 
