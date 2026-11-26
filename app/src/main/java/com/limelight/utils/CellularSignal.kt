@@ -15,8 +15,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * Detects whether the device is actively streaming over a cellular connection with poor signal
- * strength (level <= [CellSignalStrength.SIGNAL_STRENGTH_POOR], i.e. 0-1 bars), without
+ * Detects whether the device is actively streaming over a cellular connection with weak signal
+ * strength (level <= [CellSignalStrength.SIGNAL_STRENGTH_MODERATE], i.e. 0-2 of 4 bars), without
  * requiring any runtime permissions.
  */
 object CellularSignal {
@@ -25,13 +25,17 @@ object CellularSignal {
         val connMgr = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
         val network = connMgr.activeNetwork ?: return false
         val caps = connMgr.getNetworkCapabilities(network) ?: return false
-        if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) return false
+        val isCellular = caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+            (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) &&
+                !caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) &&
+                connMgr.isActiveNetworkMetered)
+        if (!isCellular) return false
         val telephony = context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager ?: return false
         val level = runCatching { telephony.signalStrength?.level }.getOrNull() ?: return false
         return isWeakLevel(level)
     }
 
-    internal fun isWeakLevel(level: Int): Boolean = level <= CellSignalStrength.SIGNAL_STRENGTH_POOR
+    internal fun isWeakLevel(level: Int): Boolean = level <= CellSignalStrength.SIGNAL_STRENGTH_MODERATE
 }
 
 @Composable
