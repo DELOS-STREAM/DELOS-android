@@ -325,8 +325,8 @@ fun CircleItem(
     Column(
         Modifier.staggerEntrance().then(if (fixed != null) Modifier.width(fixed.px) else Modifier.widthIn(min = side.px)),
         horizontalAlignment = Alignment.CenterHorizontally,
-        // A compact stage keeps the focused circle's ring off its own label (the growth, the ring and the label's own air above its letters)
-        verticalArrangement = Arrangement.spacedBy((if (compact) CircleRowLayout.labelGap(side) else (if (side < 176f) 14f else 22f) * cs).px),
+        // Keep the focused circle's ring off its own label on both compact and standard stages
+        verticalArrangement = Arrangement.spacedBy(CircleRowLayout.labelGap(side).px),
     ) {
         Box {
             Box(
