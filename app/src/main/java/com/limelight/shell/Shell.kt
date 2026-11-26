@@ -810,6 +810,7 @@ fun Shell(
             }
             withContext(Dispatchers.Main) {
                 result.onSuccess { info ->
+                    repo.reloadRestoredComputers()
                     repo.refresh()
                     shell.showToast(
                         res.getString(R.string.settings_native_backup_imported, info.profileCount, info.pcCount),

@@ -346,6 +346,31 @@ class PcRepository(context: Context, private val settings: () -> SharedPreferenc
         poller?.pollNow()
     }
 
+    /**
+     * Loads computers written directly to the database (e.g. after restoring a backup) into the
+     * repository and registers them with the bound [ComputerManagerService] so polling starts at once.
+     */
+    fun reloadRestoredComputers() {
+        val db = com.limelight.computers.ComputerDatabaseManager(app)
+        val restored = try {
+            db.allComputers
+        } finally {
+            db.close()
+        }
+        restored.forEach { details ->
+            forgotten.remove(details.uuid)
+            onComputerUpdated(details)
+        }
+        val activeBinder = binder
+        if (activeBinder != null && restored.isNotEmpty()) {
+            Thread {
+                restored.forEach { details ->
+                    runCatching { activeBinder.addComputerBlocking(details) }
+                }
+            }.start()
+        }
+    }
+
     fun lastPlayed(pcUuid: String): Int = prefs.getInt(lastPlayedKey(pcUuid), -1)
 
     fun setLastPlayed(pcUuid: String, appId: Int) {
