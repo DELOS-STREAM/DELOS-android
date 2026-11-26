@@ -62,4 +62,8 @@
     <string name="devices_unpair_failed">Impossible de dissocier %1$s</string>
     <string name="devices_unreachable">%1$s est injoignable</string>
     <string name="devices_starting">Delos démarre encore, réessaie</string>
+    <string name="devices_status_ping">%1$s · %2$d ms</string>
+    <string name="devices_menu_ping">Tester le réseau</string>
+    <string name="devices_ping_ok">%1$s : %2$d ms moy. (%3$d ms gigue)</string>
+    <string name="devices_ping_unreachable">%s est inaccessible</string>
 </resources>

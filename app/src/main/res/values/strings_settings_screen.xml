@@ -262,4 +262,23 @@
     <string name="settings_native_main_screen_swapped">Swapped</string>
     <string name="settings_native_help_main_screen_automatic">The larger panel is main.</string>
     <string name="settings_native_help_main_screen_swapped">The smaller panel is main.</string>
+    <string name="settings_native_section_presets">Stream presets</string>
+    <string name="settings_native_stream_preset_title">Active preset</string>
+    <string name="settings_native_stream_preset_description">Apply a saved combination of resolution, frame rate, bitrate, codec, and pacing.</string>
+    <string name="settings_native_stream_preset_custom">Custom</string>
+    <string name="settings_native_stream_preset_save_title">Save current as preset</string>
+    <string name="settings_native_stream_preset_save_description">Save the current stream settings under a custom name for quick switching.</string>
+    <string name="settings_native_stream_preset_save_dialog_title">Preset name</string>
+    <string name="settings_native_stream_preset_saved">Saved preset "%s"</string>
+    <string name="settings_native_stream_preset_delete_title">Delete custom preset</string>
+    <string name="settings_native_stream_preset_delete_description">Remove the currently active custom preset.</string>
+    <string name="settings_native_stream_preset_deleted">Deleted preset "%s"</string>
+    <string name="settings_native_section_backup">Backup &amp; transfer</string>
+    <string name="settings_native_export_backup_title">Export backup</string>
+    <string name="settings_native_export_backup_description">Save profiles, settings, paired PCs, and pairing identity to a file.</string>
+    <string name="settings_native_import_backup_title">Import backup</string>
+    <string name="settings_native_import_backup_description">Restore profiles, settings, and paired PCs from a backup file.</string>
+    <string name="settings_native_backup_exported">Backup exported</string>
+    <string name="settings_native_backup_imported">Restored %1$d profiles and %2$d PCs</string>
+    <string name="settings_native_backup_failed">Backup failed: %s</string>
 </resources>

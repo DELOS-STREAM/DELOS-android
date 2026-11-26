@@ -72,9 +72,9 @@ import com.limelight.shell.ui.px
 import com.limelight.shell.ui.tpx
 import com.limelight.shell.ui.rowNavGrid
 
-/** First launch (`#scr-boot`): the logo, the wordmark and "Get started"; [onSkip] when PCs are paired already. */
+/** First launch (`#scr-boot`): the logo, the wordmark and "Get started"; [onSkip] when PCs are paired already; [onImport] to restore a backup. */
 @Composable
-fun BootScreen(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
+fun BootScreen(onBegin: () -> Unit, onSkip: (() -> Unit)?, onImport: (() -> Unit)? = null) {
     val colors = LocalDelosColors.current
     val begin = remember { FocusRequester() }
     InitialFocus(begin)
@@ -92,6 +92,7 @@ fun BootScreen(onBegin: () -> Unit, onSkip: (() -> Unit)?) {
         BasicText(stringResource(R.string.firstrun_boot_tagline), style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 28.tpx))
         FocusRow(FocusSpacing.PILL, gap = if (LocalStage.current.compact) Compact.BUTTON_GAP else 24f, Modifier.padding(top = 26.px)) {
             PillButton(stringResource(R.string.firstrun_boot_begin), Symbols.ARROW_FORWARD, onBegin, Modifier.focusRequester(begin), primary = true)
+            if (onImport != null) PillButton(stringResource(R.string.firstrun_boot_import), Symbols.DOWNLOAD, onImport)
             if (onSkip != null) PillButton(stringResource(R.string.firstrun_boot_skip), Symbols.FAST_FORWARD, onSkip)
         }
     }

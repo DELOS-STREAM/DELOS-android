@@ -34,4 +34,5 @@
     <string name="firstrun_avatar_hacker">Hacker</string>
     <string name="firstrun_avatar_wolf">Wolf</string>
     <string name="firstrun_avatar_dragon">Drache</string>
+    <string name="firstrun_boot_import">Backup importieren</string>
 </resources>

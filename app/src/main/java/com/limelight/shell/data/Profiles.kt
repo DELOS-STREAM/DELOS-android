@@ -105,6 +105,16 @@ class ProfileStore(context: Context, private val later: (Long, () -> Unit) -> Un
         settingsListeners += listener
     }
 
+    /** Re-reads profiles and active settings from disk (used after restoring a backup). */
+    fun reload() {
+        deleted.clear()
+        val next = read()
+        state.value = next
+        streamProfiles.activate(next.current, settings())
+        next.current?.let { ProfileLayouts.initialize(app, it.id, settings()) }
+        settingsListeners.forEach { it() }
+    }
+
     /** Adds a profile with a copy of the current one's settings and makes it the current one. */
     fun create(name: String, avatar: Int): Profile {
         val profile = Profile(UUID.randomUUID().toString(), name, avatar)

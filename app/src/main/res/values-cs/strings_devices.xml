@@ -75,4 +75,8 @@
     <string name="devices_unpair_failed">Spárování s %1$s se nepodařilo zrušit</string>
     <string name="devices_unreachable">%1$s není dostupné</string>
     <string name="devices_starting">Aplikace Delos se ještě spouští, zkus to znovu</string>
+    <string name="devices_status_ping">%1$s · %2$d ms</string>
+    <string name="devices_menu_ping">Otestovat síť</string>
+    <string name="devices_ping_ok">%1$s: průměr %2$d ms (kolísání %3$d ms)</string>
+    <string name="devices_ping_unreachable">%s je nedostupný</string>
 </resources>

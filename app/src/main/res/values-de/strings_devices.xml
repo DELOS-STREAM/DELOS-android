@@ -82,4 +82,8 @@
     <string name="devices_unpair_failed">Kopplung mit %1$s konnte nicht aufgehoben werden</string>
     <string name="devices_unreachable">%1$s ist nicht erreichbar</string>
     <string name="devices_starting">Delos startet noch, versuch es erneut</string>
+    <string name="devices_status_ping">%1$s · %2$d ms</string>
+    <string name="devices_menu_ping">Netzwerk testen</string>
+    <string name="devices_ping_ok">%1$s: %2$d ms Ø (%3$d ms Jitter)</string>
+    <string name="devices_ping_unreachable">%s ist nicht erreichbar</string>
 </resources>

@@ -30,4 +30,5 @@
     <string name="firstrun_avatar_hacker">ハッカー</string>
     <string name="firstrun_avatar_wolf">オオカミ</string>
     <string name="firstrun_avatar_dragon">ドラゴン</string>
+    <string name="firstrun_boot_import">バックアップを復元</string>
 </resources>

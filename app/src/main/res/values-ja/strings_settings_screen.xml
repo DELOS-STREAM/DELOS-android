@@ -217,4 +217,23 @@
     <string name="settings_native_main_screen_swapped">入れ替え</string>
     <string name="settings_native_help_main_screen_automatic">大きいパネルがメイン画面です。</string>
     <string name="settings_native_help_main_screen_swapped">小さいパネルがメイン画面です。</string>
+    <string name="settings_native_section_presets">ストリームプリセット</string>
+    <string name="settings_native_stream_preset_title">現在のプリセット</string>
+    <string name="settings_native_stream_preset_description">解像度、フレームレート、ビットレート、コーデック、ペーシングの組み合わせを適用します。</string>
+    <string name="settings_native_stream_preset_custom">カスタム</string>
+    <string name="settings_native_stream_preset_save_title">現在の設定をプリセット保存</string>
+    <string name="settings_native_stream_preset_save_description">現在のストリーム設定に名前を付けて保存し、すばやく切り替えられます。</string>
+    <string name="settings_native_stream_preset_save_dialog_title">プリセット名</string>
+    <string name="settings_native_stream_preset_saved">プリセット "%s" を保存しました</string>
+    <string name="settings_native_stream_preset_delete_title">カスタムプリセットを削除</string>
+    <string name="settings_native_stream_preset_delete_description">現在選択中のカスタムプリセットを削除します。</string>
+    <string name="settings_native_stream_preset_deleted">プリセット "%s" を削除しました</string>
+    <string name="settings_native_section_backup">バックアップと移行</string>
+    <string name="settings_native_export_backup_title">バックアップをエクスポート</string>
+    <string name="settings_native_export_backup_description">プロフィール、設定、ペアリング済みPC、認証情報をファイルに保存します。</string>
+    <string name="settings_native_import_backup_title">バックアップをインポート</string>
+    <string name="settings_native_import_backup_description">バックアップファイルからプロフィール、設定、PCを復元します。</string>
+    <string name="settings_native_backup_exported">バックアップを書き出しました</string>
+    <string name="settings_native_backup_imported">%1$d 件のプロフィールと %2$d 台のPCを復元しました</string>
+    <string name="settings_native_backup_failed">バックアップに失敗しました: %s</string>
 </resources>

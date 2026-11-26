@@ -238,4 +238,23 @@
     <string name="settings_native_main_screen_swapped">Prohozeno</string>
     <string name="settings_native_help_main_screen_automatic">Hlavní je větší panel.</string>
     <string name="settings_native_help_main_screen_swapped">Hlavní je menší panel.</string>
+    <string name="settings_native_section_presets">Předvolby streamu</string>
+    <string name="settings_native_stream_preset_title">Aktivní předvolba</string>
+    <string name="settings_native_stream_preset_description">Použít uloženou kombinaci rozlišení, snímkové frekvence, datového toku, kodeku a synchronizace.</string>
+    <string name="settings_native_stream_preset_custom">Vlastní</string>
+    <string name="settings_native_stream_preset_save_title">Uložit aktuální jako předvolbu</string>
+    <string name="settings_native_stream_preset_save_description">Uložit aktuální nastavení streamu pod vlastním názvem pro rychlé přepínání.</string>
+    <string name="settings_native_stream_preset_save_dialog_title">Název předvolby</string>
+    <string name="settings_native_stream_preset_saved">Předvolba "%s" uložena</string>
+    <string name="settings_native_stream_preset_delete_title">Smazat vlastní předvolbu</string>
+    <string name="settings_native_stream_preset_delete_description">Odstranit aktuálně aktivní vlastní předvolbu.</string>
+    <string name="settings_native_stream_preset_deleted">Předvolba "%s" smazána</string>
+    <string name="settings_native_section_backup">Záloha a přenos</string>
+    <string name="settings_native_export_backup_title">Exportovat zálohu</string>
+    <string name="settings_native_export_backup_description">Uložit profily, nastavení, spárovaná PC a identitu párování do souboru.</string>
+    <string name="settings_native_import_backup_title">Importovat zálohu</string>
+    <string name="settings_native_import_backup_description">Obnovit profily, nastavení a spárovaná PC ze záložního souboru.</string>
+    <string name="settings_native_backup_exported">Záloha exportována</string>
+    <string name="settings_native_backup_imported">Obnoveno %1$d profilů a %2$d PC</string>
+    <string name="settings_native_backup_failed">Záloha selhala: %s</string>
 </resources>

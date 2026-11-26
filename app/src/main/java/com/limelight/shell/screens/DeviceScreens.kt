@@ -11,10 +11,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.limelight.utils.ToastKind
+import com.limelight.shell.data.HostPing
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,7 +85,17 @@ fun StartScreen(profiles: Profiles, store: ProfileStore, pcs: List<Pc>, startup:
     val res = textResources()
     val actions = LocalDeviceActions.current
     val shell = LocalShell.current
+    val scope = rememberCoroutineScope()
     val paired = pcs.filter { it.paired }.sortedBy { it.name.lowercase() }
+    val pings = remember { mutableStateMapOf<String, HostPing.Result>() }
+    LaunchedEffect(paired) {
+        paired.filter { it.online }.forEach { pc ->
+            val target = HostPing.targetFor(pc.details) ?: return@forEach
+            launch {
+                HostPing.measure(target.first, target.second, samples = 3)?.let { pings[pc.uuid] = it }
+            }
+        }
+    }
     val focusPc = paired.firstOrNull { it.uuid == startup.defaultPc } ?: paired.firstOrNull { it.online } ?: paired.firstOrNull()
     val first = remember { FocusRequester() }
     InitialFocus(first, focusPc?.uuid)
@@ -106,11 +122,30 @@ fun StartScreen(profiles: Profiles, store: ProfileStore, pcs: List<Pc>, startup:
                         Symbols.DESKTOP_WINDOWS, pc.name,
                         onClick = { actions.connect(pc) },
                         modifier = if (pc == focusPc) Modifier.focusRequester(first) else Modifier,
-                        meta = pcStatus(pc, default),
+                        meta = pcStatus(pc, default, pings[pc.uuid]),
                         metaDot = if (pc.online) OnlineGreen else null,
                         big = true,
                         selected = default,
-                        contextMenu = startMenu(res, pc, default, actions),
+                        contextMenu = startMenu(res, pc, default, actions) {
+                            scope.launch {
+                                val target = HostPing.targetFor(pc.details)
+                                val result = target?.let { HostPing.measure(it.first, it.second, samples = 5) }
+                                if (result != null) {
+                                    pings[pc.uuid] = result
+                                    shell.showToast(
+                                        res.getString(R.string.devices_ping_ok, pc.name, result.avgMs, result.jitterMs),
+                                        Symbols.SPEED,
+                                        kind = ToastKind.SUCCESS,
+                                    )
+                                } else {
+                                    shell.showToast(
+                                        res.getString(R.string.devices_ping_unreachable, pc.name),
+                                        Symbols.ERROR,
+                                        kind = ToastKind.ERROR,
+                                    )
+                                }
+                            }
+                        },
                         onFocused = { focusedUuid = pc.uuid },
                     )
                 }
@@ -125,19 +160,21 @@ fun StartScreen(profiles: Profiles, store: ProfileStore, pcs: List<Pc>, startup:
     }
 }
 
-/** The status line under a PC on the start screen: online, asleep or offline, and whether it is the default one. */
+/** The status line under a PC on the start screen: online (with RTT), asleep or offline, and whether it is the default one. */
 @Composable
-private fun pcStatus(pc: Pc, default: Boolean): String {
-    val status = stringResource(if (pc.online) R.string.devices_status_online else if (pc.canWake) R.string.devices_status_asleep_wakes else R.string.devices_status_offline)
+private fun pcStatus(pc: Pc, default: Boolean, ping: HostPing.Result? = null): String {
+    val baseStatus = stringResource(if (pc.online) R.string.devices_status_online else if (pc.canWake) R.string.devices_status_asleep_wakes else R.string.devices_status_offline)
+    val status = if (pc.online && ping != null) stringResource(R.string.devices_status_ping, baseStatus, ping.avgMs) else baseStatus
     return if (default) stringResource(R.string.devices_status_with_default, status, stringResource(R.string.devices_status_default)) else status
 }
 
-private fun startMenu(res: Resources, pc: Pc, default: Boolean, actions: DeviceActions) = ContextMenu(
+private fun startMenu(res: Resources, pc: Pc, default: Boolean, actions: DeviceActions, onPing: () -> Unit) = ContextMenu(
     pc.name,
     below = true,
     items = listOfNotNull(
         if (default) MenuItem(Symbols.STAR, res.getString(R.string.devices_menu_default_off)) { actions.setDefault(null) }
         else MenuItem(Symbols.STAR, res.getString(R.string.devices_menu_default_on)) { actions.setDefault(pc) },
+        if (pc.online) MenuItem(Symbols.SPEED, res.getString(R.string.devices_menu_ping)) { onPing() } else null,
         if (!pc.online && pc.canWake) MenuItem(Symbols.WAKE, res.getString(R.string.devices_menu_wake)) { actions.wake(pc) } else null,
         MenuItem(Symbols.EDIT, res.getString(R.string.devices_menu_rename)) { actions.rename(pc) },
     ),

@@ -30,4 +30,5 @@
     <string name="firstrun_avatar_hacker">黑客</string>
     <string name="firstrun_avatar_wolf">狼</string>
     <string name="firstrun_avatar_dragon">龙</string>
+    <string name="firstrun_boot_import">导入备份</string>
 </resources>

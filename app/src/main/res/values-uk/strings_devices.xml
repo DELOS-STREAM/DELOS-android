@@ -68,4 +68,8 @@
     <string name="devices_unpair_failed">Не вдалося розірвати пару з %1$s</string>
     <string name="devices_unreachable">%1$s недоступний</string>
     <string name="devices_starting">Delos ще запускається, спробуй ще раз</string>
+    <string name="devices_status_ping">%1$s · %2$d мс</string>
+    <string name="devices_menu_ping">Перевірити мережу</string>
+    <string name="devices_ping_ok">%1$s: у середньому %2$d мс (джиттер %3$d мс)</string>
+    <string name="devices_ping_unreachable">%s недоступний</string>
 </resources>

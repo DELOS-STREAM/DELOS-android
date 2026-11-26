@@ -217,4 +217,23 @@
     <string name="settings_native_main_screen_swapped">对调</string>
     <string name="settings_native_help_main_screen_automatic">较大的面板为主屏幕。</string>
     <string name="settings_native_help_main_screen_swapped">较小的面板为主屏幕。</string>
+    <string name="settings_native_section_presets">串流预设</string>
+    <string name="settings_native_stream_preset_title">当前预设</string>
+    <string name="settings_native_stream_preset_description">应用已保存的分辨率、帧率、码率、编码与帧步调组合。</string>
+    <string name="settings_native_stream_preset_custom">自定义</string>
+    <string name="settings_native_stream_preset_save_title">将当前设置保存为预设</string>
+    <string name="settings_native_stream_preset_save_description">将当前串流设置以自定义名称保存，方便快速切换。</string>
+    <string name="settings_native_stream_preset_save_dialog_title">预设名称</string>
+    <string name="settings_native_stream_preset_saved">已保存预设“%s”</string>
+    <string name="settings_native_stream_preset_delete_title">删除自定义预设</string>
+    <string name="settings_native_stream_preset_delete_description">移除当前正在使用的自定义预设。</string>
+    <string name="settings_native_stream_preset_deleted">已删除预设“%s”</string>
+    <string name="settings_native_section_backup">备份与迁移</string>
+    <string name="settings_native_export_backup_title">导出备份</string>
+    <string name="settings_native_export_backup_description">将配置文件、设置、已配对电脑及配对凭证保存到文件。</string>
+    <string name="settings_native_import_backup_title">导入备份</string>
+    <string name="settings_native_import_backup_description">从备份文件恢复配置文件、设置和已配对电脑。</string>
+    <string name="settings_native_backup_exported">备份已导出</string>
+    <string name="settings_native_backup_imported">已恢复 %1$d 个配置文件和 %2$d 台电脑</string>
+    <string name="settings_native_backup_failed">备份失败：%s</string>
 </resources>

@@ -44,6 +44,9 @@ import com.limelight.shell.settings.SettingsHelp
 import com.limelight.shell.settings.Startup
 import com.limelight.shell.settings.OscOpacity
 import com.limelight.shell.settings.StreamMenuSettings
+import com.limelight.shell.settings.StreamPresetStore
+import com.limelight.shell.LocalBackupActions
+import com.limelight.utils.ToastKind
 import com.limelight.shell.ui.RowValue
 import com.limelight.shell.ui.Symbols
 import com.limelight.shell.ui.hsl
@@ -247,7 +250,53 @@ internal fun nativeSettings(
     val artwork = LocalArtwork.current
     val tracker = LocalFocusTracker.current
     val library = LocalLibrary.current as? Library.Ready
+    val backupActions = LocalBackupActions.current
     val scope = rememberCoroutineScope()
+    // Stream presets: one-tap switching between Home, Balanced, TV, Travel, and custom saved presets
+    val presetsSection = res.getString(R.string.settings_native_section_presets)
+    var presetVersion by remember(settings) { mutableStateOf(0) }
+    val presets = remember(settings, presetVersion) { StreamPresetStore.all(settings) }
+    val activePreset = remember(settings, presetVersion, a, startup, pcs) { StreamPresetStore.matchingPreset(settings) }
+    val customLabel = res.getString(R.string.settings_native_stream_preset_custom)
+    val presetOptions = presets.map { it.name }
+    val activePresetIndex = presets.indexOfFirst { it.id == activePreset?.id }
+    row("stream_preset", Symbols.TUNE, res.getString(R.string.settings_native_stream_preset_title),
+        RowValue.Choice(activePreset?.name ?: customLabel, { dir ->
+            if (presets.isNotEmpty()) {
+                val base = if (activePresetIndex >= 0) activePresetIndex else if (dir >= 0) -1 else 0
+                val next = presets[Math.floorMod(base + dir, presets.size)]
+                StreamPresetStore.apply(settings, next)
+                presetVersion++
+            }
+        }, options = presetOptions, selected = activePresetIndex, onPick = { i ->
+            presets.getOrNull(i)?.let {
+                StreamPresetStore.apply(settings, it)
+                presetVersion++
+            }
+        }), res.getString(R.string.settings_native_stream_preset_description), tab = SettingsTab.STREAM, section = presetsSection)
+    row("stream_preset_save", Symbols.STAR, res.getString(R.string.settings_native_stream_preset_save_title), RowValue.Action {
+        shell.openLayer(Layer.Dialog(DialogSpec(
+            res.getString(R.string.settings_native_stream_preset_save_dialog_title),
+            res.getString(R.string.settings_native_stream_preset_save_description),
+            listOf(DialogField(Symbols.TUNE, "", res.getString(R.string.settings_native_stream_preset_save_dialog_title), maxLength = 32)),
+            res.getString(R.string.firstrun_create_save),
+        ) { values ->
+            val entered = values.firstOrNull().orEmpty().trim()
+            if (entered.isEmpty()) return@DialogSpec false
+            val saved = StreamPresetStore.saveCustom(settings, entered)
+            presetVersion++
+            shell.showToast(res.getString(R.string.settings_native_stream_preset_saved, saved.name), Symbols.CHECK_CIRCLE, kind = ToastKind.SUCCESS)
+            true
+        }), tracker)
+    }, res.getString(R.string.settings_native_stream_preset_save_description), tab = SettingsTab.STREAM, section = presetsSection)
+    row("stream_preset_delete", Symbols.DELETE, res.getString(R.string.settings_native_stream_preset_delete_title), RowValue.Action {
+        val target = activePreset ?: return@Action
+        if (!target.builtIn) {
+            StreamPresetStore.deleteCustom(settings, target.id)
+            presetVersion++
+            shell.showToast(res.getString(R.string.settings_native_stream_preset_deleted, target.name), Symbols.DELETE)
+        }
+    }, res.getString(R.string.settings_native_stream_preset_delete_description), activePreset != null && !activePreset.builtIn, SettingsTab.STREAM, presetsSection)
     row("covers_sgdb_key", Symbols.KEY, res.getString(R.string.settings_native_sgdb_key_title),
         RowValue.Text(res.getString(if (artwork.enabled) R.string.settings_native_sgdb_key_added else R.string.settings_native_sgdb_key_not_set)) {
         shell.openLayer(Layer.Dialog(DialogSpec(
@@ -293,6 +342,13 @@ internal fun nativeSettings(
         res.getString(R.string.settings_native_based_description), tab = SettingsTab.ABOUT, section = delosSection)
     row("about_welcome", Symbols.REPLAY, res.getString(R.string.settings_native_welcome_title), RowValue.Action { shell.navigate(Screen.Boot(back = Screen.Settings)) },
         res.getString(R.string.settings_native_welcome_description), tab = SettingsTab.ABOUT, section = delosSection)
+    val backupSection = res.getString(R.string.settings_native_section_backup)
+    row("about_export_backup", Symbols.SHARE_LOG, res.getString(R.string.settings_native_export_backup_title),
+        RowValue.Action { backupActions.export() },
+        res.getString(R.string.settings_native_export_backup_description), tab = SettingsTab.ABOUT, section = backupSection)
+    row("about_import_backup", Symbols.DOWNLOAD, res.getString(R.string.settings_native_import_backup_title),
+        RowValue.Action { backupActions.import() },
+        res.getString(R.string.settings_native_import_backup_description), tab = SettingsTab.ABOUT, section = backupSection)
     // In-app updates (docs/UPDATES.md): the switch is device-wide and on by default; off means no request at all
     val updateSection = res.getString(R.string.settings_native_section_updates)
     val updateStore = remember { Updates.store(context) }

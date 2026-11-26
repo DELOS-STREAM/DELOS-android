@@ -225,4 +225,23 @@
     <string name="settings_native_main_screen_swapped">Поміняно</string>
     <string name="settings_native_help_main_screen_automatic">Головна — більша панель.</string>
     <string name="settings_native_help_main_screen_swapped">Головна — менша панель.</string>
+    <string name="settings_native_section_presets">Пресети потоку</string>
+    <string name="settings_native_stream_preset_title">Активний пресет</string>
+    <string name="settings_native_stream_preset_description">Застосувати збережене поєднання роздільності, FPS, бітрейту, кодека та синхронізації.</string>
+    <string name="settings_native_stream_preset_custom">Власний</string>
+    <string name="settings_native_stream_preset_save_title">Зберегти поточні як пресет</string>
+    <string name="settings_native_stream_preset_save_description">Зберегти поточні налаштування потоку під власною назвою для швидкого перемикання.</string>
+    <string name="settings_native_stream_preset_save_dialog_title">Назва пресету</string>
+    <string name="settings_native_stream_preset_saved">Пресет "%s" збережено</string>
+    <string name="settings_native_stream_preset_delete_title">Видалити власний пресет</string>
+    <string name="settings_native_stream_preset_delete_description">Видалити поточний активний власний пресет.</string>
+    <string name="settings_native_stream_preset_deleted">Пресет "%s" видалено</string>
+    <string name="settings_native_section_backup">Резервне копіювання та перенесення</string>
+    <string name="settings_native_export_backup_title">Експортувати резервну копію</string>
+    <string name="settings_native_export_backup_description">Зберегти профілі, налаштування, підключені ПК та ідентифікатор у файл.</string>
+    <string name="settings_native_import_backup_title">Імпортувати резервну копію</string>
+    <string name="settings_native_import_backup_description">Відновити профілі, налаштування та підключені ПК із файлу.</string>
+    <string name="settings_native_backup_exported">Резервну копію експортовано</string>
+    <string name="settings_native_backup_imported">Відновлено %1$d профілів і %2$d ПК</string>
+    <string name="settings_native_backup_failed">Помилка резервної копії: %s</string>
 </resources>

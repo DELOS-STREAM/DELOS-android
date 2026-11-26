@@ -68,4 +68,8 @@
     <string name="devices_unpair_failed">%1$s 페어링을 해제하지 못했어요</string>
     <string name="devices_unreachable">%1$s에 연결할 수 없어요</string>
     <string name="devices_starting">Delos가 아직 시작 중이에요. 다시 시도해 주세요</string>
+    <string name="devices_status_ping">%1$s · %2$d ms</string>
+    <string name="devices_menu_ping">네트워크 테스트</string>
+    <string name="devices_ping_ok">%1$s: 평균 %2$d ms (지터 %3$d ms)</string>
+    <string name="devices_ping_unreachable">%s에 연결할 수 없습니다</string>
 </resources>

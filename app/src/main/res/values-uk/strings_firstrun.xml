@@ -30,4 +30,5 @@
     <string name="firstrun_avatar_hacker">Хакер</string>
     <string name="firstrun_avatar_wolf">Вовк</string>
     <string name="firstrun_avatar_dragon">Дракон</string>
+    <string name="firstrun_boot_import">Імпортувати резервну копію</string>
 </resources>

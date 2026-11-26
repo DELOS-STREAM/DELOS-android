@@ -32,4 +32,5 @@
     <string name="firstrun_avatar_hacker">Hacker</string>
     <string name="firstrun_avatar_wolf">Vlk</string>
     <string name="firstrun_avatar_dragon">Drak</string>
+    <string name="firstrun_boot_import">Importovat zálohu</string>
 </resources>

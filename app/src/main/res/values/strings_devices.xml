@@ -82,4 +82,8 @@
     <string name="devices_unpair_failed">%1$s could not be unpaired</string>
     <string name="devices_unreachable">%1$s cannot be reached</string>
     <string name="devices_starting">Delos is still starting, try again</string>
+    <string name="devices_status_ping">%1$s · %2$d ms</string>
+    <string name="devices_menu_ping">Test network</string>
+    <string name="devices_ping_ok">%1$s: %2$d ms avg (%3$d ms jitter)</string>
+    <string name="devices_ping_unreachable">%s is unreachable</string>
 </resources>

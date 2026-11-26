@@ -247,4 +247,23 @@
     <string name="settings_native_main_screen_swapped">Getauscht</string>
     <string name="settings_native_help_main_screen_automatic">Hauptbildschirm ist das größere Panel.</string>
     <string name="settings_native_help_main_screen_swapped">Hauptbildschirm ist das kleinere Panel.</string>
+    <string name="settings_native_section_presets">Stream-Vorlagen</string>
+    <string name="settings_native_stream_preset_title">Aktive Vorlage</string>
+    <string name="settings_native_stream_preset_description">Gespeicherte Kombination aus Auflösung, Bildrate, Bitrate, Codec und Frame-Pacing anwenden.</string>
+    <string name="settings_native_stream_preset_custom">Benutzerdefiniert</string>
+    <string name="settings_native_stream_preset_save_title">Aktuelle als Vorlage speichern</string>
+    <string name="settings_native_stream_preset_save_description">Aktuelle Stream-Einstellungen unter eigenem Namen für schnellen Wechsel speichern.</string>
+    <string name="settings_native_stream_preset_save_dialog_title">Vorlagenname</string>
+    <string name="settings_native_stream_preset_saved">Vorlage "%s" gespeichert</string>
+    <string name="settings_native_stream_preset_delete_title">Eigene Vorlage löschen</string>
+    <string name="settings_native_stream_preset_delete_description">Die aktuell aktive benutzerdefinierte Vorlage entfernen.</string>
+    <string name="settings_native_stream_preset_deleted">Vorlage "%s" gelöscht</string>
+    <string name="settings_native_section_backup">Backup &amp; Übertragung</string>
+    <string name="settings_native_export_backup_title">Backup exportieren</string>
+    <string name="settings_native_export_backup_description">Profile, Einstellungen, gekoppelte PCs und Kopplungsidentität in eine Datei speichern.</string>
+    <string name="settings_native_import_backup_title">Backup importieren</string>
+    <string name="settings_native_import_backup_description">Profile, Einstellungen und gekoppelte PCs aus einer Sicherungsdatei wiederherstellen.</string>
+    <string name="settings_native_backup_exported">Backup exportiert</string>
+    <string name="settings_native_backup_imported">%1$d Profile und %2$d PCs wiederhergestellt</string>
+    <string name="settings_native_backup_failed">Backup fehlgeschlagen: %s</string>
 </resources>

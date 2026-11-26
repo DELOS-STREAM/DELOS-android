@@ -30,4 +30,5 @@
     <string name="firstrun_avatar_hacker">해커</string>
     <string name="firstrun_avatar_wolf">늑대</string>
     <string name="firstrun_avatar_dragon">용</string>
+    <string name="firstrun_boot_import">백업 가져오기</string>
 </resources>

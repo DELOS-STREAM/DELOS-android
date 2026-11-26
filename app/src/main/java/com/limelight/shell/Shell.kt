@@ -21,6 +21,13 @@ import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.staticCompositionLocalOf
+import com.limelight.shell.data.BackupManager
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloatAsState
@@ -173,6 +180,10 @@ import com.limelight.shell.screens.FilterModalLayer
 import com.limelight.shell.screens.filterHintLabel
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+
+data class BackupActions(val export: () -> Unit, val import: () -> Unit)
+
+val LocalBackupActions = staticCompositionLocalOf { BackupActions({}, {}) }
 
 /**
  * The new UI (Phase 6, step 6.3): background, screens with transitions, status bar, hint bar, the
@@ -771,8 +782,61 @@ fun Shell(
     val statusEdges = remember { com.limelight.shell.ui.StatusBarEdges() }
     // The overview viewer's player window covers the hint bar below: it draws this one over the video
     val windowHintBar: @Composable () -> Unit = remember(shell, uiScale) { { WindowHintBar(shell, uiScale) } }
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch(Dispatchers.IO) {
+            val result = runCatching {
+                val json = BackupManager.exportJson(activityContext, profileStore)
+                activityContext.contentResolver.openOutputStream(uri)?.use { out ->
+                    out.write(json.toByteArray(Charsets.UTF_8))
+                } ?: error("Could not open output stream")
+            }
+            withContext(Dispatchers.Main) {
+                result.onSuccess {
+                    shell.showToast(res.getString(R.string.settings_native_backup_exported), Symbols.CHECK_CIRCLE, kind = ToastKind.SUCCESS)
+                }.onFailure { e ->
+                    shell.showToast(res.getString(R.string.settings_native_backup_failed, e.message ?: ""), Symbols.ERROR, kind = ToastKind.ERROR)
+                }
+            }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch(Dispatchers.IO) {
+            val result = runCatching {
+                val raw = activityContext.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                    ?: error("Could not read backup file")
+                BackupManager.importJson(activityContext, raw, profileStore)
+            }
+            withContext(Dispatchers.Main) {
+                result.onSuccess { info ->
+                    repo.refresh()
+                    shell.showToast(
+                        res.getString(R.string.settings_native_backup_imported, info.profileCount, info.pcCount),
+                        Symbols.CHECK_CIRCLE,
+                        kind = ToastKind.SUCCESS,
+                    )
+                    if (shell.screen is Screen.Boot) shell.navigate(Screen.Start)
+                }.onFailure { e ->
+                    shell.showToast(res.getString(R.string.settings_native_backup_failed, e.message ?: ""), Symbols.ERROR, kind = ToastKind.ERROR)
+                }
+            }
+        }
+    }
+    val backupActions = remember {
+        BackupActions(
+            export = {
+                val stamp = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                exportLauncher.launch("delos-backup-$stamp.delos.json")
+            },
+            import = {
+                importLauncher.launch(arrayOf("application/json", "*/*"))
+            },
+        )
+    }
     CompositionLocalProvider(
         LocalShell provides shell, LocalFocusTracker provides tracker, LocalGameActions provides actions, LocalDeviceActions provides devices,
+        LocalBackupActions provides backupActions,
         LocalBackdropHaze provides backdropHaze, LocalBackdropMirror provides backdropMirror, LocalLibrary provides library, LocalImeAvoidance provides imeAvoidance,
         com.limelight.shell.screens.LocalLinkTests provides linkTests, com.limelight.shell.ui.LocalStatusBarEdges provides statusEdges,
         // Touch: a focused choice or slider row's tap opens its popup at the row (issue #92)
@@ -841,6 +905,7 @@ fun Shell(
                                     }
                                 }
                             },
+                            onImport = { backupActions.import() },
                         )
                         is Screen.CreateProfile -> CreateProfileScreen(screen.editing, profile.takeIf { screen.editing }) { name, avatar ->
                             if (screen.editing) {
