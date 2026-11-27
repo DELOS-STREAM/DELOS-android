@@ -127,7 +127,7 @@ fun PsSettingsScreen(profiles: ProfileStore, appearance: Appearance) {
     DisposableEffect(shell, tabIndex) {
         val handler: (Int) -> Unit = { dir ->
             changeTab(Math.floorMod(tabIndex + dir, PsSettingsTab.entries.size))
-            feedback.play(Cue.MOVE)
+            feedback.play(Cue.TAB)
         }
         shell.onShoulder = handler
         onDispose { if (shell.onShoulder === handler) shell.onShoulder = null }

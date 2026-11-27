@@ -93,7 +93,7 @@ fun StartScreen(profiles: Profiles, store: ProfileStore, pcs: List<Pc>, startup:
     val feedback = LocalFeedback.current
     val switchMode: (Boolean) -> Unit = { on ->
         if (on != com.limelight.shell.ps.PsMode.active.value) {
-            feedback.play(Cue.MOVE)
+            feedback.play(Cue.TAB)
             com.limelight.shell.ps.PsMode.set(on)
         }
     }

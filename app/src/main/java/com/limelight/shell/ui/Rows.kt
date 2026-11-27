@@ -200,11 +200,17 @@ fun SettingRow(
         }
         // Steps left or right ([dir] may be several while a key is held), landing on the slider's grid
         // (a stored value between steps snaps to it)
-        is RowValue.Slider -> { dir -> value.onChange(SliderEdit.step(value, value.value, dir)) }
+        is RowValue.Slider -> { dir ->
+            val next = SliderEdit.step(value, value.value, dir)
+            if (next != value.value) {
+                value.onChange(next)
+                feedback.play(Cue.STEP)
+            }
+        }
         else -> null
     }
     val activate: () -> Unit = when (value) {
-        is RowValue.Toggle -> ({ value.onChange(!value.on) })
+        is RowValue.Toggle -> ({ value.onChange(!value.on); feedback.play(Cue.TOGGLE) })
         is RowValue.Choice -> ({ adjust?.invoke(1) })
         is RowValue.Slider -> ({ adjust?.invoke(1) })
         is RowValue.Action -> value.onClick
@@ -231,10 +237,10 @@ fun SettingRow(
     // A tap on a part of the value that changes it directly (a choice's arrows, the switch): focus the row too, for its help
     val partTap: (() -> Unit) -> Unit = { change ->
         requester.requestFocus()
-        if (enabled) { feedback.play(Cue.MOVE); change() } else feedback.play(Cue.ERROR)
+        if (enabled) { if (value is RowValue.Choice) feedback.play(Cue.MOVE); change() } else feedback.play(Cue.ERROR)
     }
     val controllerAdjust: ((Int, Int) -> Unit)? = if (adjust == null || !enabled) null else { direction, repeatCount ->
-        feedback.play(Cue.MOVE)
+        if (value is RowValue.Choice) feedback.play(Cue.MOVE)
         adjust(direction * if (value is RowValue.Slider) sliderAcceleration(value, repeatCount) else 1)
     }
     val shape = RoundedCornerShape(ROW_CORNER.px)
@@ -253,7 +259,7 @@ fun SettingRow(
                 }
                 if (dir == 0 || adjust == null || !enabled) return@onPreviewKeyEvent false
                 if (event.type == KeyEventType.KeyDown) {
-                    feedback.play(Cue.MOVE)
+                    if (value is RowValue.Choice) feedback.play(Cue.MOVE)
                     adjust(dir * if (value is RowValue.Slider) sliderAcceleration(value, event.nativeKeyEvent.repeatCount) else 1)
                 }
                 true
@@ -265,7 +271,11 @@ fun SettingRow(
                 focusScale = ROW_FOCUS_SCALE,
                 ring = if (glide != null) null else ROW_RING,
                 glow = if (glide != null) null else FocusGlow(offsetY = 20f, blur = 50f, spread = -24f),
-                clickCue = if (enabled && value !is RowValue.Info) (if (value is RowValue.Action) Cue.OPEN else Cue.SELECT) else null,
+                clickCue = if (!enabled) null else when (value) {
+                    is RowValue.Info, is RowValue.Toggle, is RowValue.Slider -> null
+                    is RowValue.Action -> Cue.OPEN
+                    else -> Cue.SELECT
+                },
                 contextMenu = contextMenu,
                 adjustable = adjust != null && enabled,
                 controllerAdjust = controllerAdjust,
@@ -343,7 +353,7 @@ fun SettingRow(
                 if (override != null && override.touch) RowResetButton(override, focused && enabled)
                 Box {
                     RowValueView(value, focused, choice, calm, onPart = { dir ->
-                        partTap { if (value is RowValue.Toggle) value.onChange(!value.on) else adjust?.invoke(dir) }
+                        partTap { if (value is RowValue.Toggle) activate() else adjust?.invoke(dir) }
                     })
                     // Controller: the pill takes no room at all. It is drawn over the free space left of the value, only while the row is focused,
                     // so the title column never changes its width (and never re-wraps) when focus arrives

@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.collect
 
-enum class Cue { MOVE, SELECT, BACK, OPEN, ERROR }
+enum class Cue { MOVE, SELECT, BACK, OPEN, ERROR, TOGGLE, STEP, TAB, COMPLETE, UNDO }
 
 /**
  * UI sounds (res/raw: Open Sounds by Romain Raynal, see docs/CREDITS.md), the intro's sound track and
@@ -119,6 +119,8 @@ class Feedback(context: Context) {
 
     private val clips: Map<Cue, Clip> = mapOf(
         Cue.MOVE to R.raw.ui_move, Cue.SELECT to R.raw.ui_select, Cue.BACK to R.raw.ui_back, Cue.OPEN to R.raw.ui_open, Cue.ERROR to R.raw.ui_error,
+        Cue.TOGGLE to R.raw.ui_toggle_placeholder, Cue.STEP to R.raw.ui_step_placeholder,
+        Cue.TAB to R.raw.ui_tab_placeholder, Cue.COMPLETE to R.raw.ui_complete_placeholder, Cue.UNDO to R.raw.ui_undo_placeholder,
     ).mapNotNull { (cue, res) -> decode(res)?.let { cue to it } }.toMap()
 
     /**
@@ -222,7 +224,7 @@ class Feedback(context: Context) {
             val gain = volume.gain
             runCatching { cuePlayer.execute { track.play(gain) } } // refused after release()
         }
-        if (hapticsEnabled) {
+        if (hapticsEnabled && cue != Cue.UNDO) {
             if (rumbleMotorOnly) pulse(cue) else view?.performHapticFeedback(hapticFor(cue))
         }
     }
@@ -278,11 +280,12 @@ class Feedback(context: Context) {
     }
 
     private fun hapticFor(cue: Cue): Int = when (cue) {
-        Cue.MOVE, Cue.BACK -> HapticFeedbackConstants.CLOCK_TICK
-        Cue.SELECT, Cue.OPEN ->
+        Cue.MOVE, Cue.BACK, Cue.STEP, Cue.TAB -> HapticFeedbackConstants.CLOCK_TICK
+        Cue.SELECT, Cue.OPEN, Cue.TOGGLE, Cue.COMPLETE ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
         Cue.ERROR ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
+        Cue.UNDO -> HapticFeedbackConstants.VIRTUAL_KEY
     }
 
     /**
@@ -294,9 +297,10 @@ class Feedback(context: Context) {
         val v = vibrator ?: return
         val full = if (v.hasAmplitudeControl()) 255 else VibrationEffect.DEFAULT_AMPLITUDE
         val effect = when (cue) {
-            Cue.MOVE, Cue.BACK -> VibrationEffect.createOneShot(50, full)
-            Cue.SELECT, Cue.OPEN -> VibrationEffect.createOneShot(70, full)
+            Cue.MOVE, Cue.BACK, Cue.STEP, Cue.TAB -> VibrationEffect.createOneShot(50, full)
+            Cue.SELECT, Cue.OPEN, Cue.TOGGLE, Cue.COMPLETE -> VibrationEffect.createOneShot(70, full)
             Cue.ERROR -> VibrationEffect.createWaveform(longArrayOf(0, 60, 80, 60), intArrayOf(0, full, 0, full), -1)
+            Cue.UNDO -> return
         }
         // Touch usage: follows the system's touch feedback intensity, like the regular haptics
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

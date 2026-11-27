@@ -174,7 +174,7 @@ fun TutorialScreen(screen: Screen.Tutorial, keys: GlobalKeys, onDone: () -> Unit
     // Per page: whether the lesson is done, and the bits of state its scene shows
     var success by remember(index, touch) { mutableStateOf(false) }
     val lesson = (page as? Page.Learn)?.lesson
-    val complete: () -> Unit = { if (!success) { feedback.play(Cue.OPEN); success = true } }
+    val complete: () -> Unit = { if (!success) { feedback.play(Cue.COMPLETE); success = true } }
     LaunchedEffect(index, touch, success) { if (success) { delay(1600); next() } }
     // A chapter card stays for a moment, then the first lesson follows
     LaunchedEffect(index, touch) { if (page is Page.Opening) { delay(2600); if (list[index] == page) next() } }
