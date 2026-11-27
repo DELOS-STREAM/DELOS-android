@@ -137,7 +137,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private volatile boolean stopped = false;
     // Delos: the Full keyboard owns the controller while it is up (setInputSuspended)
     private volatile boolean inputSuspended = false;
-    /** Whether the USB driver claims a wired DualSense for this stream; null until its service connects. */
+    /** Whether the USB driver claims a wired DualSense for this stream ([setUsbClaimsDualSense]); null until set. */
     private volatile Boolean usbClaimsDualSense;
 
     private final PreferenceConfiguration prefConfig;
@@ -1510,14 +1510,12 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     /**
-     * Delos: tells whether this stream's USB driver claims a wired DualSense (set when the driver service connects).
-     * Until then, and when it does not, Android's own devices for it are ordinary controllers.
+     * Delos: tells whether this stream's USB driver claims a wired DualSense, before any controller is used (the stream
+     * activity sets it right after creating the handler). When it does not, Android's own devices for it are ordinary
+     * controllers.
      */
     public void setUsbClaimsDualSense(boolean claims) {
         usbClaimsDualSense = claims;
-        for (int i = 0; i < inputDeviceContexts.size(); i++) {
-            inputDeviceContexts.valueAt(i).takenByUsbDriver = null;
-        }
     }
 
     /**
@@ -1547,7 +1545,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 }
             }
         }
-        // Unknown until the driver service connects: decided again then
+        // Not cached before the claim setting is known
         if (usbClaimsDualSense != null) {
             context.takenByUsbDriver = taken;
         }

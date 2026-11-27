@@ -191,12 +191,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             UsbDriverService.UsbDriverBinder binder = (UsbDriverService.UsbDriverBinder) iBinder;
             binder.setListener(controllerHandler);
             binder.setStateListener(DelosStreamActivity.this);
-            // Delos: a wired DualSense is DELOS's when this stream's settings ask for it (PlayStation or PC settings, #125)
-            boolean claimDualSense = psConsoleId != null
-                    ? com.limelight.ps.PsPrefs.INSTANCE.prefs(DelosStreamActivity.this).getBoolean(com.limelight.ps.PsPrefs.DUALSENSE_USB, true)
-                    : prefConfig.dualSenseUsb;
-            binder.setClaimDualSense(claimDualSense);
-            controllerHandler.setUsbClaimsDualSense(claimDualSense);
+            binder.setClaimDualSense(claimsDualSense());
             binder.start();
             connectedToUsbDriverService = true;
         }
@@ -206,6 +201,13 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             connectedToUsbDriverService = false;
         }
     };
+
+    /** Delos: a wired DualSense is DELOS's when this stream's settings ask for it (PlayStation or PC settings, #125). */
+    private boolean claimsDualSense() {
+        return psConsoleId != null
+                ? com.limelight.ps.PsPrefs.INSTANCE.prefs(this).getBoolean(com.limelight.ps.PsPrefs.DUALSENSE_USB, true)
+                : prefConfig.dualSenseUsb;
+    }
 
     public static final String EXTRA_HOST = "Host";
     public static final String EXTRA_PORT = "Port";
@@ -720,6 +722,8 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         // The stats take the round trip from the stream's own connection
         decoderRenderer.setRttInfoSupplier(conn::getEstimatedRttInfo);
         controllerHandler = new ControllerHandler(this, conn, this, prefConfig);
+        // Known before the USB driver service connects: a DualSense pressed during the loader is already the driver's
+        controllerHandler.setUsbClaimsDualSense(claimsDualSense());
         keyboardTranslator = new KeyboardTranslator(prefConfig);
 
         InputManager inputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);
