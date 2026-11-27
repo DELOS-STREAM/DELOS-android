@@ -2,7 +2,7 @@
 <resources>
     <string name="title_frame_generation">DELOS Tide</string>
     <string name="subtitle_frame_generation">Bildgenerierung</string>
-    <string name="summary_frame_generation">Experimentell. DELOS Tide ist die Bildgenerierung von DELOS für gestreamtes Video: Die GPU schätzt die Bewegung zwischen den Bildern des Streams, und DELOS zeigt dazwischen vorhergesagte Bilder, sodass Bewegung flüssiger wirkt. Am besten mit einem Spiel mit 60 fps (60 → 120); ein Spiel mit 30 fps zeigt Artefakte. Braucht einen Adreno-GPU-Treiber mit Bewegungsschätzung oder Bildextrapolation.</string>
+    <string name="summary_frame_generation">Beta. DELOS Tide ist die Bildgenerierung von DELOS für gestreamtes Video: Die GPU schätzt die Bewegung zwischen den Bildern des Streams, und DELOS zeigt dazwischen vorhergesagte Bilder, sodass Bewegung flüssiger wirkt. Am besten mit einem Spiel mit 60 fps (60 → 120); ein Spiel mit 30 fps zeigt Artefakte. Braucht einen Adreno-GPU-Treiber mit Bewegungsschätzung oder Bildextrapolation.</string>
     <string name="frame_generation_off">Aus</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
@@ -12,6 +12,6 @@
     <string name="help_list_frame_generation_2">Ein vorhergesagtes Bild pro Spielbild: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Zwei vorhergesagte Bilder pro Spielbild: 30 → 90 fps.</string>
     <string name="help_list_frame_generation_4">Drei vorhergesagte Bilder pro Spielbild: 30 → 120 fps.</string>
-    <!-- The badge under the name of an experimental setting -->
-    <string name="setting_badge_experimental">Experimentell</string>
+    <!-- The badge under the name of a beta feature (DELOS Tide, the upscaler) -->
+    <string name="setting_badge_beta">Beta</string>
 </resources>

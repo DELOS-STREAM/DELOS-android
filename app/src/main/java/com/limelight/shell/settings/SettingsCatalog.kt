@@ -64,8 +64,8 @@ data class SettingSpec(
     val icon: String get() = settingIcon(key) ?: tab.icon
 }
 
-/** Settings whose rows carry the Experimental badge under their name. */
-fun isExperimentalSetting(key: String): Boolean = key == "list_frame_generation"
+/** Settings whose rows carry the Beta badge under their name: DELOS Tide and the upscaler (owner, 2026-11-28). */
+fun isBetaSetting(key: String): Boolean = key == "list_frame_generation" || key == "checkbox_sgsr"
 
 /** The second line under a setting's name, for a setting titled by a product name: DELOS Tide is the frame generation. */
 fun settingSubtitle(res: Resources, key: String): String? =

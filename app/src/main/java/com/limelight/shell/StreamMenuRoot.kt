@@ -503,7 +503,7 @@ internal fun StreamMenuRoot(
                                     titleIn = titleIn,
                                     navigation = navigation,
                                     subtitle = if (contentPage == MenuPage.FRAME_GEN) res.getString(R.string.subtitle_frame_generation) else null,
-                                    experimental = contentPage == MenuPage.FRAME_GEN,
+                                    beta = contentPage == MenuPage.FRAME_GEN || contentPage == MenuPage.UPSCALER,
                                     titleIcon = if (contentPage == MenuPage.FRAME_GEN) Symbols.DELOS_TIDE else null,
                                 ) {
                                     val first = remember { FocusRequester() }

@@ -2,7 +2,7 @@
 <resources>
     <string name="stream_menu_tile_frame_gen">Frame-gen</string>
     <string name="stream_menu_row_multiplier">Multiplier</string>
-    <string name="stream_help_frame_generation">DELOS Tide, experimental frame generation. Best with a game at 60 fps; 30 fps shows artefacts. Applies at once, for this stream.</string>
+    <string name="stream_help_frame_generation">DELOS Tide, frame generation (beta). Best with a game at 60 fps; 30 fps shows artefacts. Applies at once, for this stream.</string>
     <string name="stream_help_frame_generation_on">Turns DELOS Tide on or off for this stream; turning it on with the upscaler off restarts the decoder once.</string>
     <string name="stream_help_multiplier">How many frames are shown per game frame: 2× makes a 30 fps game 60, 4× makes it 120.</string>
     <string name="stream_help_create">Presses the Create button on the console: screenshots and clips.</string>

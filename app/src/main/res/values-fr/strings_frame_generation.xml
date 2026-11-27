@@ -2,7 +2,7 @@
 <resources>
     <string name="title_frame_generation">DELOS Tide</string>
     <string name="subtitle_frame_generation">Génération d’images</string>
-    <string name="summary_frame_generation">Expérimental. DELOS Tide est la génération d’images de DELOS pour la vidéo diffusée : le GPU estime le mouvement entre les images du stream et DELOS affiche entre elles des images prédites, ce qui rend le mouvement plus fluide. Idéal avec un jeu à 60 fps (60 → 120) ; un jeu à 30 fps montre des artefacts. Nécessite un pilote GPU Adreno avec estimation de mouvement ou extrapolation d’images.</string>
+    <string name="summary_frame_generation">Bêta. DELOS Tide est la génération d’images de DELOS pour la vidéo diffusée : le GPU estime le mouvement entre les images du stream et DELOS affiche entre elles des images prédites, ce qui rend le mouvement plus fluide. Idéal avec un jeu à 60 fps (60 → 120) ; un jeu à 30 fps montre des artefacts. Nécessite un pilote GPU Adreno avec estimation de mouvement ou extrapolation d’images.</string>
     <string name="frame_generation_off">Désactivée</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
@@ -12,6 +12,6 @@
     <string name="help_list_frame_generation_2">Une image prédite par image du jeu : 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Deux images prédites par image du jeu : 30 → 90 fps.</string>
     <string name="help_list_frame_generation_4">Trois images prédites par image du jeu : 30 → 120 fps.</string>
-    <!-- The badge under the name of an experimental setting -->
-    <string name="setting_badge_experimental">Expérimental</string>
+    <!-- The badge under the name of a beta feature (DELOS Tide, the upscaler) -->
+    <string name="setting_badge_beta">Bêta</string>
 </resources>

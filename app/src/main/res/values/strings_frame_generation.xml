@@ -3,7 +3,7 @@
 <resources>
     <string name="title_frame_generation">DELOS Tide</string>
     <string name="subtitle_frame_generation">Frame Generation</string>
-    <string name="summary_frame_generation">Experimental. DELOS Tide is the frame generation of DELOS for streamed video: the GPU estimates the motion between the stream\'s frames and DELOS shows predicted frames between them, so motion looks smoother. Best with a game at 60 fps (60 → 120); a 30 fps game shows artefacts. Needs an Adreno GPU driver with motion estimation or frame extrapolation.</string>
+    <string name="summary_frame_generation">Beta. DELOS Tide is the frame generation of DELOS for streamed video: the GPU estimates the motion between the stream\'s frames and DELOS shows predicted frames between them, so motion looks smoother. Best with a game at 60 fps (60 → 120); a 30 fps game shows artefacts. Needs an Adreno GPU driver with motion estimation or frame extrapolation.</string>
     <string name="frame_generation_off">Off</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
@@ -13,6 +13,6 @@
     <string name="help_list_frame_generation_2">One predicted frame per game frame: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Two predicted frames per game frame: 30 → 90 fps.</string>
     <string name="help_list_frame_generation_4">Three predicted frames per game frame: 30 → 120 fps.</string>
-    <!-- The badge under the name of an experimental setting -->
-    <string name="setting_badge_experimental">Experimental</string>
+    <!-- The badge under the name of a beta feature (DELOS Tide, the upscaler) -->
+    <string name="setting_badge_beta">Beta</string>
 </resources>

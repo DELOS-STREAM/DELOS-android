@@ -2,7 +2,7 @@
 <resources>
     <string name="title_frame_generation">DELOS Tide</string>
     <string name="subtitle_frame_generation">フレーム生成</string>
-    <string name="summary_frame_generation">実験的な機能です。DELOS Tide は、ストリーム映像のための DELOS のフレーム生成です。GPU がストリームのフレーム間の動きを推定し、その間に予測したフレームを表示するので、動きがより滑らかに見えます。60 fps のゲームで最適です（60 → 120）。30 fps のゲームではアーティファクトが出ます。動き推定またはフレーム外挿に対応した Adreno GPU ドライバーが必要です。</string>
+    <string name="summary_frame_generation">ベータ機能です。DELOS Tide は、ストリーム映像のための DELOS のフレーム生成です。GPU がストリームのフレーム間の動きを推定し、その間に予測したフレームを表示するので、動きがより滑らかに見えます。60 fps のゲームで最適です（60 → 120）。30 fps のゲームではアーティファクトが出ます。動き推定またはフレーム外挿に対応した Adreno GPU ドライバーが必要です。</string>
     <string name="frame_generation_off">オフ</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
@@ -12,6 +12,6 @@
     <string name="help_list_frame_generation_2">ゲームの 1 フレームごとに予測フレーム 1 枚：60 → 120 fps。</string>
     <string name="help_list_frame_generation_3">ゲームの 1 フレームごとに予測フレーム 2 枚：30 → 90 fps。</string>
     <string name="help_list_frame_generation_4">ゲームの 1 フレームごとに予測フレーム 3 枚：30 → 120 fps。</string>
-    <!-- The badge under the name of an experimental setting -->
-    <string name="setting_badge_experimental">実験的</string>
+    <!-- The badge under the name of a beta feature (DELOS Tide, the upscaler) -->
+    <string name="setting_badge_beta">ベータ</string>
 </resources>

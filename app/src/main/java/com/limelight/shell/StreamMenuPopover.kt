@@ -311,9 +311,9 @@ internal fun ColumnScope.PopoverPage(
     leaving: Boolean,
     titleIn: Boolean,
     navigation: FocusedListNavigation<String>? = null,
-    // A second line under the title and the Experimental badge, as the settings row of the same feature shows them (DELOS Tide)
+    // A second line under the title (DELOS Tide) and the Beta badge, as the settings row of the same feature shows them
     subtitle: String? = null,
-    experimental: Boolean = false,
+    beta: Boolean = false,
     // An icon before the title (DELOS Tide's own mark)
     titleIcon: String? = null,
     content: @Composable ColumnScope.() -> Unit,
@@ -351,7 +351,10 @@ internal fun ColumnScope.PopoverPage(
                 MarqueeText(
                     title,
                     style = TextStyle(color = colors.text, fontFamily = Unbounded, fontWeight = FontWeight.SemiBold, fontSize = L.POPOVER_TITLE_SIZE.fsp, letterSpacing = (-.005f).em),
+                    modifier = Modifier.weight(1f, fill = false),
                 )
+                // A page without a second line (the upscaler) has its badge beside the title
+                if (beta && subtitle == null) com.limelight.shell.ui.BetaBadge()
             }
             if (subtitle != null) Row(
                 Modifier.padding(top = 4.px),
@@ -359,7 +362,7 @@ internal fun ColumnScope.PopoverPage(
                 horizontalArrangement = Arrangement.spacedBy(12.px),
             ) {
                 BasicText(subtitle, style = TextStyle(color = colors.text2, fontFamily = Figtree, fontSize = 20.fsp))
-                if (experimental) com.limelight.shell.ui.ExperimentalBadge()
+                if (beta) com.limelight.shell.ui.BetaBadge()
             }
         }
     }

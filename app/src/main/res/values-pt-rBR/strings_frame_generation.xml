@@ -2,7 +2,7 @@
 <resources>
     <string name="title_frame_generation">DELOS Tide</string>
     <string name="subtitle_frame_generation">Geração de quadros</string>
-    <string name="summary_frame_generation">Experimental. DELOS Tide é a geração de quadros do DELOS para vídeo transmitido: a GPU estima o movimento entre os quadros da transmissão e o DELOS mostra entre eles quadros previstos, deixando o movimento mais suave. Melhor com um jogo a 60 fps (60 → 120); um jogo a 30 fps mostra artefatos. Requer um driver de GPU Adreno com estimativa de movimento ou extrapolação de quadros.</string>
+    <string name="summary_frame_generation">Beta. DELOS Tide é a geração de quadros do DELOS para vídeo transmitido: a GPU estima o movimento entre os quadros da transmissão e o DELOS mostra entre eles quadros previstos, deixando o movimento mais suave. Melhor com um jogo a 60 fps (60 → 120); um jogo a 30 fps mostra artefatos. Requer um driver de GPU Adreno com estimativa de movimento ou extrapolação de quadros.</string>
     <string name="frame_generation_off">Desligada</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
@@ -12,6 +12,6 @@
     <string name="help_list_frame_generation_2">Um quadro previsto por quadro do jogo: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Dois quadros previstos por quadro do jogo: 30 → 90 fps.</string>
     <string name="help_list_frame_generation_4">Três quadros previstos por quadro do jogo: 30 → 120 fps.</string>
-    <!-- The badge under the name of an experimental setting -->
-    <string name="setting_badge_experimental">Experimental</string>
+    <!-- The badge under the name of a beta feature (DELOS Tide, the upscaler) -->
+    <string name="setting_badge_beta">Beta</string>
 </resources>

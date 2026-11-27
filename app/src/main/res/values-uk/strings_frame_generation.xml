@@ -2,7 +2,7 @@
 <resources>
     <string name="title_frame_generation">DELOS Tide</string>
     <string name="subtitle_frame_generation">Генерація кадрів</string>
-    <string name="summary_frame_generation">Експериментально. DELOS Tide — це генерація кадрів застосунку DELOS для трансляції відео: GPU оцінює рух між кадрами трансляції, а DELOS показує між ними передбачені кадри, тож рух виглядає плавнішим. Найкраще з грою на 60 fps (60 → 120); гра на 30 fps має артефакти. Потрібен драйвер GPU Adreno з оцінкою руху або екстраполяцією кадрів.</string>
+    <string name="summary_frame_generation">Бета. DELOS Tide — це генерація кадрів застосунку DELOS для трансляції відео: GPU оцінює рух між кадрами трансляції, а DELOS показує між ними передбачені кадри, тож рух виглядає плавнішим. Найкраще з грою на 60 fps (60 → 120); гра на 30 fps має артефакти. Потрібен драйвер GPU Adreno з оцінкою руху або екстраполяцією кадрів.</string>
     <string name="frame_generation_off">Вимкнено</string>
     <string name="frame_generation_2x">2×</string>
     <string name="frame_generation_3x">3×</string>
@@ -12,6 +12,6 @@
     <string name="help_list_frame_generation_2">Один передбачений кадр на кадр гри: 60 → 120 fps.</string>
     <string name="help_list_frame_generation_3">Два передбачені кадри на кадр гри: 30 → 90 fps.</string>
     <string name="help_list_frame_generation_4">Три передбачені кадри на кадр гри: 30 → 120 fps.</string>
-    <!-- The badge under the name of an experimental setting -->
-    <string name="setting_badge_experimental">Експериментально</string>
+    <!-- The badge under the name of a beta feature (DELOS Tide, the upscaler) -->
+    <string name="setting_badge_beta">Бета</string>
 </resources>

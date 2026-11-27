@@ -172,8 +172,8 @@ fun SettingRow(
     override: RowOverride? = null,
     onFocused: (() -> Unit)? = null,
     impact: SettingImpact? = null,
-    /** An experimental setting: a small badge under the name. */
-    experimental: Boolean = false,
+    /** A beta feature: a small badge under the name. */
+    beta: Boolean = false,
     /** A second line under the name, in the description's style: what a product name stands for ("DELOS Tide" → "Frame Generation"). */
     subtitle: String? = null,
     /**
@@ -331,7 +331,7 @@ fun SettingRow(
                     style = TextStyle(color = colors.text3, fontFamily = Figtree, fontSize = 19.tpx, lineHeight = 1.35.em),
                     modifier = Modifier.padding(top = 2.px),
                 )
-                if (experimental) ExperimentalBadge(Modifier.padding(top = 6.px))
+                if (beta) BetaBadge(Modifier.padding(top = 6.px))
                 if (override != null) {
                     Row(Modifier.padding(top = 4.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.px)) {
                         CustomBadge()
@@ -390,9 +390,9 @@ private fun CustomBadge() {
     }
 }
 
-/** The badge of an experimental setting: an outlined pill in the secondary colour, the size of the CUSTOM badge. */
+/** The badge of a beta feature (DELOS Tide, the upscaler): an outlined pill in the secondary colour, the size of the CUSTOM badge. */
 @Composable
-internal fun ExperimentalBadge(modifier: Modifier = Modifier) {
+internal fun BetaBadge(modifier: Modifier = Modifier) {
     val colors = LocalDelosColors.current
     val shape = CircleShape
     Box(
@@ -401,7 +401,7 @@ internal fun ExperimentalBadge(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         BasicText(
-            stringResource(R.string.setting_badge_experimental).uppercase(androidx.compose.ui.platform.LocalConfiguration.current.locales[0]),
+            stringResource(R.string.setting_badge_beta).uppercase(androidx.compose.ui.platform.LocalConfiguration.current.locales[0]),
             style = TextStyle(color = colors.accent2, fontFamily = Figtree, fontWeight = FontWeight.ExtraBold, fontSize = 14.tpx, letterSpacing = .06.em),
         )
     }
