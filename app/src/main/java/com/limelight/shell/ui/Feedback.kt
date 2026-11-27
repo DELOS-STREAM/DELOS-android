@@ -122,7 +122,7 @@ class Feedback(context: Context) {
 
     /**
      * Every take of each cue (ui_<cue>.wav, then ui_<cue>_v2.wav …), padded with silence to the longest, so one static track
-     * holds any of them. Played in turn, so a repeated action does not sound mechanical (owner, 2026-11-27).
+     * holds any of them. A random one plays each time, so a repeated action does not sound mechanical (owner, 2026-11-27).
      */
     private val clips: Map<Cue, List<Clip>> = Cue.entries.mapNotNull { cue ->
         val base = "ui_" + cue.name.lowercase()
@@ -153,13 +153,14 @@ class Feedback(context: Context) {
             .also { it.preferredDevice = output; it.write(takes[0].pcm, 0, takes[0].pcm.size, android.media.AudioTrack.WRITE_BLOCKING) }
         private var loaded = 1f
         private var loadedTake = 0
-        private var next = 0
+        private var last = 0
 
         fun play(gain: Float) {
             runCatching {
                 track.stop()
-                val take = next
-                next = (next + 1) % takes.size
+                // A random take, never the one just played (owner, 2026-11-27: random beats a fixed cycle of four)
+                val take = if (takes.size < 2) 0 else (last + 1 + kotlin.random.Random.nextInt(takes.size - 1)) % takes.size
+                last = take
                 val wanted = maxOf(1f, gain)
                 if (wanted != loaded || take != loadedTake) {
                     val src = takes[take].pcm

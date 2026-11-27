@@ -207,7 +207,7 @@ The usual move, select, back, open and error sounds remain. Dedicated cues cover
 
 The context menu has its own pair: two clicks rising when it opens (Start, a long press) and falling when it closes (B from its top level, Start again, a tap beside it); from a submenu B plays the usual back cue. Toasts sound by kind (info, warning, success; an error toast plays the error cue), stream toasts stay silent over the game. A game controller (its gamepad part) connecting or disconnecting while the shell is in front plays its cue; controllers that came or went during a stream are taken silently on return. The stream start cue plays as the launch tunnel dives into the stream, the stream end cue when the shell comes back from it.
 
-Each cue has four takes (`ui_<cue>.wav`, `ui_<cue>_v2..v4.wav`) played in turn. All use the same device routing, volume gain and interface-sounds switch. Undo, toasts, controllers and the stream end add no vibration: the app announces them, the user did not press anything.
+Each cue has four takes (`ui_<cue>.wav`, `ui_<cue>_v2..v4.wav`); a random one plays each time, never the same take twice in a row. All use the same device routing, volume gain and interface-sounds switch. Undo, toasts, controllers and the stream end add no vibration: the app announces them, the user did not press anything.
 
 ## 2. Text input
 
