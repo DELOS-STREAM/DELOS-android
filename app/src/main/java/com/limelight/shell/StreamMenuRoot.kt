@@ -154,6 +154,8 @@ internal fun StreamMenuRoot(
     var savedShots by remember { mutableIntStateOf(0) }
     val screenshotFx = remember { ScreenshotEffect() }
     val fxScope = rememberCoroutineScope()
+    // Window pixels per stage pixel (the menu window's blur behind is 50 stage pixels at full strength, StreamMenu.blurRadius)
+    val stageK = stageScale()
     // The popover: present from opening until it has animated out. Its geometry snaps when it opens from the dock
     // (after its content reported its size), and follows its target with a spring when another page replaces it.
     var popPresent by remember { mutableStateOf(start.page != MenuPage.MAIN) }
@@ -416,7 +418,7 @@ internal fun StreamMenuRoot(
             // A tap anywhere else closes the popover, or the menu on the dock (never quits or disconnects)
             Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { outsideTap() } })
             // The capture effect bends the copied picture under the menu's gradient (ScreenshotEffect)
-            ScreenshotWarp(screenshotFx)
+            ScreenshotWarp(screenshotFx) { if (host.backdropBlurs) gradient.value * sharp.value * 50f * stageK else 0f }
             StreamMenuBackdrop(gradientAlpha = { gradient.value }, scrimAlpha = { scrim.value })
 
             // Everything else sits on a 1920-wide box centered on the stage and as high as the real stage, bottom-aligned: the

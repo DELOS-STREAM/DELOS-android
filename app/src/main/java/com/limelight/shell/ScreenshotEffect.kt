@@ -19,9 +19,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.graphicsLayer
 import com.limelight.shell.ui.LocalReducedMotion
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -83,16 +86,22 @@ internal class ScreenshotEffect {
     }
 }
 
-/** The bent picture inside the wave's band; under the menu's gradient, over the live video. */
+/**
+ * The bent picture inside the wave's band; under the menu's gradient, over the live video. [blurPx]: the blur the menu's window puts
+ * on the stream behind it (window pixels), applied to the copy too, so the band never shows a sharp picture over the blurred stream.
+ */
 @Composable
-internal fun ScreenshotWarp(fx: ScreenshotEffect) {
+internal fun ScreenshotWarp(fx: ScreenshotEffect, blurPx: () -> Float) {
     if (LocalReducedMotion.current || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
     val k = stageScale()
     val shader = remember { RuntimeShader(WARP) }
     val p = fx.progress.value
     val shot = fx.picture ?: return
     if (p !in 0f..1f) return
-    Canvas(Modifier.fillMaxSize()) {
+    Canvas(Modifier.fillMaxSize().graphicsLayer {
+        val r = blurPx()
+        renderEffect = if (r > .5f) BlurEffect(r, r, TileMode.Decal) else null
+    }) {
         val (bitmap, rect) = shot
         val o = fx.origin
         val reach = hypot(maxOf(o.x, size.width - o.x), maxOf(o.y, size.height - o.y)) + ScreenshotEffect.OVERSHOOT * k

@@ -442,6 +442,7 @@ class StreamMenu(private val game: DelosStreamActivity) {
             50f * minOf(m.widthPixels / 1920f, m.heightPixels / 1080f)
         }
         private val blurOn = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && game.getSystemService(WindowManager::class.java).isCrossWindowBlurEnabled
+        override val backdropBlurs get() = blurOn
         init {
             if (blurOn) menu?.window?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
         }

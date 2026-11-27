@@ -35,6 +35,9 @@ internal interface StreamMenuHost {
      */
     fun setBackdrop(amount: Float) = Unit
 
+    /** Whether [setBackdrop] really blurs the stream (window blur on); the capture effect then blurs its copy the same way. */
+    val backdropBlurs: Boolean get() = false
+
     /** Runs [action] once the stream has the focus again (after the menu closed). */
     fun runWhenStreamFocused(action: () -> Unit)
 

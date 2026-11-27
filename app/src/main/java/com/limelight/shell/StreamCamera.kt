@@ -11,7 +11,8 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -41,9 +42,9 @@ import com.limelight.shell.StreamMenuMotion as M
 /**
  * The stream menu's camera (docs/gui/STREAM_MENU.md §2, prototype screenshot-B): a pill of the dock's glass with the camera and its
  * label, 96 px high, at the top right with the tile row's inset (109 px from the top and from the right). It enters and leaves with
- * the dock's head on the [enter] and [exit] clocks, takes the app's focus ring, glow, lift and press like every focusable element,
- * and shows the primary action's hint under it while focused, in the glyph of the input in use (A, tap, click, Return). Down returns
- * to the tile it came from; left, right and up stay on it.
+ * the dock's head on the [enter] and [exit] clocks, and takes the app's focus ring, glow, lift and press like every focusable element.
+ * No hint under it (owner, 2026-11-27: A, Cross or a tap is obvious). Down returns to the tile it came from; left, right and up stay
+ * on it.
  *
  * Capture (prototype screenshot-fx A, owner 2026-11-27): each [shot] pulses the pill (in, overshoot, settle) and [onCenter] tells
  * the effect ([ScreenshotEffect]) where the wave starts. Each [saved] turns the camera into a check drawn in the accent colour and the
@@ -65,7 +66,6 @@ internal fun StreamCamera(
     val rm = LocalReducedMotion.current
     var focused by remember { mutableStateOf(false) }
     val focusFill by animateFloatAsState(if (focused) 1f else 0f, tween(Motion.FADE, easing = Motion.Ease), label = "cameraFill")
-    val hint by animateFloatAsState(if (focused) 1f else 0f, tween(Motion.FADE, easing = Motion.Ease), label = "cameraHint")
     val label = stringResource(R.string.stream_menu_screenshot)
     val savedLabel = stringResource(R.string.stream_menu_screenshot_saved)
     val side = 96f
@@ -115,7 +115,7 @@ internal fun StreamCamera(
         contentAlignment = Alignment.TopEnd,
     ) {
         // Prototype screenshot-B: a pill with the camera and its label always shown (owner, 2026-11-27: the bare circle came
-        // out of nowhere); focus adds the primary action's hint under it
+        // out of nowhere)
         Row(
             Modifier
                 .height(side.px)
@@ -150,8 +150,8 @@ internal fun StreamCamera(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(18.px),
         ) {
-            // The camera and the check share one place
-            Box(Modifier.size(44.px), contentAlignment = Alignment.Center) {
+            // The camera and the check share one place: the symbol sizes the box (a fixed box cut the glyph off)
+            Box(contentAlignment = Alignment.Center) {
                 Box(Modifier.graphicsLayer { alpha = camera; scaleX = cameraScale; scaleY = cameraScale }) {
                     Symbol(Symbols.STREAM_SCREENSHOT, 44.tpx, colors.text, filled = focused, fadeMillis = Motion.FADE)
                 }
@@ -170,23 +170,18 @@ internal fun StreamCamera(
                 shadow = menuTextShadow(k, 2f, 12f, .6f))
             Box(contentAlignment = Alignment.CenterStart) {
                 val rise = 40f * .7f * k
-                BasicText(label, Modifier
-                    .graphicsLayer { translationY = -rise * wordMove; alpha = 1f - wordFade }
-                    .blur((4f * wordFade).px), style = style)
-                BasicText(savedLabel, Modifier
-                    .graphicsLayer { translationY = rise * (1f - nextMove); alpha = nextFade }
-                    .blur((4f * (1f - nextFade)).px), style = style)
+                // The blur exists only while a word moves, and never clips (a clipped layer cut the text's shadow into a box)
+                BasicText(label, Modifier.graphicsLayer {
+                    translationY = -rise * wordMove; alpha = 1f - wordFade
+                    val r = 4f * k * wordFade
+                    renderEffect = if (r > .3f) BlurEffect(r, r, TileMode.Decal) else null
+                }, style = style)
+                BasicText(savedLabel, Modifier.graphicsLayer {
+                    translationY = rise * (1f - nextMove); alpha = nextFade
+                    val r = 4f * k * (1f - nextFade)
+                    renderEffect = if (r > .3f && nextFade > 0f) BlurEffect(r, r, TileMode.Decal) else null
+                }, style = style)
             }
-        }
-        val glyph = Glyph.A.forKind(ControllerGlyphs.kind)
-        if (glyph != null) Row(
-            Modifier.offset(y = (side + 20f).px).graphicsLayer { alpha = hint },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.px),
-        ) {
-            GlyphButton(glyph, 44)
-            BasicText(stringResource(R.string.stream_menu_hint_select), style = TextStyle(color = colors.text, fontFamily = Figtree,
-                fontWeight = FontWeight.Medium, fontSize = 24.tpx, shadow = menuTextShadow(k, 2f, 12f, .6f)))
         }
     }
 }
