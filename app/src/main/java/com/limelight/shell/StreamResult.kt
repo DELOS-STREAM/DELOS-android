@@ -244,20 +244,24 @@ object StreamOutcome {
         activity.finish()
     }
 
-    private fun homeIntent(activity: Activity): Intent = Intent().setClassName(activity, "com.limelight.shell.ShellActivity")
+    /**
+     * The shell, brought to the front. After a stream on an external display it starts in another task on another display,
+     * where Android ignores custom animations and side-slides it in; the shell's own arrival scene is the transition instead
+     * (as for the nested stream task, see ExternalDisplayControlActivity).
+     */
+    internal fun homeIntent(activity: Activity): Intent = Intent().setClassName(activity, "com.limelight.shell.ShellActivity")
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        .apply { if (activity is DelosStreamActivity && activity.isOnExternalDisplay) addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION) }
 
     /**
      * From the whole screen a scale-up only fades the shell in over the stream (like the portal exit); after a stream on
-     * an external display the shell opens on the main display, where it was, with the same fade (a scale-up rectangle from
-     * the stream's display would not fit there). In the Odin's TV mode that display is the one the TV shows at 1920 × 1080;
-     * the stream's own display is the TV's native 4K output (owner, 2026-11-27: the shell opened there came back at 4K, slow,
-     * laid out differently and too contrasty after an HDR stream).
+     * an external display the shell opens on the main display, where it was. In the Odin's TV mode that display is the one the
+     * TV shows at 1920 × 1080; the stream's own display is the TV's native 4K output (owner, 2026-11-27: the shell opened
+     * there came back at 4K, slow, laid out differently and too contrasty after an HDR stream).
      */
     internal fun homeOptions(activity: Activity): ActivityOptions =
         if (activity is DelosStreamActivity && activity.isOnExternalDisplay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            ActivityOptions.makeCustomAnimation(activity, com.limelight.R.anim.shell_return_in, 0)
-                .setLaunchDisplayId(DualScreen.mainDisplayId(activity))
+            ActivityOptions.makeBasic().setLaunchDisplayId(DualScreen.mainDisplayId(activity))
         } else {
             val root = activity.window.decorView
             DualScreen.placeOnMain(activity, ActivityOptions.makeScaleUpAnimation(root, 0, 0, root.width, root.height))

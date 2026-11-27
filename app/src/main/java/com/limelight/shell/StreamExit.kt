@@ -162,10 +162,8 @@ object StreamExit {
         view.postDelayed({
             if (game.isFinishing) return@postDelayed
             pending = Arrival(label, pcName)
-            val home = Intent().setClassName(game, "com.limelight.shell.ShellActivity")
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             // As after any stream: on the main display after a stream on an external one, else a scale-up over the stream
-            game.startActivity(home, StreamOutcome.homeOptions(game).toBundle())
+            game.startActivity(StreamOutcome.homeIntent(game), StreamOutcome.homeOptions(game).toBundle())
             end.run()
             feedback.release()
             // Gone with the stream window anyway; closed once the new UI has faded in over it
