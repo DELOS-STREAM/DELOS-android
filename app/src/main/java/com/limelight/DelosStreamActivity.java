@@ -2251,12 +2251,31 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     /** One input route for the controller Activity, including keys delivered before the IME. */
     public boolean handleExternalDisplayKeyEvent(KeyEvent event) {
-        if (volumeHud != null && volumeHud.handle(event)) return true;
+        String route = externalKeyRoute(event);
+        boolean handled = !"game".equals(route) || keyHandler.handleKeyEvent(event);
+        // Diagnostics (owner, 2026-11-27: a Bluetooth pad's buttons do not reach the PC with the stream on a TV): where the
+        // first gamepad keys of a stream went, which device sent them and whether the game path took them
+        if (externalKeysLogged < 40 && event.getRepeatCount() == 0
+                && (event.getSource() & android.view.InputDevice.SOURCE_GAMEPAD) == android.view.InputDevice.SOURCE_GAMEPAD) {
+            externalKeysLogged++;
+            android.view.InputDevice d = event.getDevice();
+            LimeLog.info("External key " + KeyEvent.keyCodeToString(event.getKeyCode()) + (event.getAction() == KeyEvent.ACTION_DOWN ? " down" : " up")
+                    + " device " + event.getDeviceId() + " '" + (d != null ? d.getName() : "?") + "'"
+                    + " route " + route + " handled " + handled);
+        }
+        return handled;
+    }
+
+    private int externalKeysLogged;
+
+    /** Who takes a key of the external display's control screen before the game: the volume, the loader, a block, the menu. */
+    private String externalKeyRoute(KeyEvent event) {
+        if (volumeHud != null && volumeHud.handle(event)) return "volume";
         ControllerGlyphs.INSTANCE.key(event);
-        if (cancelLoaderOnKey(event)) return true;
-        if (inputBlocked) return true;
-        if (streamMenu != null && streamMenu.onExternalKey(event)) return true;
-        return keyHandler.handleKeyEvent(event);
+        if (cancelLoaderOnKey(event)) return "loader";
+        if (inputBlocked) return "blocked";
+        if (streamMenu != null && streamMenu.onExternalKey(event)) return "menu";
+        return "game";
     }
 
     /** Keeps raw stick input on the normal streaming path unless the external menu owns it. */
