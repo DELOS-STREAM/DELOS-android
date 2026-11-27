@@ -656,6 +656,26 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     /**
+     * Delos: a controller pressed while the stream was still connecting (the loader) got its player number then, but its
+     * arrival went nowhere: the host first heard of it from its input and made it a default Xbox pad (a wired DualSense came
+     * back as Xbox, with plain rumble instead of its own type). Once the stream runs, the host learns what each numbered
+     * controller is.
+     */
+    public void resendControllerArrivals() {
+        if (stopped) {
+            return;
+        }
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            InputDeviceContext context = inputDeviceContexts.valueAt(i);
+            if (context.assignedControllerNumber && context.reservedControllerNumber) context.sendControllerArrival();
+        }
+        for (int i = 0; i < usbDeviceContexts.size(); i++) {
+            UsbDeviceContext context = usbDeviceContexts.valueAt(i);
+            if (context.assignedControllerNumber && context.reservedControllerNumber) context.sendControllerArrival();
+        }
+    }
+
+    /**
      * Delos: while the Full keyboard is up the physical controllers drive the keyboard, not the game. Starting and ending
      * the suspension lets go of everything they hold (a neutral packet each, which also ends a mouse emulation click);
      * while it lasts no controller state reaches the host (the on-screen gamepad is not a physical controller and keeps going).

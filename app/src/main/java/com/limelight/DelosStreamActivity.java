@@ -1846,6 +1846,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
                 connected = true;
                 connecting = false;
                 windowController.updatePipAutoEnter();
+                if (controllerHandler != null) controllerHandler.resendControllerArrivals();
 
                 // Hide the mouse cursor now after a short delay.
                 // Doing it before dismissing the spinner seems to be undone
