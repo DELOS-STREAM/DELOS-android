@@ -10,6 +10,12 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import com.limelight.shell.settings.Appearance
 
+object StatusColors {
+    val ok = Color(0xFF9FEBBD)
+    val warn = Color(0xFFFFD08A)
+    val bad = Color(0xFFFFCDD4)
+}
+
 /**
  * Color tokens of the new UI. Same formulas as applyTheme() in the prototype: everything is derived
  * from four hues (the background and the main, secondary and accent colors); Material You supplies the

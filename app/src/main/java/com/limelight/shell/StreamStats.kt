@@ -185,10 +185,10 @@ class StreamStatsPanel internal constructor(
         applyGravity()
     }
 
-    /** The overlay container sits at the top or bottom of the stream according to [position]. */
+    /** Compact statistics stay at the top, independently of the full panel position. */
     private fun applyGravity() {
         (container.layoutParams as? android.widget.FrameLayout.LayoutParams)?.let {
-            it.gravity = if (position.top) android.view.Gravity.TOP else android.view.Gravity.BOTTOM
+            it.gravity = if (position.top || compactState.value) android.view.Gravity.TOP else android.view.Gravity.BOTTOM
             container.layoutParams = it
         }
     }
@@ -197,20 +197,19 @@ class StreamStatsPanel internal constructor(
     internal fun Content() {
         val s = stats.value ?: return
         val compact = compactState.value
-        val degradedColor = when {
-            compact && (s.lossPercent >= 5.0f || s.networkMs >= 100) -> HEALTH_CORAL.copy(alpha = .55f)
-            compact && (s.lossPercent >= 1.5f || s.networkMs >= 60) -> HEALTH_AMBER.copy(alpha = .55f)
-            else -> Color.White.copy(alpha = .10f)
-        }
         Box(
-            Modifier.fillMaxWidth().padding(horizontal = 40.px, vertical = if (compact) 24.px else 32.px),
-            contentAlignment = if (position.start) Alignment.TopStart else Alignment.TopEnd,
+            Modifier.fillMaxWidth().padding(horizontal = 40.px, vertical = if (compact) StreamMenuLayout.STATS_COMPACT_TOP.px else 32.px),
+            contentAlignment = when {
+                compact -> Alignment.TopCenter
+                position.start -> Alignment.TopStart
+                else -> Alignment.TopEnd
+            },
         ) {
             // Over the stream's video (a SurfaceView) nothing can blur it: the documented fallback is a darker tint (docs/GUI.md, "Glass")
             val shape = RoundedCornerShape(if (compact) 999.px else 18.px)
             val glass = Modifier.clip(shape)
                 .background(Color.Black.copy(alpha = .7f))
-                .border(1.px, degradedColor, shape)
+                .border(1.px, Color.White.copy(alpha = .10f), shape)
             if (compact) CompactLine(s, glass) else FullPanel(s, glass)
         }
     }
@@ -221,45 +220,37 @@ class StreamStatsPanel internal constructor(
         // A compact stage narrower than the line breaks it in two: only after a separator, never inside a figure ("Network 11 ms" stays whole)
         val wraps = LocalStage.current.compact
         fun figures(text: String) = if (wraps) keepFigures(text) else text
-        val fpsColor = when {
-            s.incomingFps > 0f && s.fps < s.incomingFps * 0.6f -> HEALTH_CORAL
-            s.incomingFps > 0f && s.fps < s.incomingFps * 0.85f -> HEALTH_AMBER
-            else -> FPS_GREEN
-        }
-        val lowColor = if (s.onePercentLowFps >= 0f && s.onePercentLowFps < s.fps * 0.6f) HEALTH_AMBER else PANEL_TEXT
-        val netColor = when {
-            s.networkMs >= 100 -> HEALTH_CORAL
-            s.networkMs >= 60 -> HEALTH_AMBER
-            else -> PANEL_TEXT
-        }
-        val lossColor = when {
-            s.lossPercent >= 5.0f -> HEALTH_CORAL
-            s.lossPercent >= 1.5f -> HEALTH_AMBER
-            else -> PANEL_TEXT
-        }
-        val tail = figures("  ·  " + stringResource(R.string.stream_stats_compact_tail, s.networkMs, format(s.decodeMs), format(s.totalMs), format(s.lossPercent)))
-        val netToken = figures("${s.networkMs} ms")
-        val lossToken = figures("${format(s.lossPercent)} %")
+        val fpsColor = healthColor(CompactStatsHealth.fps(s.renderingFps, s.fps), FPS_GREEN)
+        val lowColor = healthColor(CompactStatsHealth.low(s.onePercentLowFps, s.fps))
+        val netColor = healthColor(CompactStatsHealth.network(s.networkMs))
+        val lossColor = healthColor(CompactStatsHealth.loss(s.lossPercent))
+        val lowTemplate = stringResource(R.string.stream_stats_compact_low)
+        val tailTemplate = stringResource(R.string.stream_stats_compact_tail)
         BasicText(
             buildAnnotatedString {
-                withStyle(SpanStyle(color = fpsColor, fontWeight = FontWeight.SemiBold)) { append(figures("${s.fps.toInt()} FPS" + if (s.vrr) " VRR" else "")) } // l10n-ignore
-                if (s.onePercentLowFps >= 0f) {
-                    append(figures("  ·  "))
-                    withStyle(SpanStyle(color = lowColor, fontWeight = if (lowColor != PANEL_TEXT) FontWeight.SemiBold else FontWeight.Normal)) {
-                        append(figures(stringResource(R.string.stream_stats_compact_low, s.onePercentLowFps.toInt())))
+                fun appendValues(template: String, vararg values: Pair<String, Color>) {
+                    var start = 0
+                    for (token in FORMAT_TOKEN.findAll(template)) {
+                        append(figures(template.substring(start, token.range.first)))
+                        if (token.value == "%%") append("%")
+                        else {
+                            val (value, color) = values[token.groupValues[1].toInt() - 1]
+                            withStyle(SpanStyle(color = color)) { append(value) }
+                        }
+                        start = token.range.last + 1
                     }
+                    append(figures(template.substring(start)))
+                }
+                withStyle(SpanStyle(color = fpsColor, fontWeight = FontWeight.SemiBold)) { append(s.fps.toInt().toString()) }
+                append(figures(" FPS" + if (s.vrr) " VRR" else "")) // l10n-ignore
+                if (s.onePercentLowFps >= 0f) {
+                    append("  ·  ")
+                    appendValues(lowTemplate, s.onePercentLowFps.toInt().toString() to lowColor)
                 }
                 if (s.bandwidthKb >= 0f) append(figures("  ·  ${bandwidth(s.bandwidthKb)}"))
-                append(tail)
-                val netStart = length - tail.length + tail.indexOf(netToken).coerceAtLeast(0)
-                if (netColor != PANEL_TEXT && tail.contains(netToken)) {
-                    addStyle(SpanStyle(color = netColor, fontWeight = FontWeight.SemiBold), netStart, netStart + netToken.length)
-                }
-                val lossIdx = tail.lastIndexOf(lossToken)
-                if (lossColor != PANEL_TEXT && lossIdx >= 0) {
-                    val lossStart = length - tail.length + lossIdx
-                    addStyle(SpanStyle(color = lossColor, fontWeight = FontWeight.SemiBold), lossStart, lossStart + lossToken.length)
-                }
+                append("  ·  ")
+                appendValues(tailTemplate, s.networkMs.toString() to netColor, format(s.decodeMs) to PANEL_TEXT,
+                    format(s.totalMs) to PANEL_TEXT, format(s.lossPercent) to lossColor)
             },
             modifier.padding(horizontal = 24.px, vertical = StreamMenuLayout.STATS_COMPACT_PADDING_Y.px),
             // two balanced, centred lines there, not one figure alone on the second
@@ -362,8 +353,12 @@ class StreamStatsPanel internal constructor(
 
         private val PANEL_TEXT = Color(0xFFE8F0FF)
         private val FPS_GREEN = Color(0xFF7EE2A8)
-        private val HEALTH_AMBER = Color(0xFFF59E0B)
-        private val HEALTH_CORAL = Color(0xFFEF4444)
+        private val FORMAT_TOKEN = Regex("""%(?:([1-9])\$[ds]|%)""")
+        private fun healthColor(health: CompactStatsHealth.Level, good: Color = PANEL_TEXT) = when (health) {
+            CompactStatsHealth.Level.GOOD -> good
+            CompactStatsHealth.Level.WARNING -> com.limelight.shell.ui.StatusColors.warn
+            CompactStatsHealth.Level.ERROR -> com.limelight.shell.ui.StatusColors.bad
+        }
     }
 }
 
