@@ -188,4 +188,5 @@
     <string name="stream_result_offline_details">컴퓨터가 오프라인이에요</string>
     <string name="stream_result_unpaired">%1$s이(가) 이 기기와 페어링되어 있지 않아요.</string>
     <string name="stream_result_unpaired_details">PC가 페어링되지 않았어요</string>
+    <string name="stream_menu_screenshot">스크린샷</string>
 </resources>

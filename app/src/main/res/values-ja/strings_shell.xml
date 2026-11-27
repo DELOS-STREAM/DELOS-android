@@ -95,4 +95,10 @@
     <string name="impact_axis_level">%1$s %2$s</string>
     <string name="impact_legend">現在の値の負荷：1本＝低、2本＝中、3本＝高</string>
     <string name="impact_axes_joined">%1$s、%2$s、%3$s</string>
+    <!-- The cellular indicator of the status bar and the network problem pill under it -->
+    <string name="signal_mobile">モバイル通信</string>
+    <string name="signal_cell_description">モバイル通信 %1$s、4 本中 %2$d 本</string>
+    <string name="signal_pill_weak">電波が弱い：ビットレートを下げてください</string>
+    <string name="signal_pill_none">圏外：Wi-Fi に接続してください</string>
+    <string name="signal_pill_unstable">接続が不安定：ビットレートを下げてください</string>
 </resources>

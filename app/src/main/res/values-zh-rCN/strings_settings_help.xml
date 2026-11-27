@@ -226,4 +226,5 @@
     <string name="stream_help_format_keys">向 PC 发送一次 %1$s，然后返回串流。</string>
     <!-- %1$s: the command name, cut to 35 characters -->
     <string name="stream_help_format_command">立即在 PC 上运行电脑端定义的命令 %1$s。在 Vibepollo 或 Apollo 中设置。</string>
+    <string name="stream_help_take_screenshot">仅将视频画面保存到 Pictures/DELOS。</string>
 </resources>

@@ -129,6 +129,8 @@ fun ToastHost(
     actionPress: Int = 0,
     toastStage: ToastStage = remember { ToastStage() },
     active: Boolean = true,
+    topInset: Float = 112f,
+    rightInset: Float? = null,
 ) {
     val reduced = LocalReducedMotion.current
     val hidden by rememberUpdatedState(onHidden)
@@ -159,7 +161,8 @@ fun ToastHost(
     val density = LocalDensity.current
     val metrics = remember(stage, density.density, density.fontScale) { ToastMetrics(stage, density.density, density.fontScale) }
     val colors = LocalDelosColors.current
-    BoxWithConstraints(Modifier.fillMaxSize().padding(top = 112.px, end = (if (stage.compact) 48 else 44).px), contentAlignment = Alignment.TopEnd) {
+    BoxWithConstraints(Modifier.fillMaxSize().padding(top = topInset.px,
+        end = (rightInset ?: if (stage.compact) 48f else 44f).px), contentAlignment = Alignment.TopEnd) {
         val textMaxPx = toastTextMaxWidth(constraints.maxWidth / metrics.pxPerStage + 44f, metrics.scale) * metrics.pxPerStage
         val latest = slots.last()
         slots.forEach { slot ->

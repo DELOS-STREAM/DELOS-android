@@ -188,4 +188,5 @@
     <string name="stream_result_offline_details">电脑已离线</string>
     <string name="stream_result_unpaired">%1$s 尚未与此设备配对。</string>
     <string name="stream_result_unpaired_details">PC 未配对</string>
+    <string name="stream_menu_screenshot">截图</string>
 </resources>

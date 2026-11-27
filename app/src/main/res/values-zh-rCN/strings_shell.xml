@@ -86,4 +86,10 @@
     <string name="impact_axis_level">%1$s%2$s</string>
     <string name="impact_legend">当前值的开销：1 格为低，2 格为中，3 格为高</string>
     <string name="impact_axes_joined">%1$s，%2$s，%3$s</string>
+    <!-- The cellular indicator of the status bar and the network problem pill under it -->
+    <string name="signal_mobile">移动网络</string>
+    <string name="signal_cell_description">移动网络 %1$s，%2$d/4 格</string>
+    <string name="signal_pill_weak">信号弱：请降低码率</string>
+    <string name="signal_pill_none">无信号：请连接 Wi-Fi</string>
+    <string name="signal_pill_unstable">连接不稳定：请降低码率</string>
 </resources>

@@ -323,6 +323,15 @@ internal fun nativeSettings(
                 }), tracker)
             }, "Debug builds only: where the update check asks instead of GitHub.", // l10n-ignore: debug build only
             tab = SettingsTab.ABOUT, section = updateSection)
+        // The cellular indicator and the network problem pill on a device without a modem (the AYN Odin): simulated, in memory only
+        val preview = com.limelight.shell.system.NetworkPreview
+        val previewModes = preview.modes
+        row("about_network_preview_debug", Symbols.DEBUG, "Network preview (simulated)", // l10n-ignore: debug build only
+            RowValue.Choice(preview.mode.label, { direction ->
+                preview.index = Math.floorMod(preview.index + direction, previewModes.size)
+            }, options = previewModes.map { it.label }, selected = preview.index, onPick = { preview.index = it }),
+            "Debug builds only: shows the cellular indicator and the network pill with a simulated network. Off at every start.", // l10n-ignore: debug build only
+            tab = SettingsTab.ABOUT, section = updateSection)
     }
     var diagnosticLogs by remember { mutableStateOf(DiagLog.enabled) }
     row("about_diag_logs", Symbols.DIAGNOSTIC_LOGS, res.getString(R.string.settings_native_diag_logs_title), RowValue.Toggle(diagnosticLogs) { on ->

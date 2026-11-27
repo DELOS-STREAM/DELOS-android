@@ -36,6 +36,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -143,6 +144,9 @@ internal fun StreamMenuRoot(
         pendingCircle = null
     }
     val reducedMotion = LocalReducedMotion.current
+    val cameraFocus = remember { FocusRequester() }
+    var cameraReturn by remember { mutableStateOf(start.focus) }
+    var shutter by remember { mutableIntStateOf(0) }
     // The popover: present from opening until it has animated out. Its geometry snaps when it opens from the dock
     // (after its content reported its size), and follows its target with a spring when another page replaces it.
     var popPresent by remember { mutableStateOf(start.page != MenuPage.MAIN) }
@@ -381,7 +385,16 @@ internal fun StreamMenuRoot(
     CompositionLocalProvider(
         LocalStreamHelp provides { helpKey = it }, LocalDockGeometry provides dock, LocalRowPicker provides openPicker, LocalImeAvoidance provides imeAvoidance,
     ) {
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().onPreviewKeyEvent {
+            val from = focusedItem
+            if (page == MenuPage.MAIN && !popPresent && picker == null && from != null && it.key == Key.DirectionUp) {
+                if (it.type == KeyEventType.KeyDown && it.nativeKeyEvent.repeatCount == 0) {
+                    cameraReturn = from
+                    cameraFocus.requestFocus()
+                }
+                true
+            } else false
+        }) {
             // A tap anywhere else closes the popover, or the menu on the dock (never quits or disconnects)
             Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { outsideTap() } })
             StreamMenuBackdrop(gradientAlpha = { gradient.value }, scrimAlpha = { scrim.value })
@@ -413,6 +426,17 @@ internal fun StreamMenuRoot(
                     onOutsideTap = ::outsideTap,
                     modifier = Modifier.offset(0.px, (stageHeight - dock.dockHeight).px),
                 )
+                // Out of the way of a tile's popover, the picker and More, fading so it does not blink (owner, 2026-11-27)
+                androidx.compose.animation.AnimatedVisibility(page == MenuPage.MAIN && !popPresent && picker == null,
+                    Modifier.align(Alignment.TopEnd).padding(top = dock.tilesLeft.px, end = dock.tilesLeft.px),
+                    enter = androidx.compose.animation.fadeIn(tween(Motion.FADE)),
+                    exit = androidx.compose.animation.fadeOut(tween(Motion.FADE))) {
+                    StreamCamera(cameraFocus, { enterClock.value }, { exitClock.value }, Modifier,
+                        onDown = { circleFocus.getValue(cameraReturn).requestFocus(); true }) {
+                        shutter++
+                        host.takeScreenshot()
+                    }
+                }
 
                 // The popover sits above the tile that opened it, its caret pointing down at that tile
                 if (popPresent) {
@@ -463,6 +487,8 @@ internal fun StreamMenuRoot(
             // The popup of a choice or slider row (touch, issue #92), over the dock and the card
             RowPickerLayer(picker, haze = null) { picker = null }
         }
+        // The camera's shutter over everything, the menu included
+        CameraFlash(shutter)
     }
 }
 

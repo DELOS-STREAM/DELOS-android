@@ -232,4 +232,5 @@
     <string name="stream_help_format_keys">Sends %1$s to the PC once, then returns to the stream.</string>
     <!-- %1$s: the command name, cut to 35 characters -->
     <string name="stream_help_format_command">Runs the host-defined command %1$s on the PC at once. Set in Vibepollo or Apollo.</string>
+    <string name="stream_help_take_screenshot">Saves only the video to Pictures/DELOS.</string>
 </resources>

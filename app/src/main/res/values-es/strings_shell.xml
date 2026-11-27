@@ -99,4 +99,10 @@
     <string name="impact_axis_level">%1$s %2$s</string>
     <string name="impact_legend">Coste del valor actual: 1 barra bajo, 2 medio, 3 alto</string>
     <string name="impact_axes_joined">%1$s, %2$s, %3$s</string>
+    <!-- The cellular indicator of the status bar and the network problem pill under it -->
+    <string name="signal_mobile">Red móvil</string>
+    <string name="signal_cell_description">Red móvil %1$s, %2$d de 4 barras</string>
+    <string name="signal_pill_weak">Señal débil: baja el bitrate</string>
+    <string name="signal_pill_none">Sin señal: conéctate a una Wi-Fi</string>
+    <string name="signal_pill_unstable">Conexión inestable: baja el bitrate</string>
 </resources>

@@ -120,6 +120,18 @@ this frame rate: lower the supersampling or the frame rate". No setting changes 
 
 ## 2. Stream menu
 
+The dock has a round camera button at its top right, outside the tile order: 96 px of the tiles' glass, with the tile row's
+109 px inset from the top and from the right. It enters and leaves with the dock's head, takes the app's focus ring, glow,
+1.04 lift and press, fills its icon and shows "A Screenshot" under it while focused. Up from a dock tile focuses the camera;
+Down returns to that tile. A or touch captures without closing the menu: a white flash over the whole screen, the menu
+included (up to 70 % in 40 ms, out in 220 ms; none with reduced motion). A saved picture shows no message; only a failure
+shows the usual error toast.
+
+PixelCopy reads only the video surface at its buffer size into an extended-range bitmap, so an HDR picture is converted
+instead of written as washed-out code values; highlights above SDR white roll off softly into an 8-bit sRGB PNG in
+`Pictures/DELOS`, published only after a successful save. Android's normal screenshot gesture is unchanged and captures
+everything.
+
 ### 2.1 Design
 
 The design is "Console tiles" (prototype B, approved):

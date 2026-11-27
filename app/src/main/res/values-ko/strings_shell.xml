@@ -95,4 +95,10 @@
     <string name="impact_axis_level">%1$s %2$s</string>
     <string name="impact_legend">현재 값의 부담: 막대 1개 낮음, 2개 보통, 3개 높음</string>
     <string name="impact_axes_joined">%1$s, %2$s, %3$s</string>
+    <!-- The cellular indicator of the status bar and the network problem pill under it -->
+    <string name="signal_mobile">모바일 네트워크</string>
+    <string name="signal_cell_description">모바일 네트워크 %1$s, 4칸 중 %2$d칸</string>
+    <string name="signal_pill_weak">신호가 약해요: 비트레이트를 낮추세요</string>
+    <string name="signal_pill_none">신호가 없어요: Wi-Fi에 연결하세요</string>
+    <string name="signal_pill_unstable">연결이 불안정해요: 비트레이트를 낮추세요</string>
 </resources>
