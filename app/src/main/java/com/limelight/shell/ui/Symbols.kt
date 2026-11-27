@@ -108,6 +108,7 @@ object Symbols {
     const val OPACITY = "\uE210"
     const val PALETTE = "\uE6C8"
     const val SPEAKER = "\uE44A"
+    const val STREAM_SCREENSHOT = "\uE10E"
     const val SPEED = "\uEE74"
     const val SURROUND_SOUND = "\uEA08"
     const val TIMER = "\uE492"

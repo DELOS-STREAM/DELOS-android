@@ -216,4 +216,5 @@
     <string name="help_checkbox_back_game_bar">Solo Windows. Toca Atrás para Guide (Game Bar); mantenlo 500 ms para Vista de tareas (Win+Tab). Guide abre el menú del stream. PlayStation no cambia.</string>
     <string name="help_checkbox_dualsense_usb">Un DualSense por USB usa los gatillos adaptativos y la barra luminosa del juego. Android pide permiso USB una vez. Desactivado: Android ofrece vibración básica. Sin háptica de audio en PC.</string>
     <string name="help_checkbox_sound_on_device">Con un DualSense por USB, el audio del stream sale por el altavoz o los auriculares del dispositivo, no por el mando. Las teclas de volumen ajustan entonces el volumen del stream.</string>
+    <string name="stream_help_take_screenshot">Guarda solo el vídeo en Pictures/DELOS.</string>
 </resources>

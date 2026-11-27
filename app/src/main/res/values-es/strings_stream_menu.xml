@@ -188,4 +188,5 @@
     <string name="stream_result_offline_details">El equipo está sin conexión</string>
     <string name="stream_result_unpaired">%1$s no está emparejado con este dispositivo.</string>
     <string name="stream_result_unpaired_details">PC sin emparejar</string>
+    <string name="stream_menu_screenshot">Captura de pantalla</string>
 </resources>

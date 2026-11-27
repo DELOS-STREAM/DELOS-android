@@ -223,4 +223,5 @@
     <!-- %1$s: PC name -->
     <string name="stream_result_unpaired">%1$s isn\'t paired with this device.</string>
     <string name="stream_result_unpaired_details">PC not paired</string>
+    <string name="stream_menu_screenshot">Screenshot</string>
 </resources>

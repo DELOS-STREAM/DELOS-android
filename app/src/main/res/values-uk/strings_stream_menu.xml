@@ -188,4 +188,5 @@
     <string name="stream_result_offline_details">Комп’ютер не в мережі</string>
     <string name="stream_result_unpaired">%1$s не спарений із цим пристроєм.</string>
     <string name="stream_result_unpaired_details">ПК не спарений</string>
+    <string name="stream_menu_screenshot">Знімок екрана</string>
 </resources>

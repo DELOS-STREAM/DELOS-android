@@ -235,4 +235,5 @@
     <string name="help_checkbox_back_game_bar">Windows only. Tap Back for Guide (Game Bar); hold 500 ms for Task View (Win+Tab). Guide still opens the stream menu. PlayStation is unchanged.</string>
     <string name="help_checkbox_dualsense_usb">A USB DualSense uses the game’s adaptive triggers and light bar. Android asks once for USB permission. Off: Android handles simple rumble. No audio haptics on PC.</string>
     <string name="help_checkbox_sound_on_device">With a DualSense connected by USB, stream audio plays on the device’s speaker or headphones, not the controller. Volume keys adjust the stream volume.</string>
+    <string name="stream_help_take_screenshot">Saves only the video to Pictures/DELOS.</string>
 </resources>

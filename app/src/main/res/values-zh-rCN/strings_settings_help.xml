@@ -229,4 +229,5 @@
     <string name="help_checkbox_back_game_bar">仅限 Windows。短按返回发送 Guide（Game Bar），长按 500 毫秒打开任务视图（Win+Tab）。Guide 打开串流菜单。PlayStation 保持不变。</string>
     <string name="help_checkbox_dualsense_usb">通过USB连接的DualSense使用游戏的自适应扳机和灯条。Android会请求一次USB使用权限。关闭：由Android控制普通震动。PC不支持音频触觉反馈。</string>
     <string name="help_checkbox_sound_on_device">连接USB DualSense时，串流声音通过设备的扬声器或耳机播放，而非手柄。音量键此时可调节串流音量。</string>
+    <string name="stream_help_take_screenshot">仅将视频画面保存到 Pictures/DELOS。</string>
 </resources>

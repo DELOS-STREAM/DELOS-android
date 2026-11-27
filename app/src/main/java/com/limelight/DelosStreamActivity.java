@@ -2194,6 +2194,11 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         return key != LoaderKey.NONE;
     }
 
+    public void captureScreenshot(java.util.function.Consumer<Boolean> onResult) {
+        com.limelight.utils.StreamScreenshot.capture(this,
+                streamContainer == null ? null : streamContainer.getSurfaceView(), onResult);
+    }
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
         ControllerGlyphs.INSTANCE.touch(event);

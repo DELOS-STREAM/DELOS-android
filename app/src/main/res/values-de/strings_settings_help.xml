@@ -235,4 +235,5 @@
     <string name="help_checkbox_back_game_bar">Nur Windows. Zurück tippen: Guide (Game Bar). 500 ms halten: Task View (Win+Tab). Guide öffnet weiter das Stream-Menü. PlayStation bleibt unverändert.</string>
     <string name="help_checkbox_dualsense_usb">Ein USB-DualSense nutzt die adaptiven Trigger und die Lichtleiste des Spiels. Android fragt einmal nach USB-Zugriff. Aus: Android übernimmt einfache Vibrationen. Keine Audio-Haptik am PC.</string>
     <string name="help_checkbox_sound_on_device">Mit einem USB-DualSense läuft der Stream-Ton über Lautsprecher oder Kopfhörer des Geräts, nicht über den Controller. Die Lautstärketasten regeln dann die Stream-Lautstärke.</string>
+    <string name="stream_help_take_screenshot">Speichert nur das Video in Pictures/DELOS.</string>
 </resources>

@@ -188,4 +188,5 @@
     <string name="stream_result_offline_details">O computador está offline</string>
     <string name="stream_result_unpaired">%1$s não está pareado com este dispositivo.</string>
     <string name="stream_result_unpaired_details">PC não pareado</string>
+    <string name="stream_menu_screenshot">Captura de tela</string>
 </resources>

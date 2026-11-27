@@ -115,6 +115,7 @@
 .ms[data-icon="opacity"] { --phosphor-glyph: "\e210"; }
 .ms[data-icon="palette"] { --phosphor-glyph: "\e6c8"; }
 .ms[data-icon="speaker"] { --phosphor-glyph: "\e44a"; }
+.ms[data-icon="stream_screenshot"] { --phosphor-glyph: "\e10e"; }
 .ms[data-icon="speed"] { --phosphor-glyph: "\ee74"; }
 .ms[data-icon="surround_sound"] { --phosphor-glyph: "\ea08"; }
 .ms[data-icon="timer"] { --phosphor-glyph: "\e492"; }
