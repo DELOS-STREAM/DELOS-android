@@ -213,4 +213,5 @@
     <string name="stream_help_rumble_feel">호스트 럼블의 느낌을 바로 고르고 저장해요. 열린 상태로 유지되니 다시 골라 비교해 보세요. %1$s로 뒤로 가요.</string>
     <string name="stream_help_format_keys">%1$s을(를) PC로 한 번 보낸 뒤 스트림으로 돌아가요.</string>
     <string name="stream_help_format_command">호스트에 정의된 명령 %1$s을(를) PC에서 바로 실행해요. Vibepollo 또는 Apollo에서 설정해요.</string>
+    <string name="stream_help_take_screenshot">영상만 Pictures/DELOS에 저장해요.</string>
 </resources>

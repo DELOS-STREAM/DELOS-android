@@ -36,6 +36,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -143,6 +144,18 @@ internal fun StreamMenuRoot(
         pendingCircle = null
     }
     val reducedMotion = LocalReducedMotion.current
+    val cameraFocus = remember { FocusRequester() }
+    var cameraReturn by remember { mutableStateOf(start.focus) }
+    var shutter by remember { mutableIntStateOf(0) }
+    var shutterVisible by remember { mutableStateOf(false) }
+    var screenshotToast by remember { mutableStateOf<Toast?>(null) }
+    LaunchedEffect(shutter, reducedMotion) {
+        if (shutter != 0 && !reducedMotion) {
+            shutterVisible = true
+            delay(120)
+        }
+        shutterVisible = false
+    }
     // The popover: present from opening until it has animated out. Its geometry snaps when it opens from the dock
     // (after its content reported its size), and follows its target with a spring when another page replaces it.
     var popPresent by remember { mutableStateOf(start.page != MenuPage.MAIN) }
@@ -381,9 +394,19 @@ internal fun StreamMenuRoot(
     CompositionLocalProvider(
         LocalStreamHelp provides { helpKey = it }, LocalDockGeometry provides dock, LocalRowPicker provides openPicker, LocalImeAvoidance provides imeAvoidance,
     ) {
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().onPreviewKeyEvent {
+            val from = focusedItem
+            if (page == MenuPage.MAIN && !popPresent && picker == null && from != null && it.key == Key.DirectionUp) {
+                if (it.type == KeyEventType.KeyDown && it.nativeKeyEvent.repeatCount == 0) {
+                    cameraReturn = from
+                    cameraFocus.requestFocus()
+                }
+                true
+            } else false
+        }) {
             // A tap anywhere else closes the popover, or the menu on the dock (never quits or disconnects)
             Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { outsideTap() } })
+            if (shutterVisible) CameraShutter()
             StreamMenuBackdrop(gradientAlpha = { gradient.value }, scrimAlpha = { scrim.value })
 
             // Everything else sits on a 1920-wide box centered on the stage and as high as the real stage, bottom-aligned: the
@@ -413,6 +436,23 @@ internal fun StreamMenuRoot(
                     onOutsideTap = ::outsideTap,
                     modifier = Modifier.offset(0.px, (stageHeight - dock.dockHeight).px),
                 )
+                if (page == MenuPage.MAIN && !popPresent && picker == null) {
+                    StreamCamera(cameraFocus, Modifier.align(Alignment.TopEnd)
+                        .padding(top = dock.tilesLeft.px, end = dock.tilesLeft.px),
+                        onDown = { circleFocus.getValue(cameraReturn).requestFocus(); true }) {
+                        shutter++
+                        val shot = shutter
+                        host.takeScreenshot { saved ->
+                            screenshotToast = Toast(
+                                res.getString(if (saved) R.string.stream_screenshot_saved else R.string.stream_screenshot_failed),
+                                null, shot, kind = if (saved) com.limelight.utils.ToastKind.SUCCESS else com.limelight.utils.ToastKind.ERROR,
+                            )
+                        }
+                    }
+                }
+                com.limelight.shell.ui.ToastHost(screenshotToast,
+                    onHidden = { if (screenshotToast?.id == it) screenshotToast = null }, onAction = {},
+                    topInset = dock.tilesLeft + 195f, rightInset = dock.tilesLeft)
 
                 // The popover sits above the tile that opened it, its caret pointing down at that tile
                 if (popPresent) {
@@ -495,7 +535,6 @@ private fun pageFocusKeys(host: StreamMenuHost, page: MenuPage, supersamplingMod
             add(MenuKey.ONSCREEN_CONTROLS)
             add(MoreRow.OSC_OPACITY)
             add(MoreRow.ANDROID_KEYBOARD)
-            add(MoreRow.SCREENSHOT)
             add(MenuKey.TOUCH_SENSITIVITY)
             add(MoreRow.RUMBLE)
             if (host.gyroSmoothingAvailable) add(MoreRow.GYRO)
@@ -563,7 +602,6 @@ private fun PageRows(
                     changesTick()
                 })
             KeyedRow(Symbols.ANDROID_KEYBOARD, R.string.stream_menu_row_android_keyboard, MoreRow.ANDROID_KEYBOARD, RowValue.Action { close { host.toggleSystemKeyboard() } })
-            KeyedRow(Symbols.IMAGE, R.string.stream_menu_row_screenshot, MoreRow.SCREENSHOT, RowValue.Action { close { host.takeScreenshot() } })
             KeyedRow(Symbols.TOUCH_SENSITIVITY, R.string.stream_menu_row_touch_sensitivity, MenuKey.TOUCH_SENSITIVITY, RowValue.Toggle(host.touchSensitivityOn) { toggle { host.toggleTouchSensitivity() } })
             KeyedRow(Symbols.VIBRATION, R.string.stream_menu_row_rumble_feel, MoreRow.RUMBLE, RowValue.Text(host.rumblePreset?.label(res) ?: stringResource(R.string.stream_menu_rumble_custom)) { openPage(MenuPage.RUMBLE) }, entry(MoreRow.RUMBLE))
             if (host.gyroSmoothingAvailable) {

@@ -200,4 +200,5 @@
     <string name="stream_result_offline_details">PC je offline</string>
     <string name="stream_result_unpaired">%1$s není spárováno s tímto zařízením.</string>
     <string name="stream_result_unpaired_details">PC není spárováno</string>
+    <string name="stream_menu_screenshot">Snímek obrazovky</string>
 </resources>

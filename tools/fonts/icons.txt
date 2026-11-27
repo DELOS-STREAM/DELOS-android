@@ -113,6 +113,7 @@ network_check = gauge
 opacity = drop
 palette = palette
 speaker = speaker-high
+stream_screenshot = camera
 speed = speedometer
 surround_sound = speaker-hifi
 timer = timer

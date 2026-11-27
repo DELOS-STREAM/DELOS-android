@@ -213,4 +213,5 @@
     <string name="stream_help_rumble_feel">Escolhe como a vibração do PC é sentida, na hora e salvo. Continua aberto: escolha de novo para comparar. %1$s volta.</string>
     <string name="stream_help_format_keys">Envia %1$s ao PC uma vez e volta ao stream.</string>
     <string name="stream_help_format_command">Executa na hora no PC o comando %1$s definido pelo PC. Configurado no Vibepollo ou Apollo.</string>
+    <string name="stream_help_take_screenshot">Salva apenas o vídeo em Pictures/DELOS.</string>
 </resources>

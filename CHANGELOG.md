@@ -11,6 +11,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 ## [Unreleased]
 
 ### Added
+- **Stream screenshots**: open the stream menu and choose the camera to save a PNG in Pictures/DELOS. It captures only the game picture, without the menu or statistics; Android screenshots still work as before. (original idea and code by [@xoniq](https://github.com/xoniq), finished by the DELOS team, [#136](https://github.com/DELOS-STREAM/DELOS-android/pull/136))
 - **Android TV remotes**: on an Android TV or Google TV, a TV remote now operates DELOS without a controller or touch. Menu and Info open the context menu, Play/Pause is the right menu button, Channel or Page Up/Down step through the tabs, and the yellow and blue keys act as Y and X. On a remote without a Menu key, holding OK opens the context menu, and the tabs of the settings screens can be reached with the D-pad. The contributor reported remote navigation working on a RayNeo Pocket TV Pro (Android TV 14). Other devices are not affected. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
 - **Lighter look on Android TV**: the first profile created on an Android TV starts with the still background, no hero blur and reduced motion, because TV hardware is usually slower than a handheld. Every option can be turned back on in Settings → Appearance, and profiles that already exist keep their look. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
 

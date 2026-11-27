@@ -22,4 +22,6 @@
     <string name="toast_description">%1$s。%2$s</string>
     <!-- %1$s: the kind word, %2$s: the message, %3$s: the label of the toast's action button -->
     <string name="toast_description_action">%1$s。%2$s。%3$s</string>
+    <string name="stream_screenshot_saved">截图已保存\nPictures/DELOS</string>
+    <string name="stream_screenshot_failed">无法保存截图</string>
 </resources>

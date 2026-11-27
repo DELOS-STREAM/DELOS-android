@@ -118,6 +118,10 @@ this frame rate: lower the supersampling or the frame rate". No setting changes 
 
 ## 2. Stream menu
 
+The dock has a round camera button at its top right, outside the tile order. On the 1920 × 1080 stage its top and right insets match the dock's 109 px outer inset. Up from a dock tile focuses the camera; Down returns to that tile. A or touch captures without closing the menu, with a 120 ms edge pulse unless reduced motion is enabled.
+
+PixelCopy reads only the video surface at its buffer size. Screenshots are PNGs in `Pictures/DELOS`, published only after a successful save; the result is shown in a toast. Android's normal screenshot gesture is unchanged.
+
 ### 2.1 Design
 
 The design is "Console tiles" (prototype B, approved):
