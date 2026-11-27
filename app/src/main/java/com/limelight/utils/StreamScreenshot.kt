@@ -20,9 +20,13 @@ object StreamScreenshot {
     private val scope = CoroutineScope(Dispatchers.Main)
     private var busy = false
 
-    /** [pq]: the stream runs in HDR (BT.2020 PQ): the copied values are PQ code values and are tone-mapped to SDR. */
+    /**
+     * [pq]: the stream runs in HDR (BT.2020 PQ): the copied values are PQ code values and are tone-mapped to SDR. [onPicture] gets
+     * the 8-bit picture on the main thread before it is written (the capture effect bends it); it must not recycle it.
+     */
     @JvmStatic
-    fun capture(context: Context, view: SurfaceView?, pq: Boolean, onResult: java.util.function.Consumer<Boolean>) {
+    fun capture(context: Context, view: SurfaceView?, pq: Boolean, onPicture: java.util.function.Consumer<Bitmap>?,
+                onResult: java.util.function.Consumer<Boolean>) {
         if (busy) return
         val holder = view?.holder
         val surface = holder?.surface
@@ -40,9 +44,12 @@ object StreamScreenshot {
             PixelCopy.request(surface, bitmap, { result ->
                 scope.launch {
                     val saved = try {
-                        result == PixelCopy.SUCCESS && withContext(Dispatchers.IO) { toSdr(bitmap, pq).let { sdr ->
-                            try { save(context.applicationContext, sdr) } finally { sdr.recycle() }
-                        } }
+                        val sdr = if (result == PixelCopy.SUCCESS) withContext(Dispatchers.IO) { toSdr(bitmap, pq) } else null
+                        if (sdr == null) false else {
+                            onPicture?.accept(sdr)
+                            // Kept for the effect when it has it (the garbage collector frees it after the effect)
+                            withContext(Dispatchers.IO) { try { save(context.applicationContext, sdr) } finally { if (onPicture == null) sdr.recycle() } }
+                        }
                     } finally {
                         bitmap.recycle()
                         busy = false

@@ -160,12 +160,21 @@ intro synchronization require hardware verification; a browser prototype does no
 
 ## 2. Stream menu
 
-The dock has a round camera button at its top right, outside the tile order: 96 px of the tiles' glass, with the tile row's
-109 px inset from the top and from the right. It enters and leaves with the dock's head, takes the app's focus ring, glow,
-1.04 lift and press, fills its icon and shows "A Screenshot" under it while focused. Up from a dock tile focuses the camera;
-Down returns to that tile. A or touch captures without closing the menu: a white flash over the whole screen, the menu
-included (up to 70 % in 40 ms, out in 220 ms; none with reduced motion). A saved picture shows no message; only a failure
-shows the usual error toast.
+The dock has a camera pill at its top right, outside the tile order: 96 px high, the tiles' glass, the camera and the label
+"Screenshot", with the tile row's 109 px inset from the top and from the right. It enters and leaves with the dock's head, takes the
+app's focus ring, glow, 1.04 lift and press, fills its icon and, while focused, shows the primary action's hint under it in the glyph
+of the input in use (the pad's A, the tap, the click or Return). Up from a dock tile focuses the camera; Down returns to that tile.
+A or touch captures without closing the menu (prototype `screenshot-fx` A, owner 2026-11-27):
+
+- The pill pulses: 0.93, then 1.07, then 1 in 520 ms.
+- A lens wave (the intro's Shockwave profile) runs from the camera to every corner in 1.3 s: 22 px strength fading to 0, band
+  60 to 160 px wide, a 7 % light on the front. It bends the copied frame, drawn only inside the band and only where the video is,
+  under the menu's gradient; it fades in when the copy arrives. Android 13 and newer.
+- A bright core flashes at the camera with a 16 % veil over the screen, in over 3 % of the run, out on a cubic.
+- 26 motes ride the front out (left and down), fading with the wave.
+- When the PNG is written, the camera turns into a check drawn in the accent colour and the label into "Saved"; the old word rises
+  out blurred while the new one rises in, for about 2 s, then both return the same way. The pill keeps its width. A failure shows
+  the usual error toast instead. Reduced motion: no pulse, wave, flash or motes; the check and the word switch at once.
 
 PixelCopy reads only the video surface at its buffer size into an extended-range bitmap, so an HDR picture is converted
 instead of written as washed-out code values; highlights above SDR white roll off softly into an 8-bit sRGB PNG in

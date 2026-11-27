@@ -151,6 +151,9 @@ internal fun StreamMenuRoot(
     val cameraFocus = remember { FocusRequester() }
     var cameraReturn by remember { mutableStateOf(start.focus) }
     var shutter by remember { mutableIntStateOf(0) }
+    var savedShots by remember { mutableIntStateOf(0) }
+    val screenshotFx = remember { ScreenshotEffect() }
+    val fxScope = rememberCoroutineScope()
     // The popover: present from opening until it has animated out. Its geometry snaps when it opens from the dock
     // (after its content reported its size), and follows its target with a spring when another page replaces it.
     var popPresent by remember { mutableStateOf(start.page != MenuPage.MAIN) }
@@ -412,6 +415,8 @@ internal fun StreamMenuRoot(
         }) {
             // A tap anywhere else closes the popover, or the menu on the dock (never quits or disconnects)
             Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { outsideTap() } })
+            // The capture effect bends the copied picture under the menu's gradient (ScreenshotEffect)
+            ScreenshotWarp(screenshotFx)
             StreamMenuBackdrop(gradientAlpha = { gradient.value }, scrimAlpha = { scrim.value })
 
             // Everything else sits on a 1920-wide box centered on the stage and as high as the real stage, bottom-aligned: the
@@ -447,9 +452,11 @@ internal fun StreamMenuRoot(
                     enter = androidx.compose.animation.fadeIn(tween(Motion.FADE)),
                     exit = androidx.compose.animation.fadeOut(tween(Motion.FADE))) {
                     StreamCamera(cameraFocus, { enterClock.value }, { exitClock.value }, Modifier,
+                        shot = shutter, saved = savedShots, onCenter = { screenshotFx.origin = it },
                         onDown = { circleFocus.getValue(cameraReturn).requestFocus(); true }) {
                         shutter++
-                        host.takeScreenshot()
+                        fxScope.launch { screenshotFx.play() }
+                        host.takeScreenshot({ bitmap, where -> screenshotFx.show(bitmap, where) }) { saved -> if (saved) savedShots++ }
                     }
                 }
 
@@ -505,8 +512,8 @@ internal fun StreamMenuRoot(
             // The popup of a choice or slider row (touch, issue #92), over the dock and the card
             RowPickerLayer(picker, haze = null) { picker = null }
         }
-        // The camera's shutter over everything, the menu included
-        CameraFlash(shutter)
+        // The capture's flash and motes over everything, the menu included
+        ScreenshotBurst(screenshotFx)
     }
 }
 

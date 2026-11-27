@@ -72,7 +72,11 @@ internal interface StreamMenuHost {
     val overlayCompact: Boolean
     fun toggleOverlay()
     fun toggleSystemKeyboard()
-    fun takeScreenshot()
+    /**
+     * Saves the stream picture. [onPicture]: the copied picture and where the video sits in the window (pixels), for the capture
+     * effect; [onSaved]: whether it was written. Both on the main thread.
+     */
+    fun takeScreenshot(onPicture: (android.graphics.Bitmap, android.graphics.Rect) -> Unit, onSaved: (Boolean) -> Unit)
 
     // Brightness
     val brightnessPercent: Int

@@ -222,4 +222,5 @@
     <string name="stream_result_unpaired">%1$s ist nicht mit diesem Gerät gekoppelt.</string>
     <string name="stream_result_unpaired_details">PC nicht gekoppelt</string>
     <string name="stream_menu_screenshot">Screenshot</string>
+    <string name="stream_menu_screenshot_saved">Gespeichert</string>
 </resources>

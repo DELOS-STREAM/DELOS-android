@@ -178,4 +178,5 @@
     <string name="stream_result_unpaired">%1$s n’est pas associé à cet appareil.</string>
     <string name="stream_result_unpaired_details">PC non associé</string>
     <string name="stream_menu_screenshot">Capture d’écran</string>
+    <string name="stream_menu_screenshot_saved">Enregistrée</string>
 </resources>

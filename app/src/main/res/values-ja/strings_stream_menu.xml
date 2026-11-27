@@ -189,4 +189,5 @@
     <string name="stream_result_unpaired">%1$sはこの端末とペアリングされていません。</string>
     <string name="stream_result_unpaired_details">PCがペアリングされていません</string>
     <string name="stream_menu_screenshot">スクリーンショット</string>
+    <string name="stream_menu_screenshot_saved">保存しました</string>
 </resources>

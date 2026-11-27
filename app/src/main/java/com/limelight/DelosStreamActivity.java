@@ -2206,9 +2206,15 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         return key != LoaderKey.NONE;
     }
 
-    public void captureScreenshot(java.util.function.Consumer<Boolean> onResult) {
-        com.limelight.utils.StreamScreenshot.capture(this,
-                streamContainer == null ? null : streamContainer.getSurfaceView(), hdrActive, onResult);
+    /** Saves the stream picture; [onPicture] gets the copy and the video's place in the window (the capture effect). */
+    public void captureScreenshot(java.util.function.BiConsumer<android.graphics.Bitmap, android.graphics.Rect> onPicture,
+                                  java.util.function.Consumer<Boolean> onResult) {
+        android.view.SurfaceView view = streamContainer == null ? null : streamContainer.getSurfaceView();
+        com.limelight.utils.StreamScreenshot.capture(this, view, hdrActive, bitmap -> {
+            int[] at = new int[2];
+            view.getLocationInWindow(at);
+            onPicture.accept(bitmap, new android.graphics.Rect(at[0], at[1], at[0] + view.getWidth(), at[1] + view.getHeight()));
+        }, onResult);
     }
 
     @Override

@@ -224,4 +224,5 @@
     <string name="stream_result_unpaired">%1$s isn\'t paired with this device.</string>
     <string name="stream_result_unpaired_details">PC not paired</string>
     <string name="stream_menu_screenshot">Screenshot</string>
+    <string name="stream_menu_screenshot_saved">Saved</string>
 </resources>
