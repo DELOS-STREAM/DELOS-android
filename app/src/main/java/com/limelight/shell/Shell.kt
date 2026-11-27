@@ -895,8 +895,9 @@ fun Shell(
                             onBack = goBack.takeIf { shell.screen.back != null || shell.overviewGame != null },
                             cell = signal.cell,
                         )
-                        // Under the bar, over the screen: it names a network problem and is gone while there is none
-                        com.limelight.shell.ui.SignalPill(signal)
+                        // Under the bar, over the start screen only (its PC and PlayStation tabs; owner, 2026-11-27): it names a
+                        // network problem and is gone while there is none
+                        if (shell.screen == Screen.Start) com.limelight.shell.ui.SignalPill(signal)
                     }
                 }
             }
