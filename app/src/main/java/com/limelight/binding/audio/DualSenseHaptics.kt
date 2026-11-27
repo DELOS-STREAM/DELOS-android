@@ -24,6 +24,7 @@ class DualSenseHaptics private constructor(private val track: AudioTrack, privat
     private var buffer = ShortArray(0)
     private var units = 0
     private var firstUnitNs = 0L
+    private var peak = 0
 
     /** One unit from the console; never blocks (a full buffer drops the unit rather than delay the next). */
     fun play(pcm: ByteArray) {
@@ -33,12 +34,15 @@ class DualSenseHaptics private constructor(private val track: AudioTrack, privat
         // Once: how fast units come (spec Q6: 300 units of 360 bytes took 4.5 s on the Odin, so 6 kHz)
         if (units == 0) firstUnitNs = System.nanoTime()
         if (++units == 300) Log.i(TAG, "300 units of ${pcm.size} bytes in ${(System.nanoTime() - firstUnitNs) / 1_000_000} ms")
+        // How loud the console's haptics are (owner: weaker than on a PlayStation, 2026-11-27): the peak per 10 s, to size a gain
+        if (units % 660 == 0) { Log.i(TAG, "Haptics peak ${peak * 100 / 32767} % of full scale over the last 10 s"); peak = 0 }
         if (buffer.size != pairs * UPSAMPLE * 4) buffer = ShortArray(pairs * UPSAMPLE * 4)
         val out = buffer
         var o = 0
         repeat(pairs) {
             val left = input.short.toInt()
             val right = input.short.toInt()
+            peak = maxOf(peak, kotlin.math.abs(left), kotlin.math.abs(right))
             // Linear steps from the last sample to this one, so the actuators get no 6 kHz staircase
             for (k in 1..UPSAMPLE) {
                 out[o + 2] = (lastLeft + (left - lastLeft) * k / UPSAMPLE).toShort()
