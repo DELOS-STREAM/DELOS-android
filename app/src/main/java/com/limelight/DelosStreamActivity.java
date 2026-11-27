@@ -1852,9 +1852,6 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
                 connected = true;
                 connecting = false;
                 windowController.updatePipAutoEnter();
-                // Delos: the PC learns the connected controllers now, not on their first press (owner, 2026-11-24): Windows
-                // announces a new controller, and that first press (Back held for Task View) used to be lost to it
-                if (controllerHandler != null) controllerHandler.announceConnectedControllers();
 
                 // Hide the mouse cursor now after a short delay.
                 // Doing it before dismissing the spinner seems to be undone

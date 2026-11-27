@@ -631,29 +631,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     /**
-     * Delos: tells the host about every connected controller with sticks (those {@link #getAttachedControllerMask} counts) once
-     * the stream runs, instead of on its first input. Windows announces a newly attached controller, and the input that created
-     * it was lost to that announcement (a first Back hold for Task View did nothing).
-     */
-    public void announceConnectedControllers() {
-        if (stopped) {
-            return;
-        }
-        for (int id : inputManager.getInputDeviceIds()) {
-            InputDevice dev = inputManager.getInputDevice(id);
-            if (dev == null || !hasJoystickAxes(dev)) {
-                continue;
-            }
-            InputDeviceContext context = inputDeviceContexts.get(id);
-            if (context == null) {
-                context = createInputDeviceContextForDevice(dev);
-                inputDeviceContexts.put(id, context);
-            }
-            assignControllerNumberIfNeeded(context);
-        }
-    }
-
-    /**
      * Delos: while the Full keyboard is up the physical controllers drive the keyboard, not the game. Starting and ending
      * the suspension lets go of everything they hold (a neutral packet each, which also ends a mouse emulation click);
      * while it lasts no controller state reaches the host (the on-screen gamepad is not a physical controller and keeps going).
