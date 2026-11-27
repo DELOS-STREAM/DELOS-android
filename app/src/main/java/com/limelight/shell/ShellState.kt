@@ -428,7 +428,18 @@ class ShellState(initial: Screen) {
     /** The row to focus again once the popup has closed. */
     fun takePickerReturn(): FocusRequester? = pickerReturn.also { pickerReturn = null }
 
+    /**
+     * Settings were opened from the start screen (its side menu), so Back returns there, to the PC or PlayStation side it showed,
+     * not to a PC's dashboard (owner, 2026-11-28: from the PlayStation side Back landed on a dashboard in PlayStation colours).
+     * Kept while Settings' own pages (search, debug info) come and go; opening Settings from a dashboard screen clears it.
+     */
+    private var settingsFromStart = false
+
     fun navigate(to: Screen) {
+        if (to == Screen.Settings) {
+            if (screen == Screen.Start) settingsFromStart = true
+            else if (screen.main) settingsFromStart = false
+        }
         layer = null
         picker = null
         pickerReturn = null
@@ -449,7 +460,7 @@ class ShellState(initial: Screen) {
             else closeLayer()
             return true
         }
-        val to = screen.back ?: return false
+        val to = (if (screen == Screen.Settings && settingsFromStart) Screen.Start else screen.back) ?: return false
         navigate(to)
         return true
     }
