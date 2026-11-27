@@ -248,12 +248,12 @@ object StreamOutcome {
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
 
     /**
-     * From the whole screen a scale-up only fades the shell in over the stream (like the portal exit); a stream on
-     * an external display ends there and the shell opens on the device's own screen.
+     * From the whole screen a scale-up only fades the shell in over the stream (like the portal exit); after a stream on
+     * an external display the shell opens there, on the TV the player is looking at (owner, 2026-11-27).
      */
     internal fun homeOptions(activity: Activity): ActivityOptions =
         if (activity is DelosStreamActivity && activity.isOnExternalDisplay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            ActivityOptions.makeBasic().setLaunchDisplayId(DualScreen.mainDisplayId(activity))
+            ActivityOptions.makeBasic().setLaunchDisplayId(DualScreen.displayIdOf(activity))
         } else {
             val root = activity.window.decorView
             DualScreen.placeOnMain(activity, ActivityOptions.makeScaleUpAnimation(root, 0, 0, root.width, root.height))
