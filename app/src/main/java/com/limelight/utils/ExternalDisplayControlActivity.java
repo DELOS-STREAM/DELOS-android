@@ -1,6 +1,5 @@
 package com.limelight.utils;
 
-import static com.limelight.utils.ExternalDisplayFocus.requestFocusToGameActivity;
 import static com.limelight.utils.ServerHelper.getExternalDisplay;
 
 import android.annotation.SuppressLint;
@@ -200,7 +199,6 @@ public class ExternalDisplayControlActivity extends AppCompatActivity implements
         createProgrammaticUI();
         initTouchEventHandling();
         setupInactivityTimeoutForBrightness();
-        requestFocusToGameActivity();
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -319,6 +317,8 @@ public class ExternalDisplayControlActivity extends AppCompatActivity implements
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
+        LimeLog.info("External display focus: window=handheld control, display="
+                + getWindowManager().getDefaultDisplay().getDisplayId() + ", focused=" + hasFocus);
         if (isGameInstanceAvailable()) {
             DelosStreamActivity.instance.handleFocusChange(hasFocus);
         } else {

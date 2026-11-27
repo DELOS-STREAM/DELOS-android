@@ -33,6 +33,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - **Stream end message**: the message after a stream that ended by itself names the PC or console.
 
 ### Fixed
+- **Controller input on an external TV**: the handheld keeps input focus while the TV shows the stream and its menu. The same input route sends controller buttons and sticks to the host when the menu is closed and handles them locally when it is open. Not verified on real hardware yet.
 - **Back on the PC dashboard**: Back on a PC's dashboard returns to the start screen.
 - **Covers on wide, low screens**: home covers keep their 2:3 shape on wide stages lower than 1080.
 - **Metadata pill**: the metadata pill no longer flashes when DELOS starts.

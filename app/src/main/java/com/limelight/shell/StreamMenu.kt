@@ -196,6 +196,7 @@ class StreamMenu(private val game: DelosStreamActivity) {
             setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
             setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            if (game.isOnExternalDisplay()) addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
             attributes = attributes.apply { layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS }
             WindowCompat.setDecorFitsSystemWindows(this, false)
         }
@@ -308,10 +309,15 @@ class StreamMenu(private val game: DelosStreamActivity) {
         StreamExit.play(game, quit, end)
     }
 
-    /** Runs [action] once the stream window has the focus again (after the menu closed). */
+    /** Runs [action] once the stream's input window has focus again (after the menu closed). */
     private fun whenGameFocused(action: () -> Unit) {
         if (game.isFinishing) return
-        if (!game.hasWindowFocus()) {
+        val inputFocused = if (game.isOnExternalDisplay()) {
+            ExternalDisplayControlActivity.instance?.hasWindowFocus() == true
+        } else {
+            game.hasWindowFocus()
+        }
+        if (!inputFocused) {
             game.window.decorView.postDelayed({ whenGameFocused(action) }, 50)
             return
         }
