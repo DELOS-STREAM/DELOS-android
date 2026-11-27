@@ -30,13 +30,19 @@ object StreamScreenshot {
             onResult.accept(false)
             return
         }
-        val bitmap = Bitmap.createBitmap(frame.width(), frame.height(), Bitmap.Config.ARGB_8888)
+        // Copied into a wide, extended-range bitmap: the readback converts an HDR picture (PQ/HLG) into it instead of writing
+        // its code values as sRGB, which made an HDR stream's screenshot look washed out (owner, 2026-11-27); [toSdr] then
+        // rolls the highlights above SDR white off softly into an ordinary 8-bit sRGB PNG.
+        val bitmap = Bitmap.createBitmap(frame.width(), frame.height(), Bitmap.Config.RGBA_F16, false,
+            android.graphics.ColorSpace.get(android.graphics.ColorSpace.Named.EXTENDED_SRGB))
         busy = true
         try {
             PixelCopy.request(surface, bitmap, { result ->
                 scope.launch {
                     val saved = try {
-                        result == PixelCopy.SUCCESS && withContext(Dispatchers.IO) { save(context.applicationContext, bitmap) }
+                        result == PixelCopy.SUCCESS && withContext(Dispatchers.IO) { toSdr(bitmap).let { sdr ->
+                            try { save(context.applicationContext, sdr) } finally { sdr.recycle() }
+                        } }
                     } finally {
                         bitmap.recycle()
                         busy = false
@@ -51,6 +57,32 @@ object StreamScreenshot {
         }
     }
 
+    /**
+     * The extended-range copy as 8-bit sRGB: values up to 0.8 stay as they are, brighter ones (HDR highlights above SDR white,
+     * which the conversion puts above 1.0) bend smoothly towards 1.0 instead of clipping. SDR pictures pass unchanged.
+     */
+    // The shorts are the bitmap's half floats, read through Half.toFloat as lint asks; its check misreads the ShortBuffer
+    @android.annotation.SuppressLint("HalfFloat")
+    private fun toSdr(source: Bitmap): Bitmap {
+        val w = source.width
+        val h = source.height
+        val halfs = java.nio.ByteBuffer.allocateDirect(w * h * 8).order(java.nio.ByteOrder.nativeOrder())
+        source.copyPixelsToBuffer(halfs)
+        halfs.rewind()
+        val shorts = halfs.asShortBuffer()
+        val out = IntArray(w * h)
+        fun channel(v: Float): Int {
+            val k = if (v <= .8f) v.coerceAtLeast(0f) else .8f + .2f * (1f - kotlin.math.exp(-(v - .8f) / .2f))
+            return (k * 255f + .5f).toInt().coerceIn(0, 255)
+        }
+        for (i in 0 until w * h) {
+            val r = android.util.Half.toFloat(shorts.get(i * 4))
+            val g = android.util.Half.toFloat(shorts.get(i * 4 + 1))
+            val b = android.util.Half.toFloat(shorts.get(i * 4 + 2))
+            out[i] = (0xFF shl 24) or (channel(r) shl 16) or (channel(g) shl 8) or channel(b)
+        }
+        return Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888)
+    }
     private fun save(context: Context, bitmap: Bitmap): Boolean = runCatching {
         val resolver = context.contentResolver
         val values = ContentValues().apply {

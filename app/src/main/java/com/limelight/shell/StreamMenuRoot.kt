@@ -151,15 +151,6 @@ internal fun StreamMenuRoot(
     val cameraFocus = remember { FocusRequester() }
     var cameraReturn by remember { mutableStateOf(start.focus) }
     var shutter by remember { mutableIntStateOf(0) }
-    var shutterVisible by remember { mutableStateOf(false) }
-    var screenshotToast by remember { mutableStateOf<Toast?>(null) }
-    LaunchedEffect(shutter, reducedMotion) {
-        if (shutter != 0 && !reducedMotion) {
-            shutterVisible = true
-            delay(120)
-        }
-        shutterVisible = false
-    }
     // The popover: present from opening until it has animated out. Its geometry snaps when it opens from the dock
     // (after its content reported its size), and follows its target with a spring when another page replaces it.
     var popPresent by remember { mutableStateOf(start.page != MenuPage.MAIN) }
@@ -421,7 +412,6 @@ internal fun StreamMenuRoot(
         }) {
             // A tap anywhere else closes the popover, or the menu on the dock (never quits or disconnects)
             Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { outsideTap() } })
-            if (shutterVisible) CameraShutter()
             StreamMenuBackdrop(gradientAlpha = { gradient.value }, scrimAlpha = { scrim.value })
 
             // Everything else sits on a 1920-wide box centered on the stage and as high as the real stage, bottom-aligned: the
@@ -452,22 +442,13 @@ internal fun StreamMenuRoot(
                     modifier = Modifier.offset(0.px, (stageHeight - dock.dockHeight).px),
                 )
                 if (page == MenuPage.MAIN && !popPresent && picker == null) {
-                    StreamCamera(cameraFocus, Modifier.align(Alignment.TopEnd)
-                        .padding(top = dock.tilesLeft.px, end = dock.tilesLeft.px),
+                    StreamCamera(cameraFocus, { enterClock.value }, { exitClock.value },
+                        Modifier.align(Alignment.TopEnd).padding(top = dock.tilesLeft.px, end = dock.tilesLeft.px),
                         onDown = { circleFocus.getValue(cameraReturn).requestFocus(); true }) {
                         shutter++
-                        val shot = shutter
-                        host.takeScreenshot { saved ->
-                            screenshotToast = Toast(
-                                res.getString(if (saved) R.string.stream_screenshot_saved else R.string.stream_screenshot_failed),
-                                null, shot, kind = if (saved) com.limelight.utils.ToastKind.SUCCESS else com.limelight.utils.ToastKind.ERROR,
-                            )
-                        }
+                        host.takeScreenshot()
                     }
                 }
-                com.limelight.shell.ui.ToastHost(screenshotToast,
-                    onHidden = { if (screenshotToast?.id == it) screenshotToast = null }, onAction = {},
-                    topInset = dock.tilesLeft + 195f, rightInset = dock.tilesLeft)
 
                 // The popover sits above the tile that opened it, its caret pointing down at that tile
                 if (popPresent) {
@@ -521,6 +502,8 @@ internal fun StreamMenuRoot(
             // The popup of a choice or slider row (touch, issue #92), over the dock and the card
             RowPickerLayer(picker, haze = null) { picker = null }
         }
+        // The camera's shutter over everything, the menu included
+        CameraFlash(shutter)
     }
 }
 

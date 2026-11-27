@@ -459,13 +459,11 @@ class StreamMenu(private val game: DelosStreamActivity) {
         override val overlayCompact get() = prefs.enablePerfOverlayLite
         override fun toggleOverlay() { game.toggleHUD() }
         override fun toggleSystemKeyboard() { game.toggleKeyboard() }
-        override fun takeScreenshot(onResult: (Boolean) -> Unit) {
+        // A saved picture needs no message (the flash is the answer); only a failure shows the usual toast
+        override fun takeScreenshot() {
             game.captureScreenshot { saved ->
-                if (menu?.isShowing == true) onResult(saved)
-                else com.limelight.utils.DelosToast.show(game,
-                    if (saved) com.limelight.R.string.stream_screenshot_saved else com.limelight.R.string.stream_screenshot_failed,
-                    com.limelight.utils.DelosToast.SHORT,
-                    if (saved) com.limelight.utils.ToastKind.SUCCESS else com.limelight.utils.ToastKind.ERROR)
+                if (!saved) com.limelight.utils.DelosToast.show(game, com.limelight.R.string.stream_screenshot_failed,
+                    com.limelight.utils.DelosToast.SHORT, com.limelight.utils.ToastKind.ERROR)
             }
         }
 
