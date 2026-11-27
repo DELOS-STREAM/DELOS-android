@@ -127,13 +127,17 @@ class Feedback(context: Context) {
     /**
      * Each cue a static track (restarted from its start on every play; a streaming track per cue dropped the short sounds on the
      * Odin), with the volume controller's gain: attenuation as the track volume, amplification as an amplified copy of the PCM,
-     * written again only when the gain changes.
+     * written again only when the gain changes. Low latency: on the game usage Android put the cues on its deep-buffer output
+     * (about 150 ms of mixed audio ahead of the speaker), where a restart could not take back what was already mixed: the old
+     * start and the new one played on top of each other, and only the first cue after a pause sounded as the file does
+     * (owner, 2026-11-27).
      */
     private inner class CueTrack(private val clip: Clip) {
         val track: android.media.AudioTrack = android.media.AudioTrack.Builder()
             .setAudioAttributes(attributes)
             .setAudioFormat(clip.format)
             .setTransferMode(android.media.AudioTrack.MODE_STATIC)
+            .setPerformanceMode(android.media.AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
             .setBufferSizeInBytes(clip.pcm.size * 4)
             .build()
             .also { it.preferredDevice = output; it.write(clip.pcm, 0, clip.pcm.size, android.media.AudioTrack.WRITE_BLOCKING) }
@@ -220,7 +224,21 @@ class Feedback(context: Context) {
         if (focusSilenced) focusSilenced = false else play(Cue.MOVE)
     }
 
+    /** When each cue last played (uptime ms), to drop a second request that arrives on top of the first. */
+    private val lastPlayed = LongArray(Cue.entries.size)
+
+    /**
+     * Plays [cue]. The same cue asked for again within [REPEAT_GUARD_MS] is dropped: one focus change can report twice (a focus
+     * passing through a container on its way), and restarting the cue's track a few milliseconds into it left the stopped start
+     * and the new one overlapping, a quieter, hollow double of the sound (owner, 2026-11-27).
+     */
     fun play(cue: Cue) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastPlayed[cue.ordinal] < REPEAT_GUARD_MS) {
+            android.util.Log.d("Feedback", "dropped a repeat of $cue after ${now - lastPlayed[cue.ordinal]} ms")
+            return
+        }
+        lastPlayed[cue.ordinal] = now
         if (soundsEnabled) tracks[cue]?.let { track ->
             val gain = volume.gain
             runCatching { cuePlayer.execute { track.play(gain) } } // refused after release()
@@ -253,6 +271,8 @@ class Feedback(context: Context) {
                 .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(48_000)
                     .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
                 .setTransferMode(android.media.AudioTrack.MODE_STATIC)
+                // The same output as the cues (low latency), so it is that output the silence keeps open
+                .setPerformanceMode(android.media.AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
                 .setBufferSizeInBytes(frames * 4)
                 .build()
                 .apply {
@@ -315,6 +335,8 @@ class Feedback(context: Context) {
     private companion object {
         /** How long after a device comes or goes the sounds are rerouted: the audio policy switches its routes first. */
         const val REROUTE_DELAY_MS = 400L
+        /** A repeat of the same cue closer than this is one event reported twice (one frame); a held D-pad repeats slower. */
+        const val REPEAT_GUARD_MS = 35L
     }
 }
 
