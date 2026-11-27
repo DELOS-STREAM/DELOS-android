@@ -201,6 +201,12 @@ below applies: those keys pass through untouched.
 Navigation must be **intuitive and direct**. Pressing a direction takes the focus where the user wants to go, ideally
 in **one press**. A sequence such as left, down, down to reach something is never required.
 
+### Interface sound cues
+
+The usual move, select, back, open and error sounds remain. Dedicated cues cover Settings switches, discrete slider changes, Settings and PC/PlayStation tab changes, completed tutorial lessons and successful profile undo. A slider at its limit or a tab already selected does not emit its change cue. Continuous slider dragging does not play step sounds.
+
+The new cue slots use temporary copies of the bundled Open Sounds WAVs. They use the same device routing, volume gain and interface-sounds switch as the existing cues. Undo adds no vibration.
+
 ## 2. Text input
 
 ### Where text is typed

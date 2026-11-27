@@ -282,7 +282,7 @@ fun SettingsScreen(
             focusTransfer.request()
             shell.settingsFocus = null
             shell.settingsTab = tab.step(dir)
-            feedback.play(Cue.MOVE)
+            feedback.play(Cue.TAB)
         }
         shell.onShoulder = handler
         onDispose { if (shell.onShoulder === handler) shell.onShoulder = null }
@@ -441,7 +441,7 @@ internal fun Modifier.tabScroll(scroll: ScrollState): Modifier {
  * [DelosColors.text2] when another tab is selected. A tap squeezes the tab for a moment and plays the select cue.
  */
 @Composable
-internal fun TabPill(icon: String, label: String, selected: Boolean, modifier: Modifier, badge: Int = 0, collapse: Boolean = false, onClick: () -> Unit) {
+internal fun TabPill(icon: String, label: String, selected: Boolean, modifier: Modifier, badge: Int = 0, collapse: Boolean = false, changeCue: Cue? = Cue.TAB, onClick: () -> Unit) {
     val colors = LocalDelosColors.current
     val reduced = LocalReducedMotion.current
     val feedback = LocalFeedback.current
@@ -473,15 +473,16 @@ internal fun TabPill(icon: String, label: String, selected: Boolean, modifier: M
                     focusScale = 1.04f,
                     ring = FocusRing(4f, 2f),
                     glow = FocusGlow(offsetY = 4f, blur = 16f, spread = -4f),
+                    clickCue = if (selected) null else changeCue,
                     onFocusChange = { focused = it },
-                ) else Modifier.pointerTap(999f, cue = Cue.SELECT) { currentClick() }
+                ) else Modifier.pointerTap(999f, cue = if (selected) null else changeCue) { currentClick() }
             )
             .clip(CircleShape)
             .then(if (selected && !hosted) Modifier.background(colors.accent) else Modifier)
             .semantics {
                 role = Role.Tab
                 this.selected = selected
-                onClick { feedback.play(Cue.SELECT); currentClick(); true }
+                onClick { if (!selected) changeCue?.let(feedback::play); currentClick(); true }
             }
             .height(targetPx(66)).padding(horizontal = (if (collapse && !selected && !focused) 16 else 22).cpx),
         horizontalArrangement = Arrangement.spacedBy(12.px), verticalAlignment = Alignment.CenterVertically

@@ -158,6 +158,7 @@ hold precompiled SPIR-V of the PyroWave codec as C++ arrays. They run on the dev
 | `app/src/main/res/font/figtree.ttf` | google/fonts `ofl/figtree` | same commit | OFL-1.1 | `Figtree-OFL.txt` |
 | `app/src/main/res/font/phosphor_regular.ttf`, `phosphor_fill.ttf` | [phosphor-icons/web](https://github.com/phosphor-icons/web) plus approved input artwork below | `v2.1.2` plus local SVGs | MIT base; OFL-1.1 lettering; CC0-1.0 brand paths | `Phosphor-LICENSE.txt`, `Figtree-OFL.txt`, `Simple-Icons-CC0.txt` |
 | `app/src/main/res/raw/ui_{back,error,move,open,select}.wav` | [Open Sounds](https://www.romainraynal.fr/en/opensounds) by Romain Raynal, chosen and named by the owner | downloaded 2026-11-24 | royalty-free, free for commercial use, credit appreciated (credited in `docs/CREDITS.md`) | n/a |
+| `app/src/main/res/raw/ui_{complete,step,tab,toggle,undo}_placeholder.wav` | Byte-for-byte copies of the existing Open Sounds files above | unchanged source WAVs | same terms and credit as above | n/a |
 | `app/src/main/res/raw/intro_fx.wav` | made for Delos by the owner (Meitoncz) | 2026-11-24 | original to Delos, project licence | n/a |
 
 The volume dial adds the upstream `headphones` and `bluetooth` glyphs as `VOLUME_HEADPHONES` and `VOLUME_BLUETOOTH`.

@@ -109,7 +109,7 @@ fun ProfileScreen(profiles: Profiles, store: ProfileStore, defaultPcName: String
             CircleItem(Symbols.EDIT, stringResource(R.string.profile_rename), { renameProfile(res, shell, tracker, store, feedback, profile.id, profile.name) })
             CircleItem(Symbols.SWITCH_ACCOUNT, stringResource(R.string.profile_switch), { openProfilesMenu(res, shell, tracker, feedback, profiles, store, Screen.Profile) })
             CircleItem(Symbols.PERSON_ADD, stringResource(R.string.profile_add), { shell.navigate(Screen.CreateProfile(editing = false, back = Screen.Profile)) })
-            CircleItem(Symbols.DELETE, stringResource(R.string.profile_delete), { deleteProfile(res, shell, store, profile.id, profile.name) })
+            CircleItem(Symbols.DELETE, stringResource(R.string.profile_delete), { deleteProfile(res, shell, store, feedback, profile.id, profile.name) })
         }
     }
 }
@@ -120,10 +120,11 @@ fun ProfileScreen(profiles: Profiles, store: ProfileStore, defaultPcName: String
  * so the toast can undo it with Y or a tap. The next profile takes over; without one, the first launch
  * starts again (and Undo still brings the profile back).
  */
-private fun deleteProfile(res: Resources, shell: ShellState, store: ProfileStore, id: String, name: String) {
+private fun deleteProfile(res: Resources, shell: ShellState, store: ProfileStore, feedback: Feedback, id: String, name: String) {
     val another = store.delete(id)
     val undo = ToastAction(res.getString(R.string.profile_undo)) {
         if (store.undoDelete(id)) {
+            feedback.play(Cue.UNDO)
             shell.showToast(res.getString(R.string.profile_restored, name), Symbols.CHECK_CIRCLE)
             // The first launch screens make no sense with a profile again
             if (shell.screen is Screen.Boot || shell.screen is Screen.CreateProfile) shell.navigate(Screen.Start)

@@ -95,8 +95,8 @@ fun PsModeSwitch(playStation: Boolean, onPick: (Boolean) -> Unit, y: Float) {
     val stage = com.limelight.shell.ui.LocalStage.current
     com.limelight.shell.screens.TabRow(y, com.limelight.shell.screens.SettingsLayout.TABS_HEIGHT.px, left = 0f, right = stage.stageWidth) {
         com.limelight.shell.screens.ShoulderLabel("L1")
-        com.limelight.shell.screens.TabPill(Symbols.DESKTOP_WINDOWS, stringResource(R.string.ps_mode_pc), !playStation, Modifier.padding(horizontal = 5.px)) { onPick(false) }
-        com.limelight.shell.screens.TabPill(Symbols.PLAYSTATION_MARK, stringResource(R.string.ps_mode_playstation), playStation, Modifier.padding(horizontal = 5.px)) { onPick(true) }
+        com.limelight.shell.screens.TabPill(Symbols.DESKTOP_WINDOWS, stringResource(R.string.ps_mode_pc), !playStation, Modifier.padding(horizontal = 5.px), changeCue = null) { onPick(false) }
+        com.limelight.shell.screens.TabPill(Symbols.PLAYSTATION_MARK, stringResource(R.string.ps_mode_playstation), playStation, Modifier.padding(horizontal = 5.px), changeCue = null) { onPick(true) }
         com.limelight.shell.screens.ShoulderLabel("R1")
     }
 }

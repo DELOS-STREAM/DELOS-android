@@ -406,8 +406,11 @@ private fun ValueCard(popup: RowPopup.Value, active: Boolean, hook: CloseHook, o
                 when {
                     dir != 0 -> {
                         if (event.type == KeyEventType.KeyDown) {
-                            feedback.play(Cue.MOVE)
-                            change(SliderEdit.step(slider, value, dir * sliderAcceleration(slider, event.nativeKeyEvent.repeatCount)))
+                            val next = SliderEdit.step(slider, value, dir * sliderAcceleration(slider, event.nativeKeyEvent.repeatCount))
+                            if (next != value) {
+                                change(next)
+                                feedback.play(Cue.STEP)
+                            }
                         }
                         true
                     }
@@ -487,6 +490,15 @@ private fun StepButton(
     val fill by animateColorAsState(Color.White.copy(alpha = if (pressed) .22f else .10f), tween(Motion.PRESS, easing = Motion.Ease), label = "stepFill")
     // The shared hover and press looks; the step itself runs at the press (a hold repeats), so it is not deferred
     val pulse = rememberPressPulse()
+    fun step(steps: Int) {
+        if (!enabled) return
+        val before = current()
+        val next = SliderEdit.step(slider, before, steps)
+        if (next != before) {
+            onValue(next)
+            feedback.play(Cue.STEP)
+        }
+    }
     Box(
         Modifier
             .size(P.VALUE_BUTTON.px)
@@ -495,19 +507,17 @@ private fun StepButton(
             .alpha(if (enabled) 1f else .35f)
             .clip(CircleShape)
             .background(fill)
-            .semantics { role = Role.Button; contentDescription = description; onClick { onValue(SliderEdit.step(slider, current(), direction)); true } }
+            .semantics { role = Role.Button; contentDescription = description; onClick { if (!enabled) false else { step(direction); true } } }
             .pointerInput(slider, direction) {
                 detectTapGestures(onPress = {
                     pressed = true
                     coroutineScope {
                         val repeater = launch {
-                            feedback.play(Cue.MOVE)
-                            onValue(SliderEdit.step(slider, current(), direction))
+                            step(direction)
                             delay(HoldRepeat.FIRST_DELAY_MS)
                             var repeat = 1
                             while (true) {
-                                feedback.play(Cue.MOVE)
-                                onValue(SliderEdit.step(slider, current(), direction * HoldRepeat.steps(slider, repeat)))
+                                step(direction * HoldRepeat.steps(slider, repeat))
                                 repeat++
                                 delay(HoldRepeat.INTERVAL_MS)
                             }
