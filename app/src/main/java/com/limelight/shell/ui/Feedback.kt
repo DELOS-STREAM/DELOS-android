@@ -152,8 +152,15 @@ class Feedback(context: Context) {
             .setBufferSizeInBytes(bytes)
             .build()
             .also { it.preferredDevice = output }
-        private var loaded = Float.NaN
-        private var loadedTake = -1
+        private var loaded = 1f
+        private var loadedTake = 0
+
+        // A static track has no state to stop or play from until its data is written (stop() threw, and no cue played at all)
+        init {
+            val src = takes[0].pcm
+            for (i in src.indices) pcm16[i] = (src[i].coerceIn(-1f, 1f) * 32767f).toInt().toShort()
+            if (track.write(pcm16, 0, pcm16.size) < 0) { track.release(); error("static data refused") }
+        }
         private var last = 0
 
         fun play(gain: Float) {
