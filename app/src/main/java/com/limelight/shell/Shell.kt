@@ -516,6 +516,8 @@ fun Shell(
         }
     }
     val wifi by rememberWifiStatus()
+    // The cellular indicator and the problem pill: one source, listening only while the shell is started
+    val signal by com.limelight.shell.system.rememberNetworkSignal()
     val battery by rememberBatteryStatus()
     val clock by rememberClock(appearance.clock)
     val library by repo.library.collectAsStateWithLifecycle()
@@ -885,32 +887,16 @@ fun Shell(
                     val barAlpha by androidx.compose.animation.core.animateFloatAsState(
                         if (shell.overviewViewer != null) 0f else 1f, tween(Motion.FADE, easing = Motion.Ease), label = "statusBarUnderViewer",
                     )
-                    val cellularLevel = com.limelight.utils.rememberCellularSignalLevel()
-                    var previousWeakCellular by remember { mutableStateOf<Boolean?>(null) }
-                    LaunchedEffect(cellularLevel) {
-                        if (cellularLevel == null) {
-                            previousWeakCellular = null
-                        } else {
-                            val isWeakNow = com.limelight.utils.CellularSignal.isWeakLevel(cellularLevel)
-                            val wasWeak = previousWeakCellular
-                            previousWeakCellular = isWeakNow
-                            if (wasWeak != null && wasWeak != isWeakNow) {
-                                if (isWeakNow) {
-                                    shell.showToast(res.getString(R.string.conn_weak_mobile_toast), Symbols.WARNING, kind = ToastKind.WARNING)
-                                } else {
-                                    shell.showToast(res.getString(R.string.conn_good_mobile_toast), Symbols.CHECK_CIRCLE, kind = ToastKind.SUCCESS)
-                                }
-                            }
-                        }
-                    }
                     Box(Modifier.graphicsLayer { alpha = barAlpha }) {
                         StatusBar(
                             nav.takeIf { shell.screen.main }, pcName = pc?.name.takeIf { shell.screen.main }, pcOnline = pc?.online == true,
                             wifi = wifi, battery = battery, clock = clock, brand = shell.screen != Screen.Start,
                             // The game overview goes back with the same button (its own back handler closes it), the dashboard has none
                             onBack = goBack.takeIf { shell.screen.back != null || shell.overviewGame != null },
-                            cellularLevel = cellularLevel,
+                            cell = signal.cell,
                         )
+                        // Under the bar, over the screen: it names a network problem and is gone while there is none
+                        com.limelight.shell.ui.SignalPill(signal)
                     }
                 }
             }

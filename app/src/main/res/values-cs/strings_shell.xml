@@ -112,4 +112,10 @@
     <string name="impact_axis_level">%1$s %2$s</string>
     <string name="impact_legend">Náročnost aktuální hodnoty: 1 pruh nízká, 2 střední, 3 vysoká</string>
     <string name="impact_axes_joined">%1$s, %2$s, %3$s</string>
+    <!-- The cellular indicator of the status bar and the network problem pill under it -->
+    <string name="signal_mobile">Mobilní síť</string>
+    <string name="signal_cell_description">Mobilní síť %1$s, %2$d ze 4 čárek</string>
+    <string name="signal_pill_weak">Slabý signál: sniž bitrate</string>
+    <string name="signal_pill_none">Žádný signál: připoj se k Wi-Fi</string>
+    <string name="signal_pill_unstable">Nestabilní spojení: sniž bitrate</string>
 </resources>

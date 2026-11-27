@@ -18,7 +18,6 @@ import com.limelight.shell.settings.StartupStore
 import com.limelight.shell.ui.Cue
 import com.limelight.shell.ui.Feedback
 import com.limelight.shell.ui.Symbols
-import com.limelight.utils.CellularSignal
 import com.limelight.utils.ToastKind
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -135,9 +134,6 @@ class ShellDeviceActions internal constructor(
                 arrived = true
                 shell.navigate(Screen.Home)
                 shell.portal = null
-                if (CellularSignal.isWeak(context)) {
-                    shell.showToast(res.getString(R.string.conn_weak_mobile_toast), Symbols.WARNING, kind = ToastKind.WARNING)
-                }
                 delay(500)
                 shell.portalBurst = false
             } finally {
