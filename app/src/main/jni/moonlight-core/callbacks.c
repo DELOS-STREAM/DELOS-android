@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <Limelight.h>
+#include <ControllerHaptics.h>
 
 #include <opus_multistream.h>
 #include <android/log.h>
@@ -48,6 +49,7 @@ static jmethodID BridgeClRumbleTriggersMethod;
 static jmethodID BridgeClSetMotionEventStateMethod;
 static jmethodID BridgeClSetControllerLEDMethod;
 static jmethodID BridgeClSetAdaptiveTriggersMethod;
+static jmethodID BridgeClControllerHapticsMethod;
 static jmethodID BridgeNativeLogMethod;
 static jbyteArray DecodedFrameBuffer;
 static jshortArray DecodedAudioBuffer;
@@ -195,6 +197,7 @@ Java_com_limelight_nvstream_jni_MoonBridge_init(JNIEnv *env, jclass clazz) {
             {&BridgeClSetMotionEventStateMethod, "bridgeClSetMotionEventState", "(SBS)V"},
             {&BridgeClSetControllerLEDMethod, "bridgeClSetControllerLED", "(SBBB)V"},
             {&BridgeClSetAdaptiveTriggersMethod, "bridgeClSetAdaptiveTriggers", "(SBBB[B[B)V"},
+            {&BridgeClControllerHapticsMethod, "bridgeClControllerHaptics", "(S[BI)V"},
             {&BridgeNativeLogMethod, "bridgeNativeLog", "(ILjava/lang/String;[B)V"},
     };
 
@@ -579,6 +582,37 @@ void BridgeClSetAdaptiveTriggers(uint16_t controllerNumber, uint8_t eventFlags, 
     (*env)->DeleteLocalRef(env, rightArray);
 }
 
+// Vibepollo waveform haptics (0x5601): a DualSense's actuator PCM, 48 kHz S16LE stereo, every 5 ms. Called on the control
+// receive thread only, so one buffer serves every packet without an allocation; Java plays it before returning.
+static jbyteArray HapticsPcmArray;
+
+void BridgeClControllerHaptics(uint16_t controllerNumber, uint32_t sequence, const uint8_t* pcm, uint16_t frames) {
+    (void)sequence;
+    JNIEnv* env = BeginUpcall();
+    if (env == NULL) {
+        return;
+    }
+
+    if (HapticsPcmArray == NULL) {
+        jbyteArray local = (*env)->NewByteArray(env, ML_HAPTICS_MAX_FRAMES * ML_HAPTICS_FRAME_BYTES);
+        if (local == NULL) {
+            (*env)->ExceptionClear(env);
+            return;
+        }
+        HapticsPcmArray = (*env)->NewGlobalRef(env, local);
+        (*env)->DeleteLocalRef(env, local);
+        if (HapticsPcmArray == NULL) {
+            (*env)->ExceptionClear(env);
+            return;
+        }
+    }
+    (*env)->SetByteArrayRegion(env, HapticsPcmArray, 0, frames * ML_HAPTICS_FRAME_BYTES, (const jbyte*)pcm);
+
+    (*env)->CallStaticVoidMethod(env, GlobalBridgeClass, BridgeClControllerHapticsMethod, (jshort)controllerNumber,
+                                 HapticsPcmArray, (jint)frames);
+    UpcallThrew(env);
+}
+
 // At most this many lines a second reach the diagnostic log; a flood stays in logcat only
 #define DIAG_LOG_LINES_PER_SECOND 60
 
@@ -663,6 +697,7 @@ static CONNECTION_LISTENER_CALLBACKS BridgeConnListenerCallbacks = {
         .setMotionEventState = BridgeClSetMotionEventState,
         .setControllerLED = BridgeClSetControllerLED,
         .setAdaptiveTriggers = BridgeClSetAdaptiveTriggers,
+        .controllerHaptics = BridgeClControllerHaptics,
 };
 
 static bool

@@ -495,6 +495,12 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         stopped = true;
         backgroundThreadHandler.removeCallbacks(motionRateRunnable);
         stopRumblePlayback();
+        synchronized (hapticsLock) {
+            if (waveformHaptics != null) {
+                waveformHaptics.close();
+                waveformHaptics = null;
+            }
+        }
 
         // Unregister our input device callbacks
         inputManager.unregisterInputDeviceListener(this);
@@ -2507,6 +2513,40 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
+    // Vibepollo waveform haptics: the DualSense's voice coils, opened on the first packet and closed with the stream
+    private final Object hapticsLock = new Object();
+    private com.limelight.binding.audio.DualSenseHaptics waveformHaptics;
+    private boolean waveformHapticsTried;
+
+    /** Native DualSense haptics from the host (0x5601), for the wired DualSense DELOS drives as [controllerNumber]. */
+    public void handleControllerHaptics(short controllerNumber, byte[] pcm, int frames) {
+        boolean ours = false;
+        for (int i = 0; i < usbDeviceContexts.size(); i++) {
+            UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
+            if (deviceContext.controllerNumber == controllerNumber && deviceContext.device instanceof DualSenseController) {
+                ours = true;
+                break;
+            }
+        }
+        if (!ours) {
+            return;
+        }
+        synchronized (hapticsLock) {
+            if (stopped) {
+                return;
+            }
+            if (waveformHaptics == null && !waveformHapticsTried) {
+                waveformHapticsTried = true;
+                waveformHaptics = com.limelight.binding.audio.DualSenseHaptics.Companion.open(activityContext);
+                LimeLog.info("Waveform haptics for controller " + controllerNumber + ": "
+                        + (waveformHaptics != null ? "playing on the DualSense" : "no DualSense audio output"));
+            }
+            if (waveformHaptics != null) {
+                waveformHaptics.playNative(pcm, frames);
+            }
+        }
+    }
+
     private SensorEventListener createSensorListener(final short controllerNumber, final byte motionType, final boolean needsDeviceOrientationCorrection) {
         return new SensorEventListener() {
             private float[] lastValues = new float[3];
@@ -3952,6 +3992,11 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         public void sendControllerArrival() {
             byte type = device.getType();
             short capabilities = device.getCapabilities();
+            // Vibepollo waveform haptics: only a DualSense whose voice coils DELOS can reach (its four-channel USB audio)
+            if (device instanceof DualSenseController && !(conn instanceof com.limelight.ps.PsConnection)
+                    && com.limelight.binding.audio.DualSenseHaptics.Companion.device(activityContext) != null) {
+                capabilities |= MoonBridge.LI_CCAP_HAPTICS_PCM;
+            }
 
             // Report sensors if the input device has them or we're using built-in sensors for a built-in controller
             if (type != MoonBridge.LI_CTYPE_PS && type != MoonBridge.LI_CTYPE_NINTENDO && sensorManager != null) {

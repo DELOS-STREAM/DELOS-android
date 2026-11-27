@@ -1960,6 +1960,11 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     }
 
     @Override
+    public void controllerHaptics(short controllerNumber, byte[] pcm, int frames) {
+        controllerHandler.handleControllerHaptics(controllerNumber, pcm, frames);
+    }
+
+    @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         surfaceController.onSurfaceChanged(width, height);
 

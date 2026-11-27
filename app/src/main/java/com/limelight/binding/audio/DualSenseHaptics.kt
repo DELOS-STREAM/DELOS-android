@@ -55,6 +55,25 @@ class DualSenseHaptics private constructor(private val track: AudioTrack, privat
         track.write(out, 0, out.size, AudioTrack.WRITE_NON_BLOCKING)
     }
 
+    /**
+     * Native waveform haptics from a Vibepollo host (0x5601): [frames] left/right pairs of signed 16-bit PCM at 48 kHz, the
+     * actuator channels a game wrote to the host's virtual DualSense. Played as they came, without resampling; never blocks.
+     */
+    fun playNative(pcm: ByteArray, frames: Int) {
+        if (frames <= 0) return
+        if (buffer.size < frames * 4) buffer = ShortArray(frames * 4)
+        val out = buffer
+        var i = 0
+        var o = 0
+        repeat(frames) {
+            out[o + 2] = ((pcm[i].toInt() and 0xFF) or (pcm[i + 1].toInt() shl 8)).toShort()
+            out[o + 3] = ((pcm[i + 2].toInt() and 0xFF) or (pcm[i + 3].toInt() shl 8)).toShort()
+            i += 4
+            o += 4
+        }
+        track.write(out, 0, frames * 4, AudioTrack.WRITE_NON_BLOCKING)
+    }
+
     fun close() {
         runCatching { track.stop() }
         track.release()

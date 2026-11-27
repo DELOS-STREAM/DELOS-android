@@ -122,6 +122,8 @@ public class MoonBridge {
     public static final short LI_CCAP_BATTERY_STATE   = 0x40;
     public static final short LI_CCAP_RGB_LED         = 0x80;
     public static final short LI_CCAP_DUAL_TOUCHPAD   = 0x100;
+    /** Vibepollo extension: renders waveform haptics (ConnListenerControllerHaptics, ControllerHaptics.h). */
+    public static final short LI_CCAP_HAPTICS_PCM     = (short) 0x8000;
 
     public static final byte LI_MOTION_TYPE_ACCEL = 0x01;
     public static final byte LI_MOTION_TYPE_GYRO  = 0x02;
@@ -346,6 +348,13 @@ public class MoonBridge {
     public static void bridgeClSetAdaptiveTriggers(short controllerNumber, byte eventFlags, byte typeLeft, byte typeRight, byte[] left, byte[] right) {
         if (connectionListener != null) {
             connectionListener.setAdaptiveTriggers(controllerNumber, eventFlags, typeLeft, typeRight, left, right);
+        }
+    }
+
+    /** Vibepollo waveform haptics: [pcm] holds [frames] 48 kHz S16LE stereo actuator frames; borrowed, read before returning. */
+    public static void bridgeClControllerHaptics(short controllerNumber, byte[] pcm, int frames) {
+        if (connectionListener != null) {
+            connectionListener.controllerHaptics(controllerNumber, pcm, frames);
         }
     }
 
