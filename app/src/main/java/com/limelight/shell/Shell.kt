@@ -516,6 +516,8 @@ fun Shell(
         }
     }
     val wifi by rememberWifiStatus()
+    // The cellular indicator and the problem pill: one source, listening only while the shell is started
+    val signal by com.limelight.shell.system.rememberNetworkSignal()
     val battery by rememberBatteryStatus()
     val clock by rememberClock(appearance.clock)
     val library by repo.library.collectAsStateWithLifecycle()
@@ -891,7 +893,11 @@ fun Shell(
                             wifi = wifi, battery = battery, clock = clock, brand = shell.screen != Screen.Start,
                             // The game overview goes back with the same button (its own back handler closes it), the dashboard has none
                             onBack = goBack.takeIf { shell.screen.back != null || shell.overviewGame != null },
+                            cell = signal.cell,
                         )
+                        // Under the bar, over the start screen only (its PC and PlayStation tabs; owner, 2026-11-27): it names a
+                        // network problem and is gone while there is none
+                        if (shell.screen == Screen.Start) com.limelight.shell.ui.SignalPill(signal)
                     }
                 }
             }

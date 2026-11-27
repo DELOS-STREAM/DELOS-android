@@ -181,7 +181,7 @@ The geometry is in pure functions with unit tests over the stages 1099 × 957, 1
 3. There is no wordmark under 1280 bar px.
 4. `fitStatusBar` places the navigation in this order:
    1. On the middle of the bar, while that leaves 24 px to the brand cluster and to the status cluster. The status
-      cluster (Wi-Fi, battery, clock) is measured, so a 12-hour clock and "100%" count.
+      cluster (the cellular signal on a device with a modem, Wi-Fi, battery, clock) is measured, so a 12-hour clock and "100%" count.
    2. Otherwise in the middle of the free space between the two clusters.
    3. When even that is too narrow (interface scale 1.3), the gaps inside the navigation (14 → 6) and the status
       cluster (28 → 16) tighten.
