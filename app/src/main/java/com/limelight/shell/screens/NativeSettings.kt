@@ -339,11 +339,11 @@ internal fun nativeSettings(
             tab = SettingsTab.ABOUT, section = updateSection)
         // The cellular indicator and the network problem pill on a device without a modem (the AYN Odin): simulated, in memory only
         val preview = com.limelight.shell.system.NetworkPreview
-        val previewModes = com.limelight.shell.system.NetworkPreview.Mode.entries
+        val previewModes = preview.modes
         row("about_network_preview_debug", Symbols.DEBUG, "Network preview (simulated)", // l10n-ignore: debug build only
             RowValue.Choice(preview.mode.label, { direction ->
-                preview.mode = previewModes[Math.floorMod(preview.mode.ordinal + direction, previewModes.size)]
-            }, options = previewModes.map { it.label }, selected = preview.mode.ordinal, onPick = { preview.mode = previewModes[it] }),
+                preview.index = Math.floorMod(preview.index + direction, previewModes.size)
+            }, options = previewModes.map { it.label }, selected = preview.index, onPick = { preview.index = it }),
             "Debug builds only: shows the cellular indicator and the network pill with a simulated network. Off at every start.", // l10n-ignore: debug build only
             tab = SettingsTab.ABOUT, section = updateSection)
     }

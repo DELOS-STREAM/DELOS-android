@@ -179,16 +179,25 @@ internal class SignalJudge(raiseMs: Long = RAISE_MS, clearMs: Long = CLEAR_MS) {
  * Odin): set from the debug-only settings row, kept in memory only (off at every process start) and never read in a release build.
  */
 object NetworkPreview {
-    enum class Mode(val label: String, val signal: NetworkSignal?) {
-        OFF("Off", null), // l10n-ignore: debug build only
-        GOOD_5G("Good 5G", NetworkSignal(CellStatus(4, "5G", SignalSeverity.OK), null, simulated = true)), // l10n-ignore
-        WEAK_LTE("Weak LTE", NetworkSignal(CellStatus(2, "LTE", SignalSeverity.WARN), SignalProblem.WEAK_CELLULAR, simulated = true)), // l10n-ignore
-        NO_SERVICE("No service", NetworkSignal(CellStatus(0, "LTE", SignalSeverity.BAD), SignalProblem.NO_SERVICE, simulated = true)), // l10n-ignore
-        STABLE_WIFI("Stable Wi-Fi", NetworkSignal(CellStatus(4, "LTE", SignalSeverity.OK), null, simulated = true)), // l10n-ignore
-        UNSTABLE_WIFI("Unstable Wi-Fi", NetworkSignal(CellStatus(4, "LTE", SignalSeverity.OK), SignalProblem.UNSTABLE_WIFI, simulated = true)), // l10n-ignore
+    /** One simulated network: what the status bar and the pill would show for it. */
+    class Mode(val label: String, val signal: NetworkSignal?)
+
+    /**
+     * Every case the real judge produces, for every network type (the judge treats 5G, LTE and 3G alike): 4 or 3 bars = fine,
+     * 2 or 1 = weak (pill), 0 = no signal (pill); plus a fine cellular signal while Wi-Fi is unstable (pill).
+     */
+    val modes: List<Mode> = buildList {
+        add(Mode("Off", null)) // l10n-ignore: debug build only
+        for (network in listOf("5G", "LTE", "3G")) for (bars in 4 downTo 0) {
+            val severity = when { bars == 0 -> SignalSeverity.BAD; bars <= 2 -> SignalSeverity.WARN; else -> SignalSeverity.OK }
+            val problem = when { bars == 0 -> SignalProblem.NO_SERVICE; bars <= 2 -> SignalProblem.WEAK_CELLULAR; else -> null }
+            add(Mode("$network · $bars bars", NetworkSignal(CellStatus(bars, network, severity), problem, simulated = true))) // l10n-ignore
+        }
+        add(Mode("Unstable Wi-Fi", NetworkSignal(CellStatus(4, "5G", SignalSeverity.OK), SignalProblem.UNSTABLE_WIFI, simulated = true))) // l10n-ignore
     }
 
-    var mode by mutableStateOf(Mode.OFF)
+    var index by mutableStateOf(0)
+    val mode: Mode get() = modes[index]
 }
 
 /**

@@ -719,8 +719,10 @@ The name comes from the kinds of cells in the signal report, not from the data n
 4. Nothing polls. The listeners (the default network's callback, the signal strength listener of the default data SIM) are
    registered only while the shell is started: not under a stream and not in the background. One delayed look is posted
    when a pending change is due.
-5. A debug build has Settings → About → "Network preview (simulated)": Off, Good 5G, Weak LTE, No service, Stable Wi-Fi,
-   Unstable Wi-Fi. It is kept in memory (Off at every start) and is not read in a release build.
+5. The cases are the same for every network type (5G, LTE, 3G …): 4 or 3 bars are fine (no pill), 2 or 1 bar is a weak signal,
+   0 bars no signal; and a fine cellular signal with an unstable Wi-Fi. A debug build has Settings → About → "Network preview
+   (simulated)" with every one of them: Off, then 5G, LTE and 3G each at 4, 3, 2, 1 and 0 bars, then Unstable Wi-Fi. It is kept
+   in memory (Off at every start) and is not read in a release build.
 
 ## Code map
 
