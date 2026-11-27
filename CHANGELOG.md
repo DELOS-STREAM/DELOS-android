@@ -33,6 +33,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - **Stream menu**: the PC stream menu has a Frame generation tile; Brightness moved to the More page. Help texts in settings and in the stream menu can be scrolled with a finger and travel on after a pause.
 - **Focus plate in settings**: the plate behind the focused settings row is frosted glass that blurs the background, like the top bar.
 - **Stream end message**: the message after a stream that ended by itself names the PC or console.
+- **Statistics colors**: high network delay, packet loss and low frame rates now color their numbers, in the compact statistics line and in the full statistics panel. The compact line stays at the top center, both keep their border. (original idea and code by [@xoniq](https://github.com/xoniq), finished by the DELOS team, [#135](https://github.com/DELOS-STREAM/DELOS-android/pull/135))
 
 ### Fixed
 - **Controller input on an external TV**: the handheld keeps input focus while the TV shows the stream and its menu. The same input route sends controller buttons and sticks to the host when the menu is closed and handles them locally when it is open. Not verified on real hardware yet.
@@ -41,7 +42,6 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - **Metadata pill**: the metadata pill no longer flashes when DELOS starts.
 - **Double interface sounds**: in the stream menu, the keyboard over the stream and the trailer player, Android's own click played together with the DELOS sound. Only the DELOS sound plays now, and a sound in the stream menu is no longer cut short after the menu was opened again.
 - **Smoother stream menu**: the focus ring's glow and the tiles' shadows were blurred again for every frame, and each focus move waited for its sound to start. Both are fixed: on the AYN Odin over a PlayStation stream the menu skips about a third as many screen refreshes while the focus moves. The menu still draws 60 frames a second over a stream.
-- **Compact statistics colors**: high network delay, packet loss and low frame rates now color their numbers in the compact statistics line. The line stays at the top center, with the same border. (original idea and code by [@xoniq](https://github.com/xoniq), finished by the DELOS team, [#135](https://github.com/DELOS-STREAM/DELOS-android/pull/135))
 
 ## [1.3.3] - 2026-11-24
 _Virtual displays set up on the host work again with Vibepollo and Vibeshine._

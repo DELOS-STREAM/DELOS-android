@@ -67,7 +67,7 @@ In **Sharpen only**:
   connecting. The host refuses probes during a stream, so there is no Test link here.
 - An ordinary codec without a test shows only the slider and Apply.
 
-The compact statistics line stays at the top center with its normal border. Network delay warns at 60 ms and shows an error at 100 ms; loss warns at 1.5% and shows an error at 5%. The FPS figure warns when the rendered rate falls below 85% of the sent rate and shows an error below 60%; the 1% low warns below 60% of the sent rate. Rate comparisons require a positive sent rate. Only the figures change color.
+The compact statistics line stays at the top center with its normal border. In it and in the full statistics panel (the FPS in the heading and the Rendering, 1% low, Network and Lost frames rows), network delay warns at 60 ms and shows an error at 100 ms; loss warns at 1.5% and shows an error at 5%. The FPS figure warns when the rendered rate falls below 85% of the sent rate and shows an error below 60%; the 1% low warns below 60% of the sent rate. Rate comparisons require a positive sent rate. Only the figures change color.
 
 ### 1.4 Statistics panel, Link block
 

@@ -276,11 +276,13 @@ class StreamStatsPanel internal constructor(
 
     @Composable
     private fun FullPanel(s: StreamStats, modifier: Modifier) {
+        // The same health colours as the compact line (owner, 2026-11-27: in both)
+        val fpsColor = healthColor(CompactStatsHealth.fps(s.renderingFps, s.fps), FPS_GREEN)
         Column(modifier.padding(horizontal = 22.px, vertical = 16.px), verticalArrangement = Arrangement.spacedBy(10.px)) {
             BasicText(
                 buildAnnotatedString {
                     append("${s.width} × ${s.height} · ")
-                    withStyle(SpanStyle(color = FPS_GREEN, fontWeight = FontWeight.SemiBold)) { append(fpsText(s) { format(it) } + if (s.vrr) " VRR" else "") } // l10n-ignore
+                    withStyle(SpanStyle(color = fpsColor, fontWeight = FontWeight.SemiBold)) { append(fpsText(s) { format(it) } + if (s.vrr) " VRR" else "") } // l10n-ignore
                     append(" · ${s.codec}${if (s.hdr) " HDR" else ""}")
                 },
                 style = TextStyle(color = PANEL_TEXT, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 20.tpx, fontFeatureSettings = "tnum"),
@@ -293,12 +295,19 @@ class StreamStatsPanel internal constructor(
                 )
             }
             val res = textResources()
+            // Rows whose value is coloured by its health, by index
+            val tints = HashMap<Int, Color>()
+            val renderingLabel = stringResource(R.string.stream_stats_rendering)
+            val lowLabel = stringResource(R.string.stream_stats_one_percent_low, 1)
+            val networkLabel = stringResource(R.string.stream_stats_network)
+            val lostLabel = stringResource(R.string.stream_stats_lost_frames)
             val rows = buildList {
+                fun tinted(row: Pair<String, String>, color: Color) { tints[size] = color; add(row) }
                 add(stringResource(R.string.stream_stats_decoder) to s.decoder)
                 add(stringResource(R.string.stream_stats_incoming) to "${format(s.incomingFps)} FPS") // l10n-ignore
-                add(stringResource(R.string.stream_stats_rendering) to "${format(s.renderingFps)} FPS") // l10n-ignore
-                if (s.onePercentLowFps >= 0f) add(stringResource(R.string.stream_stats_one_percent_low, 1) to "${format(s.onePercentLowFps)} FPS") // l10n-ignore
-                add(stringResource(R.string.stream_stats_network) to "${s.networkMs} ms ± ${s.networkVarianceMs} ms") // l10n-ignore
+                tinted(renderingLabel to "${format(s.renderingFps)} FPS", fpsColor) // l10n-ignore
+                if (s.onePercentLowFps >= 0f) tinted(lowLabel to "${format(s.onePercentLowFps)} FPS", healthColor(CompactStatsHealth.low(s.onePercentLowFps, s.fps))) // l10n-ignore
+                tinted(networkLabel to "${s.networkMs} ms ± ${s.networkVarianceMs} ms", healthColor(CompactStatsHealth.network(s.networkMs))) // l10n-ignore
                 if (s.hostMs >= 0f) add(stringResource(R.string.stream_stats_pc_processing) to "${format(s.hostMs)} ms (${format(s.hostMinMs)}–${format(s.hostMaxMs)})") // l10n-ignore
                 add(stringResource(R.string.stream_stats_decoding) to "${format(s.decodeMs, 2)} ms") // l10n-ignore
                 s.console?.let { c ->
@@ -313,7 +322,7 @@ class StreamStatsPanel internal constructor(
                 s.renderLatency?.let { add(stringResource(R.string.stream_stats_render_latency) to renderLatencyText(it)) }
                 add(stringResource(R.string.stream_stats_total_latency) to "${format(s.totalMs)} ms") // l10n-ignore
                 if (s.bandwidthKb >= 0f) add(stringResource(R.string.stream_stats_bandwidth) to bandwidth(s.bandwidthKb))
-                add(stringResource(R.string.stream_stats_lost_frames) to "${format(s.lossPercent, 2)} %")
+                tinted(lostLabel to "${format(s.lossPercent, 2)} %", healthColor(CompactStatsHealth.loss(s.lossPercent)))
                 com.limelight.diag.StreamEncryption.last?.let { add(stringResource(R.string.stream_stats_encryption) to it.text(res)) }
                 s.backlog?.let { b ->
                     add(stringResource(R.string.stream_stats_backlog) to "")
@@ -335,7 +344,7 @@ class StreamStatsPanel internal constructor(
             val value = label.copy(color = PANEL_TEXT, fontFeatureSettings = "tnum")
             Row(horizontalArrangement = Arrangement.spacedBy(24.px)) {
                 Column { rows.forEach { BasicText(it.first, style = label) } }
-                Column { rows.forEach { BasicText(it.second, style = value) } }
+                Column { rows.forEachIndexed { i, row -> BasicText(row.second, style = tints[i]?.let { value.copy(color = it) } ?: value) } }
             }
         }
     }
