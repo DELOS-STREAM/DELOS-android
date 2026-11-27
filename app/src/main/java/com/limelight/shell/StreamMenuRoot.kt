@@ -426,9 +426,12 @@ internal fun StreamMenuRoot(
                     onOutsideTap = ::outsideTap,
                     modifier = Modifier.offset(0.px, (stageHeight - dock.dockHeight).px),
                 )
-                if (page == MenuPage.MAIN && !popPresent && picker == null) {
-                    StreamCamera(cameraFocus, { enterClock.value }, { exitClock.value },
-                        Modifier.align(Alignment.TopEnd).padding(top = dock.tilesLeft.px, end = dock.tilesLeft.px),
+                // Out of the way of a tile's popover, the picker and More, fading so it does not blink (owner, 2026-11-27)
+                androidx.compose.animation.AnimatedVisibility(page == MenuPage.MAIN && !popPresent && picker == null,
+                    Modifier.align(Alignment.TopEnd).padding(top = dock.tilesLeft.px, end = dock.tilesLeft.px),
+                    enter = androidx.compose.animation.fadeIn(tween(Motion.FADE)),
+                    exit = androidx.compose.animation.fadeOut(tween(Motion.FADE))) {
+                    StreamCamera(cameraFocus, { enterClock.value }, { exitClock.value }, Modifier,
                         onDown = { circleFocus.getValue(cameraReturn).requestFocus(); true }) {
                         shutter++
                         host.takeScreenshot()

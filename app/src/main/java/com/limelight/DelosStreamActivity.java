@@ -1871,8 +1871,12 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         controllerHandler.handleRumbleTriggers(controllerNumber, leftTrigger, rightTrigger);
     }
 
+    /** Whether the stream is in HDR now (the screenshot tone-maps its PQ picture). */
+    private volatile boolean hdrActive;
+
     @Override
     public void setHdrMode(boolean enabled, byte[] hdrMetadata) {
+        hdrActive = enabled;
         surfaceController.setHdrMode(enabled, hdrMetadata);
     }
 
@@ -2125,7 +2129,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     public void captureScreenshot(java.util.function.Consumer<Boolean> onResult) {
         com.limelight.utils.StreamScreenshot.capture(this,
-                streamContainer == null ? null : streamContainer.getSurfaceView(), onResult);
+                streamContainer == null ? null : streamContainer.getSurfaceView(), hdrActive, onResult);
     }
 
     @Override
