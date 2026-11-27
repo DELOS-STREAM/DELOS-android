@@ -15,7 +15,7 @@ Not verified on real hardware yet: variable refresh rate (no VRR display was ava
 - **Lighter look on Android TV**: the first profile created on an Android TV starts with the still background, no hero blur and reduced motion, because TV hardware is usually slower than a handheld. Every option can be turned back on in Settings → Appearance, and profiles that already exist keep their look. (by [@xoniq](https://github.com/xoniq), [#130](https://github.com/DELOS-STREAM/DELOS-android/pull/130))
 
 ### Changed
-- **Compact statistics colors**: high network delay, packet loss and low frame rates now color their numbers in the compact statistics line. The line stays at the top center, with the same border. (original idea and code by [@xoniq](https://github.com/xoniq), finished by the DELOS team, [#135](https://github.com/DELOS-STREAM/DELOS-android/pull/135))
+- **Statistics colors**: high network delay, packet loss and low frame rates now color their numbers, in the compact statistics line and in the full statistics panel. The compact line stays at the top center, both keep their border. (original idea and code by [@xoniq](https://github.com/xoniq), finished by the DELOS team, [#135](https://github.com/DELOS-STREAM/DELOS-android/pull/135))
 
 ## [1.3.3] - 2026-11-24
 _Virtual displays set up on the host work again with Vibepollo and Vibeshine._
