@@ -478,6 +478,9 @@ class ShellState(initial: Screen) {
     /** The element to focus again once the closed layer has left the composition. */
     fun takeReturnFocus(): FocusRequester? = returnFocus.also { returnFocus = null }
 
+    /** Told the kind of every toast shown (the shell plays its sound); the stream window's toasts stay silent over the game. */
+    var onToast: ((ToastKind) -> Unit)? = null
+
     /**
      * A toast with an [action] keeps its existing Undo window unless a duration is supplied. Its [kind] is the caller's, else it is
      * read from the [icon] (`toastKindFor`); information by default.
@@ -492,6 +495,7 @@ class ShellState(initial: Screen) {
         val shown = toastKindFor(kind, icon, action != null)
         DiagLog.logToast(shown, text)
         toast = Toast(text, icon, ++toastCounter, action, durationMs, shown)
+        onToast?.invoke(shown)
     }
 
     fun hideToast(id: Int) {

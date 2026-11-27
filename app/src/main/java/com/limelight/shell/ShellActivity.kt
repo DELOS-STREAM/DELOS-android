@@ -98,6 +98,36 @@ class ShellActivity : ComponentActivity() {
     /** The result of a stream that ended on its own, which the shell still has to show (once). */
     private val results = MutableStateFlow<StreamResult?>(null)
 
+    /** The game controllers present while the shell is in front, so a removed one (no longer readable) is known as one. */
+    private val pads = mutableSetOf<Int>()
+    private val padListener = object : android.hardware.input.InputManager.InputDeviceListener {
+        override fun onInputDeviceAdded(id: Int) {
+            if (isPad(id) && pads.add(id)) feedback.play(com.limelight.shell.ui.Cue.PAD_CONNECT)
+        }
+        override fun onInputDeviceRemoved(id: Int) {
+            if (pads.remove(id)) feedback.play(com.limelight.shell.ui.Cue.PAD_DISCONNECT)
+        }
+        override fun onInputDeviceChanged(id: Int) = Unit
+    }
+
+    /** A real game controller: its gamepad part only (a DualSense also brings a touchpad and motion sensors), not a virtual one. */
+    private fun isPad(id: Int): Boolean {
+        val device = android.view.InputDevice.getDevice(id) ?: return false
+        return !device.isVirtual && device.supportsSource(android.view.InputDevice.SOURCE_GAMEPAD)
+    }
+
+    private fun watchPads(on: Boolean) {
+        val input = getSystemService(android.hardware.input.InputManager::class.java) ?: return
+        if (on) {
+            // Controllers that came or went while the shell was away (in a stream) are taken as they are now, silently
+            pads.clear()
+            android.view.InputDevice.getDeviceIds().filterTo(pads, ::isPad)
+            input.registerInputDeviceListener(padListener, null)
+        } else {
+            input.unregisterInputDeviceListener(padListener)
+        }
+    }
+
     // Android 10-12: puts the saved app language on this activity's resources (a no-op on Android 13+, where the system does it)
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLanguage.wrap(newBase))
@@ -130,6 +160,14 @@ class ShellActivity : ComponentActivity() {
         shellState = shell
         if (settingsAgain) shell.settingsTab = SettingsTab.DISPLAY
         DelosToast.register(this, show = { text, durationMs, kind -> shell.showToast(text, durationMs = durationMs, kind = kind) })
+        shell.onToast = { kind ->
+            feedback.play(when (kind) {
+                com.limelight.utils.ToastKind.SUCCESS -> com.limelight.shell.ui.Cue.TOAST_SUCCESS
+                com.limelight.utils.ToastKind.WARNING -> com.limelight.shell.ui.Cue.TOAST_WARNING
+                com.limelight.utils.ToastKind.ERROR -> com.limelight.shell.ui.Cue.ERROR
+                com.limelight.utils.ToastKind.INFO, com.limelight.utils.ToastKind.ACTION -> com.limelight.shell.ui.Cue.TOAST_INFO
+            })
+        }
         metadata = GameMetadataStore(this, profiles::settings)
         igdbImages = IgdbImageCache(this)
         val startup = StartupStore(profiles::settings)
@@ -287,6 +325,7 @@ class ShellActivity : ComponentActivity() {
             profiles.settings().getBoolean(com.limelight.preferences.PreferenceConfiguration.SOUND_ON_DEVICE_STRING, true))
         feedback.reroute()
         feedback.holdOutput(true)
+        watchPads(true)
         languageSettings?.let { AppLanguage.mirror(this, it) }
         profiles.streamProfiles.resume()
         placement?.start()
@@ -310,6 +349,7 @@ class ShellActivity : ComponentActivity() {
         if (::feedback.isInitialized) {
             feedback.stopIntro()
             feedback.holdOutput(false)
+            watchPads(false)
         }
         super.onStop()
     }

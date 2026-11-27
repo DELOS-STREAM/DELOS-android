@@ -25,12 +25,15 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.collect
 
-enum class Cue { MOVE, SELECT, BACK, OPEN, ERROR, TOGGLE, STEP, TAB, COMPLETE, UNDO, SCREENSHOT }
+enum class Cue {
+    MOVE, SELECT, BACK, OPEN, ERROR, TOGGLE, STEP, TAB, COMPLETE, UNDO, SCREENSHOT,
+    TOAST_INFO, TOAST_WARNING, TOAST_SUCCESS, PAD_CONNECT, PAD_DISCONNECT, STREAM_START, STREAM_END, MENU_OPEN, MENU_CLOSE,
+}
 
 /**
- * UI sounds (res/raw: Open Sounds by Romain Raynal, see docs/CREDITS.md), the intro's sound track and
- * haptics. Created by the activity, released in onDestroy. While a DualSense is plugged in by USB, the sounds stay
- * on the device ([com.limelight.binding.audio.DeviceOutput]), not on the controller's speaker.
+ * UI sounds (res/raw/ui_<cue>.wav and its takes ui_<cue>_v2..v4.wav, synthesized by tools/sounds/make_ui_sounds.py), the
+ * intro's sound track and haptics. Created by the activity, released in onDestroy. While a DualSense is plugged in by USB,
+ * the sounds stay on the device ([com.limelight.binding.audio.DeviceOutput]), not on the controller's speaker.
  */
 class Feedback(context: Context) {
     private val appContext = context.applicationContext
@@ -117,12 +120,19 @@ class Feedback(context: Context) {
     /** One UI sound decoded once: float PCM and its format. */
     private class Clip(val pcm: FloatArray, val format: AudioFormat)
 
-    private val clips: Map<Cue, Clip> = mapOf(
-        Cue.MOVE to R.raw.ui_move, Cue.SELECT to R.raw.ui_select, Cue.BACK to R.raw.ui_back, Cue.OPEN to R.raw.ui_open, Cue.ERROR to R.raw.ui_error,
-        Cue.TOGGLE to R.raw.ui_toggle, Cue.STEP to R.raw.ui_step,
-        Cue.TAB to R.raw.ui_tab, Cue.COMPLETE to R.raw.ui_complete, Cue.UNDO to R.raw.ui_undo,
-        Cue.SCREENSHOT to R.raw.ui_screenshot,
-    ).mapNotNull { (cue, res) -> decode(res)?.let { cue to it } }.toMap()
+    /**
+     * Every take of each cue (ui_<cue>.wav, then ui_<cue>_v2.wav …), padded with silence to the longest, so one static track
+     * holds any of them. Played in turn, so a repeated action does not sound mechanical (owner, 2026-11-27).
+     */
+    private val clips: Map<Cue, List<Clip>> = Cue.entries.mapNotNull { cue ->
+        val base = "ui_" + cue.name.lowercase()
+        val takes = (1..MAX_TAKES).mapNotNull { n ->
+            val res = appContext.resources.getIdentifier(if (n == 1) base else "${base}_v$n", "raw", appContext.packageName)
+            if (res == 0) null else decode(res)
+        }
+        val longest = takes.maxOfOrNull { it.pcm.size } ?: return@mapNotNull null
+        cue to takes.map { if (it.pcm.size == longest) it else Clip(it.pcm.copyOf(longest), it.format) }
+    }.toMap()
 
     /**
      * Each cue a static track (restarted from its start on every play; a streaming track per cue dropped the short sounds on the
@@ -132,25 +142,31 @@ class Feedback(context: Context) {
      * start and the new one played on top of each other, and only the first cue after a pause sounded as the file does
      * (owner, 2026-11-27).
      */
-    private inner class CueTrack(private val clip: Clip) {
+    private inner class CueTrack(private val takes: List<Clip>) {
         val track: android.media.AudioTrack = android.media.AudioTrack.Builder()
             .setAudioAttributes(attributes)
-            .setAudioFormat(clip.format)
+            .setAudioFormat(takes[0].format)
             .setTransferMode(android.media.AudioTrack.MODE_STATIC)
             .setPerformanceMode(android.media.AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
-            .setBufferSizeInBytes(clip.pcm.size * 4)
+            .setBufferSizeInBytes(takes[0].pcm.size * 4)
             .build()
-            .also { it.preferredDevice = output; it.write(clip.pcm, 0, clip.pcm.size, android.media.AudioTrack.WRITE_BLOCKING) }
+            .also { it.preferredDevice = output; it.write(takes[0].pcm, 0, takes[0].pcm.size, android.media.AudioTrack.WRITE_BLOCKING) }
         private var loaded = 1f
+        private var loadedTake = 0
+        private var next = 0
 
         fun play(gain: Float) {
             runCatching {
                 track.stop()
+                val take = next
+                next = (next + 1) % takes.size
                 val wanted = maxOf(1f, gain)
-                if (wanted != loaded) {
-                    val pcm = if (wanted > 1f) FloatArray(clip.pcm.size) { (clip.pcm[it] * wanted).coerceIn(-1f, 1f) } else clip.pcm
+                if (wanted != loaded || take != loadedTake) {
+                    val src = takes[take].pcm
+                    val pcm = if (wanted > 1f) FloatArray(src.size) { (src[it] * wanted).coerceIn(-1f, 1f) } else src
                     track.write(pcm, 0, pcm.size, android.media.AudioTrack.WRITE_BLOCKING)
                     loaded = wanted
+                    loadedTake = take
                 }
                 track.setVolume(minOf(1f, gain))
                 track.reloadStaticData()
@@ -165,8 +181,8 @@ class Feedback(context: Context) {
     private val routeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     init { routeScope.launch { volume.state.map { it.preferredId }.distinctUntilChanged().collect { reroute() } } }
 
-    private fun buildTracks(): Map<Cue, CueTrack> = clips.mapNotNull { (cue, clip) ->
-        runCatching { CueTrack(clip) }.getOrNull()?.let { cue to it }
+    private fun buildTracks(): Map<Cue, CueTrack> = clips.mapNotNull { (cue, takes) ->
+        runCatching { CueTrack(takes) }.getOrNull()?.let { cue to it }
     }.toMap()
 
     /** A 16- or 24-bit PCM WAV in res/raw as float PCM. */
@@ -243,7 +259,7 @@ class Feedback(context: Context) {
             val gain = volume.gain
             runCatching { cuePlayer.execute { track.play(gain) } } // refused after release()
         }
-        if (hapticsEnabled && cue != Cue.UNDO) {
+        if (hapticsEnabled && cue !in NO_HAPTICS) {
             if (rumbleMotorOnly) pulse(cue) else view?.performHapticFeedback(hapticFor(cue))
         }
     }
@@ -301,12 +317,12 @@ class Feedback(context: Context) {
     }
 
     private fun hapticFor(cue: Cue): Int = when (cue) {
-        Cue.MOVE, Cue.BACK, Cue.STEP, Cue.TAB -> HapticFeedbackConstants.CLOCK_TICK
-        Cue.SELECT, Cue.OPEN, Cue.TOGGLE, Cue.COMPLETE, Cue.SCREENSHOT ->
+        Cue.MOVE, Cue.BACK, Cue.STEP, Cue.TAB, Cue.MENU_OPEN, Cue.MENU_CLOSE -> HapticFeedbackConstants.CLOCK_TICK
+        Cue.SELECT, Cue.OPEN, Cue.TOGGLE, Cue.COMPLETE, Cue.SCREENSHOT, Cue.STREAM_START ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
         Cue.ERROR ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
-        Cue.UNDO -> HapticFeedbackConstants.VIRTUAL_KEY
+        else -> HapticFeedbackConstants.VIRTUAL_KEY
     }
 
     /**
@@ -318,10 +334,10 @@ class Feedback(context: Context) {
         val v = vibrator ?: return
         val full = if (v.hasAmplitudeControl()) 255 else VibrationEffect.DEFAULT_AMPLITUDE
         val effect = when (cue) {
-            Cue.MOVE, Cue.BACK, Cue.STEP, Cue.TAB -> VibrationEffect.createOneShot(50, full)
-            Cue.SELECT, Cue.OPEN, Cue.TOGGLE, Cue.COMPLETE, Cue.SCREENSHOT -> VibrationEffect.createOneShot(70, full)
+            Cue.MOVE, Cue.BACK, Cue.STEP, Cue.TAB, Cue.MENU_OPEN, Cue.MENU_CLOSE -> VibrationEffect.createOneShot(50, full)
+            Cue.SELECT, Cue.OPEN, Cue.TOGGLE, Cue.COMPLETE, Cue.SCREENSHOT, Cue.STREAM_START -> VibrationEffect.createOneShot(70, full)
             Cue.ERROR -> VibrationEffect.createWaveform(longArrayOf(0, 60, 80, 60), intArrayOf(0, full, 0, full), -1)
-            Cue.UNDO -> return
+            else -> return
         }
         // Touch usage: follows the system's touch feedback intensity, like the regular haptics
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -337,6 +353,13 @@ class Feedback(context: Context) {
         const val REROUTE_DELAY_MS = 400L
         /** A repeat of the same cue closer than this is one event reported twice (one frame); a held D-pad repeats slower. */
         const val REPEAT_GUARD_MS = 35L
+        /** Takes per cue the generator writes (ui_<cue>.wav … ui_<cue>_v4.wav); fewer files are fine. */
+        const val MAX_TAKES = 4
+        /**
+         * Cues without a buzz: undo (the toast's action), and what the app announces on its own (toasts, a controller coming
+         * or going, the end of a stream): a vibration there would feel like a press that did not happen.
+         */
+        val NO_HAPTICS = setOf(Cue.UNDO, Cue.TOAST_INFO, Cue.TOAST_WARNING, Cue.TOAST_SUCCESS, Cue.PAD_CONNECT, Cue.PAD_DISCONNECT, Cue.STREAM_END)
     }
 }
 

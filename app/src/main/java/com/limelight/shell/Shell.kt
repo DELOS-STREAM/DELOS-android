@@ -454,6 +454,7 @@ fun Shell(
         launchLine.value = StreamLoader.firstLine(res, launch.pc.name)
         delay(if (appearance.reducedMotion) 150 else 350)
         shell.diving = true
+        feedback.play(Cue.STREAM_START)
         // Only a game that really opens counts as last played (not one cancelled in the loader)
         repo.setLastPlayed(launch.pc.uuid, launch.app.id)
         // The stream (DelosStreamActivity, launchMode singleTask) opens in its own task, where the system ignores custom
@@ -492,6 +493,7 @@ fun Shell(
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { handOverToStream() }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         val arrival = StreamExit.take()
+        if (arrival != null || returningFromStream.value) feedback.play(Cue.STREAM_END)
         // Not coming back through the exit portal (a cancelled or failed launch): the cover of the hand-over goes away
         if (arrival == null && shell.exitCover) {
             shell.exitCover = false
@@ -653,17 +655,20 @@ fun Shell(
         }
     }
 
+    /** B closes the context menu with its own cue (from a submenu it only goes back to the parent: the usual one). */
+    fun backCue() = if (shell.picker == null && shell.layer is Layer.Context && shell.menuPath.isEmpty()) Cue.MENU_CLOSE else Cue.BACK
+
     fun toggleContext() {
         when (shell.layer) {
             is Layer.Context -> {
-                feedback.play(Cue.BACK)
+                feedback.play(Cue.MENU_CLOSE)
                 shell.closeLayer()
             }
             null -> {
                 // A settings row's Options opens its popup, the one a tap opens (it plays its own cue)
                 tracker.options?.let { it(); return }
                 val menu = tracker.contextMenu ?: return
-                feedback.play(Cue.OPEN)
+                feedback.play(Cue.MENU_OPEN)
                 shell.openLayer(Layer.Context(menu, tracker.bounds()), tracker)
             }
             else -> Unit
@@ -716,7 +721,7 @@ fun Shell(
     }
 
     BackHandler(enabled = shell.layer != null || shell.picker != null || shell.screen.back != null) {
-        feedback.play(Cue.BACK)
+        feedback.play(backCue())
         shell.back()
     }
     // B in the portal only cancels waiting for a PC to wake up; nothing underneath moves meanwhile
@@ -803,7 +808,7 @@ fun Shell(
         // Touch: a long press on a cover (or any element with a context menu) opens it, as Start does
         LocalContextMenuOpener provides { menu, bounds ->
             if (longPressOpensContext(menu, true, shell.layer != null, shell.launch != null || shell.portal != null || shell.result != null || shell.picker != null)) {
-                feedback.play(Cue.OPEN)
+                feedback.play(Cue.MENU_OPEN)
                 shell.openLayer(Layer.Context(menu, bounds ?: tracker.bounds()), tracker)
             }
         },
@@ -827,7 +832,7 @@ fun Shell(
                 // is the item's (focusEffects: its Options)
                 .secondaryClickOutside {
                     if (shell.layer != null || shell.picker != null) {
-                        feedback.play(Cue.BACK)
+                        feedback.play(backCue())
                         shell.back()
                     }
                 },
@@ -935,7 +940,7 @@ fun Shell(
                 // While a touch drag moves the side menu, the scrim follows its progress (also as it leaves after a drag closed it)
                 val sideProgress: (() -> Float)? = if (sideDrag.engaged && (shell.layer == Layer.Side || shell.layer == null)) ({ sideDrag.progress }) else null
                 Scrim(shell.layer != null, light = shell.layer is Layer.Context, haze, progress = sideProgress) {
-                    feedback.play(Cue.BACK)
+                    feedback.play(if (shell.layer is Layer.Context) Cue.MENU_CLOSE else Cue.BACK)
                     shell.closeLayer()
                 }
                 val context = shell.layer as? Layer.Context
