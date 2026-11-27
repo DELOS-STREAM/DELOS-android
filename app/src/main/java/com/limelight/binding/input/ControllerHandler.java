@@ -3783,6 +3783,13 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     type = MoonBridge.LI_CTYPE_NINTENDO;
                     break;
                 default:
+                    // Some firmwares re-create a controller under their own vendor id and keep only its name (a Bluetooth
+                    // DualSense as "DualSense Wireless Controller" 2020:0111 in the AYN Odin's TV mode, verified 2026-11-27)
+                    if (inputDevice.getName().contains("DualSense") || inputDevice.getName().contains("DualShock")
+                            || inputDevice.getName().contains("DUALSHOCK")) {
+                        type = MoonBridge.LI_CTYPE_PS;
+                        break;
+                    }
                     // Consult SDL's controller type list to see if it knows
                     type = MoonBridge.guessControllerType(inputDevice.getVendorId(), inputDevice.getProductId());
                     break;
