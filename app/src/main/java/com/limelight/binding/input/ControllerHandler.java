@@ -137,6 +137,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private volatile boolean stopped = false;
     // Delos: the Full keyboard owns the controller while it is up (setInputSuspended)
     private volatile boolean inputSuspended = false;
+    /** Whether the USB driver claims a wired DualSense for this stream; null until its service connects. */
+    private volatile Boolean usbClaimsDualSense;
 
     private final PreferenceConfiguration prefConfig;
     // The stream menu switches the rumble preset live, so the rumble playback follows
@@ -262,36 +264,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         InputDeviceContext context = inputDeviceContexts.get(deviceId);
         if (context != null) {
             LimeLog.info("Removed controller: "+context.name+" ("+deviceId+")");
-            boolean hadPlayer = context.assignedControllerNumber && context.reservedControllerNumber;
             releaseControllerNumber(context);
             context.destroy();
             inputDeviceContexts.remove(deviceId);
-            if (hadPlayer) {
-                giveFreedPlayerToUsbTakeover(context);
-            }
-        }
-    }
-
-    /**
-     * Delos: the USB driver claiming a controller removes Android's own input device for it a moment later (the kernel driver
-     * lets go). That device had a player number; the USB controller, announced just before, got the next free one (a wired
-     * DualSense became player 3 behind its own vanished copy and a game listening to player 1 ignored it). The USB controller
-     * of the same model that arrived within the last two seconds takes the freed, lower number instead.
-     */
-    private void giveFreedPlayerToUsbTakeover(InputDeviceContext removed) {
-        long now = SystemClock.uptimeMillis();
-        for (int i = 0; i < usbDeviceContexts.size(); i++) {
-            UsbDeviceContext usb = usbDeviceContexts.valueAt(i);
-            if (usb.assignedControllerNumber && usb.reservedControllerNumber && usb.controllerNumber > removed.controllerNumber
-                    && usb.vendorId == removed.identityVendorId && usb.productId == removed.identityProductId
-                    && now - usb.createdAtMs < 2000) {
-                LimeLog.info("USB controller " + usb.id + " takes over player " + removed.controllerNumber + " from " + removed.name);
-                releaseControllerNumber(usb);
-                usb.assignedControllerNumber = false;
-                usb.reservedControllerNumber = false;
-                assignControllerNumberIfNeeded(usb);
-                return;
-            }
         }
     }
 
@@ -656,22 +631,25 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     /**
-     * Delos: a controller pressed while the stream was still connecting (the loader) got its player number then, but its
-     * arrival went nowhere: the host first heard of it from its input and made it a default Xbox pad (a wired DualSense came
-     * back as Xbox, with plain rumble instead of its own type). Once the stream runs, the host learns what each numbered
-     * controller is.
+     * Delos: tells the host about every connected controller with sticks (those {@link #getAttachedControllerMask} counts) once
+     * the stream runs, instead of on its first input. Windows announces a newly attached controller, and the input that created
+     * it was lost to that announcement (a first Back hold for Task View did nothing).
      */
-    public void resendControllerArrivals() {
+    public void announceConnectedControllers() {
         if (stopped) {
             return;
         }
-        for (int i = 0; i < inputDeviceContexts.size(); i++) {
-            InputDeviceContext context = inputDeviceContexts.valueAt(i);
-            if (context.assignedControllerNumber && context.reservedControllerNumber) context.sendControllerArrival();
-        }
-        for (int i = 0; i < usbDeviceContexts.size(); i++) {
-            UsbDeviceContext context = usbDeviceContexts.valueAt(i);
-            if (context.assignedControllerNumber && context.reservedControllerNumber) context.sendControllerArrival();
+        for (int id : inputManager.getInputDeviceIds()) {
+            InputDevice dev = inputManager.getInputDevice(id);
+            if (dev == null || !hasJoystickAxes(dev)) {
+                continue;
+            }
+            InputDeviceContext context = inputDeviceContexts.get(id);
+            if (context == null) {
+                context = createInputDeviceContextForDevice(dev);
+                inputDeviceContexts.put(id, context);
+            }
+            assignControllerNumberIfNeeded(context);
         }
     }
 
@@ -880,7 +858,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         UsbDeviceContext context = new UsbDeviceContext();
 
         context.id = device.getControllerId();
-        context.createdAtMs = SystemClock.uptimeMillis();
         context.device = device;
         context.external = true;
 
@@ -918,49 +895,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         // We can't use the platform API, so we'll have to just guess based on the gamepad type.
         // If this is a PlayStation controller with a touchpad, we know it has a clickpad.
         return type == MoonBridge.LI_CTYPE_PS;
-    }
-
-    /**
-     * Delos: the Odin's TV mode takes a Bluetooth controller's gamepad device and re-creates it under AYN's vendor id 0x2020 with
-     * the same name ("DualSense Wireless Controller" as 2020:0111); the original's other devices stay ("DualSense Wireless
-     * Controller Motion Sensors", 054c:0ce6). Returns that other device, which carries the real ids, or null for anything else.
-     */
-    private static InputDevice stationOriginal(InputDevice dev) {
-        if (dev.getVendorId() != 0x2020) {
-            return null;
-        }
-        String prefix = dev.getName() + " ";
-        for (int id : InputDevice.getDeviceIds()) {
-            InputDevice other = InputDevice.getDevice(id);
-            if (other != null && other.getId() != dev.getId() && other.getVendorId() != 0x2020 && other.getVendorId() != 0
-                    && other.getName().startsWith(prefix)) {
-                return other;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Some firmwares re-create a controller under their own vendor id and keep only its name (e.g. a DualSense as
-     * "DualSense Wireless Controller" 2020:0111 in the AYN Odin's TV mode). Returns Sony's product id for a PlayStation
-     * controller recognised by name, or 0 when the name does not identify one.
-     */
-    private static int playStationProductByName(String name) {
-        if (name.contains("DualSense Edge")) {
-            return 0x0df2;
-        }
-        if (name.contains("DualSense")) {
-            return 0x0ce6;
-        }
-        if (name.contains("DualShock 4") || name.contains("DUALSHOCK 4")) {
-            return 0x09cc;
-        }
-        return 0;
-    }
-
-    /** The handheld's own pad: an internal one, or the Odin's, which Android lists as external ("Xbox Wireless Controller" 2020:0112). */
-    private static boolean isHandheldPad(GenericControllerContext context) {
-        return !context.external || (context.vendorId == 0x2020 && context.productId == 0x0112);
     }
 
     private static boolean isExternal(InputDevice dev) {
@@ -1136,31 +1070,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 if (dev.getSensorManager().getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null || dev.getSensorManager().getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
                     context.sensorManager = dev.getSensorManager();
                 }
-            }
-        }
-
-        context.identityVendorId = dev.getVendorId();
-        context.identityProductId = dev.getProductId();
-        InputDevice original = stationOriginal(dev);
-        if (original != null) {
-            // The PC gets the controller in the player's hands (a DualSense as a PlayStation controller), and its motion
-            // sensors, which stay on the original's own device
-            context.identityVendorId = original.getVendorId();
-            context.identityProductId = original.getProductId();
-            LimeLog.info(devName + " is a copy of '" + original.getName() + "' (" + String.format(java.util.Locale.ROOT, "%04x:%04x",
-                    original.getVendorId(), original.getProductId()) + ")");
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && context.sensorManager == null && prefConfig.gamepadMotionSensors
-                    && (original.getSensorManager().getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
-                    || original.getSensorManager().getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null)) {
-                context.sensorManager = original.getSensorManager();
-            }
-        }
-        else if (context.identityVendorId != 0x054c) {
-            int psProduct = playStationProductByName(devName);
-            if (psProduct != 0) {
-                context.identityVendorId = 0x054c;
-                context.identityProductId = psProduct;
-                LimeLog.info(devName + " is identified by name as a PlayStation controller (054c:" + String.format(java.util.Locale.ROOT, "%04x", psProduct) + ")");
             }
         }
 
@@ -1600,9 +1509,58 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
+    /**
+     * Delos: tells whether this stream's USB driver claims a wired DualSense (set when the driver service connects).
+     * Until then, and when it does not, Android's own devices for it are ordinary controllers.
+     */
+    public void setUsbClaimsDualSense(boolean claims) {
+        usbClaimsDualSense = claims;
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            inputDeviceContexts.valueAt(i).takenByUsbDriver = null;
+        }
+    }
+
+    /**
+     * Delos: Android's input device for a controller the USB driver claims for this stream. It must never become a player:
+     * it vanishes once the driver takes the controller, and a player the host already made from it (an Xbox pad without
+     * rumble when pressed during the loader, or a third controller) stays the one games use, while the real controller
+     * becomes another player. Some firmwares keep a copy of it under their own ids (the AYN Odin as 2020:0111), so it is
+     * matched by the USB device's name ("Sony Interactive Entertainment DualSense Wireless Controller"), which is also the
+     * name Linux gives a USB HID controller; a Bluetooth DualSense has a different name and stays a player.
+     */
+    private boolean isTakenByUsbDriver(InputDeviceContext context) {
+        if (context.takenByUsbDriver != null) {
+            return context.takenByUsbDriver;
+        }
+        boolean taken = false;
+        if (usbClaimsDualSense != null && prefConfig.usbDriver) {
+            UsbManager usbManager = (UsbManager) activityContext.getSystemService(Context.USB_SERVICE);
+            if (usbManager != null) {
+                for (UsbDevice dev : usbManager.getDeviceList().values()) {
+                    String usbName = (dev.getManufacturerName() == null ? "" : dev.getManufacturerName().trim() + " ")
+                            + (dev.getProductName() == null ? "" : dev.getProductName().trim());
+                    if (usbName.equals(context.name) && UsbDriverService.shouldClaimDevice(dev, prefConfig.bindAllUsb, usbClaimsDualSense)) {
+                        LimeLog.info(context.name + " (" + context.id + ") is the USB driver's controller, not a player of its own");
+                        taken = true;
+                        break;
+                    }
+                }
+            }
+        }
+        // Unknown until the driver service connects: decided again then
+        if (usbClaimsDualSense != null) {
+            context.takenByUsbDriver = taken;
+        }
+        return taken;
+    }
+
     private void sendControllerInputPacket(GenericControllerContext originalContext) {
         // Delos: the Full keyboard owns the physical controllers (the on-screen gamepad is the default context)
         if (inputSuspended && originalContext != defaultContext) {
+            return;
+        }
+        if (originalContext instanceof InputDeviceContext && !(originalContext instanceof UsbDeviceContext)
+                && isTakenByUsbDriver((InputDeviceContext) originalContext)) {
             return;
         }
 
@@ -2453,13 +2411,11 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             return;
         }
 
-        boolean matchedHandheldPad = false;
         for (int i = 0; i < inputDeviceContexts.size(); i++) {
             InputDeviceContext deviceContext = inputDeviceContexts.valueAt(i);
 
             if (deviceContext.controllerNumber == controllerNumber) {
                 foundMatchingDevice = true;
-                matchedHandheldPad |= isHandheldPad(deviceContext);
 
                 deviceContext.lowFreqMotor = lowFreqMotor;
                 deviceContext.highFreqMotor = highFreqMotor;
@@ -2507,9 +2463,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 rumbleSingleVibrator(deviceVibrator, lowFreqMotor, highFreqMotor);
                 fallbackVibrated = true;
             }
-            // Only for the handheld's own pad: a controller in the player's hands without rumble (a Bluetooth DualSense in the
-            // Odin's TV mode) would shake the handheld lying elsewhere (owner, 2026-11-27)
-            else if (foundMatchingDevice && matchedHandheldPad && !vibrated && prefConfig.vibrateFallbackToDevice) {
+            else if (foundMatchingDevice && !vibrated && prefConfig.vibrateFallbackToDevice) {
                 // We found a device to vibrate but it didn't have rumble support. The user
                 // has requested us to vibrate the device in this case.
 
@@ -3611,8 +3565,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     class InputDeviceContext extends GenericControllerContext {
         public String name;
-        /** The controller's real USB ids: its own, or those of the controller behind a copy ([stationOriginal]). */
-        public int identityVendorId, identityProductId;
+        /** Android's device for a controller the USB driver claims ([isTakenByUsbDriver]); null until decided. */
+        public Boolean takenByUsbDriver;
         public VibratorManager vibratorManager;
         public Vibrator vibrator;
         public boolean quadVibrators;
@@ -3803,7 +3757,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         @Override
         public void sendControllerArrival() {
             byte type;
-            switch (identityVendorId) {
+            switch (inputDevice.getVendorId()) {
                 case 0x045e: // Microsoft
                     type = MoonBridge.LI_CTYPE_XBOX;
                     break;
@@ -3815,7 +3769,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     break;
                 default:
                     // Consult SDL's controller type list to see if it knows
-                    type = MoonBridge.guessControllerType(identityVendorId, identityProductId);
+                    type = MoonBridge.guessControllerType(inputDevice.getVendorId(), inputDevice.getProductId());
                     break;
             }
 
@@ -3921,9 +3875,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             final byte announcedType = reportedType;
             final short announcedCapabilities = capabilities;
             final int announcedButtons = supportedButtonFlags;
-            final String usbId = inputDevice == null ? "" : String.format(java.util.Locale.ROOT, ", %04x:%04x",
-                    inputDevice.getVendorId(), inputDevice.getProductId());
-            diag(() -> "InputDeviceContext arrival pad " + controllerNumber + " '" + name + "' (device " + id + usbId + "): detected type "
+            diag(() -> "InputDeviceContext arrival pad " + controllerNumber + " '" + name + "' (device " + id + "): detected type "
                     + ControllerSendLog.controllerType(detectedType) + ", reported to the host as "
                     + ControllerSendLog.controllerType(announcedType) + ", capabilities 0x"
                     + String.format(java.util.Locale.ROOT, "%04x", announcedCapabilities) + " ("
@@ -4013,8 +3965,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     class UsbDeviceContext extends InputDeviceContext {
         public AbstractController device;
-        /** When the USB driver announced it ({@link #giveFreedPlayerToUsbTakeover}). */
-        public long createdAtMs;
 
 //        @Override
 //        public void destroy() {

@@ -192,9 +192,11 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             binder.setListener(controllerHandler);
             binder.setStateListener(DelosStreamActivity.this);
             // Delos: a wired DualSense is DELOS's when this stream's settings ask for it (PlayStation or PC settings, #125)
-            binder.setClaimDualSense(psConsoleId != null
+            boolean claimDualSense = psConsoleId != null
                     ? com.limelight.ps.PsPrefs.INSTANCE.prefs(DelosStreamActivity.this).getBoolean(com.limelight.ps.PsPrefs.DUALSENSE_USB, true)
-                    : prefConfig.dualSenseUsb);
+                    : prefConfig.dualSenseUsb;
+            binder.setClaimDualSense(claimDualSense);
+            controllerHandler.setUsbClaimsDualSense(claimDualSense);
             binder.start();
             connectedToUsbDriverService = true;
         }
@@ -1846,7 +1848,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
                 connected = true;
                 connecting = false;
                 windowController.updatePipAutoEnter();
-                if (controllerHandler != null) controllerHandler.resendControllerArrivals();
+                // Delos: the PC learns the connected controllers now, not on their first press (owner, 2026-11-24): Windows
+                // announces a new controller, and that first press (Back held for Task View) used to be lost to it
+                if (controllerHandler != null) controllerHandler.announceConnectedControllers();
 
                 // Hide the mouse cursor now after a short delay.
                 // Doing it before dismissing the spinner seems to be undone
