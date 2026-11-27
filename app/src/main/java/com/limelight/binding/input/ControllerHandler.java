@@ -289,6 +289,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         InputDeviceContext newContext = createInputDeviceContextForDevice(device);
         newContext.migrateContext(existingContext);
         inputDeviceContexts.put(deviceId, newContext);
+        if (playerOne == existingContext) {
+            playerOne = newContext;
+        }
 
         diag(() -> "InputDeviceContext migrated device " + deviceId + " '" + existingContext.name + "' (context "
                 + System.identityHashCode(existingContext) + " -> " + System.identityHashCode(newContext) + ") controller "
@@ -701,6 +704,29 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     private void releaseControllerNumber(GenericControllerContext context) {
+        if (context.assignedControllerNumber && swapsPlayerOne(context)) {
+            if (context != playerOne) {
+                return;
+            }
+            // Player 1's controller went away: the PC frees it, and the next controller pressed arrives in its place
+            playerOne = null;
+            boolean another = false;
+            for (int i = 0; i < inputDeviceContexts.size(); i++) {
+                GenericControllerContext other = inputDeviceContexts.valueAt(i);
+                another |= other != context && other.assignedControllerNumber && swapsPlayerOne(other);
+            }
+            for (int i = 0; i < usbDeviceContexts.size(); i++) {
+                GenericControllerContext other = usbDeviceContexts.valueAt(i);
+                another |= other != context && other.assignedControllerNumber && swapsPlayerOne(other);
+            }
+            if (!another) {
+                currentControllers &= ~1;
+            }
+            conn.sendControllerInput((short) 0, (short) (getActiveControllerMask() & ~1), 0,
+                    (byte) 0, (byte) 0, (short) 0, (short) 0, (short) 0, (short) 0);
+            return;
+        }
+
         // If we reserved a controller number, remove that reservation
         if (context.reservedControllerNumber) {
             LimeLog.info("Controller number "+context.controllerNumber+" is now available");
@@ -747,6 +773,24 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     // is definitely a controller (not a keyboard, mouse, or something else)
     private void assignControllerNumberIfNeeded(GenericControllerContext context) {
         if (context.assignedControllerNumber) {
+            return;
+        }
+
+        if (swapsPlayerOne(context)) {
+            context.controllerNumber = 0;
+            context.assignedControllerNumber = true;
+            currentControllers |= 1;
+            initialControllers &= ~1;
+            if (context instanceof InputDeviceContext) {
+                InputDeviceContext devContext = (InputDeviceContext) context;
+                if (prefConfig.gamepadMotionSensorsFallbackToDevice && (prefConfig.forceMotionSensorsFallbackToDevice || devContext.sensorManager == null)) {
+                    devContext.sensorManager = deviceSensorManager;
+                }
+            }
+            LimeLog.info("Assigned as controller 0 (player 1 follows the controller in use)");
+            if (playerOne == null) {
+                swapPlayerOne(context);
+            }
             return;
         }
 
@@ -900,6 +944,94 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         // We can't use the platform API, so we'll have to just guess based on the gamepad type.
         // If this is a PlayStation controller with a touchpad, we know it has a clickpad.
         return type == MoonBridge.LI_CTYPE_PS;
+    }
+
+    /**
+     * Delos: the Odin's TV mode takes a Bluetooth controller's gamepad device and re-creates it under AYN's vendor id 0x2020 with
+     * the same name ("DualSense Wireless Controller" as 2020:0111); the original's other devices stay ("DualSense Wireless
+     * Controller Motion Sensors", 054c:0ce6). Returns that other device, which carries the real ids, or null for anything else.
+     */
+    private static InputDevice stationOriginal(InputDevice dev) {
+        if (dev.getVendorId() != 0x2020) {
+            return null;
+        }
+        String prefix = dev.getName() + " ";
+        for (int id : InputDevice.getDeviceIds()) {
+            InputDevice other = InputDevice.getDevice(id);
+            if (other != null && other.getId() != dev.getId() && other.getVendorId() != 0x2020 && other.getVendorId() != 0
+                    && other.getName().startsWith(prefix)) {
+                return other;
+            }
+        }
+        return null;
+    }
+
+    /** The handheld's own pad: an internal one, or the Odin's, which Android lists as external ("Xbox Wireless Controller" 2020:0112). */
+    private static boolean isHandheldPad(GenericControllerContext context) {
+        return !context.external || (context.vendorId == 0x2020 && context.productId == 0x0112);
+    }
+
+    /**
+     * Delos (owner, 2026-11-27): on a PC stream player 1 follows the controller in use. Every physical controller is player 1;
+     * the one used last is the one the PC knows, and a deliberate press on another swaps them: the PC sees the old controller
+     * leave and the new one arrive with its own type (buttons in games follow).
+     */
+    private boolean swapsPlayerOne(GenericControllerContext context) {
+        if (!prefConfig.multiController || conn instanceof com.limelight.ps.PsConnection) {
+            return false;
+        }
+        if (context instanceof UsbDeviceContext) {
+            return true;
+        }
+        return context instanceof InputDeviceContext && ((InputDeviceContext) context).hasJoystickAxes;
+    }
+
+    /** A press, a trigger pulled a quarter or a stick pushed half way: not noise from a controller lying on the table. */
+    private static boolean isDeliberate(GenericControllerContext c) {
+        int triggerLimit = 0x40;
+        int stickLimit = 0x4000;
+        return c.inputMap != 0 || (c.leftTrigger & 0xff) > triggerLimit || (c.rightTrigger & 0xff) > triggerLimit
+                || Math.abs(c.leftStickX) > stickLimit || Math.abs(c.leftStickY) > stickLimit
+                || Math.abs(c.rightStickX) > stickLimit || Math.abs(c.rightStickY) > stickLimit;
+    }
+
+    /** Rumble, lights, trigger effects and motion requests from the PC for [controllerNumber] reach this controller. */
+    private boolean receivesFeedback(GenericControllerContext context, short controllerNumber) {
+        return context.controllerNumber == controllerNumber && (!swapsPlayerOne(context) || context == playerOne);
+    }
+
+    /** The controller the PC knows as player 1 while [swapsPlayerOne] applies. */
+    private GenericControllerContext playerOne;
+
+    private void swapPlayerOne(GenericControllerContext next) {
+        GenericControllerContext previous = playerOne;
+        LimeLog.info("Player 1 swaps to controller context " + next.id + (previous != null ? " from " + previous.id : ""));
+        if (previous != null) {
+            stopMotion(previous);
+            // Player 1 leaves: the PC frees its virtual controller
+            conn.sendControllerInput((short) 0, (short) (getActiveControllerMask() & ~1), 0,
+                    (byte) 0, (byte) 0, (short) 0, (short) 0, (short) 0, (short) 0);
+        }
+        playerOne = next;
+        next.sendControllerArrival();
+    }
+
+    private void stopMotion(GenericControllerContext context) {
+        if (!(context instanceof InputDeviceContext)) {
+            return;
+        }
+        InputDeviceContext device = (InputDeviceContext) context;
+        if (device.sensorManager == null) {
+            return;
+        }
+        if (device.accelListener != null) {
+            device.sensorManager.unregisterListener(device.accelListener);
+            device.accelListener = null;
+        }
+        if (device.gyroListener != null) {
+            device.sensorManager.unregisterListener(device.gyroListener);
+            device.gyroListener = null;
+        }
     }
 
     private static boolean isExternal(InputDevice dev) {
@@ -1075,6 +1207,23 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 if (dev.getSensorManager().getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null || dev.getSensorManager().getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
                     context.sensorManager = dev.getSensorManager();
                 }
+            }
+        }
+
+        context.identityVendorId = dev.getVendorId();
+        context.identityProductId = dev.getProductId();
+        InputDevice original = stationOriginal(dev);
+        if (original != null) {
+            // The PC gets the controller in the player's hands (a DualSense as a PlayStation controller), and its motion
+            // sensors, which stay on the original's own device
+            context.identityVendorId = original.getVendorId();
+            context.identityProductId = original.getProductId();
+            LimeLog.info(devName + " is a copy of '" + original.getName() + "' (" + String.format(java.util.Locale.ROOT, "%04x:%04x",
+                    original.getVendorId(), original.getProductId()) + ")");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && context.sensorManager == null && prefConfig.gamepadMotionSensors
+                    && (original.getSensorManager().getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
+                    || original.getSensorManager().getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null)) {
+                context.sensorManager = original.getSensorManager();
             }
         }
 
@@ -1521,6 +1670,12 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
 
         assignControllerNumberIfNeeded(originalContext);
+        if (swapsPlayerOne(originalContext) && originalContext != playerOne) {
+            if (!isDeliberate(originalContext)) {
+                return;
+            }
+            swapPlayerOne(originalContext);
+        }
 
         // Take the context's controller number and fuse all inputs with the same number
         short controllerNumber = originalContext.controllerNumber;
@@ -1539,7 +1694,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             GenericControllerContext context = inputDeviceContexts.valueAt(i);
             if (context.assignedControllerNumber &&
                     context.controllerNumber == controllerNumber &&
-                    context.mouseEmulationActive == originalContext.mouseEmulationActive) {
+                    context.mouseEmulationActive == originalContext.mouseEmulationActive &&
+                    (!swapsPlayerOne(context) || context == playerOne)) {
                 inputMap |= context.inputMap;
                 leftTrigger |= maxByMagnitude(leftTrigger, context.leftTrigger);
                 rightTrigger |= maxByMagnitude(rightTrigger, context.rightTrigger);
@@ -1553,7 +1709,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             GenericControllerContext context = usbDeviceContexts.valueAt(i);
             if (context.assignedControllerNumber &&
                     context.controllerNumber == controllerNumber &&
-                    context.mouseEmulationActive == originalContext.mouseEmulationActive) {
+                    context.mouseEmulationActive == originalContext.mouseEmulationActive &&
+                    (!swapsPlayerOne(context) || context == playerOne)) {
                 inputMap |= context.inputMap;
                 leftTrigger |= maxByMagnitude(leftTrigger, context.leftTrigger);
                 rightTrigger |= maxByMagnitude(rightTrigger, context.rightTrigger);
@@ -2367,11 +2524,13 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             return;
         }
 
+        boolean matchedHandheldPad = false;
         for (int i = 0; i < inputDeviceContexts.size(); i++) {
             InputDeviceContext deviceContext = inputDeviceContexts.valueAt(i);
 
-            if (deviceContext.controllerNumber == controllerNumber) {
+            if (deviceContext.controllerNumber == controllerNumber && (!swapsPlayerOne(deviceContext) || deviceContext == playerOne)) {
                 foundMatchingDevice = true;
+                matchedHandheldPad |= isHandheldPad(deviceContext);
 
                 deviceContext.lowFreqMotor = lowFreqMotor;
                 deviceContext.highFreqMotor = highFreqMotor;
@@ -2404,7 +2563,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
             UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
 
-            if (deviceContext.controllerNumber == controllerNumber) {
+            if (receivesFeedback(deviceContext, controllerNumber)) {
                 foundMatchingDevice = vibrated = true;
                 deviceContext.device.rumble(lowFreqMotor, highFreqMotor);
             }
@@ -2419,7 +2578,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 rumbleSingleVibrator(deviceVibrator, lowFreqMotor, highFreqMotor);
                 fallbackVibrated = true;
             }
-            else if (foundMatchingDevice && !vibrated && prefConfig.vibrateFallbackToDevice) {
+            // Only for the handheld's own pad: a controller in the player's hands without rumble (a Bluetooth DualSense in the
+            // Odin's TV mode) would shake the handheld lying elsewhere (owner, 2026-11-27)
+            else if (foundMatchingDevice && matchedHandheldPad && !vibrated && prefConfig.vibrateFallbackToDevice) {
                 // We found a device to vibrate but it didn't have rumble support. The user
                 // has requested us to vibrate the device in this case.
 
@@ -2453,7 +2614,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             for (int i = 0; i < inputDeviceContexts.size(); i++) {
                 InputDeviceContext deviceContext = inputDeviceContexts.valueAt(i);
 
-                if (deviceContext.controllerNumber == controllerNumber) {
+                if (receivesFeedback(deviceContext, controllerNumber)) {
                     deviceContext.leftTriggerMotor = leftTrigger;
                     deviceContext.rightTriggerMotor = rightTrigger;
 
@@ -2469,7 +2630,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
             UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
 
-            if (deviceContext.controllerNumber == controllerNumber) {
+            if (receivesFeedback(deviceContext, controllerNumber)) {
                 deviceContext.device.rumbleTriggers(leftTrigger, rightTrigger);
             }
         }
@@ -2482,7 +2643,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
             UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
-            if (deviceContext.controllerNumber == controllerNumber && deviceContext.device instanceof DualSenseController) {
+            if (receivesFeedback(deviceContext, controllerNumber) && deviceContext.device instanceof DualSenseController) {
                 ((DualSenseController) deviceContext.device).setAdaptiveTriggers(eventFlags, typeLeft, typeRight, left, right);
             }
         }
@@ -2617,7 +2778,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 deviceContext = usbDeviceContexts.valueAt(i - inputDeviceContexts.size());
             }
 
-            if (deviceContext.controllerNumber == controllerNumber) {
+            if (receivesFeedback(deviceContext, controllerNumber)) {
                 // Store the desired report rate even if we don't have sensors. In some cases,
                 // input devices can be reconfigured at runtime which results in a change where
                 // sensors disappear and reappear. By storing the desired report rate, we can
@@ -2684,7 +2845,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 InputDeviceContext deviceContext = inputDeviceContexts.valueAt(i);
 
                 // Ignore input devices without an RGB LED
-                if (deviceContext.controllerNumber == controllerNumber && deviceContext.hasRgbLed) {
+                if (receivesFeedback(deviceContext, controllerNumber) && deviceContext.hasRgbLed) {
                     // Convert the RGB components into the integer value that LightState uses
                     deviceContext.ledArgbValue = 0xFF000000 | ((r << 16) & 0xFF0000) | ((g << 8) & 0xFF00) | (b & 0xFF);
 
@@ -2696,7 +2857,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
             UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
-            if (deviceContext.controllerNumber == controllerNumber && deviceContext.device instanceof DualSenseController) {
+            if (receivesFeedback(deviceContext, controllerNumber) && deviceContext.device instanceof DualSenseController) {
                 ((DualSenseController) deviceContext.device).setLed(r, g, b);
             }
         }
@@ -3521,6 +3682,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     class InputDeviceContext extends GenericControllerContext {
         public String name;
+        /** The controller's real USB ids: its own, or those of the controller behind a clone ([stationOriginal]). */
+        public int identityVendorId, identityProductId;
         public VibratorManager vibratorManager;
         public Vibrator vibrator;
         public boolean quadVibrators;
@@ -3711,7 +3874,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         @Override
         public void sendControllerArrival() {
             byte type;
-            switch (inputDevice.getVendorId()) {
+            switch (identityVendorId) {
                 case 0x045e: // Microsoft
                     type = MoonBridge.LI_CTYPE_XBOX;
                     break;
@@ -3723,7 +3886,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     break;
                 default:
                     // Consult SDL's controller type list to see if it knows
-                    type = MoonBridge.guessControllerType(inputDevice.getVendorId(), inputDevice.getProductId());
+                    type = MoonBridge.guessControllerType(identityVendorId, identityProductId);
                     break;
             }
 
