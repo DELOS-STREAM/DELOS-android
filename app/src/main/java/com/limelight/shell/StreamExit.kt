@@ -164,7 +164,7 @@ object StreamExit {
             pending = Arrival(label, pcName)
             val home = Intent().setClassName(game, "com.limelight.shell.ShellActivity")
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            // As after any stream: on the TV when the stream was there, else a scale-up over the stream
+            // As after any stream: on the main display after a stream on an external one, else a scale-up over the stream
             game.startActivity(home, StreamOutcome.homeOptions(game).toBundle())
             end.run()
             feedback.release()
