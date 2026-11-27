@@ -211,8 +211,6 @@ internal fun StreamMenuRoot(
         morph = exit.page != MenuPage.MAIN && page != MenuPage.MAIN
         entryRow = exit.focusRow
         pendingCircle = exit.focusCircle
-        // The focus going back to the tile or row is part of this step, not a move: its cue drowned the close (owner, 2026-11-27)
-        feedback.silenceNextFocus()
         page = exit.page
     }
     // B: one level up, to the tile on the dock; on the dock it resumes (closes the menu)
@@ -270,8 +268,7 @@ internal fun StreamMenuRoot(
     val imeAvoidance = rememberImeAvoidance()
     LaunchedEffect(picker) {
         if (picker != null) return@LaunchedEffect
-        // As in the shell: the row taking its focus back is not a move, so the popup's close cue is heard
-        pickerReturn?.let { feedback.silenceNextFocus(); runCatching { it.requestFocus() } }
+        pickerReturn?.let { runCatching { it.requestFocus() } }
         pickerReturn = null
     }
     fun backOrClosePicker() {

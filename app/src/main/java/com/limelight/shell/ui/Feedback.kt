@@ -58,7 +58,7 @@ class Feedback(context: Context) {
     private val cuePlayer = Executors.newSingleThreadExecutor()
 
     /** The output DELOS's own sounds go to (null: the system's routing), followed as devices come and go. */
-    private var output: AudioDeviceInfo? = volume.preferredDevice()
+    @Volatile private var output: AudioDeviceInfo? = volume.preferredDevice()
     private val main = Handler(Looper.getMainLooper())
     private val rerouteLater = Runnable { reroute() }
     // A track re-pointed after a device change kept playing on the controller (restored by the system on the old route), so the
@@ -78,10 +78,9 @@ class Feedback(context: Context) {
         val next = volume.preferredDevice()
         if (next?.id == output?.id) return
         output = next
-        tracks.values.forEach { it.release() }
+        runCatching { cuePlayer.execute { releaseTracks(); prewarm() } }
         releaseHold()
         updateHold()
-        tracks = buildTracks()
         intro?.route(output)
     }
 
@@ -135,24 +134,26 @@ class Feedback(context: Context) {
     }.toMap()
 
     /**
-     * Each cue a static track (restarted from its start on every play; a streaming track per cue dropped the short sounds on the
-     * Odin), with the volume controller's gain: attenuation as the track volume, amplification as an amplified copy of the PCM,
-     * written again only when the gain changes. Low latency: on the game usage Android put the cues on its deep-buffer output
-     * (about 150 ms of mixed audio ahead of the speaker), where a restart could not take back what was already mixed: the old
-     * start and the new one played on top of each other, and only the first cue after a pause sounded as the file does
-     * (owner, 2026-11-27).
+     * A cue's static track (restarted from its start on every play; a streaming track per cue dropped the short sounds on the
+     * Odin), 16-bit, with the volume controller's gain: attenuation as the track volume, amplification in the PCM written for
+     * the take that plays. Low latency: on the game usage Android put the cues on its deep-buffer output (about 150 ms of mixed
+     * audio ahead of the speaker), where a restart could not take back what was already mixed: the old start and the new one
+     * played on top of each other, and only the first cue after a pause sounded as the file does (owner, 2026-11-27).
      */
     private inner class CueTrack(private val takes: List<Clip>) {
+        private val pcm16 = ShortArray(takes[0].pcm.size)
+        val bytes = pcm16.size * 2
         val track: android.media.AudioTrack = android.media.AudioTrack.Builder()
             .setAudioAttributes(attributes)
-            .setAudioFormat(takes[0].format)
+            .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                .setSampleRate(takes[0].format.sampleRate).setChannelMask(takes[0].format.channelMask).build())
             .setTransferMode(android.media.AudioTrack.MODE_STATIC)
             .setPerformanceMode(android.media.AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
-            .setBufferSizeInBytes(takes[0].pcm.size * 4)
+            .setBufferSizeInBytes(bytes)
             .build()
-            .also { it.preferredDevice = output; it.write(takes[0].pcm, 0, takes[0].pcm.size, android.media.AudioTrack.WRITE_BLOCKING) }
-        private var loaded = 1f
-        private var loadedTake = 0
+            .also { it.preferredDevice = output }
+        private var loaded = Float.NaN
+        private var loadedTake = -1
         private var last = 0
 
         fun play(gain: Float) {
@@ -164,8 +165,8 @@ class Feedback(context: Context) {
                 val wanted = maxOf(1f, gain)
                 if (wanted != loaded || take != loadedTake) {
                     val src = takes[take].pcm
-                    val pcm = if (wanted > 1f) FloatArray(src.size) { (src[it] * wanted).coerceIn(-1f, 1f) } else src
-                    track.write(pcm, 0, pcm.size, android.media.AudioTrack.WRITE_BLOCKING)
+                    for (i in src.indices) pcm16[i] = ((src[i] * wanted).coerceIn(-1f, 1f) * 32767f).toInt().toShort()
+                    track.write(pcm16, 0, pcm16.size)
                     loaded = wanted
                     loadedTake = take
                 }
@@ -178,13 +179,55 @@ class Feedback(context: Context) {
         fun release() = track.release()
     }
 
-    private var tracks: Map<Cue, CueTrack> = buildTracks()
-    private val routeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    init { routeScope.launch { volume.state.map { it.preferredId }.distinctUntilChanged().collect { reroute() } } }
+    /**
+     * The cues' tracks, made when a cue first plays and the least recently played released past [TRACK_BUDGET_BYTES]: the static
+     * buffers live in the app's shared audio memory, and with all twenty made at once the stream window ran out of it (Android
+     * refused the last tracks, status -12: the context menu's close cue never played in the stream menu, owner 2026-11-27).
+     * Touched only on [cuePlayer].
+     */
+    private val tracks = LinkedHashMap<Cue, CueTrack>(16, 0.75f, true)
+    private var trackBytes = 0
 
-    private fun buildTracks(): Map<Cue, CueTrack> = clips.mapNotNull { (cue, takes) ->
-        runCatching { CueTrack(takes) }.getOrNull()?.let { cue to it }
-    }.toMap()
+    private fun trackFor(cue: Cue): CueTrack? {
+        tracks[cue]?.let { return it }
+        val takes = clips[cue] ?: return null
+        while (tracks.isNotEmpty() && trackBytes + takes[0].pcm.size * 2 > TRACK_BUDGET_BYTES) releaseOldest()
+        var made = runCatching { CueTrack(takes) }.getOrNull()
+        // Refused anyway (the stream's own audio shares that memory): room is made until it fits
+        while (made == null && tracks.isNotEmpty()) {
+            releaseOldest()
+            made = runCatching { CueTrack(takes) }.getOrNull()
+        }
+        if (made == null) {
+            android.util.Log.w("Feedback", "no audio track for $cue")
+            return null
+        }
+        tracks[cue] = made
+        trackBytes += made.bytes
+        return made
+    }
+
+    private fun releaseOldest() {
+        val (cue, track) = tracks.entries.first()
+        track.release()
+        trackBytes -= track.bytes
+        tracks.remove(cue)
+    }
+
+    private fun releaseTracks() {
+        tracks.values.forEach { it.release() }
+        tracks.clear()
+        trackBytes = 0
+    }
+
+    /** The cues of every screen are ready before their first use. */
+    private fun prewarm() = PREWARM.forEach { trackFor(it) }
+
+    private val routeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    init {
+        runCatching { cuePlayer.execute { prewarm() } }
+        routeScope.launch { volume.state.map { it.preferredId }.distinctUntilChanged().collect { reroute() } }
+    }
 
     /** A 16- or 24-bit PCM WAV in res/raw as float PCM. */
     private fun decode(res: Int): Clip? = runCatching {
@@ -256,9 +299,9 @@ class Feedback(context: Context) {
             return
         }
         lastPlayed[cue.ordinal] = now
-        if (soundsEnabled) tracks[cue]?.let { track ->
+        if (soundsEnabled) {
             val gain = volume.gain
-            runCatching { cuePlayer.execute { track.play(gain) } } // refused after release()
+            runCatching { cuePlayer.execute { trackFor(cue)?.play(gain) } } // refused after release()
         }
         if (hapticsEnabled && cue !in NO_HAPTICS) {
             if (rumbleMotorOnly) pulse(cue) else view?.performHapticFeedback(hapticFor(cue))
@@ -310,7 +353,7 @@ class Feedback(context: Context) {
         stopIntro()
         main.removeCallbacks(rerouteLater)
         audioManager?.unregisterAudioDeviceCallback(devices)
-        tracks.values.forEach { it.release() }
+        runCatching { cuePlayer.execute { releaseTracks() } }
         releaseHold()
         audioWorkers.shutdown()
         cuePlayer.shutdown()
@@ -354,6 +397,10 @@ class Feedback(context: Context) {
         const val REROUTE_DELAY_MS = 400L
         /** A repeat of the same cue closer than this is one event reported twice (one frame); a held D-pad repeats slower. */
         const val REPEAT_GUARD_MS = 35L
+        /** Static buffer memory the cue tracks may hold together (16-bit; all twenty cues need about 1.7 MB). */
+        const val TRACK_BUDGET_BYTES = 512 * 1024
+        /** Made at once: the cues of moving around and of the popups. */
+        val PREWARM = listOf(Cue.MOVE, Cue.SELECT, Cue.BACK, Cue.MENU_OPEN, Cue.MENU_CLOSE, Cue.STEP)
         /** Takes per cue the generator writes (ui_<cue>.wav … ui_<cue>_v4.wav); fewer files are fine. */
         const val MAX_TAKES = 4
         /**
