@@ -59,9 +59,11 @@ internal fun StreamCamera(
         },
         contentAlignment = Alignment.TopEnd,
     ) {
-        Box(
+        // Prototype screenshot-B: a pill with the camera and its label always shown (owner, 2026-11-27: the bare circle came
+        // out of nowhere); focus adds the A hint under it
+        Row(
             Modifier
-                .size(side.px)
+                .height(side.px)
                 .focusRequester(requester)
                 .onPreviewKeyEvent {
                     when (it.key) {
@@ -74,14 +76,18 @@ internal fun StreamCamera(
                     onFocusChange = { focused = it })
                 .semantics { contentDescription = label }
                 .drawBehind {
-                    val corner = CornerRadius(size.minDimension / 2f)
+                    val corner = CornerRadius(size.height / 2f)
                     drawRoundRect(Color(0xFF05070F).copy(alpha = StreamMenuLayout.TILE_BACKING_ALPHA), cornerRadius = corner)
-                    drawTileFill(size.minDimension / 2f)
-                    drawTileFocusFill(size.minDimension / 2f, focusFill)
-                },
-            contentAlignment = Alignment.Center,
+                    drawTileFill(size.height / 2f)
+                    drawTileFocusFill(size.height / 2f, focusFill)
+                }
+                .padding(start = 30.px, end = 36.px),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(18.px),
         ) {
-            Symbol(Symbols.STREAM_SCREENSHOT, 48.tpx, colors.text, filled = focused, fadeMillis = Motion.FADE)
+            Symbol(Symbols.STREAM_SCREENSHOT, 44.tpx, colors.text, filled = focused, fadeMillis = Motion.FADE)
+            BasicText(label, style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 28.tpx,
+                shadow = menuTextShadow(k, 2f, 12f, .6f)))
         }
         Row(
             Modifier.offset(y = (side + 20f).px).graphicsLayer { alpha = hint },
@@ -89,8 +95,8 @@ internal fun StreamCamera(
             horizontalArrangement = Arrangement.spacedBy(12.px),
         ) {
             GlyphButton(Glyph.A, 44)
-            BasicText(label, style = TextStyle(color = colors.text, fontFamily = Figtree, fontWeight = FontWeight.Medium, fontSize = 24.tpx,
-                shadow = menuTextShadow(k, 2f, 12f, .6f)))
+            BasicText(stringResource(R.string.stream_menu_hint_select), style = TextStyle(color = colors.text, fontFamily = Figtree,
+                fontWeight = FontWeight.Medium, fontSize = 24.tpx, shadow = menuTextShadow(k, 2f, 12f, .6f)))
         }
     }
 }
