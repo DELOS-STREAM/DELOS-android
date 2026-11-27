@@ -251,7 +251,7 @@ object StreamOutcome {
      * From the whole screen a scale-up only fades the shell in over the stream (like the portal exit); a stream on
      * an external display ends there and the shell opens on the device's own screen.
      */
-    private fun homeOptions(activity: Activity): ActivityOptions =
+    internal fun homeOptions(activity: Activity): ActivityOptions =
         if (activity is DelosStreamActivity && activity.isOnExternalDisplay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ActivityOptions.makeBasic().setLaunchDisplayId(DualScreen.mainDisplayId(activity))
         } else {

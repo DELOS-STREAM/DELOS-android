@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.limelight.shell.ui.Backdrop
 import com.limelight.shell.ui.EaseOut
 import android.animation.ValueAnimator
-import android.app.ActivityOptions
 import android.content.Intent
 import android.graphics.Color as AndroidColor
 import android.graphics.drawable.ColorDrawable
@@ -28,7 +27,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
 import com.limelight.DelosStreamActivity
 import com.limelight.R
-import com.limelight.display.DualScreen
 import com.limelight.shell.data.ProfileStore
 import com.limelight.shell.settings.AppearanceStore
 import com.limelight.shell.ui.Cue
@@ -164,11 +162,11 @@ object StreamExit {
         view.postDelayed({
             if (game.isFinishing) return@postDelayed
             pending = Arrival(label, pcName)
-            val root = game.window.decorView
             val home = Intent().setClassName(game, "com.limelight.shell.ShellActivity")
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            // From the whole screen a scale-up only fades the new UI in over the stream (like starting one)
-            game.startActivity(home, DualScreen.placeOnMain(game, ActivityOptions.makeScaleUpAnimation(root, 0, 0, root.width, root.height)).toBundle())
+            // As after any stream: on the device's own screen when the stream was on a TV (owner, 2026-11-27: the shell moved
+            // to the TV, still in HDR, and was recreated there on the start screen), else a scale-up over the stream
+            game.startActivity(home, StreamOutcome.homeOptions(game).toBundle())
             end.run()
             feedback.release()
             // Gone with the stream window anyway; closed once the new UI has faded in over it
