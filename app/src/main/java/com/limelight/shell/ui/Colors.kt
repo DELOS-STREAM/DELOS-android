@@ -58,6 +58,17 @@ val DelosColors.accent3Line: Color get() = accent3.copy(alpha = .34f)
 /** The accent3 for small icons on a dark overlay (a cover's badge), whatever the theme: always the dark theme's light shade. */
 val DelosColors.accent3OnDark: Color get() = hsl(accent3Hue, 85f, 68f)
 
+/**
+ * The three state colours of status text and glyphs: fine, a warning, a problem. Fixed in every palette and theme (the approved
+ * trio A of the prototypes' status-colors.css); they stay readable on dark glass over any picture. Everything that colours a
+ * state uses these, so no second warning colour appears.
+ */
+object StatusColors {
+    val ok = Color(0xFF9FEBBD)
+    val warn = Color(0xFFFFD08A)
+    val bad = Color(0xFFFFCDD4)
+}
+
 /** CSS-style hsl(): hue in degrees (any value), saturation and lightness in percent. */
 fun hsl(h: Float, s: Float, l: Float, a: Float = 1f): Color =
     Color.hsl(((h % 360f) + 360f) % 360f, (s / 100f).coerceIn(0f, 1f), (l / 100f).coerceIn(0f, 1f), a.coerceIn(0f, 1f))

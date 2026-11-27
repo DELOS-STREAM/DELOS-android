@@ -67,7 +67,24 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.rememberUpdatedState
 import com.limelight.R
+import androidx.compose.animation.core.Animatable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import com.limelight.shell.system.BatteryStatus
+import com.limelight.shell.system.CellStatus
+import com.limelight.shell.system.NetworkSignal
+import com.limelight.shell.system.SignalProblem
+import com.limelight.shell.system.SignalSeverity
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import com.limelight.shell.system.WifiStatus
 import kotlin.math.roundToInt
 
@@ -107,10 +124,12 @@ fun StatusBar(
     clock: String,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
+    /** The cellular indicator left of Wi-Fi; null on a device without a modem (nothing shows). */
+    cell: CellStatus? = null,
 ) {
     val stage = LocalStage.current
     if (stage.compact) {
-        CompactStatusBar(nav, pcName, pcOnline, wifi, battery, clock, modifier, onBack)
+        CompactStatusBar(nav, pcName, pcOnline, wifi, battery, clock, modifier, onBack, cell)
         return
     }
     val colors = LocalDelosColors.current
@@ -126,7 +145,7 @@ fun StatusBar(
             }
         }
         if (nav != null) TopNav(nav, Modifier.align(Alignment.Center))
-        StatusCluster(wifi, battery, clock, Modifier.align(Alignment.CenterEnd))
+        StatusCluster(wifi, battery, clock, Modifier.align(Alignment.CenterEnd), cell = cell)
     }
 }
 
@@ -159,10 +178,12 @@ private fun StatusBarBack(onBack: (() -> Unit)?) {
 private fun StatusCluster(
     wifi: WifiStatus, battery: BatteryStatus?, clock: String, modifier: Modifier = Modifier,
     gap: Float = StatusBarLayout.STATUS_GAP, batteryGap: Float = StatusBarLayout.BATTERY_GAP, percent: Boolean = true,
+    cell: CellStatus? = null,
 ) {
     val colors = LocalDelosColors.current
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(gap.px)) {
-        // Wi-Fi, battery and clock in the same color
+        // The cellular signal (a device with a modem), Wi-Fi, battery and clock in the same color
+        if (cell != null) CellIndicator(cell)
         Symbol(wifiIcon(wifi), 30.tpx, colors.text)
         if (battery != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(batteryGap.px)) {
@@ -188,7 +209,7 @@ private fun StatusCluster(
 @Composable
 private fun CompactStatusBar(
     nav: List<NavButton>?, pcName: String?, pcOnline: Boolean, wifi: WifiStatus, battery: BatteryStatus?, clock: String, modifier: Modifier,
-    onBack: (() -> Unit)?,
+    onBack: (() -> Unit)?, cell: CellStatus? = null,
 ) {
     val colors = LocalDelosColors.current
     val stage = LocalStage.current
@@ -221,6 +242,7 @@ private fun CompactStatusBar(
             StatusCluster(
                 wifi, battery, clock, gap = if (step.tight) c.STATUS_GAP_TIGHT else c.STATUS_GAP,
                 batteryGap = if (step.tight) c.BATTERY_GAP_TIGHT else c.BATTERY_GAP, percent = step.percent,
+                cell = cell,
             )
         }.first().measure(open).also { rights[step.ordinal] = it }
         val fit = fitStatusBar(width.toFloat(), sideLeft.toPx(), sideRight.toPx(), minGap.toPx()) { step ->
@@ -269,6 +291,123 @@ private fun wifiIcon(wifi: WifiStatus) = when (wifi.level) {
     3 -> Symbols.NETWORK_WIFI_3_BAR
     else -> Symbols.WIFI
 }
+
+/**
+ * The cellular signal left of Wi-Fi: four rounded bars (30 x 24 px: 4.5 px wide, 4 px apart, 7 / 12 / 18 / 24 px high, as high as
+ * the Wi-Fi glyph) and the network's name 10 px after them. Fine, both are the status icons' own colour; a weak signal turns them
+ * the warning colour and no service the error colour ([StatusColors]). Never focusable; a screen reader gets one sentence.
+ */
+@Composable
+private fun CellIndicator(cell: CellStatus) {
+    val colors = LocalDelosColors.current
+    val color = when (cell.severity) {
+        SignalSeverity.OK -> colors.text
+        SignalSeverity.WARN -> StatusColors.warn
+        SignalSeverity.BAD -> StatusColors.bad
+    }
+    val network = cell.network.ifEmpty { stringResource(R.string.signal_mobile) }
+    val spoken = stringResource(R.string.signal_cell_description, network, cell.bars)
+    Row(
+        Modifier.semantics(mergeDescendants = true) { contentDescription = spoken },
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.px),
+    ) {
+        Canvas(Modifier.size(30.px, 24.px)) {
+            val unit = size.width / 30f
+            val width = 4.5f * unit
+            val radius = CornerRadius(2.25f * unit)
+            CELL_BAR_HEIGHTS.forEachIndexed { i, height ->
+                val h = height * unit
+                drawRoundRect(
+                    color.copy(alpha = if (i < cell.bars) 1f else .22f),
+                    topLeft = Offset(i * 8.5f * unit, size.height - h), size = Size(width, h), cornerRadius = radius,
+                )
+            }
+        }
+        if (cell.network.isNotEmpty()) BasicText(
+            cell.network, modifier = Modifier.clearAndSetSemantics { },
+            style = TextStyle(color = color, fontFamily = Figtree, fontWeight = FontWeight.SemiBold, fontSize = 25.tpx),
+        )
+    }
+}
+
+private val CELL_BAR_HEIGHTS = floatArrayOf(7f, 12f, 18f, 24f)
+
+/**
+ * The pill under the status bar that names a network problem: a weak cellular signal, no service, or an unstable Wi-Fi link.
+ * It shows only while there is one, on one line, its right edge on the status cluster's (the clock's), 7 px under the bar. The
+ * network's name is in the state's colour, the sentence neutral; no icon. It takes no focus and moves nothing: it lies over the
+ * screen. It settles up from 8 px below with a .98 to 1 pop and leaves fading 6 px upward; with reduced motion both are instant.
+ */
+@Composable
+fun SignalPill(signal: NetworkSignal, modifier: Modifier = Modifier) {
+    val colors = LocalDelosColors.current
+    val reduced = LocalReducedMotion.current
+    val safe = LocalStage.current.safe
+    val network = when (signal.problem) {
+        null -> null
+        SignalProblem.UNSTABLE_WIFI -> WIFI_NAME
+        else -> signal.cell?.network?.takeIf { it.isNotEmpty() } ?: stringResource(R.string.signal_mobile)
+    }
+    val message = when (signal.problem) {
+        null -> null
+        SignalProblem.WEAK_CELLULAR -> stringResource(R.string.signal_pill_weak)
+        SignalProblem.NO_SERVICE -> stringResource(R.string.signal_pill_none)
+        SignalProblem.UNSTABLE_WIFI -> stringResource(R.string.signal_pill_unstable)
+    }
+    // What the pill says stays while it leaves
+    var shown by remember { mutableStateOf<Triple<String, String, Color>?>(null) }
+    val visible = network != null && message != null
+    if (visible) shown = Triple(network!!, message!!, if (signal.problem == SignalProblem.NO_SERVICE) StatusColors.bad else StatusColors.warn)
+    val alpha = remember { Animatable(0f) }
+    val shift = remember { Animatable(8f) }
+    val scale = remember { Animatable(.98f) }
+    LaunchedEffect(visible) {
+        if (visible) {
+            if (reduced) { alpha.snapTo(1f); shift.snapTo(0f); scale.snapTo(1f) } else coroutineScope {
+                shift.snapTo(8f)
+                scale.snapTo(.98f)
+                launch { alpha.animateTo(1f, tween(Motion.FADE, easing = EaseOut)) }
+                launch { shift.animateTo(0f, tween(Motion.POP_IN, easing = Motion.Glide)) }
+                launch { scale.animateTo(1f, tween(Motion.POP_IN, easing = Motion.Glide)) }
+            }
+        } else {
+            if (reduced) alpha.snapTo(0f) else coroutineScope {
+                launch { alpha.animateTo(0f, tween(Motion.EXIT, easing = Motion.In)) }
+                launch { shift.animateTo(-6f, tween(Motion.EXIT, easing = Motion.In)) }
+            }
+            shown = null
+        }
+    }
+    val (name, text, stateColor) = shown ?: return
+    val k = LocalStage.current.dpPerPx * LocalDensity.current.density
+    val line = "$name · $text" // l10n-ignore: the separator of the shell's status lines
+    Box(modifier.fillMaxWidth().padding(top = safe.top.px + 111.px, end = StatusBarLayout.SIDE.px + safe.right.px), contentAlignment = Alignment.TopEnd) {
+        BasicText(
+            buildAnnotatedString {
+                withStyle(SpanStyle(color = stateColor, fontWeight = FontWeight.SemiBold)) { append(name) }
+                append(line.substring(name.length))
+            },
+            maxLines = 1, softWrap = false,
+            style = TextStyle(color = colors.text2, fontFamily = Figtree, fontWeight = FontWeight.Medium, fontSize = 22.tpx, lineHeight = 28.tpx),
+            modifier = Modifier
+                .graphicsLayer {
+                    this.alpha = alpha.value
+                    translationY = shift.value * k
+                    scaleX = scale.value
+                    scaleY = scale.value
+                }
+                .semantics { liveRegion = LiveRegionMode.Polite; contentDescription = line }
+                .height(56.px)
+                .clip(CircleShape)
+                .glass(colors.surface.copy(alpha = colors.surface.alpha * .45f))
+                .border(1.px, lerp(colors.line, stateColor, .36f), CircleShape)
+                .padding(horizontal = 24.px)
+                .wrapContentHeight(Alignment.CenterVertically),
+        )
+    }
+}
+
+private const val WIFI_NAME = "Wi-Fi" // l10n-ignore: a network's name
 
 /** Battery at or below this level shows red while not charging (like iOS). */
 private const val LOW_BATTERY = .2f

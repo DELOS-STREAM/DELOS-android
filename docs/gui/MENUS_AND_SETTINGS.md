@@ -564,7 +564,7 @@ The hero banner is `GameBanner`; its geometry is in `GameSettingsLayout`.
 
 | Element | Position or size |
 |---|---|
-| Persistent status bar: the DELOS logo at the left, Wi-Fi / battery / clock at the right | y 0..104 |
+| Persistent status bar: the DELOS logo at the left, cellular signal (devices with a modem, section 16) / Wi-Fi / battery / clock at the right | y 0..104 |
 | Header block, on the banner | y 106..198 |
 | Stream / Display `SelectionPillHost` tabs | y 206..272, exactly where the global settings' tabs are |
 | Shared `SettingRowList` (gliding plate, `FocusScroller`, entrance rise) | Starts at y 296 |
@@ -673,6 +673,55 @@ Gesture navigation: Android reserves both side edges for Back. While the drag ca
 
 The opacity of the on-screen controls (`seekbar_osc_opacity`, `PreferenceConfiguration.oscOpacity`, default 90 %) is a native slider row: Settings → Controls, section "On-screen Controls Settings", 0 to 100 % in steps of 5, only on a device with a touchscreen. It writes the current profile's value through `OscOpacity`; the other on-screen gamepad settings stay hidden (`PhoneOnlySettings`). A tap on the focused row opens the slider popup ([7.3](#73-slider-popup)). The stream menu's More page has the same slider, applied live ([STREAM_MENU.md](STREAM_MENU.md#27-popover)).
 
+## 16. Network signal
+
+The approved prototype is `build/signal-pill-proto/signal.html` (variant C). One source (`rememberNetworkSignal`, read once in
+`Shell`) feeds the status bar's cellular indicator and the pill under the bar.
+
+### 16.1 Cellular indicator
+
+| Property | Value |
+|---|---|
+| Where | In the status cluster, immediately left of the Wi-Fi glyph, on every shape (the compact bar measures it with the cluster) |
+| Shown | Only on a device with a modem (`FEATURE_TELEPHONY` and a phone type) whose default data SIM is ready, once the modem reported a signal. No modem (the AYN Odin): nothing |
+| Glyph | Four rounded bars, 30 × 24 px: 4.5 px wide, 4 px apart, 7 / 12 / 18 / 24 px high, radius 2.25; unlit bars at 22 % |
+| Label | The network's name (5G, LTE, 3G, 2G) at 25 px semibold, 10 px after the glyph; none while the technology is unknown |
+| Bars | The weakest reported cell's level, 0 to 4; an LTE cell at −105 dBm RSRP or less counts as two at most |
+| Colour | The status icons' own colour while fine; `StatusColors.warn` for a weak signal, `StatusColors.bad` for no service |
+| Focus | None. A screen reader gets "Cellular LTE, 2 of 4 bars" |
+
+The name comes from the kinds of cells in the signal report, not from the data network type, so no permission is needed.
+
+### 16.2 Problem pill
+
+| Property | Value |
+|---|---|
+| Shown | Only while there is a problem: a weak cellular signal (1 or 2 bars), no service (0 bars), or an unstable Wi-Fi link |
+| Place | One line under the status bar: top at y 111, right edge on the status cluster's (72 px and the cutout from the right) |
+| Size | 56 px high, 24 px padding left and right, 22 px text on a 28 px line |
+| Look | Glass (`surface` at 45 %), 1 px border of `line` mixed 36 % with the state colour, fully rounded; no icon |
+| Text | The network's name in the state colour, then " · " and a neutral sentence: "LTE · Weak signal: lower the bitrate", "LTE · No signal: connect to Wi-Fi", "Wi-Fi · Unstable link: lower the bitrate" |
+| Entrance | Opacity `Motion.FADE` with `EaseOut`; from 8 px below and scale .98 with `Motion.POP_IN` and `Motion.Glide` |
+| Exit | Opacity and 6 px upward with `Motion.EXIT` and `Motion.In` |
+| Reduced motion | Both instant |
+| Focus and layout | Never focusable; it lies over the screen, so the greeting and the circles do not move. No toast is shown or replaced |
+
+### 16.3 When a problem counts
+
+1. A cellular problem counts only while a stream would use cellular: the default network is cellular, or there is none. On
+   Wi-Fi the bars show the modem's level uncoloured and there is no pill for it.
+2. A problem shows after it lasted 5 s and goes after the signal was fine for 10 s (`Debounced`), so a signal at the
+   threshold does not flap.
+3. Wi-Fi is unstable (`WifiStability`) when, within the last 30 s of link reports: the link was lost twice; or the RSSI
+   moved by 15 dB or more; or the link speed fell to half while the RSSI is −70 dBm or less. Fewer than four reports say
+   nothing, so a quiet link shows no pill. The reports are the default network's capability changes (RSSI; the link speed
+   from Android 12). This judges the local link only, not the way to the host.
+4. Nothing polls. The listeners (the default network's callback, the signal strength listener of the default data SIM) are
+   registered only while the shell is started: not under a stream and not in the background. One delayed look is posted
+   when a pending change is due.
+5. A debug build has Settings → About → "Network preview (simulated)": Off, Good 5G, Weak LTE, No service, Stable Wi-Fi,
+   Unstable Wi-Fi. It is kept in memory (Off at every start) and is not read in a release build.
+
 ## Code map
 
 | Path or class | Role |
@@ -699,6 +748,8 @@ The opacity of the on-screen controls (`seekbar_osc_opacity`, `PreferenceConfigu
 | `screens/SettingsScreen.kt` | `TabPill` |
 | `ui/SelectionPill.kt` | `SelectionPillHost`, `TransientPillHost` / `TransientPill`, `PillGeometry`, `TransientPillMotion`, `HANDOVER_MS` |
 | `ui/Bars.kt` | `TopNav`, the top menu |
+| `system/NetworkSignal.kt` | Network signal ([16](#16-network-signal)): pure `cellReading`, `Debounced`, `WifiStability`, `SignalJudge`; the listeners (`rememberNetworkSignal`); the debug `NetworkPreview` |
+| `ui/Bars.kt` (`CellIndicator`, `SignalPill`), `ui/Colors.kt` (`StatusColors`) | The cellular indicator, the problem pill and the three state colours |
 | `HomeScreen.kt` | `GameTile` badges, `rememberCustomGames`, `ROW_GAP` |
 | `GameSettingsStore.KEYS`, `GameSettingsStore.customAppIds` | Per-app setting keys and the set of custom app ids |
 | `GameSettingsScreen.kt` | Per-app settings screen: `GameBanner`, `GameSettingsLayout`, `SettingsPanelFrame` |
@@ -750,6 +801,10 @@ right, right. Then it rests.
 - Settings row focus: the shared plate of [Settings row focus](#7-settings-row-focus) is the accepted one.
 
 ### Not verified
+
+- Network signal (section 16) on a device with a modem: the cellular indicator, the weak and no-service states, the
+  following of the default data SIM, and how often Android reports Wi-Fi link changes. Only the simulated preview can be
+  seen on the AYN Odin.
 
 The checks that apply to every GUI document are in [GUI.md](../GUI.md#not-verified).
 
