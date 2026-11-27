@@ -85,6 +85,10 @@ object DelosToastOverlay {
                 val (overlay, view) = overlayView(activity) {
                     HostContent(session, appearance, colors, window = null)
                 }
+                // Compose makes the window's recomposer from the decor view's owners, which an activity gets in setContentView.
+                // The external display's control screen sets its content only once the stream activity exists (up to 5 s
+                // later), so it reached this point without them and the app crashed when a stream started on a TV.
+                activity.initializeViewTreeOwners()
                 view.setViewTreeLifecycleOwner(activity)
                 view.setViewTreeViewModelStoreOwner(activity)
                 view.setViewTreeSavedStateRegistryOwner(activity)
