@@ -656,36 +656,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     /**
-     * Delos: tells the host about every connected controller with sticks (those {@link #getAttachedControllerMask} counts) once
-     * the stream runs, instead of on its first input. Windows announces a newly attached controller, and the input that created
-     * it was lost to that announcement (a first Back hold for Task View did nothing).
-     */
-    public void announceConnectedControllers() {
-        if (stopped) {
-            return;
-        }
-        // The controller pressed last in DELOS is player 1, the rest follow by device id (owner, 2026-11-27: on a TV the
-        // DualSense was player 2 behind the Odin's own pad, and a game listening to player 1 ignored it; on the Odin, AYN's
-        // firmware re-exposes a Bluetooth DualSense with its own vendor id, so the vendor cannot tell the two apart)
-        Integer first = com.limelight.shell.ui.ControllerGlyphs.INSTANCE.getLastUsedPad();
-        java.util.List<Integer> ids = new java.util.ArrayList<>();
-        for (int id : inputManager.getInputDeviceIds()) ids.add(id);
-        if (first != null && ids.remove(first)) ids.add(0, first);
-        for (int id : ids) {
-            InputDevice dev = inputManager.getInputDevice(id);
-            if (dev == null || !hasJoystickAxes(dev)) {
-                continue;
-            }
-            InputDeviceContext context = inputDeviceContexts.get(id);
-            if (context == null) {
-                context = createInputDeviceContextForDevice(dev);
-                inputDeviceContexts.put(id, context);
-            }
-            assignControllerNumberIfNeeded(context);
-        }
-    }
-
-    /**
      * Delos: while the Full keyboard is up the physical controllers drive the keyboard, not the game. Starting and ending
      * the suspension lets go of everything they hold (a neutral packet each, which also ends a mouse emulation click);
      * while it lasts no controller state reaches the host (the on-screen gamepad is not a physical controller and keeps going).
