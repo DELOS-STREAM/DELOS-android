@@ -209,4 +209,5 @@
     <string name="stream_help_rumble_feel">Choisit le ressenti des vibrations du PC, aussitôt et enregistré. Reste ouvert : choisis à nouveau pour comparer. %1$s revient en arrière.</string>
     <string name="stream_help_format_keys">Envoie %1$s une fois au PC, puis revient au stream.</string>
     <string name="stream_help_format_command">Exécute aussitôt sur le PC la commande %1$s définie par le PC. À configurer dans Vibepollo ou Apollo.</string>
+    <string name="stream_help_take_screenshot">Enregistre uniquement la vidéo dans Pictures/DELOS.</string>
 </resources>
