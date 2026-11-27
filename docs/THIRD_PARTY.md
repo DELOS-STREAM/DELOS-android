@@ -185,7 +185,7 @@ commercial controller icon pack is included.
 | Component | Source | Licence | Notice |
 |---|---|---|---|
 | Figtree Medium lettering converted to contours | [google/fonts, pinned Figtree source](https://github.com/google/fonts/tree/e7db6ca603fd4862010383ff17ffd6cc4ffac1c0/ofl/figtree) | OFL-1.1, retained for the derived lettering | `Figtree-OFL.txt`, also beside both SVG sets |
-| Xbox and PlayStation Guide marks | [Simple Icons 11.0.0](https://github.com/simple-icons/simple-icons/tree/11.0.0) | CC0-1.0; trademark rights are not waived | `Simple-Icons-CC0.txt`, also beside controller sources |
+| Xbox and PlayStation Guide marks; the PlayStation logo of the start screen's PlayStation tab (`tools/fonts/console/playstation-mark*.svg`, the same path scaled into the 256 grid) | [Simple Icons 11.0.0](https://github.com/simple-icons/simple-icons/tree/11.0.0) | CC0-1.0; trademark rights are not waived | `Simple-Icons-CC0.txt`, also beside controller sources |
 
 Figtree's pinned variable source SHA-256 is
 `26ad3db9b31ff7dde67a91ff515d022d2f495cd506590699cf264f0bfe6fb714`;
