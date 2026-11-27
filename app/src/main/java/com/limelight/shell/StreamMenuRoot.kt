@@ -203,16 +203,18 @@ internal fun StreamMenuRoot(
             host.runWhenStreamFocused(then)
         }
     }
+    // The popover and the row popup are popups, with the context menu's pair of cues (open: rising clicks, close: falling); the
+    // menu itself opens with Open and closes with Back
+    val feedback = com.limelight.shell.ui.LocalFeedback.current
     fun go(exit: PageExit) {
         navigated = true
         morph = exit.page != MenuPage.MAIN && page != MenuPage.MAIN
         entryRow = exit.focusRow
         pendingCircle = exit.focusCircle
+        // The focus going back to the tile or row is part of this step, not a move: its cue drowned the close (owner, 2026-11-27)
+        feedback.silenceNextFocus()
         page = exit.page
     }
-    // The popover and the row popup are popups, with the context menu's pair of cues (open: rising clicks, close: falling); the
-    // menu itself opens with Open and closes with Back
-    val feedback = com.limelight.shell.ui.LocalFeedback.current
     // B: one level up, to the tile on the dock; on the dock it resumes (closes the menu)
     fun back() {
         val exit = pageAfterBack(page)
@@ -268,7 +270,8 @@ internal fun StreamMenuRoot(
     val imeAvoidance = rememberImeAvoidance()
     LaunchedEffect(picker) {
         if (picker != null) return@LaunchedEffect
-        pickerReturn?.let { runCatching { it.requestFocus() } }
+        // As in the shell: the row taking its focus back is not a move, so the popup's close cue is heard
+        pickerReturn?.let { feedback.silenceNextFocus(); runCatching { it.requestFocus() } }
         pickerReturn = null
     }
     fun backOrClosePicker() {
