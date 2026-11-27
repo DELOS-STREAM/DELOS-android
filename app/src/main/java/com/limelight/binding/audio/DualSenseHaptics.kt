@@ -17,7 +17,7 @@ import java.nio.ByteOrder
  * channels 3–4, silence on 1–2.
  * [open] returns null when no DualSense audio output with four channels is there.
  */
-class DualSenseHaptics private constructor(private val track: AudioTrack, private val audio: AudioManager?, private val restoreVolume: Int) {
+class DualSenseHaptics private constructor(private val track: AudioTrack) {
     private var lastLeft = 0
     private var lastRight = 0
     /** Reused between units; channels 1–2 stay silent, they are never written. */
@@ -77,7 +77,6 @@ class DualSenseHaptics private constructor(private val track: AudioTrack, privat
     fun close() {
         runCatching { track.stop() }
         track.release()
-        if (restoreVolume >= 0) runCatching { audio?.setStreamVolume(AudioManager.STREAM_MUSIC, restoreVolume, 0) }
     }
 
     companion object {
@@ -111,21 +110,10 @@ class DualSenseHaptics private constructor(private val track: AudioTrack, privat
                     .setBufferSizeInBytes(RATE / 1000 * 40 * 4 * 2)
                     .build()
                 track.preferredDevice = device
-                // The actuators follow the media volume of the controller's audio output, which is often low (it was turned down
-                // when Android put the sound there); with the controller as the media route it goes to full for the stream and back
-                // after it. Never when media plays elsewhere (headphones): that volume is not the controller's
-                val audio = context.getSystemService(AudioManager::class.java)
-                var restore = -1
-                val routes = if (audio != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU)
-                    audio.getAudioDevicesForAttributes(attributes) else emptyList()
-                if (audio != null && routes.any { it.type == device.type }) {
-                    restore = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
-                    audio.setStreamVolume(AudioManager.STREAM_MUSIC, audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0)
-                }
-                Log.i(TAG, "Media route: ${routes.joinToString { "${it.type}:${it.address}" }}; the controller ${device.type}:${device.address}")
+                // The actuators follow the media volume Android keeps for the controller; VolumeController holds it at the maximum
                 track.play()
-                Log.i(TAG, "DualSense haptics on ${device.productName} (${device.channelCounts.joinToString()} channels), routed to ${track.routedDevice?.productName}, volume ${if (restore >= 0) "raised from $restore" else "unchanged"}")
-                DualSenseHaptics(track, audio, restore)
+                Log.i(TAG, "DualSense haptics on ${device.productName} (${device.channelCounts.joinToString()} channels), routed to ${track.routedDevice?.productName}")
+                DualSenseHaptics(track)
             }.onFailure { Log.w(TAG, "DualSense haptics unavailable", it) }.getOrNull()
         }
     }

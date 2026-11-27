@@ -97,14 +97,32 @@ class VolumeController private constructor(context: Context) {
         else -> VolumeRoute.SPEAKER
     }
 
+    /**
+     * A wired DualSense's voice coils follow the media volume Android keeps for it (USB headset), often low (2 of 15 on the
+     * Odin): its haptics, PC (Vibepollo waveform) and PlayStation, were then too weak to feel (owner, 2026-11-27: always at
+     * the maximum). Android sets that volume only while media is routed to the controller, which it is when it is plugged in;
+     * the index is kept for later. DELOS's own sound stays on the device ([DeviceOutput]), so this never makes it louder.
+     */
+    private fun dualSenseVolumeToMax() {
+        if (Build.VERSION.SDK_INT < 33) return
+        val route = audio.getAudioDevicesForAttributes(routeAttributes).firstOrNull() ?: return
+        if (!DualSenseHaptics.isDualSense(route)) return
+        val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        if (audio.getStreamVolume(AudioManager.STREAM_MUSIC) < max) {
+            audio.setStreamVolume(AudioManager.STREAM_MUSIC, max, 0)
+            android.util.Log.i("VolumeController", "DualSense media volume set to the maximum for its haptics")
+        }
+    }
+
     private fun refresh() {
         val offController = preferredDevice()
         val output = offController ?: systemOutput()
         val type = output?.type ?: AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
         controllerRoute = output != null && DualSenseHaptics.isDualSense(output)
         val id = output?.id ?: 0
-        // USB haptics share Android's media stream: never touch its index while the controller is present.
+        // USB haptics share Android's media stream: never touch its index while the controller is present, except below.
         val nextForced = audio.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any(DualSenseHaptics::isDualSense)
+        if (nextForced) dualSenseVolumeToMax()
         val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val changed = forced != nextForced || id != routeId
         val old = mutable.value
