@@ -198,6 +198,9 @@ object ControllerGlyphs {
         private set
 
     private var lastUsed: Int? = null
+
+    /** The input device id of the controller pressed last in DELOS, if it is still connected. */
+    val lastUsedPad: Int? get() = lastUsed
     private var input: InputManager? = null
     private val state = InputKindState()
     private val stick = StickPress()

@@ -177,6 +177,14 @@ class ShellActivity : ComponentActivity() {
         }
     }
 
+    // Diagnostics (owner, 2026-11-27: after a stream on a TV the library came back laid out wrongly): what changed and where
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        com.limelight.diag.DiagLog.i("Shell", "Configuration changed: display ${com.limelight.display.DualScreen.displayIdOf(this)}, " + // l10n-ignore
+            "${newConfig.screenWidthDp}x${newConfig.screenHeightDp} dp, ${newConfig.densityDpi} dpi, colorMode 0x" + // l10n-ignore
+            Integer.toHexString(newConfig.colorMode))
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)

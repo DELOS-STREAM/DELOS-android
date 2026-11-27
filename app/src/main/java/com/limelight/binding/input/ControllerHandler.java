@@ -637,30 +637,25 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         if (stopped) {
             return;
         }
-        // A handheld's own pad goes last: with a controller connected to it, that controller is player 1 (owner,
-        // 2026-11-27: on a TV the DualSense was player 2 behind the Odin's pad, and a game listening to player 1 ignored it)
-        for (boolean handheldPad : new boolean[] {false, true}) {
-            for (int id : inputManager.getInputDeviceIds()) {
-                InputDevice dev = inputManager.getInputDevice(id);
-                if (dev == null || !hasJoystickAxes(dev) || isHandheldPad(dev) != handheldPad) {
-                    continue;
-                }
-                InputDeviceContext context = inputDeviceContexts.get(id);
-                if (context == null) {
-                    context = createInputDeviceContextForDevice(dev);
-                    inputDeviceContexts.put(id, context);
-                }
-                assignControllerNumberIfNeeded(context);
+        // The controller pressed last in DELOS is player 1, the rest follow by device id (owner, 2026-11-27: on a TV the
+        // DualSense was player 2 behind the Odin's own pad, and a game listening to player 1 ignored it; on the Odin, AYN's
+        // firmware re-exposes a Bluetooth DualSense with its own vendor id, so the vendor cannot tell the two apart)
+        Integer first = com.limelight.shell.ui.ControllerGlyphs.INSTANCE.getLastUsedPad();
+        java.util.List<Integer> ids = new java.util.ArrayList<>();
+        for (int id : inputManager.getInputDeviceIds()) ids.add(id);
+        if (first != null && ids.remove(first)) ids.add(0, first);
+        for (int id : ids) {
+            InputDevice dev = inputManager.getInputDevice(id);
+            if (dev == null || !hasJoystickAxes(dev)) {
+                continue;
             }
+            InputDeviceContext context = inputDeviceContexts.get(id);
+            if (context == null) {
+                context = createInputDeviceContextForDevice(dev);
+                inputDeviceContexts.put(id, context);
+            }
+            assignControllerNumberIfNeeded(context);
         }
-    }
-
-    /**
-     * The pad built into a handheld that Android reports as an external controller: AYN's (Odin, Thor), an "Xbox Wireless
-     * Controller" with AYN's USB vendor id 0x2020 rather than Microsoft's 0x045e.
-     */
-    private static boolean isHandheldPad(InputDevice dev) {
-        return dev.getVendorId() == 0x2020;
     }
 
     /**
