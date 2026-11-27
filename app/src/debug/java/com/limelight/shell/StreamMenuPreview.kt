@@ -110,7 +110,7 @@ internal fun GameScene() {
 
 /** The stream menu's [StreamMenuHost] with made-up values: every row works, nothing reaches a stream. */
 internal class FakeStreamMenuHost(initialUpscalerMode: Int = 2, private val longLists: Boolean = false) : StreamMenuHost {
-    override fun takeScreenshot(onResult: (Boolean) -> Unit) = onResult(true)
+    override fun takeScreenshot() {}
     var onDismiss: () -> Unit = {}
     private val handler = Handler(Looper.getMainLooper())
 
