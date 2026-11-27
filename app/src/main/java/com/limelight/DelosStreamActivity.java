@@ -286,6 +286,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
         // External-display DelosStreamActivity runs as a separate task. Android otherwise applies its default
         // side-slide even though the Delos loader is a continuation of the shell's launch scene.
         if (getIntent().getIntExtra(EXTRA_DISPLAY_ID, Display.DEFAULT_DISPLAY) != Display.DEFAULT_DISPLAY) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
             // Keep the external window on Delos's near-black stage color until the first Compose
             // loader frame. A transparent stream window otherwise exposes the TV task background.
             getWindow().setBackgroundDrawableResource(R.color.shell_window_background);
@@ -730,6 +731,9 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
             mouseModeController.forceTrackpad();
         } else {
             if (prefConfig.enableFullExDisplay && onExternalDisplay) {
+                LimeLog.info("External display stream started: window=stream, display="
+                        + getIntent().getIntExtra(EXTRA_DISPLAY_ID, Display.DEFAULT_DISPLAY)
+                        + ", focused=" + hasWindowFocus());
                 requestFocusToExternalDisplayControl(this);
                 listenForExternalDisplayRemoval();
             }
@@ -1224,6 +1228,11 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
+        if (onExternalDisplay) {
+            LimeLog.info("External display focus: window=stream, display="
+                    + getIntent().getIntExtra(EXTRA_DISPLAY_ID, Display.DEFAULT_DISPLAY)
+                    + ", focused=" + hasFocus);
+        }
 
         if (hasFocus) {
             // We can't guarantee the state of modifiers keys which may have
@@ -2157,6 +2166,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
     // Back is decided in ControllerHandler (issue #102).
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (onExternalDisplay) return handleExternalDisplayKeyEvent(event);
         if (volumeHud != null && volumeHud.handle(event)) return true;
         ControllerGlyphs.INSTANCE.key(event);
         if (cancelLoaderOnKey(event)) {
@@ -2200,6 +2210,7 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        if (onExternalDisplay) return handleExternalDisplayMotionEvent(event);
         ControllerGlyphs.INSTANCE.motion(event);
         return inputBlocked || super.dispatchGenericMotionEvent(event);
     }
@@ -2235,13 +2246,18 @@ public class DelosStreamActivity extends AppCompatActivity implements SurfaceHol
 
     /** One input route for the controller Activity, including keys delivered before the IME. */
     public boolean handleExternalDisplayKeyEvent(KeyEvent event) {
+        if (volumeHud != null && volumeHud.handle(event)) return true;
+        ControllerGlyphs.INSTANCE.key(event);
         if (cancelLoaderOnKey(event)) return true;
+        if (inputBlocked) return true;
         if (streamMenu != null && streamMenu.onExternalKey(event)) return true;
         return keyHandler.handleKeyEvent(event);
     }
 
     /** Keeps raw stick input on the normal streaming path unless the external menu owns it. */
     public boolean handleExternalDisplayMotionEvent(MotionEvent event) {
+        ControllerGlyphs.INSTANCE.motion(event);
+        if (inputBlocked) return true;
         return (streamMenu != null && streamMenu.onExternalMotion(event)) || onGenericMotionEvent(event);
     }
 

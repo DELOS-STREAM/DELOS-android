@@ -23,9 +23,9 @@ Only a display that Delos classifies as **external** (a monitor, a TV or a wirel
 
 ## Input architecture
 
-Android treats gamepads and keyboards as untargeted input. On a normal multi-display device they go to the globally focused display, which is the Odin screen in this layout, while the stream menu is rendered by the `DelosStreamActivity` activity on the TV. Android does not dynamically route the built-in controller to that second display.
+The handheld control activity owns input focus. The stream and its menu are rendered on the TV in non-focusable windows; menu actions that need input focus wait for the handheld window, not the TV. Delos logs the stream's display and focus at startup and logs focus changes for both activity windows.
 
-`ExternalDisplayControlActivity` is therefore the single bridge for external-display input:
+`ExternalDisplayControlActivity` normally bridges external-display input:
 
 1. Normal controller keys enter its `dispatchKeyEvent()` path.
 2. Keys claimed by an IME enter the supported `ExternalControllerView.onKeyPreIme()` path first. A key that route leaves unhandled continues to the IME and then to `dispatchKeyEvent()`; `onKeyPreIme()` does not hand keys to the stream itself.
@@ -35,7 +35,7 @@ Android treats gamepads and keyboards as untargeted input. On a normal multi-dis
 
 `FocusTracker` exposes the focused control's current activation and adjustment callbacks to this route. Analog navigation has an explicit edge and repeat policy. The original `InputConnection` and `commitText` behavior remain enabled for the Android keyboard and future controller UI.
 
-The accessibility keyboard service uses the same routes: the controller activity's router when the external controller activity has focus, and `DelosStreamActivity.dispatchKeyEvent()` (menu shortcut first) when the stream window on the device has focus, so enabling it can never bypass the menu.
+If Android delivers a key or motion event to the TV activity anyway, that activity dispatches it through the same external input handlers. The accessibility keyboard service uses the handheld route for an external stream, so it cannot bypass the menu.
 
 ## Code map
 
@@ -43,8 +43,8 @@ The accessibility keyboard service uses the same routes: the controller activity
 |---|---|
 | `utils/ExternalDisplayControlActivity.java` | The activity on the device's screen that receives input for the stream on the other display |
 | `ui/ExternalControllerView.java` | `onKeyPreIme()`: keys that an input method claims |
-| `utils/ExternalDisplayFocus.java` | Focus changes between the two displays |
-| `DelosStreamActivity.java` | `handleExternalDisplayKeyEvent()`: the one entry of those keys into the stream |
+| `utils/ExternalDisplayFocus.java` | Brings the handheld control activity to the foreground |
+| `DelosStreamActivity.java` | Shared key and motion routing for an external stream |
 | `shell/StreamResult.kt` | `StreamOutcome`: where the shell opens after a stream on the external display ends |
 
 ## Verification
