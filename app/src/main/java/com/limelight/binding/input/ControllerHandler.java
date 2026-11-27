@@ -922,6 +922,24 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return null;
     }
 
+    /**
+     * Some firmwares re-create a controller under their own vendor id and keep only its name (e.g. a DualSense as
+     * "DualSense Wireless Controller" 2020:0111 in the AYN Odin's TV mode). Returns Sony's product id for a PlayStation
+     * controller recognised by name, or 0 when the name does not identify one.
+     */
+    private static int playStationProductByName(String name) {
+        if (name.contains("DualSense Edge")) {
+            return 0x0df2;
+        }
+        if (name.contains("DualSense")) {
+            return 0x0ce6;
+        }
+        if (name.contains("DualShock 4") || name.contains("DUALSHOCK 4")) {
+            return 0x09cc;
+        }
+        return 0;
+    }
+
     /** The handheld's own pad: an internal one, or the Odin's, which Android lists as external ("Xbox Wireless Controller" 2020:0112). */
     private static boolean isHandheldPad(GenericControllerContext context) {
         return !context.external || (context.vendorId == 0x2020 && context.productId == 0x0112);
@@ -1117,6 +1135,14 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     && (original.getSensorManager().getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
                     || original.getSensorManager().getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null)) {
                 context.sensorManager = original.getSensorManager();
+            }
+        }
+        else if (context.identityVendorId != 0x054c) {
+            int psProduct = playStationProductByName(devName);
+            if (psProduct != 0) {
+                context.identityVendorId = 0x054c;
+                context.identityProductId = psProduct;
+                LimeLog.info(devName + " is identified by name as a PlayStation controller (054c:" + String.format(java.util.Locale.ROOT, "%04x", psProduct) + ")");
             }
         }
 
