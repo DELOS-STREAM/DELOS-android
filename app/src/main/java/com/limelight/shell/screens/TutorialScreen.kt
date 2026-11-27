@@ -201,7 +201,7 @@ fun TutorialScreen(screen: Screen.Tutorial, keys: GlobalKeys, onDone: () -> Unit
     }
     BackHandler {
         when {
-            shell.picker != null -> shell.closePicker()
+            shell.picker != null -> { feedback.play(Cue.MENU_CLOSE); shell.closePicker() }
             lesson == Lesson.BACK && scene.menu -> { scene.menu = false; feedback.play(Cue.BACK); complete() }
             lesson == Lesson.STREAM_TOUCH && !success -> { scene.stream = true; complete() }
             scene.menu -> scene.menu = false

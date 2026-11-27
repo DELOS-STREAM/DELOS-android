@@ -1373,7 +1373,7 @@ private fun changeGame(res: Resources, scope: CoroutineScope, shell: ShellState,
                 }
             }
         } + MenuItem(Symbols.SEARCH_NAME, res.getString(R.string.artwork_search_other)) { searchDialog(res, scope, shell, tracker, feedback, store, pc, app, term) }
-        feedback.play(Cue.OPEN)
+        feedback.play(Cue.MENU_OPEN)
         shell.openLayer(Layer.Context(ContextMenu(if (found.isEmpty()) res.getString(R.string.artwork_found_none, term) else res.getString(R.string.artwork_found_title), items), tracker.bounds()), tracker)
     }
 }

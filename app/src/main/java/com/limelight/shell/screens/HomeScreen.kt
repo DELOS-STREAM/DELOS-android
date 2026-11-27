@@ -727,7 +727,7 @@ private fun GameLibrary(library: Library.Ready, apps: List<App>, appearance: App
                 onPlay = {
                     // As A on the card: another game running on the PC offers the choices (quit it, go back to it) first
                     if (running != null && running.id != shown.id) {
-                        feedback.play(Cue.OPEN)
+                        feedback.play(Cue.MENU_OPEN)
                         val key = homeKey(pc, shown)
                         val art = appArt(pc, shown)
                         val matching = appearance.matchGameColors && !appearance.materialYou
@@ -1285,7 +1285,7 @@ private fun GameTile(
     // A starts (or resumes) the game; while another game runs on the PC it offers the choices instead
     val activate = {
         if (running != null && running.id != app.id) {
-            feedback.play(Cue.OPEN)
+            feedback.play(Cue.MENU_OPEN)
             shell.openLayer(Layer.Context(menu, tracker.bounds()), tracker)
         } else {
             actions.start(pc, app, image)

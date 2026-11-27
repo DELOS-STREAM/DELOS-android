@@ -229,7 +229,7 @@ fun DevicesScreen(pcs: List<Pc>, activeUuid: String?, defaultPc: String?) {
                 CircleItem(
                     Symbols.DESKTOP_WINDOWS, pc.name,
                     onClick = {
-                        feedback.play(Cue.OPEN)
+                        feedback.play(Cue.MENU_OPEN)
                         shell.openLayer(Layer.Context(menu, tracker.bounds()), tracker)
                     },
                     modifier = if (i == 0) Modifier.focusRequester(first) else Modifier,

@@ -454,7 +454,8 @@ private fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier
             .size(L.POPOVER_HEAD_HEIGHT.px)
-            .focusEffects(onBack, corner = 999f, focusScale = 1.06f, ring = null, glow = null, clickCue = Cue.BACK, onFocusChange = { focused = it })
+            // back() plays the cue (Back, or the popup's close when this leaves the popover)
+            .focusEffects(onBack, corner = 999f, focusScale = 1.06f, ring = null, glow = null, clickCue = null, onFocusChange = { focused = it })
             .drawBehind {
                 drawCircle(fill)
                 if (ring > 0f) {
@@ -507,7 +508,7 @@ internal fun MenuRow(
     val popup = rowPopupFor(label, value)
     val touchTap: ((Boolean) -> Boolean)? = if (picker == null || popup == null || !enabled) null else { wasFocused ->
         if (wasFocused) {
-            feedback.play(Cue.OPEN)
+            feedback.play(Cue.MENU_OPEN)
             picker(popup)
         }
         false

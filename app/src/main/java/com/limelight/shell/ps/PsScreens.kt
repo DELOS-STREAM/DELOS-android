@@ -141,7 +141,7 @@ fun PsStartContent(profileName: String?) {
             consoles.forEachIndexed { i, c ->
                 CircleItem(
                     Symbols.CONSOLE_PS5, c.name,
-                    onClick = { startPsStream(context, c.id, c.name) },
+                    onClick = { startPsStream(context, c.id, c.name, feedback) },
                     modifier = if (i == 0) Modifier.focusRequester(first) else Modifier,
                     meta = stringResource(R.string.ps_console_meta), big = true, selected = i == 0,
                     contextMenu = ContextMenu(c.name, below = true, items = listOf(
@@ -179,8 +179,10 @@ private fun psStreamIntent(context: android.content.Context, consoleId: String, 
  * Opens the stream window of console [consoleId] as a PC game does (Shell's launch): the stream runs in its own task, where the
  * system slides a new window in from the side; a scale-up from the whole screen fades it in over this one instead. Also Try again
  * after a failed PlayStation stream. [resumed]: the return into a session kept in the background, which shows no tunnel.
+ * [feedback] plays the stream start cue (null: silent, a parked session coming back on its own).
  */
-internal fun startPsStream(context: android.content.Context, consoleId: String, name: String, resumed: Boolean = false) {
+internal fun startPsStream(context: android.content.Context, consoleId: String, name: String, feedback: com.limelight.shell.ui.Feedback?, resumed: Boolean = false) {
+    feedback?.play(com.limelight.shell.ui.Cue.STREAM_START)
     val intent = psStreamIntent(context, consoleId, name).putExtra(com.limelight.DelosStreamActivity.EXTRA_RESUMED, resumed)
     var base: android.content.Context? = context
     while (base is android.content.ContextWrapper && base !is android.app.Activity) base = base.baseContext
@@ -431,6 +433,7 @@ internal object PinKey {
 private fun DoneStep(step: PsPairStep.Done) {
     val shell = LocalShell.current
     val context = LocalContext.current
+    val feedback = com.limelight.shell.ui.LocalFeedback.current
     val first = remember { FocusRequester() }
     InitialFocus(first)
     CenterColumn(gap = 48f) {
@@ -438,7 +441,7 @@ private fun DoneStep(step: PsPairStep.Done) {
         Row(horizontalArrangement = Arrangement.spacedBy(18.px)) {
             PillButton(stringResource(R.string.ps_play_now), Symbols.PLAY_ARROW, {
                 shell.navigate(Screen.Start)
-                startPsStream(context, step.consoleId, step.name)
+                startPsStream(context, step.consoleId, step.name, feedback)
             }, Modifier.focusRequester(first), primary = true)
             PillButton(stringResource(R.string.ps_back_to_start), Symbols.CHECK, { shell.navigate(Screen.Start) })
         }

@@ -155,7 +155,7 @@ fun profilesMenu(res: Resources, shell: ShellState, profiles: Profiles, store: P
 
 /** Opens [profilesMenu] at the focused element. */
 fun openProfilesMenu(res: Resources, shell: ShellState, tracker: FocusTracker, feedback: Feedback, profiles: Profiles, store: ProfileStore, from: Screen) {
-    feedback.play(Cue.OPEN)
+    feedback.play(Cue.MENU_OPEN)
     shell.openLayer(Layer.Context(profilesMenu(res, shell, profiles, store, from), tracker.bounds()), tracker)
 }
 

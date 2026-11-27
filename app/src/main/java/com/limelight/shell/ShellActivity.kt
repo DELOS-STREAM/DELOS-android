@@ -340,7 +340,7 @@ class ShellActivity : ComponentActivity() {
     private fun resumeParkedConsole() {
         val id = com.limelight.ps.PsConnection.parkedConsole() ?: return
         val console = com.limelight.shell.ps.PsConsoleStore.get(this).consoles.value.firstOrNull { it.id == id } ?: return
-        com.limelight.shell.ps.startPsStream(this, console.id, console.name, resumed = true)
+        com.limelight.shell.ps.startPsStream(this, console.id, console.name, null, resumed = true)
     }
 
     override fun onStop() {

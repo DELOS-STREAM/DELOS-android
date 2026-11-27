@@ -525,6 +525,8 @@ private fun TileCell(
             .focusEffects(
                 { if (!popOpen || spec.opensPage) onClick() },
                 corner = g.tileRadius, focusScale = 1f, ring = null, glow = null, pressPulse = press,
+                // A tile that opens a page: the popover's own cue plays (StreamMenuRoot.openPage)
+                clickCue = if (spec.opensPage) null else com.limelight.shell.ui.Cue.SELECT,
                 onFocusChange = { onFocused(spec.item, it) },
             ),
         contentAlignment = Alignment.Center,

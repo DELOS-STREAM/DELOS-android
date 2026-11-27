@@ -210,23 +210,33 @@ internal fun StreamMenuRoot(
         pendingCircle = exit.focusCircle
         page = exit.page
     }
+    // The popover and the row popup are popups, with the context menu's pair of cues (open: rising clicks, close: falling); the
+    // menu itself opens with Open and closes with Back
+    val feedback = com.limelight.shell.ui.LocalFeedback.current
     // B: one level up, to the tile on the dock; on the dock it resumes (closes the menu)
     fun back() {
         val exit = pageAfterBack(page)
+        feedback.play(when {
+            exit == null -> com.limelight.shell.ui.Cue.BACK
+            exit.page == MenuPage.MAIN -> com.limelight.shell.ui.Cue.MENU_CLOSE
+            else -> com.limelight.shell.ui.Cue.BACK
+        })
         if (exit == null) close() else go(exit)
     }
     // A tap outside the tiles and the card: closes the popover, or the menu on the dock; never the stream
     fun outsideTap() {
         when (outsideTapAction(page, closing)) {
             OutsideTap.NONE -> Unit
-            OutsideTap.CLOSE_POPOVER -> pageAfterDismiss(page)?.let { go(it) }
-            OutsideTap.CLOSE_MENU -> close()
+            OutsideTap.CLOSE_POPOVER -> pageAfterDismiss(page)?.let { feedback.play(com.limelight.shell.ui.Cue.MENU_CLOSE); go(it) }
+            OutsideTap.CLOSE_MENU -> { feedback.play(com.limelight.shell.ui.Cue.BACK); close() }
         }
     }
-    // A tile that opens a page; its own tile again closes the popover; another tile's page morphs the card
+    // A tile that opens a page; its own tile again closes the popover; another tile's page morphs the card. The tiles play no
+    // click cue of their own: the popup's cue is played here. A row opening a deeper page plays its own (Open).
     fun openPage(next: MenuPage) {
-        if (page == next) pageAfterDismiss(page)?.let { go(it) }
+        if (page == next) pageAfterDismiss(page)?.let { feedback.play(com.limelight.shell.ui.Cue.MENU_CLOSE); go(it) }
         else {
+            if (next.parent() == MenuPage.MAIN) feedback.play(com.limelight.shell.ui.Cue.MENU_OPEN)
             navigated = true
             morph = page != MenuPage.MAIN
             if (page == MenuPage.MAIN) {
@@ -262,7 +272,10 @@ internal fun StreamMenuRoot(
         pickerReturn = null
     }
     fun backOrClosePicker() {
-        if (picker != null) picker = null else back()
+        if (picker != null) {
+            feedback.play(com.limelight.shell.ui.Cue.MENU_CLOSE)
+            picker = null
+        } else back()
     }
     BackHandler(enabled = !closing) { backOrClosePicker() }
     LaunchedEffect(Unit) { closeRequests.collect { close() } }

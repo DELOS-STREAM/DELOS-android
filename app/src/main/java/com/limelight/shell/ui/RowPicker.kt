@@ -187,7 +187,7 @@ private fun PickerSheet(request: RowPopupRequest, layerAt: Offset, haze: HazeSta
     val origin = TransformOrigin(if (caretLeft) 0f else if (caretRight) 1f else .5f, if (place.hasCaret) place.caretY / place.height else .5f)
     Box(Modifier.fillMaxSize()) {
         // A tap beside the card closes it (nothing is dimmed: the stream menu's popover has no scrim either)
-        if (active) Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { hook.before(); feedback.play(Cue.BACK); onClose() } })
+        if (active) Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { hook.before(); feedback.play(Cue.MENU_CLOSE); onClose() } })
         AnimatedVisibility(
             active,
             Modifier

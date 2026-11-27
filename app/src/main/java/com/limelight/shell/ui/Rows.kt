@@ -223,7 +223,7 @@ fun SettingRow(
         when (rowTouch(value, wasFocused, enabled, picker != null && popup != null)) {
             RowTouch.ACTIVATE -> true
             RowTouch.PICK, RowTouch.ADJUST -> {
-                feedback.play(Cue.OPEN)
+                feedback.play(Cue.MENU_OPEN)
                 popup?.let { picker?.invoke(it) }
                 false
             }
@@ -233,7 +233,7 @@ fun SettingRow(
     }
     // Options (the right menu button): the popup a tap opens, so a controller sees every value at once
     val options: (() -> Unit)? = if (picker == null || !enabled || (value is RowValue.Slider && popupReset != null)) null
-        else rowPopupFor(label, value, popupReset)?.let { popup -> { feedback.play(Cue.OPEN); picker(popup) } }
+        else rowPopupFor(label, value, popupReset)?.let { popup -> { feedback.play(Cue.MENU_OPEN); picker(popup) } }
     // A tap on a part of the value that changes it directly (a choice's arrows, the switch): focus the row too, for its help
     val partTap: (() -> Unit) -> Unit = { change ->
         requester.requestFocus()

@@ -411,7 +411,7 @@ fun Shell(
         val r = shell.result ?: return
         shell.result = null
         if (r.consoleId.isNotEmpty()) {
-            activity?.let { com.limelight.shell.ps.startPsStream(it, r.consoleId, r.pcName) }
+            activity?.let { com.limelight.shell.ps.startPsStream(it, r.consoleId, r.pcName, feedback) }
             return
         }
         scope.launch {
@@ -655,8 +655,11 @@ fun Shell(
         }
     }
 
-    /** B closes the context menu with its own cue (from a submenu it only goes back to the parent: the usual one). */
-    fun backCue() = if (shell.picker == null && shell.layer is Layer.Context && shell.menuPath.isEmpty()) Cue.MENU_CLOSE else Cue.BACK
+    /**
+     * B with a popup open plays the popup's close: a row's popup, or the context menu from its top level (from a submenu B only
+     * goes back to the parent: the usual Back).
+     */
+    fun backCue() = if (shell.picker != null || (shell.layer is Layer.Context && shell.menuPath.isEmpty())) Cue.MENU_CLOSE else Cue.BACK
 
     fun toggleContext() {
         when (shell.layer) {
