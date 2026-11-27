@@ -696,7 +696,7 @@ The name comes from the kinds of cells in the signal report, not from the data n
 
 | Property | Value |
 |---|---|
-| Shown | Only while there is a problem: a weak cellular signal (1 or 2 bars), no service (0 bars), or an unstable Wi-Fi link |
+| Shown | Only on the start screen (its PC and PlayStation tabs; not on a PC's dashboard, in settings or anywhere else), and only while there is a problem: a weak cellular signal (1 or 2 bars), no service (0 bars), or an unstable Wi-Fi link |
 | Place | One line under the status bar: top at y 111, right edge on the status cluster's (72 px and the cutout from the right) |
 | Size | 56 px high, 24 px padding left and right, 22 px text on a 28 px line |
 | Look | Glass (`surface` at 45 %), 1 px border of `line` mixed 36 % with the state colour, fully rounded; no icon |
