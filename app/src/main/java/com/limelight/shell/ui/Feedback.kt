@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.collect
 
-enum class Cue { MOVE, SELECT, BACK, OPEN, ERROR, TOGGLE, STEP, TAB, UNDO, SCREENSHOT }
+enum class Cue { MOVE, SELECT, BACK, OPEN, ERROR, TOGGLE, STEP, TAB, COMPLETE, UNDO, SCREENSHOT }
 
 /**
  * UI sounds (res/raw: Open Sounds by Romain Raynal, see docs/CREDITS.md), the intro's sound track and
@@ -120,7 +120,7 @@ class Feedback(context: Context) {
     private val clips: Map<Cue, Clip> = mapOf(
         Cue.MOVE to R.raw.ui_move, Cue.SELECT to R.raw.ui_select, Cue.BACK to R.raw.ui_back, Cue.OPEN to R.raw.ui_open, Cue.ERROR to R.raw.ui_error,
         Cue.TOGGLE to R.raw.ui_toggle, Cue.STEP to R.raw.ui_step,
-        Cue.TAB to R.raw.ui_tab, Cue.UNDO to R.raw.ui_undo,
+        Cue.TAB to R.raw.ui_tab, Cue.COMPLETE to R.raw.ui_complete, Cue.UNDO to R.raw.ui_undo,
         Cue.SCREENSHOT to R.raw.ui_screenshot,
     ).mapNotNull { (cue, res) -> decode(res)?.let { cue to it } }.toMap()
 
@@ -282,7 +282,7 @@ class Feedback(context: Context) {
 
     private fun hapticFor(cue: Cue): Int = when (cue) {
         Cue.MOVE, Cue.BACK, Cue.STEP, Cue.TAB -> HapticFeedbackConstants.CLOCK_TICK
-        Cue.SELECT, Cue.OPEN, Cue.TOGGLE, Cue.SCREENSHOT ->
+        Cue.SELECT, Cue.OPEN, Cue.TOGGLE, Cue.COMPLETE, Cue.SCREENSHOT ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
         Cue.ERROR ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
@@ -299,7 +299,7 @@ class Feedback(context: Context) {
         val full = if (v.hasAmplitudeControl()) 255 else VibrationEffect.DEFAULT_AMPLITUDE
         val effect = when (cue) {
             Cue.MOVE, Cue.BACK, Cue.STEP, Cue.TAB -> VibrationEffect.createOneShot(50, full)
-            Cue.SELECT, Cue.OPEN, Cue.TOGGLE, Cue.SCREENSHOT -> VibrationEffect.createOneShot(70, full)
+            Cue.SELECT, Cue.OPEN, Cue.TOGGLE, Cue.COMPLETE, Cue.SCREENSHOT -> VibrationEffect.createOneShot(70, full)
             Cue.ERROR -> VibrationEffect.createWaveform(longArrayOf(0, 60, 80, 60), intArrayOf(0, full, 0, full), -1)
             Cue.UNDO -> return
         }
