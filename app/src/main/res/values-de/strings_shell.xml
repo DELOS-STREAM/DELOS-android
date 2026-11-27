@@ -121,4 +121,10 @@
     <string name="impact_legend">Kosten des aktuellen Werts: 1 Balken gering, 2 mittel, 3 hoch</string>
     <!-- The three spoken chip descriptions in one line. %1$s: GPU, %2$s: Latency, %3$s: Network -->
     <string name="impact_axes_joined">%1$s, %2$s, %3$s</string>
+    <!-- The cellular indicator of the status bar and the network problem pill under it -->
+    <string name="signal_mobile">Mobilfunk</string>
+    <string name="signal_cell_description">Mobilfunk %1$s, %2$d von 4 Balken</string>
+    <string name="signal_pill_weak">Schwaches Signal: Bitrate senken</string>
+    <string name="signal_pill_none">Kein Signal: mit WLAN verbinden</string>
+    <string name="signal_pill_unstable">Instabile Verbindung: Bitrate senken</string>
 </resources>
