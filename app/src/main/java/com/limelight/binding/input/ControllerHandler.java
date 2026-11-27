@@ -262,9 +262,36 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         InputDeviceContext context = inputDeviceContexts.get(deviceId);
         if (context != null) {
             LimeLog.info("Removed controller: "+context.name+" ("+deviceId+")");
+            boolean hadPlayer = context.assignedControllerNumber && context.reservedControllerNumber;
             releaseControllerNumber(context);
             context.destroy();
             inputDeviceContexts.remove(deviceId);
+            if (hadPlayer) {
+                giveFreedPlayerToUsbTakeover(context);
+            }
+        }
+    }
+
+    /**
+     * Delos: the USB driver claiming a controller removes Android's own input device for it a moment later (the kernel driver
+     * lets go). That device had a player number; the USB controller, announced just before, got the next free one (a wired
+     * DualSense became player 3 behind its own vanished copy and a game listening to player 1 ignored it). The USB controller
+     * of the same model that arrived within the last two seconds takes the freed, lower number instead.
+     */
+    private void giveFreedPlayerToUsbTakeover(InputDeviceContext removed) {
+        long now = SystemClock.uptimeMillis();
+        for (int i = 0; i < usbDeviceContexts.size(); i++) {
+            UsbDeviceContext usb = usbDeviceContexts.valueAt(i);
+            if (usb.assignedControllerNumber && usb.reservedControllerNumber && usb.controllerNumber > removed.controllerNumber
+                    && usb.vendorId == removed.identityVendorId && usb.productId == removed.identityProductId
+                    && now - usb.createdAtMs < 2000) {
+                LimeLog.info("USB controller " + usb.id + " takes over player " + removed.controllerNumber + " from " + removed.name);
+                releaseControllerNumber(usb);
+                usb.assignedControllerNumber = false;
+                usb.reservedControllerNumber = false;
+                assignControllerNumberIfNeeded(usb);
+                return;
+            }
         }
     }
 
@@ -863,6 +890,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         UsbDeviceContext context = new UsbDeviceContext();
 
         context.id = device.getControllerId();
+        context.createdAtMs = SystemClock.uptimeMillis();
         context.device = device;
         context.external = true;
 
@@ -3995,6 +4023,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     class UsbDeviceContext extends InputDeviceContext {
         public AbstractController device;
+        /** When the USB driver announced it ({@link #giveFreedPlayerToUsbTakeover}). */
+        public long createdAtMs;
 
 //        @Override
 //        public void destroy() {
