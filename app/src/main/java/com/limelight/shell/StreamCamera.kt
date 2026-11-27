@@ -138,7 +138,7 @@ internal fun StreamCamera(
                     transformOrigin = TransformOrigin(1f, 0f)
                 }
                 .focusEffects(capture, corner = side / 2f, focusScale = 1.04f, origin = TransformOrigin(1f, 0f),
-                    onFocusChange = { focused = it })
+                    clickCue = Cue.SCREENSHOT, onFocusChange = { focused = it })
                 .semantics { contentDescription = if (showSaved) savedLabel else label }
                 .drawBehind {
                     val corner = CornerRadius(size.height / 2f)
